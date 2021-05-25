@@ -47,6 +47,7 @@
     "!*/__tests__"
   ],
   "dependencies": {
+    "@loopback/authentication": "^7.3.0",
     "@loopback/boot": "^3.4.0",
     "@loopback/core": "^2.16.0",
     "@loopback/graphql": "^0.4.0",
@@ -54,6 +55,7 @@
     "@loopback/rest": "^9.3.0",
     "@loopback/rest-explorer": "^3.3.0",
     "@loopback/service-proxy": "^3.2.0",
+    "firebase-admin": "^9.8.0",
     "loopback-connector-mongodb": "^6.0.1",
     "tslib": "^2.0.0"
   },

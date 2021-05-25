@@ -8,7 +8,9 @@ import {
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
+import {registerAuthenticationStrategy} from '@loopback/authentication';
 import path from 'path';
+import { FirebaseStrategy } from './authentication-strategies/FirebaseStrategy';
 import {MySequence} from './sequence';
 
 export {ApplicationConfig};
@@ -34,6 +36,8 @@ export class SharedFinancesApplication extends BootMixin(
     this.configure(GraphQLBindings.GRAPHQL_SERVER).to({
       asMiddlewareOnly: true,
     });
+    registerAuthenticationStrategy(this, FirebaseStrategy);
+
 
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     this.expressMiddleware('middleware.express.GraphQL', server.expressApp);

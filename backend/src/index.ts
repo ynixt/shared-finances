@@ -1,9 +1,15 @@
 import {ApplicationConfig, SharedFinancesApplication} from './application';
+import * as admin from 'firebase-admin';
 
 export * from './application';
 
+export const FireabaseAdminInjector = 'firebase-admin';
+
 export async function main(options: ApplicationConfig = {}) {
   const app = new SharedFinancesApplication(options);
+
+  configureFirebase(app);
+
   await app.boot();
   await app.start();
 
@@ -12,6 +18,19 @@ export async function main(options: ApplicationConfig = {}) {
   console.log(`Try ${url}/ping`);
 
   return app;
+}
+
+function configureFirebase(app: SharedFinancesApplication): admin.app.App {
+  const bindFirebase = app.bind(FireabaseAdminInjector);
+
+  const firebaseApp = admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    databaseURL: 'https://unk-shared-finance.firebaseio.com',
+  });
+
+  bindFirebase.to(firebaseApp);
+
+  return firebaseApp;
 }
 
 if (require.main === module) {

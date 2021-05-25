@@ -9,10 +9,8 @@ export class User extends Entity {
   id?: string;
 
   @field()
-  @property()
-  name: string;
-
-  @field()
-  @property()
-  email: string;
+  @property({
+    index: true
+  })
+  uid: string;
 }

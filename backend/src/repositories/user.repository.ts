@@ -10,4 +10,12 @@ export class UserRepository extends DefaultCrudRepository<
   constructor(@inject('datasources.mongo') dataSource: MongoDataSource) {
     super(User, dataSource);
   }
+
+  getByUid(uid: string): Promise<User> {
+    return this.findOne({
+      where: {
+        uid,
+      },
+    });
+  }
 }
