@@ -1,21 +1,19 @@
 import {AuthenticationStrategy} from '@loopback/authentication';
 import {inject, service} from '@loopback/core';
-import {UserProfile} from '@loopback/security';
-import * as admin from 'firebase-admin';
-import {Request} from 'express';
-
-import {FireabaseAdminInjector} from '..';
-import {UserService} from '../services';
 import {HttpErrors} from '@loopback/rest';
+import {Request} from 'express';
+import * as admin from 'firebase-admin';
+import {FireabaseAdminInjector} from '../injectors';
 import {User} from '../models';
 import {MyUserProfile} from '../models/my-user-profile';
+import {UserService} from '../services';
 
 export interface FirebaseCredentials {
   uid: string;
 }
 
 export class FirebaseStrategy implements AuthenticationStrategy {
-  name: string = 'firebase';
+  name = 'firebase';
 
   constructor(
     @service(UserService) private userService: UserService,
@@ -26,19 +24,19 @@ export class FirebaseStrategy implements AuthenticationStrategy {
     try {
       const credentials = await this.extractCredentials(request);
       const user = await this.userService.getOrCreateUser(credentials);
-      const userProfile = this.convertToUserProfile(user);
+      const userProfile = await this.convertToUserProfile(user);
 
       return userProfile;
     } catch (err) {
       console.error(err);
-      throw new HttpErrors.Unauthorized('Invalid email or password.');
+      throw new HttpErrors.Unauthorized('Invalid token.');
     }
   }
 
   async extractCredentials(request: Request): Promise<FirebaseCredentials> {
-    const tokenId = request.headers['token-id'] as string;
+    const tokenId = request.headers.authorization as string;
 
-    const uid = (await this.firebaseAdminApp.auth().verifyIdToken(tokenId)).uid;
+    const uid = (await this.firebaseAdminApp.auth().verifyIdToken(tokenId, true)).uid;
 
     return {
       uid,
@@ -53,6 +51,7 @@ export class FirebaseStrategy implements AuthenticationStrategy {
       userRecord.uid,
       userRecord.email,
       userRecord.displayName,
+      userRecord.photoURL,
     );
   }
 }

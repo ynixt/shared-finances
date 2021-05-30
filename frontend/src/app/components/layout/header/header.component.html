@@ -1,0 +1,40 @@
+<ng-container *transloco="let t">
+  <mat-toolbar>
+    <button mat-icon-button class="example-icon" aria-label="Example icon-button with menu icon">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <span>{{t('app-title')}}</span>
+    <span class="example-spacer"></span>
+    <ng-container *ngIf="userState$ | async as userState">
+
+      <mat-progress-spinner *ngIf="!userState.done" mode="indeterminate" diameter="40">
+      </mat-progress-spinner>
+
+      <ng-container *ngIf="userState.done && userState.user != null">
+        <button mat-icon-button class='user-photo' [matMenuTriggerFor]="userMenu">
+          <img [src]='userState.user.photoURL' />
+        </button>
+
+        <mat-menu #userMenu="matMenu">
+          <div class="user-menu">
+            <div class="info">
+              <h3 class="name">{{userState.user.name}}</h3>
+              <h5 class="name">{{userState.user.email}}</h5>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="actions">
+              <button mat-menu-item (click)="logout()">
+                <mat-icon>logout</mat-icon>
+                <span>{{t('logout')}}</span>
+              </button>
+            </div>
+          </div>
+        </mat-menu>
+      </ng-container>
+
+      <button *ngIf="userState.done && userState.user == null" mat-icon-button (click)="login()" [title]="t('login')">
+        <mat-icon>login</mat-icon>
+      </button>
+    </ng-container>
+  </mat-toolbar>
+</ng-container>

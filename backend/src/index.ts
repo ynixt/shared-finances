@@ -1,14 +1,16 @@
-import {ApplicationConfig, SharedFinancesApplication} from './application';
 import * as admin from 'firebase-admin';
+import {ApplicationConfig, SharedFinancesApplication} from './application';
+import {FireabaseAdminInjector} from './injectors';
+
 
 export * from './application';
-
-export const FireabaseAdminInjector = 'firebase-admin';
 
 export async function main(options: ApplicationConfig = {}) {
   const app = new SharedFinancesApplication(options);
 
   configureFirebase(app);
+
+  app.restServer.basePath('/api');
 
   await app.boot();
   await app.start();

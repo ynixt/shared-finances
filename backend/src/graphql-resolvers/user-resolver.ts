@@ -1,7 +1,7 @@
 import {arg, query, resolver} from '@loopback/graphql';
 import {repository} from '@loopback/repository';
-import {User} from '../../models';
-import {UserRepository} from '../../repositories';
+import {User} from '../models';
+import {UserRepository} from '../repositories';
 
 @resolver(of => User)
 export class UserResolver {

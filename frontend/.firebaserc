@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "unk-shared-finances": {
+      "hosting": {
+        "shared-finances": [
+          "unk-shared-finances"
+        ]
+      }
+    }
+  }
+}

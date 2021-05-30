@@ -1,0 +1,17 @@
+/node_modules
+/**/karma_html
+/coverage
+/dist
+/debug.log
+/e2e/reports
+/**/test-results.xml
+/ssl
+/.vscode
+/.DS_Store
+/$tf
+/.tfignore
+/package.json
+/projects/modulea
+/src/assets
+*.md
+/angular.json

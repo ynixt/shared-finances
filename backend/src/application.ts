@@ -1,3 +1,4 @@
+import {AuthenticationComponent, registerAuthenticationStrategy} from '@loopback/authentication';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig} from '@loopback/core';
 import {GraphQLBindings, GraphQLComponent} from '@loopback/graphql';
@@ -5,12 +6,11 @@ import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
-  RestExplorerComponent,
+  RestExplorerComponent
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
-import {registerAuthenticationStrategy} from '@loopback/authentication';
 import path from 'path';
-import { FirebaseStrategy } from './authentication-strategies/FirebaseStrategy';
+import {FirebaseStrategy} from './authentication-strategies/FirebaseStrategy';
 import {MySequence} from './sequence';
 
 export {ApplicationConfig};
@@ -36,6 +36,7 @@ export class SharedFinancesApplication extends BootMixin(
     this.configure(GraphQLBindings.GRAPHQL_SERVER).to({
       asMiddlewareOnly: true,
     });
+    this.component(AuthenticationComponent);
     registerAuthenticationStrategy(this, FirebaseStrategy);
 
 
@@ -53,7 +54,7 @@ export class SharedFinancesApplication extends BootMixin(
       },
       graphqlResolvers: {
         // Customize ControllerBooter Conventions here
-        dirs: ['graphql\\resolvers'],
+        dirs: ['graphql-resolvers'],
         extensions: ['.js'],
         nested: true,
       },
