@@ -1,7 +1,6 @@
 import * as admin from 'firebase-admin';
-import {ApplicationConfig, SharedFinancesApplication} from './application';
-import {FireabaseAdminInjector} from './injectors';
-
+import { ApplicationConfig, SharedFinancesApplication } from './application';
+import { FireabaseAdminInjector } from './injectors';
 
 export * from './application';
 

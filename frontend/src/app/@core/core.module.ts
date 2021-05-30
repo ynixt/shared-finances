@@ -31,8 +31,6 @@ import { TranslocoRootModule } from './i18n';
     },
     [{ provide: LOCALE_ID, useValue: 'pt' }],
   ],
-  exports: [
-    TranslocoRootModule
-  ]
+  exports: [TranslocoRootModule],
 })
 export class CoreModule {}

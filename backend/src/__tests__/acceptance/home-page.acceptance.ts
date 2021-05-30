@@ -1,13 +1,13 @@
-import {Client} from '@loopback/testlab';
-import {SharedFinancesApplication} from '../..';
-import {setupApplication} from './test-helper';
+import { Client } from '@loopback/testlab';
+import { SharedFinancesApplication } from '../..';
+import { setupApplication } from './test-helper';
 
 describe('HomePage', () => {
   let app: SharedFinancesApplication;
   let client: Client;
 
   before('setupApplication', async () => {
-    ({app, client} = await setupApplication());
+    ({ app, client } = await setupApplication());
   });
 
   after(async () => {

@@ -1,5 +1,5 @@
-import {ApplicationConfig} from '@loopback/core';
-import {SharedFinancesApplication} from './application';
+import { ApplicationConfig } from '@loopback/core';
+import { SharedFinancesApplication } from './application';
 
 /**
  * Export the OpenAPI spec from the application

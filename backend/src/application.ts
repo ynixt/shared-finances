@@ -1,23 +1,18 @@
-import {AuthenticationComponent, registerAuthenticationStrategy} from '@loopback/authentication';
-import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig} from '@loopback/core';
-import {GraphQLBindings, GraphQLComponent} from '@loopback/graphql';
-import {RepositoryMixin} from '@loopback/repository';
-import {RestApplication} from '@loopback/rest';
-import {
-  RestExplorerBindings,
-  RestExplorerComponent
-} from '@loopback/rest-explorer';
-import {ServiceMixin} from '@loopback/service-proxy';
+import { AuthenticationComponent, registerAuthenticationStrategy } from '@loopback/authentication';
+import { BootMixin } from '@loopback/boot';
+import { ApplicationConfig } from '@loopback/core';
+import { GraphQLBindings, GraphQLComponent } from '@loopback/graphql';
+import { RepositoryMixin } from '@loopback/repository';
+import { RestApplication } from '@loopback/rest';
+import { RestExplorerBindings, RestExplorerComponent } from '@loopback/rest-explorer';
+import { ServiceMixin } from '@loopback/service-proxy';
 import path from 'path';
-import {FirebaseStrategy} from './authentication-strategies/FirebaseStrategy';
-import {MySequence} from './sequence';
+import { FirebaseStrategy } from './authentication-strategies/FirebaseStrategy';
+import { MySequence } from './sequence';
 
-export {ApplicationConfig};
+export { ApplicationConfig };
 
-export class SharedFinancesApplication extends BootMixin(
-  ServiceMixin(RepositoryMixin(RestApplication)),
-) {
+export class SharedFinancesApplication extends BootMixin(ServiceMixin(RepositoryMixin(RestApplication))) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
@@ -38,7 +33,6 @@ export class SharedFinancesApplication extends BootMixin(
     });
     this.component(AuthenticationComponent);
     registerAuthenticationStrategy(this, FirebaseStrategy);
-
 
     const server = this.getSync(GraphQLBindings.GRAPHQL_SERVER);
     this.expressMiddleware('middleware.express.GraphQL', server.expressApp);

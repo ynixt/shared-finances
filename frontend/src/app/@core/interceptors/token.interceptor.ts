@@ -28,7 +28,7 @@ export class TokenInterceptor implements HttpInterceptor {
   }
 
   private async getToken(): Promise<string> {
-    const user = await this.auth.user.pipe((take(1))).toPromise();
+    const user = await this.auth.user.pipe(take(1)).toPromise();
 
     return user?.getIdToken();
   }

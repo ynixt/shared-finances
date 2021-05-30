@@ -1,12 +1,12 @@
-import {AuthenticationStrategy} from '@loopback/authentication';
-import {inject, service} from '@loopback/core';
-import {HttpErrors} from '@loopback/rest';
-import {Request} from 'express';
+import { AuthenticationStrategy } from '@loopback/authentication';
+import { inject, service } from '@loopback/core';
+import { HttpErrors } from '@loopback/rest';
+import { Request } from 'express';
 import * as admin from 'firebase-admin';
-import {FireabaseAdminInjector} from '../injectors';
-import {User} from '../models';
-import {MyUserProfile} from '../models/my-user-profile';
-import {UserService} from '../services';
+import { FireabaseAdminInjector } from '../injectors';
+import { User } from '../models';
+import { MyUserProfile } from '../models/my-user-profile';
+import { UserService } from '../services';
 
 export interface FirebaseCredentials {
   uid: string;
@@ -46,12 +46,6 @@ export class FirebaseStrategy implements AuthenticationStrategy {
   public async convertToUserProfile(user: User): Promise<MyUserProfile> {
     const userRecord = await this.firebaseAdminApp.auth().getUser(user.uid);
 
-    return new MyUserProfile(
-      user.id,
-      userRecord.uid,
-      userRecord.email,
-      userRecord.displayName,
-      userRecord.photoURL,
-    );
+    return new MyUserProfile(user.id, userRecord.uid, userRecord.email, userRecord.displayName, userRecord.photoURL);
   }
 }
