@@ -5,16 +5,42 @@ import firebase from 'firebase/app';
 
 import { AuthType, User } from '../models';
 import { AuthDispatchers } from 'src/app/store';
+import { Apollo, gql } from 'apollo-angular';
+import { take } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(private httpClient: HttpClient, private auth: AngularFireAuth, private authDispatchers: AuthDispatchers) {}
+  constructor(
+    private httpClient: HttpClient,
+    private auth: AngularFireAuth,
+    private authDispatchers: AuthDispatchers,
+    private apollo: Apollo,
+  ) {}
 
   public async getCurrentUser(): Promise<User | null> {
     try {
-      return await this.httpClient.get<User>('/api/auth/currentUser').toPromise();
+      const result = await this.apollo
+        .query<{ user: User }>({
+          query: gql`
+            query GetUser {
+              user {
+                name
+                email
+                photoURL
+              }
+            }
+          `,
+        })
+        .pipe(take(1))
+        .toPromise();
+
+      if (result.errors || result.data == null || result.data.user == null) {
+        return null;
+      }
+
+      return result.data.user;
     } catch (err) {
       console.error(err);
       return null;

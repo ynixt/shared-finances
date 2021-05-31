@@ -6,6 +6,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TokenInterceptor } from './interceptors/token.interceptor';
 import { AppStoreModule } from '../store/app-store.module';
 import { TranslocoRootModule } from './i18n';
+import { GraphQLModule } from './graphql.module';
 
 @NgModule({
   imports: [
@@ -22,6 +23,7 @@ import { TranslocoRootModule } from './i18n';
     }),
     AngularFireAuthModule,
     AppStoreModule,
+    GraphQLModule,
   ],
   providers: [
     {
