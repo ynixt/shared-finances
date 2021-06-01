@@ -20,11 +20,12 @@ export class HeaderComponent implements OnInit {
     this.userState$ = this.authSelectors.state$;
   }
 
-  async logout(): Promise<void> {
+  logout(): void {
     this.authDispatchers.logout();
+    this.login();
   }
 
-  async login(): Promise<void> {
+  login(): void {
     this.router.navigateByUrl('/auth/login');
   }
 }

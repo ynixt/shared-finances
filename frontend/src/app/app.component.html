@@ -1,9 +1,8 @@
-<ng-container *ngIf="authState$ | async as authState">
-  <ng-container *ngIf="authState.done; else loading">
-    <app-header></app-header>
-    <router-outlet></router-outlet>
-  </ng-container>
+<ng-container *ngIf="appDone; else loading">
+  <app-header></app-header>
+  <router-outlet></router-outlet>
 </ng-container>
+
 
 <ng-template #loading>
   <div class="loading-full">

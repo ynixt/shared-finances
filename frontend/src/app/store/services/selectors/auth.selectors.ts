@@ -39,4 +39,15 @@ export class AuthSelectors {
         });
     });
   }
+
+  public done(): Promise<boolean> {
+    return new Promise<boolean>(resolve => {
+      this.state$
+        .pipe(filter(state => state.done))
+        .pipe(take(1))
+        .subscribe(state => {
+          resolve(state.done);
+        });
+    });
+  }
 }

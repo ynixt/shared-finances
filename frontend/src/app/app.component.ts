@@ -11,12 +11,12 @@ import { AuthSelectors } from './store/services/selectors';
 })
 export class AppComponent implements OnInit {
   title = 'shared-finances';
-  authState$: Observable<AuthState>;
+  appDone: boolean;
 
   constructor(private authDispatchers: AuthDispatchers, private authSelectors: AuthSelectors) {}
 
   ngOnInit(): void {
     this.authDispatchers.getCurrentUser();
-    this.authState$ = this.authSelectors.state$;
+    this.authSelectors.done().then(done => (this.appDone = done));
   }
 }
