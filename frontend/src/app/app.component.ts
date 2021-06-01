@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 import { AuthDispatchers } from './store';
+import { AuthState } from './store/reducers/auth.reducer';
+import { AuthSelectors } from './store/services/selectors';
 
 @Component({
   selector: 'app-root',
@@ -8,10 +11,12 @@ import { AuthDispatchers } from './store';
 })
 export class AppComponent implements OnInit {
   title = 'shared-finances';
+  authState$: Observable<AuthState>;
 
-  constructor(private authDispatchers: AuthDispatchers) {}
+  constructor(private authDispatchers: AuthDispatchers, private authSelectors: AuthSelectors) {}
 
   ngOnInit(): void {
     this.authDispatchers.getCurrentUser();
+    this.authState$ = this.authSelectors.state$;
   }
 }

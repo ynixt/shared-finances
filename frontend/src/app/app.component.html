@@ -1,1 +1,12 @@
-<app-header></app-header> <router-outlet></router-outlet>
+<ng-container *ngIf="authState$ | async as authState">
+  <ng-container *ngIf="authState.done; else loading">
+    <app-header></app-header>
+    <router-outlet></router-outlet>
+  </ng-container>
+</ng-container>
+
+<ng-template #loading>
+  <div class="loading-full">
+    <mat-progress-spinner mode="indeterminate" diameter="100"></mat-progress-spinner>
+  </div>
+</ng-template>
