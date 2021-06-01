@@ -9,6 +9,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslocoModule } from '@ngneat/transloco';
 
 import { HeaderComponent } from './header.component';
+import { CovalentStepsModule } from '@covalent/core/steps';
+import { CovalentLayoutModule } from '@covalent/core/layout';
+import { MatListModule } from '@angular/material/list';
+import { MenuModule } from '../menu';
 
 @NgModule({
   declarations: [HeaderComponent],
@@ -21,6 +25,10 @@ import { HeaderComponent } from './header.component';
     MatMenuModule,
     MatProgressSpinnerModule,
     TranslocoModule,
+    CovalentLayoutModule,
+    CovalentStepsModule,
+    MatListModule,
+    MenuModule,
   ],
   exports: [HeaderComponent],
 })

@@ -1,3 +1,24 @@
+@use '~@angular/material' as mat;
+@import 'src/scss/variables';
+
 .content {
   padding: 22px 8px 8px 8px;
 }
+
+// mat-sidenav-container {
+//   height: calc(100% - 64px);
+
+//   @media (max-width: 599px) {
+//     height: calc(100% - 56px);
+//   }
+
+//   .mat-sidenav {
+//     background: mat.get-color-from-palette($background, app-bar);
+//     border-color: mat.get-color-from-palette($background, app-bar);
+//     // min-width: 300px;
+//   }
+
+//   .mat-drawer-content {
+//     background: mat.get-color-from-palette($background, dialog);
+//   }
+// }

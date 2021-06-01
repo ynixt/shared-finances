@@ -1,5 +1,7 @@
 {
   "app-title": "Finanças compartilhadas",
   "login": "Entrar",
-  "logout": "Sair"
+  "logout": "Sair",
+  "individual": "Individual",
+  "shared": "Compartilhado"
 }
