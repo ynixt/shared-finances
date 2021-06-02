@@ -13,6 +13,7 @@ import { MatListModule } from '@angular/material/list';
 import { CovalentLayoutModule } from '@covalent/core/layout';
 import { CovalentStepsModule } from '@covalent/core/steps';
 import { TranslocoModule } from '@ngneat/transloco';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 const layoutModules = [
   ScrollingModule,
@@ -23,6 +24,7 @@ const layoutModules = [
   MatCardModule,
   MatDividerModule,
   MatListModule,
+  MatProgressSpinnerModule,
 
   CovalentLayoutModule,
   CovalentStepsModule,

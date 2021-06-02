@@ -2,14 +2,22 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Group {
+  id: ID!
+  name: String!
+  users: User!
+}
+
 type User {
   id: ID!
   uid: String!
   email: String
   name: String
   photoURL: String
+  groups: Group!
 }
 
 type Query {
   user: User
+  groups: [Group!]
 }

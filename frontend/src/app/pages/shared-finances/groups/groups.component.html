@@ -1,0 +1,17 @@
+<ng-container *ngIf="groups$ | async as groups; else loading">
+  <div class="groups">
+    <mat-card class="group-card" *ngFor="let group of groups" [routerLink]="'/finances/shared/' + group.id">
+      <mat-card-header>
+        <mat-card-title>{{ group.name }}</mat-card-title>
+      </mat-card-header>
+      <!-- <mat-card-actions>
+        <button mat-button>LIKE</button>
+        <button mat-button>SHARE</button>
+      </mat-card-actions> -->
+    </mat-card>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
+</ng-template>

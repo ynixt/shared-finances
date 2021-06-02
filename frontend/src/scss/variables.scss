@@ -23,3 +23,5 @@ $theme: mat-light-theme($primary, $accent, $warn);
 
 $config: mat-get-color-config($theme);
 $background: map.get($config, 'background');
+
+$primary-color: mat-color($primary);

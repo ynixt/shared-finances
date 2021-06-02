@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { AngularFireAuth } from '@angular/fire/auth';
 import firebase from 'firebase/app';
 
@@ -12,12 +11,7 @@ import { take } from 'rxjs/operators';
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(
-    private httpClient: HttpClient,
-    private auth: AngularFireAuth,
-    private authDispatchers: AuthDispatchers,
-    private apollo: Apollo,
-  ) {}
+  constructor(private auth: AngularFireAuth, private authDispatchers: AuthDispatchers, private apollo: Apollo) {}
 
   public async getCurrentUser(): Promise<User | null> {
     try {

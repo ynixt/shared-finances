@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { FirebaseModule } from './firebase/firebase.module';
+import { GroupModule } from './group/group.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { FirebaseModule } from './firebase/firebase.module';
       path: '/api/graphql',
     }),
     FirebaseModule,
+    GroupModule,
   ],
 })
 export class CoreModule {}

@@ -12,6 +12,10 @@ const routes: Routes = [
         path: '',
         component: DashboardComponent,
       },
+      {
+        path: 'shared',
+        loadChildren: () => import('../shared-finances/shared-finances.module').then(m => m.SharedFinancesModule),
+      },
     ],
   },
 ];

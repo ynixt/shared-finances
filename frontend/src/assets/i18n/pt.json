@@ -2,6 +2,8 @@
   "app-title": "Finanças compartilhadas",
   "login": "Entrar",
   "logout": "Sair",
+  "dashboard": "Dashboard",
   "individual": "Individual",
-  "shared": "Compartilhado"
+  "shared": "Compartilhado",
+  "manage-groups": "Gerenciar grupos"
 }

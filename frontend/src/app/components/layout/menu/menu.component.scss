@@ -1,9 +1,41 @@
+@use 'sass:map';
+@import 'src/scss/variables';
+
+.mat-expansion-panel {
+  border-radius: 0;
+
+  .mat-expansion-panel-header {
+    padding: 0 16px;
+
+    &.mat-expanded {
+      height: 48px;
+    }
+  }
+
+  .item.child {
+    font-size: 85%;
+  }
+}
+
+.mat-icon {
+  color: rgba(0, 0, 0, 0.54);
+}
+
 .item {
   height: 100%;
   display: flex !important;
   align-items: center;
 
+  &.father {
+    pointer-events: none;
+  }
+
   .mat-icon {
     margin-right: 25px;
   }
+}
+
+mat-list-item.active ::ng-deep .item,
+.item.active {
+  font-weight: 500 !important;
 }
