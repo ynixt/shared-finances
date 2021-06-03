@@ -23,8 +23,8 @@ export class GroupResolver {
   }
 
   @Mutation(() => String, { nullable: true })
-  // @UseGuards(GqlFirebaseAuthGuard)
-  async useInvite(@Args({ name: 'invite' }) inviteId: string) {
-    return this.groupService.useInvite('60a737e0bdc9262224b793fe', inviteId);
+  @UseGuards(GqlFirebaseAuthGuard)
+  async useInvite(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'invite' }) inviteId: string) {
+    return this.groupService.useInvite(user.id, inviteId);
   }
 }
