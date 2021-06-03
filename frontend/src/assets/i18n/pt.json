@@ -2,8 +2,13 @@
   "app-title": "Finanças compartilhadas",
   "login": "Entrar",
   "logout": "Sair",
+  "ok": "Ok",
+  "cancel": "Cancelar",
   "dashboard": "Dashboard",
   "individual": "Individual",
   "shared": "Compartilhado",
-  "manage-groups": "Gerenciar grupos"
+  "manage-groups": "Gerenciar grupos",
+  "create-share-url": "Gerar link compartilhavel",
+  "link-created": "Link criado",
+  "link-created-message": "Link gerado com sucesso. Agora é só enviar o link abaixo para a pessoa!"
 }

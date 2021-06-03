@@ -16,7 +16,7 @@ export class Group {
   @Prop()
   name: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId }])
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, index: true }])
   @Field(() => User)
   users?: User[];
 }

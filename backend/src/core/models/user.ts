@@ -28,7 +28,7 @@ export class User {
   @Field({ nullable: true })
   public photoURL?: string;
 
-  @Prop([{ type: mongoose.Schema.Types.ObjectId }])
+  @Prop([{ type: mongoose.Schema.Types.ObjectId, index: true }])
   @Field(() => Group)
   groups?: Group[];
 }

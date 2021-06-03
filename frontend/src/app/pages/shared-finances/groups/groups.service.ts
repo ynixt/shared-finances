@@ -35,4 +35,26 @@ export class GroupsService {
       return null;
     }
   }
+
+  async generateShareLink(groupId: string): Promise<string> {
+    const result = await this.apollo
+      .mutate<{ createShareUrl: string }>({
+        mutation: gql`
+          mutation($groupId: String!) {
+            createShareUrl(groupId: $groupId)
+          }
+        `,
+        variables: {
+          groupId,
+        },
+      })
+      .pipe(take(1))
+      .toPromise();
+
+    if (result.errors) {
+      throw result.errors;
+    }
+
+    return result.data.createShareUrl;
+  }
 }

@@ -1,1 +1,15 @@
-<p>group-single-page works!</p>
+<ng-container *transloco="let t">
+  <button
+    mat-icon-button
+    aria-label="Share"
+    [title]="t('create-share-url')"
+    (click)="createShareUrl()"
+    *ngIf="!sharedLinkLoading; else loading"
+  >
+    <mat-icon>share</mat-icon>
+  </button>
+</ng-container>
+
+<ng-template #loading>
+  <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
+</ng-template>

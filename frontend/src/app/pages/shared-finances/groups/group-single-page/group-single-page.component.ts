@@ -1,12 +1,59 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { TdDialogService } from '@covalent/core/dialogs';
+import { Group } from 'src/app/@core/models/group';
+import { GroupsService } from '../groups.service';
+import { TranslocoService } from '@ngneat/transloco';
 
 @Component({
   selector: 'app-group-single-page',
   templateUrl: './group-single-page.component.html',
   styleUrls: ['./group-single-page.component.scss'],
 })
-export class GroupSinglePageComponent implements OnInit {
-  constructor() {}
+export class GroupSinglePageComponent implements OnInit, OnDestroy {
+  public group: Group;
+  public sharedLinkLoading = false;
 
-  ngOnInit(): void {}
+  private activatedRouteSubscription: Subscription;
+  private groupId: string;
+
+  constructor(
+    private groupsService: GroupsService,
+    private activatedRoute: ActivatedRoute,
+    private dialogService: TdDialogService,
+    private translocoService: TranslocoService,
+  ) {}
+
+  ngOnInit(): void {
+    this.activatedRouteSubscription = this.activatedRoute.params.subscribe(params => this.loadGroup(params.id));
+  }
+
+  ngOnDestroy(): void {
+    if (this.activatedRouteSubscription) {
+      this.activatedRouteSubscription.unsubscribe();
+    }
+  }
+
+  async createShareUrl(): Promise<void> {
+    this.sharedLinkLoading = true;
+
+    try {
+      const sharedLink = await this.groupsService.generateShareLink(this.groupId);
+
+      this.dialogService.openPrompt({
+        title: this.translocoService.translate('link-created'),
+        message: this.translocoService.translate('link-created-message'),
+        value: `${window.location.origin}/finances/shared/invite/${sharedLink}`,
+        cancelButton: this.translocoService.translate('cancel'),
+        acceptButton: this.translocoService.translate('ok'),
+      });
+    } finally {
+      this.sharedLinkLoading = false;
+    }
+  }
+
+  private async loadGroup(groupId: string): Promise<void> {
+    this.groupId = groupId;
+  }
 }
