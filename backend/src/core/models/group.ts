@@ -18,7 +18,7 @@ export class Group {
 
   @Prop([{ type: mongoose.Schema.Types.ObjectId, index: true }])
   @Field(() => User)
-  users?: User[];
+  users?: mongoose.Types.Array<User>;
 }
 
 export const GroupSchema = SchemaFactory.createForClass(Group);

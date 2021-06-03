@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { SharedFinancesComponent } from '.';
 import { GroupsComponent, GroupSinglePageComponent } from './groups';
+import { InviteComponent } from './invite';
 
 const routes: Routes = [
   {
@@ -15,6 +16,10 @@ const routes: Routes = [
   {
     path: ':id',
     component: GroupSinglePageComponent,
+  },
+  {
+    path: 'invite/:inviteId',
+    component: InviteComponent,
   },
 ];
 

@@ -25,10 +25,10 @@ export class UserService {
     return user;
   }
 
-  public async getUserById(id: string): Promise<User> {
+  public async getUserById(id: string, loadProfile = false): Promise<User> {
     const user = await this.userModel.findById(id);
 
-    if (user != null) {
+    if (user != null && loadProfile) {
       await this.loadProfile(user);
     }
 
@@ -43,6 +43,17 @@ export class UserService {
     }
 
     return user;
+  }
+
+  public async addGroupToUser(userId: string, groupId: string): Promise<void> {
+    await this.userModel.updateOne(
+      { _id: userId },
+      {
+        $addToSet: {
+          groups: groupId,
+        },
+      },
+    );
   }
 
   private async loadProfile(user: User): Promise<User> {

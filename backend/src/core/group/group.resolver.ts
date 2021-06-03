@@ -21,4 +21,10 @@ export class GroupResolver {
   async createShareUrl(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'groupId' }) groupId: string) {
     return this.groupService.generateShareUrl(user.id, groupId);
   }
+
+  @Mutation(() => String, { nullable: true })
+  // @UseGuards(GqlFirebaseAuthGuard)
+  async useInvite(@Args({ name: 'invite' }) inviteId: string) {
+    return this.groupService.useInvite('60a737e0bdc9262224b793fe', inviteId);
+  }
 }

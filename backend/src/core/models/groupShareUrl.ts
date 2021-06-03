@@ -11,7 +11,7 @@ export class GroupShareUrl {
   @Field(() => ID)
   id: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Owner', index: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Group', index: true })
   group: Group;
 
   @Prop({ index: true })

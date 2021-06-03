@@ -14,6 +14,6 @@ export class UserResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   // async user(@Args('userId') id: string) {
   async user(@GqlCurrentUser() user: FirebaseUserWithId) {
-    return this.userService.getUserById(user.id);
+    return this.userService.getUserById(user.id, true);
   }
 }

@@ -4,9 +4,10 @@ import { SharedFinancesComponent } from './shared-finances.component';
 import { SharedFinancesRoutingModule } from './shared-finances-routing.module';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { GroupsModule } from './groups';
+import { InviteComponent } from './invite/invite.component';
 
 @NgModule({
-  declarations: [SharedFinancesComponent],
+  declarations: [SharedFinancesComponent, InviteComponent],
   imports: [CommonModule, SharedFinancesRoutingModule, SharedModule, GroupsModule],
 })
 export class SharedFinancesModule {}
