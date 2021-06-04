@@ -1,10 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { Group } from 'src/app/@core/models/group';
 import { GroupsService } from '../groups.service';
 import { TranslocoService } from '@ngneat/transloco';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-group-single-page',
@@ -17,12 +18,14 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   private activatedRouteSubscription: Subscription;
   private groupId: string;
+  private updateGroupSubscription: Subscription;
 
   constructor(
     private groupsService: GroupsService,
     private activatedRoute: ActivatedRoute,
     private dialogService: TdDialogService,
     private translocoService: TranslocoService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -32,6 +35,9 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.activatedRouteSubscription) {
       this.activatedRouteSubscription.unsubscribe();
+    }
+    if (this.updateGroupSubscription) {
+      this.updateGroupSubscription.unsubscribe();
     }
   }
 
@@ -53,7 +59,44 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     }
   }
 
+  async editGroup(): Promise<void> {
+    /** TODO: Allow to edit other properties from group and i18n it */
+    const newName = await this.dialogService
+      .openPrompt({
+        title: 'Editar grupo',
+        message: '',
+        value: this.group.name,
+        cancelButton: 'Cancelar',
+        acceptButton: 'Editar',
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .toPromise();
+
+    if (newName !== this.group.name) {
+      await this.groupsService.editGroup({ ...this.group, name: newName });
+    }
+  }
+
   private async loadGroup(groupId: string): Promise<void> {
     this.groupId = groupId;
+
+    if (this.updateGroupSubscription) {
+      this.updateGroupSubscription.unsubscribe();
+    }
+
+    if (this.groupId) {
+      this.updateGroupSubscription = this.groupsService.checkIfGroupChanged(this.groupId).subscribe(updatedGroup => {
+        this.group = { ...this.group, name: updatedGroup.name };
+      });
+    }
+
+    const group = await this.groupsService.getGroup(groupId);
+
+    if (!group) {
+      this.router.navigateByUrl('/404');
+    }
+
+    this.group = group;
   }
 }

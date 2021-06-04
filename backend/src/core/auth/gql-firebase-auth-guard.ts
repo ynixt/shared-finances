@@ -10,6 +10,10 @@ export class GqlFirebaseAuthGuard extends AuthGuard('firebase') {
     const ctx = GqlExecutionContext.create(context);
     const { req } = ctx.getContext();
 
+    if (req.headers == null && req.Authorization != null) {
+      req.headers = { authorization: req.Authorization };
+    }
+
     return super.canActivate(new ExecutionContextHost([req]));
   }
 

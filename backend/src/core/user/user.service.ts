@@ -6,10 +6,14 @@ import { User, UserDocument } from '../models';
 
 @Injectable()
 export class UserService {
+  public static instance: UserService;
+
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject(FIREBASE_ADMIN_INJECT) private firebaseAdmin: FirebaseAdminSDK,
-  ) {}
+  ) {
+    UserService.instance = this;
+  }
 
   public async getOrCreateUser(uid: string): Promise<User> {
     let user = await this.getUserByUid(uid);

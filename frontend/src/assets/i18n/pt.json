@@ -14,5 +14,7 @@
   "error-404": {
     "title": "Ops! Página não encontrada.",
     "button-home": "Voltar para início"
-  }
+  },
+  "group-name": "Grupo {{name}}",
+  "edit-group": "Editar grupo"
 }

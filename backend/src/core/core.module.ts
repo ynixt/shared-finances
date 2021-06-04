@@ -15,6 +15,7 @@ import { GroupModule } from './group/group.module';
       installSubscriptionHandlers: true,
       autoSchemaFile: 'schema.gql',
       path: '/api/graphql',
+      context: ({ req, connection }) => (connection ? { req: connection.context } : { req }),
     }),
     FirebaseModule,
     GroupModule,

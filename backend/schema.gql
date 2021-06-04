@@ -20,9 +20,15 @@ type User {
 type Query {
   user: User
   groups: [Group!]
+  group(groupId: String!): Group
 }
 
 type Mutation {
   createShareUrl(groupId: String!): String!
   useInvite(invite: String!): String
+  updateGroup(id: String!, name: String!): Group
+}
+
+type Subscription {
+  groupUpdated(groupId: String!): Group
 }

@@ -6,19 +6,59 @@ import { GroupShareUrl, GroupShareUrlDocument } from '../models';
 import { Group, GroupDocument } from '../models/group';
 import { UserService } from '../user/user.service';
 import * as mongoose from 'mongoose';
+import { UpdateGroupArgs } from '../models/args';
 
 @Injectable()
 export class GroupService {
+  public static instance: GroupService;
+
   constructor(
     @InjectModel(Group.name) private groupModel: Model<GroupDocument>,
     @InjectModel(GroupShareUrl.name) private groupShareUrlModel: Model<GroupShareUrlDocument>,
     private userService: UserService,
-  ) {}
+  ) {
+    GroupService.instance = this;
+  }
 
   public async getGroupsByUserId(userId: string): Promise<Group[]> {
     const groups = await this.groupModel.find({ users: { $elemMatch: { $eq: userId } } });
 
     return groups;
+  }
+
+  public async getGroup(userId: string, groupId: string): Promise<Group> {
+    const group = await this.groupModel
+      .findOne({
+        $and: [
+          {
+            _id: groupId,
+          },
+          { users: { $elemMatch: { $eq: userId } } },
+        ],
+      })
+      .exec();
+
+    return group;
+  }
+
+  public async updateGroup(userId: string, newGroup: UpdateGroupArgs): Promise<Group | null> {
+    const updateResponse = await this.groupModel.updateOne(
+      {
+        $and: [
+          {
+            _id: newGroup.id,
+          },
+          { users: { $elemMatch: { $eq: userId } } },
+        ],
+      },
+      { name: newGroup.name },
+    );
+
+    if (updateResponse.n > 0) {
+      return this.getGroup(userId, newGroup.id);
+    }
+
+    return null;
   }
 
   public async generateShareUrl(userId: string, groupId: string): Promise<string> {
@@ -78,7 +118,7 @@ export class GroupService {
     );
   }
 
-  private userHasAccessToGroup(userId: string, groupId: string): Promise<boolean> {
+  public userHasAccessToGroup(userId: string, groupId: string): Promise<boolean> {
     return this.groupModel.exists({ $and: [{ _id: groupId }, { users: { $elemMatch: { $eq: userId } } }] });
   }
 

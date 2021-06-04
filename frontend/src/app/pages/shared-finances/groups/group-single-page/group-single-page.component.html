@@ -1,13 +1,23 @@
 <ng-container *transloco="let t">
-  <button
-    mat-icon-button
-    aria-label="Share"
-    [title]="t('create-share-url')"
-    (click)="createShareUrl()"
-    *ngIf="!sharedLinkLoading; else loading"
-  >
-    <mat-icon>share</mat-icon>
-  </button>
+  <div class="group-single-page" *ngIf="group; else loading">
+    <div class="title-bar">
+      <h1 class="title">{{ t('group-name', { 'name': group?.name }) }}</h1>
+      <div class="buttons">
+        <button mat-icon-button aria-label="Edit" [title]="t('create-share-url')" (click)="editGroup()">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          aria-label="Share"
+          [title]="t('edit-group')"
+          (click)="createShareUrl()"
+          *ngIf="!sharedLinkLoading; else loading"
+        >
+          <mat-icon>share</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
 </ng-container>
 
 <ng-template #loading>
