@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { NotFoundComponent } from './pages/errors';
 import { PermissionGuard } from './shared/permission.guard';
 
 const routes: Routes = [
@@ -15,6 +16,14 @@ const routes: Routes = [
     path: 'finances',
     loadChildren: () => import('./pages/finances/finances.module').then(m => m.FinancesModule),
     canActivate: [PermissionGuard],
+  },
+  {
+    path: '404',
+    component: NotFoundComponent,
+  },
+  {
+    path: '**',
+    redirectTo: '/404',
   },
 ];
 

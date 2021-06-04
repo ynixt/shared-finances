@@ -8,10 +8,20 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule } from '@angular/common/http';
 import { HeaderModule } from './components/layout';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ErrorsModule } from './pages/errors';
 
 @NgModule({
   declarations: [AppComponent],
-  imports: [BrowserModule, AppRoutingModule, HttpClientModule, CoreModule, BrowserAnimationsModule, HeaderModule, MatProgressSpinnerModule],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    HttpClientModule,
+    CoreModule,
+    BrowserAnimationsModule,
+    HeaderModule,
+    MatProgressSpinnerModule,
+    ErrorsModule,
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}
