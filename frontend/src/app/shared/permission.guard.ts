@@ -27,9 +27,12 @@ export class PermissionGuard implements CanActivate, CanActivateChild {
       ) {
         return true;
       }
+
+      this.router.navigateByUrl('/auth/login');
+      return false;
     }
 
-    this.router.navigateByUrl('/auth/login');
+    this.router.navigateByUrl(`/auth/login?next=${window.location.pathname}`);
 
     return false;
   }

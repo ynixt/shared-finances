@@ -52,8 +52,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  logout(): void {
-    this.authDispatchers.logout();
+  async logout(): Promise<void> {
+    await this.authDispatchers.logout();
     this.login();
   }
 
