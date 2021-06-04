@@ -40,6 +40,11 @@ export class GroupService {
 
   public async useInvite(userId: string, inviteId: string): Promise<string | null> {
     const invite = await this.groupShareUrlModel.findById(inviteId).populate('group').exec();
+
+    if (invite == null) {
+      return null;
+    }
+
     const { group } = invite;
 
     if (group.users.filter(user => new mongoose.Types.ObjectId(user.id).toHexString() === userId).length > 0) {
