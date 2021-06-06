@@ -105,10 +105,10 @@ export class GroupsService {
 
   async generateShareLink(groupId: string): Promise<string> {
     const result = await this.apollo
-      .mutate<{ createShareUrl: string }>({
+      .mutate<{ createInvite: string }>({
         mutation: gql`
           mutation($groupId: String!) {
-            createShareUrl(groupId: $groupId)
+            createInvite(groupId: $groupId)
           }
         `,
         variables: {
@@ -122,6 +122,6 @@ export class GroupsService {
       throw result.errors;
     }
 
-    return result.data.createShareUrl;
+    return result.data.createInvite;
   }
 }

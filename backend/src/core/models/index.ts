@@ -1,3 +1,3 @@
 export * from './user';
 export * from './group';
-export * from './groupShareUrl';
+export * from './groupInvite';

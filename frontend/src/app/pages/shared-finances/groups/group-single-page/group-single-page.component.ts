@@ -41,7 +41,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     }
   }
 
-  async createShareUrl(): Promise<void> {
+  async createInvite(): Promise<void> {
     this.sharedLinkLoading = true;
 
     try {

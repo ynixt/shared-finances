@@ -10,7 +10,7 @@
           mat-icon-button
           aria-label="Share"
           [title]="t('edit-group')"
-          (click)="createShareUrl()"
+          (click)="createInvite()"
           *ngIf="!sharedLinkLoading; else loading"
         >
           <mat-icon>share</mat-icon>

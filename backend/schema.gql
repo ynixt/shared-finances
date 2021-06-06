@@ -24,7 +24,7 @@ type Query {
 }
 
 type Mutation {
-  createShareUrl(groupId: String!): String!
+  createInvite(groupId: String!): String!
   useInvite(invite: String!): String
   updateGroup(id: String!, name: String!): Group
 }

@@ -1,22 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { GroupShareUrl, GroupShareUrlDocument } from '../models';
+import { GroupInvite, GroupInviteDocument } from '../models';
 import { MongoRepository } from '../data';
 
 @Injectable()
-export class GroupShareUrlRepository extends MongoRepository<GroupShareUrl, GroupShareUrlDocument> {
-  constructor(@InjectModel(GroupShareUrl.name) groupShareUrlModel: Model<GroupShareUrlDocument>) {
-    super(groupShareUrlModel);
+export class GroupInviteRepository extends MongoRepository<GroupInvite, GroupInviteDocument> {
+  constructor(@InjectModel(GroupInvite.name) groupInviteModel: Model<GroupInviteDocument>) {
+    super(groupInviteModel);
   }
 
   public async createAndGetId(groupId: string): Promise<string> {
-    const shareUrl = await this.model.create({
+    const invite = await this.model.create({
       group: groupId,
       creationDate: new Date().toISOString(),
     });
 
-    return shareUrl.id;
+    return invite.id;
   }
 
   public async getInviteWithGroup(inviteId: string) {

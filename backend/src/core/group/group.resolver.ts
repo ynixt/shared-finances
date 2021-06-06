@@ -36,8 +36,8 @@ export class GroupResolver {
 
   @Mutation(() => String)
   @UseGuards(GqlFirebaseAuthGuard)
-  async createShareUrl(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'groupId' }) groupId: string) {
-    return this.groupService.generateShareUrl(user.id, groupId);
+  async createInvite(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'groupId' }) groupId: string) {
+    return this.groupService.generateInvite(user.id, groupId);
   }
 
   @Mutation(() => String, { nullable: true })

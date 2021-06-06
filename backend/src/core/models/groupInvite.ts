@@ -3,11 +3,11 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Group } from './group';
 
-export type GroupShareUrlDocument = GroupShareUrl & Document;
+export type GroupInviteDocument = GroupInvite & Document;
 
 @ObjectType()
 @Schema()
-export class GroupShareUrl {
+export class GroupInvite {
   @Field(() => ID)
   id: string;
 
@@ -18,4 +18,4 @@ export class GroupShareUrl {
   creationDate: string;
 }
 
-export const GroupShareUrlSchema = SchemaFactory.createForClass(GroupShareUrl);
+export const GroupInviteSchema = SchemaFactory.createForClass(GroupInvite);

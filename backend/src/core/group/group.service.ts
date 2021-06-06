@@ -5,7 +5,7 @@ import { Group } from '../models/group';
 import { UserService } from '../user/user.service';
 import { UpdateGroupArgs } from '../models/args';
 import { GroupRepository } from './group.repository';
-import { GroupShareUrlRepository } from './group-share-url.repository';
+import { GroupInviteRepository } from './group-invite.repository';
 
 @Injectable()
 export class GroupService {
@@ -14,7 +14,7 @@ export class GroupService {
   constructor(
     private userService: UserService,
     private groupRepository: GroupRepository,
-    private groupShareUrlRepository: GroupShareUrlRepository,
+    private groupInviteRepository: GroupInviteRepository,
   ) {
     GroupService.instance = this;
   }
@@ -31,7 +31,7 @@ export class GroupService {
     return this.groupRepository.update(userId, newGroup);
   }
 
-  public async generateShareUrl(userId: string, groupId: string): Promise<string> {
+  public async generateInvite(userId: string, groupId: string): Promise<string> {
     const userAllowed = await this.groupRepository.groupHasUser(userId, { groupId });
 
     if (!userAllowed) {
@@ -40,16 +40,16 @@ export class GroupService {
 
     await this.deleteOldInvites();
 
-    return this.groupShareUrlRepository.createAndGetId(groupId);
+    return this.groupInviteRepository.createAndGetId(groupId);
   }
 
   public async deleteOldInvites(): Promise<void> {
     const limitDate = new Date(new Date().getTime() - 24 * 60 * 60 * 1000).toISOString();
-    await this.groupShareUrlRepository.deleteWithCreationDateLess(limitDate);
+    await this.groupInviteRepository.deleteWithCreationDateLess(limitDate);
   }
 
   public async useInvite(userId: string, inviteId: string): Promise<string | null> {
-    const invite = await this.groupShareUrlRepository.getInviteWithGroup(inviteId);
+    const invite = await this.groupInviteRepository.getInviteWithGroup(inviteId);
 
     const { group } = invite;
 
@@ -62,7 +62,7 @@ export class GroupService {
     try {
       await this.userService.addGroupToUser(userId, group.id);
       await this.groupRepository.addUserToGroup(group.id, userId);
-      await this.groupShareUrlRepository.deleteById(inviteId);
+      await this.groupInviteRepository.deleteById(inviteId);
     } catch (err) {
       await this.groupRepository.abortTransaction(transaction);
       throw err;
