@@ -5,7 +5,7 @@ import { FirebaseUserWithId } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { UpdateGroupArgs } from '../models/args';
-import { Group, GroupSchema } from '../models/group';
+import { Group } from '../models/group';
 import { GroupService } from './group.service';
 
 const pubSub = new PubSub();
