@@ -1,17 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import { FirebaseAdminSDK, FIREBASE_ADMIN_INJECT } from '@tfarras/nestjs-firebase-admin';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../models';
+import { User } from '../models';
+import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
   public static instance: UserService;
 
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @Inject(FIREBASE_ADMIN_INJECT) private firebaseAdmin: FirebaseAdminSDK,
-  ) {
+  constructor(private userRepository: UserRepository, @Inject(FIREBASE_ADMIN_INJECT) private firebaseAdmin: FirebaseAdminSDK) {
     UserService.instance = this;
   }
 
@@ -19,18 +15,14 @@ export class UserService {
     let user = await this.getUserByUid(uid);
 
     if (user == null) {
-      const createdUser = await this.userModel.create({
-        uid: uid,
-      });
-
-      user = await this.getUserById(createdUser.id);
+      user = await this.userRepository.create(uid);
     }
 
     return user;
   }
 
   public async getUserById(id: string, loadProfile = false): Promise<User> {
-    const user = await this.userModel.findById(id);
+    const user = await this.userRepository.geById(id);
 
     if (user != null && loadProfile) {
       await this.loadProfile(user);
@@ -40,7 +32,7 @@ export class UserService {
   }
 
   public async getUserByUid(uid: string, loadProfile = false): Promise<User> {
-    const user = await this.userModel.findOne({ uid });
+    const user = await this.userRepository.getByUid(uid);
 
     if (user != null && loadProfile) {
       await this.loadProfile(user);
@@ -50,14 +42,7 @@ export class UserService {
   }
 
   public async addGroupToUser(userId: string, groupId: string): Promise<void> {
-    await this.userModel.updateOne(
-      { _id: userId },
-      {
-        $addToSet: {
-          groups: groupId,
-        },
-      },
-    );
+    return this.userRepository.addGroupToUser(userId, groupId);
   }
 
   private async loadProfile(user: User): Promise<User> {
