@@ -15,14 +15,14 @@ export class UserService {
     let user = await this.getUserByUid(uid);
 
     if (user == null) {
-      user = await this.userRepository.create(uid);
+      user = await this.userRepository.create({ uid });
     }
 
     return user;
   }
 
   public async getUserById(id: string, loadProfile = false): Promise<User> {
-    const user = await this.userRepository.geById(id);
+    const user = await this.userRepository.getById(id);
 
     if (user != null && loadProfile) {
       await this.loadProfile(user);

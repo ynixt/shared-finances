@@ -1,5 +1,11 @@
 <mat-nav-list *transloco="let t">
   <mat-list-item>
+    <span class="item" matLine routerLink="/credit" routerLinkActive="active">
+      <mat-icon>credit_card</mat-icon> {{ t('credit-cards') }}
+    </span>
+  </mat-list-item>
+
+  <mat-list-item>
     <span class="item" matLine> <mat-icon>person</mat-icon> {{ t('individual') }} </span>
   </mat-list-item>
 

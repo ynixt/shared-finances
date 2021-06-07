@@ -16,11 +16,7 @@ enum GroupPubTrigger {
 
 @Resolver(() => Group)
 export class GroupResolver {
-  self;
-
-  constructor(private groupService: GroupService) {
-    this.self = this;
-  }
+  constructor(private groupService: GroupService) {}
 
   @Query(() => [Group], { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)

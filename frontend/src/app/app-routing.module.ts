@@ -18,6 +18,11 @@ const routes: Routes = [
     canActivate: [PermissionGuard],
   },
   {
+    path: 'credit',
+    loadChildren: () => import('./pages/credit-card/credit-card.module').then(m => m.CreditCardModule),
+    canActivate: [PermissionGuard],
+  },
+  {
     path: '404',
     component: NotFoundComponent,
   },

@@ -1,9 +1,9 @@
 import { ClientSession } from 'mongoose';
 import { Repository } from './repository';
-import { Model } from 'mongoose';
+import { Model, Document } from 'mongoose';
 
-export abstract class MongoRepository<Domain, Document> extends Repository<Domain, ClientSession> {
-  constructor(protected model: Model<Document>) {
+export abstract class MongoRepository<TDomain, TDocument extends any & Document> extends Repository<TDomain, ClientSession> {
+  constructor(protected model: Model<TDocument>) {
     super();
   }
 

@@ -1,0 +1,16 @@
+import { ArgsType, Field, Float, Int } from '@nestjs/graphql';
+
+@ArgsType()
+export class NewCreditCardArgs {
+  @Field(() => Int)
+  closingDay: number;
+
+  @Field(() => Int)
+  paymentDay: number;
+
+  @Field()
+  name: string;
+
+  @Field(() => Float)
+  limit: number;
+}

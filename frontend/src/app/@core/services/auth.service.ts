@@ -4,8 +4,10 @@ import firebase from 'firebase/app';
 
 import { AuthType, User } from '../models';
 import { AuthDispatchers } from 'src/app/store';
-import { Apollo, gql } from 'apollo-angular';
-import { take } from 'rxjs/operators';
+import { Apollo, gql, QueryRef } from 'apollo-angular';
+import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { from, Observable, of } from 'rxjs';
+import { EmptyObject } from 'apollo-angular/types';
 
 @Injectable({
   providedIn: 'root',
@@ -13,48 +15,46 @@ import { take } from 'rxjs/operators';
 export class AuthService {
   constructor(private auth: AngularFireAuth, private authDispatchers: AuthDispatchers, private apollo: Apollo) {}
 
-  public async getCurrentUser(): Promise<User | null> {
-    try {
-      const result = await this.apollo
-        .query<{ user: User }>({
-          query: gql`
-            query GetUser {
-              user {
+  public getCurrentUser(): Observable<User | null> {
+    return this.apollo
+      .query<{ user: User }>({
+        query: gql`
+          query GetUser {
+            user {
+              name
+              email
+              photoURL
+              creditCards {
+                id
                 name
-                email
-                photoURL
+                closingDay
+                paymentDay
+                limit
               }
             }
-          `,
-        })
-        .pipe(take(1))
-        .toPromise();
-
-      if (result.errors || result.data == null || result.data.user == null) {
-        return null;
-      }
-
-      return result.data.user;
-    } catch (err) {
-      console.error(err);
-      return null;
-    }
+          }
+        `,
+      })
+      .pipe(map(result => (result.errors || result.data == null || result.data.user == null ? null : result.data.user)));
   }
 
-  public async login(type: AuthType): Promise<User | null> {
+  public loginThenGetCurrentUser(type: AuthType): Observable<User | null> {
+    return from(this.login(type)).pipe(
+      switchMap(() => this.getCurrentUser()),
+      catchError(error => {
+        this.authDispatchers.logout();
+        return of(error);
+      }),
+    );
+  }
+
+  private async login(type: AuthType): Promise<void> {
     let userCredentials: firebase.auth.UserCredential;
 
     switch (type) {
       case AuthType.Google:
         userCredentials = await this.loginByGoogle();
         break;
-    }
-
-    try {
-      return this.getCurrentUser();
-    } catch (err) {
-      this.authDispatchers.logout();
-      throw err;
     }
   }
 

@@ -4,6 +4,8 @@
   "logout": "Sair",
   "ok": "Ok",
   "cancel": "Cancelar",
+  "add": "Adicionar",
+  "edit": "Editar",
   "dashboard": "Dashboard",
   "individual": "Individual",
   "shared": "Compartilhado",
@@ -16,5 +18,14 @@
     "button-home": "Voltar para início"
   },
   "group-name": "Grupo {{name}}",
-  "edit-group": "Editar grupo"
+  "edit-group": "Editar grupo",
+  "credit-cards": "Cartões de crédito",
+  "no-credit-cards": "Nenhum cartão de crédito foi cadastrado. Que tal cadastrar o primeiro?",
+  "new-credit-card": "Novo cartão de crédito",
+  "name": "Nome",
+  "credit-card-name-placeholder": "Algo que te ajude a identificar o cartão.",
+  "limit": "Limite",
+  "credit-card-limit-placeholder": "Limite máximo do cartão.",
+  "closingDay": "Dia do fechamento",
+  "paymentDay": "Dia do vencimento"
 }

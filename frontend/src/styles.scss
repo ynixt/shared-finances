@@ -9,3 +9,9 @@ body {
   margin: 0;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
+
+.content {
+  padding: 12px 16px;
+}
+
+@import './scss/utils.scss';

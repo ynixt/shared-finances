@@ -1,3 +1,5 @@
+import { CreditCard } from './credit-card';
+
 export interface User {
   id: string;
   uid: string;
@@ -5,4 +7,5 @@ export interface User {
   name: string;
   photoURL: string;
   permissions?: any[];
+  creditCards?: CreditCard[];
 }

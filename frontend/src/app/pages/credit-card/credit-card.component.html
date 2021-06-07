@@ -1,0 +1,26 @@
+<ng-container *transloco="let t">
+  <div class="content credit-card-page">
+    <ng-container *ngIf="creditCards.length > 0; else noCreditCard">
+      <app-title-bar [title]="t('credit-cards')"></app-title-bar>
+
+      <div class="credit-cards">
+        <mat-card class="credit-card" *ngFor="let creditCard of creditCards">
+          <mat-card-header>
+            <mat-card-title>{{ creditCard.name }}</mat-card-title>
+            <mat-card-content>
+              {{ creditCard.limit }}
+            </mat-card-content>
+          </mat-card-header>
+        </mat-card>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-template #noCreditCard>
+    <div class="no-credit-card w-100 d-flex justify-content-center">
+      <h2>{{ t('no-credit-cards') }}</h2>
+
+      <a routerLink="new" class="btn mt-2" mat-raised-button color="primary">{{ 'new-credit-card' | transloco }}</a>
+    </div>
+  </ng-template>
+</ng-container>

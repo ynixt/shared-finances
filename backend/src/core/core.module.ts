@@ -5,6 +5,7 @@ import { UserModule } from './user/user.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { FirebaseModule } from './firebase/firebase.module';
 import { GroupModule } from './group/group.module';
+import { CreditCardModule } from './credit-card/credit-card.module';
 
 @Module({
   imports: [
@@ -19,6 +20,8 @@ import { GroupModule } from './group/group.module';
     }),
     FirebaseModule,
     GroupModule,
+    CreditCardModule,
   ],
+  providers: [],
 })
 export class CoreModule {}

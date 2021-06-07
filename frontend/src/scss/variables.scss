@@ -25,3 +25,10 @@ $config: mat-get-color-config($theme);
 $background: map.get($config, 'background');
 
 $primary-color: mat-color($primary);
+
+$spacing-0: 0;
+$spacing-1: 0.25rem;
+$spacing-2: 0.5rem;
+$spacing-3: 1rem;
+$spacing-4: 1.5rem;
+$spacing-5: 3;

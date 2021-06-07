@@ -2,6 +2,14 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type CreditCard {
+  id: ID!
+  name: String!
+  closingDay: Int!
+  paymentDay: Int!
+  limit: Float!
+}
+
 type Group {
   id: ID!
   name: String!
@@ -15,6 +23,7 @@ type User {
   name: String
   photoURL: String
   groups: Group!
+  creditCards: [CreditCard!]
 }
 
 type Query {
@@ -27,6 +36,7 @@ type Mutation {
   createInvite(groupId: String!): String!
   useInvite(invite: String!): String
   updateGroup(id: String!, name: String!): Group
+  newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
 }
 
 type Subscription {

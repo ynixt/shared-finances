@@ -4,10 +4,10 @@ import { Model } from 'mongoose';
 import * as mongoose from 'mongoose';
 import { Group, GroupDocument } from '../models';
 import { UpdateGroupArgs } from '../models/args';
-import { MongoRepository } from '../data';
+import { MongoDefaultRepository } from '../data';
 
 @Injectable()
-export class GroupRepository extends MongoRepository<Group, GroupDocument> {
+export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument> {
   constructor(@InjectModel(Group.name) groupModel: Model<GroupDocument>) {
     super(groupModel);
   }

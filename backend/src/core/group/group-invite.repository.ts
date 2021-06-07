@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GroupInvite, GroupInviteDocument } from '../models';
-import { MongoRepository } from '../data';
+import { MongoDefaultRepository } from '../data';
 
 @Injectable()
-export class GroupInviteRepository extends MongoRepository<GroupInvite, GroupInviteDocument> {
+export class GroupInviteRepository extends MongoDefaultRepository<GroupInvite, GroupInviteDocument> {
   constructor(@InjectModel(GroupInvite.name) groupInviteModel: Model<GroupInviteDocument>) {
     super(groupInviteModel);
   }

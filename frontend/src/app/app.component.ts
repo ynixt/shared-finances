@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
 import { AuthDispatchers } from './store';
-import { AuthState } from './store/reducers/auth.reducer';
 import { AuthSelectors } from './store/services/selectors';
 
 @Component({

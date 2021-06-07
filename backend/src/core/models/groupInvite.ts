@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import * as mongoose from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { Group } from './group';
 
 export type GroupInviteDocument = GroupInvite & Document;
@@ -11,7 +11,7 @@ export class GroupInvite {
   @Field(() => ID)
   id: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Group', index: true })
+  @Prop({ type: Types.ObjectId, ref: 'Group', index: true })
   group: Group;
 
   @Prop({ index: true })

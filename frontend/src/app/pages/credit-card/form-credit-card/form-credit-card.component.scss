@@ -1,0 +1,26 @@
+@import 'src/scss/breakpoints';
+@import 'src/scss/variables';
+
+.inputs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  flex-direction: row;
+
+  .field {
+    width: calc(50% - #{$spacing-1});
+
+    @include layout-bp(xs) {
+      width: 100%;
+    }
+  }
+}
+
+.add-button {
+  margin-left: auto;
+  display: block;
+
+  @include layout-bp(xs) {
+    width: 100%;
+  }
+}

@@ -14,6 +14,7 @@ import { CovalentLayoutModule } from '@covalent/core/layout';
 import { CovalentStepsModule } from '@covalent/core/steps';
 import { TranslocoModule } from '@ngneat/transloco';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TitleBarModule } from './title-bar/title-bar.module';
 
 const layoutModules = [
   ScrollingModule,
@@ -29,6 +30,8 @@ const layoutModules = [
   CovalentLayoutModule,
   CovalentStepsModule,
   TranslocoModule,
+
+  TitleBarModule,
 ];
 
 @NgModule({

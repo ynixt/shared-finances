@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 
 mongoose.set('debug', true);
+mongoose.set('useFindAndModify', false);
 
 @Global()
 @Module({

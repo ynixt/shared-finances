@@ -27,7 +27,7 @@ export class AuthEffects {
     this.actions$.pipe(
       ofType(AuthActions.login),
       switchMap(action =>
-        from(this.authService.login(action.authType)).pipe(
+        from(this.authService.loginThenGetCurrentUser(action.authType)).pipe(
           map(user => AuthActions.authSuccess({ user })),
           catchError(error => of(AuthActions.authError({ error }))),
         ),
