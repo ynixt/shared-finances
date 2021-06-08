@@ -1,3 +1,6 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 @import './scss/variables.scss';
 
 html,
@@ -14,4 +17,14 @@ body {
   padding: 12px 16px;
 }
 
-@import './scss/utils.scss';
+.mat-expansion-indicator {
+  &::after {
+    border-color: unset;
+  }
+
+  border-color: unset;
+}
+
+button:focus {
+  outline: none;
+}

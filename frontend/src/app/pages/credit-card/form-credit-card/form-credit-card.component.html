@@ -1,6 +1,6 @@
 <ng-container *transloco="let t">
   <form [formGroup]="formGroup">
-    <div class="inputs">
+    <div class="inputs grid md:grid-cols-2 md:gap-4">
       <mat-form-field class="field" appearance="outline">
         <mat-label>{{ t('name') }}</mat-label>
         <input formControlName="name" required matInput [placeholder]="t('credit-card-name-placeholder')" />
@@ -26,7 +26,13 @@
       </mat-form-field>
     </div>
 
-    <button [disabled]="formGroup.invalid" class="add-button" (click)="save()" mat-raised-button color="primary">
+    <button
+      [disabled]="formGroup.invalid"
+      class="add-button w-100 md:w-auto md:ml-auto block"
+      (click)="save()"
+      mat-raised-button
+      color="primary"
+    >
       {{ t(isNew ? 'add' : 'edit') }}
     </button>
   </form>
