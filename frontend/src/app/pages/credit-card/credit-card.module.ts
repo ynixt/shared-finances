@@ -13,9 +13,10 @@ import { NewCreditCardComponent } from './new-credit-card/new-credit-card.compon
 import { FormCreditCardComponent } from './form-credit-card/form-credit-card.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { CovalentDialogsModule } from '@covalent/core/dialogs';
+import { EditCreditCardComponent } from './edit-credit-card/edit-credit-card.component';
 
 @NgModule({
-  declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent],
+  declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent, EditCreditCardComponent],
   imports: [
     CommonModule,
     CreditCardRoutingModule,

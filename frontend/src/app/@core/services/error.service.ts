@@ -8,7 +8,7 @@ import { TranslocoService } from '@ngneat/transloco';
 export class ErrorService {
   constructor(private translocoService: TranslocoService) {}
 
-  getInstantErrorMessage(error: any, message: string, messageWithDescription: string, args: any, errorKey = 'error'): string {
+  getInstantErrorMessage(error: any, message: string, messageWithDescription: string, args?: any, errorKey = 'error'): string {
     args ??= {};
 
     if (typeof error === 'string') {

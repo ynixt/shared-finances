@@ -37,6 +37,31 @@ export class CreditCardService {
       );
   }
 
+  getById(creditCardId: string): Promise<CreditCard> {
+    return this.apollo
+      .query<{ creditCard: CreditCard }>({
+        query: gql`
+          query creditCard($creditCardId: String!) {
+            creditCard(creditCardId: $creditCardId) {
+              id
+              name
+              limit
+              closingDay
+              paymentDay
+            }
+          }
+        `,
+        variables: {
+          creditCardId,
+        },
+      })
+      .pipe(
+        map(result => result.data.creditCard),
+        take(1),
+      )
+      .toPromise();
+  }
+
   deleteCreditCard(creditCardId: string): Observable<boolean> {
     return this.apollo
       .mutate<{ deleteCreditCard: boolean }>({

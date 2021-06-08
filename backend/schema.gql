@@ -30,6 +30,7 @@ type Query {
   user: User
   groups: [Group!]
   group(groupId: String!): Group
+  creditCard(creditCardId: String!): CreditCard
 }
 
 type Mutation {

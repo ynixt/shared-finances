@@ -28,6 +28,35 @@ export class CreditCardRepository extends MongoEmbededRepository<CreditCard, Use
     return result.creditCards.filter(creditCard => creditCard.id === domain.id)[0];
   }
 
+  async getById(userId: string, creditCardId: string): Promise<CreditCard> {
+    const result = await this.model
+      .aggregate([
+        { $match: { _id: new Types.ObjectId(userId) } },
+        {
+          $project: {
+            creditCards: {
+              $filter: {
+                input: '$creditCards',
+                as: 'creditCards',
+                cond: { $eq: ['$$creditCards.id', creditCardId] },
+              },
+            },
+            _id: 0,
+          },
+        },
+        {
+          $project: {
+            creditCard: {
+              $arrayElemAt: ['$creditCards', 0],
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return result && result.length > 0 ? result[0].creditCard : null;
+  }
+
   async delete(userId: string, creditCardId: string): Promise<boolean> {
     const result = await this.model
       .updateOne(

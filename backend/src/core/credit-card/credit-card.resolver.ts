@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Resolver, Query } from '@nestjs/graphql';
 import { FirebaseUserWithId } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
@@ -15,6 +15,12 @@ export class CreditCardResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   newCreditCard(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newCreditCardArgs: NewCreditCardArgs): Promise<CreditCard> {
     return this.creditCardService.create(user.id, newCreditCardArgs);
+  }
+
+  @Query(() => CreditCard, { nullable: true })
+  @UseGuards(GqlFirebaseAuthGuard)
+  creditCard(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'creditCardId' }) creditCardId: string): Promise<CreditCard> {
+    return this.creditCardService.getById(user.id, creditCardId);
   }
 
   @Mutation(() => Boolean)
