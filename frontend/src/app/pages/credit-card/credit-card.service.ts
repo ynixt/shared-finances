@@ -10,11 +10,11 @@ import { CreditCard } from 'src/app/@core/models';
 export class CreditCardService {
   constructor(private apollo: Apollo) {}
 
-  async newCreditCard(creditCard: CreditCard): Promise<CreditCard> {
-    const result = await this.apollo
+  newCreditCard(creditCard: CreditCard): Observable<CreditCard> {
+    return this.apollo
       .mutate<{ newCreditCard: CreditCard }>({
         mutation: gql`
-          mutation ($name: String!, $limit: Float!, $closingDay: Int!, $paymentDay: Int!) {
+          mutation($name: String!, $limit: Float!, $closingDay: Int!, $paymentDay: Int!) {
             newCreditCard(name: $name, limit: $limit, closingDay: $closingDay, paymentDay: $paymentDay) {
               id
               name
@@ -31,37 +31,27 @@ export class CreditCardService {
           paymentDay: creditCard.paymentDay,
         },
       })
-      .pipe(take(1))
-      .toPromise();
-
-    if (result.errors) {
-      throw result.errors;
-    }
-
-    return result.data.newCreditCard;
+      .pipe(
+        take(1),
+        map(result => result.data.newCreditCard),
+      );
   }
 
   deleteCreditCard(creditCardId: string): Observable<boolean> {
     return this.apollo
       .mutate<{ deleteCreditCard: boolean }>({
         mutation: gql`
-          mutation ($creditCardId: String!) {
+          mutation($creditCardId: String!) {
             deleteCreditCard(creditCardId: $creditCardId)
           }
         `,
         variables: {
-          creditCardId
+          creditCardId,
         },
       })
       .pipe(
         take(1),
-        map(result => {
-          if (result.errors) {
-            // throw result.errors;
-          }
-
-          return result.data.deleteCreditCard;
-        }),
+        map(result => result.data.deleteCreditCard),
       );
   }
 }

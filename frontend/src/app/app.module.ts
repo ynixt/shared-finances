@@ -23,7 +23,7 @@ import { HotToastModule } from '@ngneat/hot-toast';
     MatProgressSpinnerModule,
     ErrorsModule,
     HotToastModule.forRoot({
-      position: 'bottom-center'
+      position: 'bottom-center',
     }),
   ],
   bootstrap: [AppComponent],
