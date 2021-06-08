@@ -9,6 +9,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { HeaderModule } from './components/layout';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ErrorsModule } from './pages/errors';
+import { HotToastModule } from '@ngneat/hot-toast';
 
 @NgModule({
   declarations: [AppComponent],
@@ -21,6 +22,7 @@ import { ErrorsModule } from './pages/errors';
     HeaderModule,
     MatProgressSpinnerModule,
     ErrorsModule,
+    HotToastModule.forRoot(),
   ],
   bootstrap: [AppComponent],
 })
