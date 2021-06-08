@@ -6,7 +6,7 @@
       <div class="credit-cards grid md:grid-cols-2 md:gap-4">
         <mat-card class="credit-card" *ngFor="let creditCard of creditCards">
           <mat-card-header class="items-center mb-1">
-            <mat-icon mat-card-avatar>credit_card</mat-icon>
+            <mat-icon mat-card-avatar class="w-auto h-auto">credit_card</mat-icon>
             <mat-card-title class="mb-0 break-all">{{ creditCard.name }}</mat-card-title>
             <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
               <mat-icon>more_vert</mat-icon>
