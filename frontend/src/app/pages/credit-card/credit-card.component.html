@@ -3,14 +3,28 @@
     <ng-container *ngIf="creditCards.length > 0; else noCreditCard">
       <app-title-bar [title]="t('credit-cards')"></app-title-bar>
 
-      <div class="credit-cards">
+      <div class="credit-cards grid md:grid-cols-2 md:gap-4">
         <mat-card class="credit-card" *ngFor="let creditCard of creditCards">
-          <mat-card-header>
-            <mat-card-title>{{ creditCard.name }}</mat-card-title>
-            <mat-card-content>
-              {{ creditCard.limit }}
-            </mat-card-content>
+          <mat-card-header class="items-center mb-1">
+            <mat-icon mat-card-avatar>credit_card</mat-icon>
+            <mat-card-title class="mb-0 break-all">{{ creditCard.name }}</mat-card-title>
+            <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <a routerLink="new" mat-menu-item>
+                <mat-icon>edit</mat-icon>
+                <span>{{t('edit')}}</span>
+              </a>
+              <button (click)="delete(creditCard)" mat-menu-item>
+                <mat-icon>delete</mat-icon>
+                <span>{{t('delete')}}</span>
+              </button>
+            </mat-menu>
           </mat-card-header>
+          <mat-card-content>
+            {{ creditCard.limit }}
+          </mat-card-content>
         </mat-card>
       </div>
     </ng-container>

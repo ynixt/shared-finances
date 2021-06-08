@@ -10,12 +10,12 @@ export class CreditCardRepository extends MongoEmbededRepository<CreditCard, Use
     super(userDocument);
   }
 
-  async create(fatherId: string, domain: Partial<CreditCard>): Promise<CreditCard> {
+  async create(userId: string, domain: Partial<CreditCard>): Promise<CreditCard> {
     domain = { id: new Types.ObjectId().toHexString(), ...domain };
 
     const result = await this.model
       .findOneAndUpdate(
-        { _id: fatherId },
+        { _id: userId },
         {
           $addToSet: {
             creditCards: domain,
@@ -26,5 +26,21 @@ export class CreditCardRepository extends MongoEmbededRepository<CreditCard, Use
       .exec();
 
     return result.creditCards.filter(creditCard => creditCard.id === domain.id)[0];
+  }
+
+  async delete(userId: string, creditCardId: string): Promise<boolean> {
+    const result = await this.model
+      .updateOne(
+        { _id: userId },
+        {
+          $pull: {
+            creditCards: { id: creditCardId },
+          },
+        },
+        { new: true },
+      )
+      .exec();
+
+    return result.n > 0;
   }
 }

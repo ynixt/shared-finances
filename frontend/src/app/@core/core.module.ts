@@ -29,6 +29,7 @@ export function createCurrencyMaskConfig(): CurrencyMaskConfig {
 }
 
 import { registerLocaleData } from '@angular/common';
+import { ErrorService } from './services/error.service';
 
 registerLocaleData(localePt, 'pt');
 
@@ -56,11 +57,8 @@ registerLocaleData(localePt, 'pt');
       multi: true,
     },
     { provide: LOCALE_ID, useValue: 'pt' },
-    // {
-    //   provide: DEFAULT_CURRENCY_CODE,
-    //   useValue: 'BRL',
-    // },
     { provide: CURRENCY_MASK_CONFIG, useFactory: createCurrencyMaskConfig },
+    ErrorService,
   ],
   exports: [TranslocoRootModule],
 })

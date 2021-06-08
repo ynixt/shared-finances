@@ -16,4 +16,10 @@ export class CreditCardResolver {
   newCreditCard(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newCreditCardArgs: NewCreditCardArgs): Promise<CreditCard> {
     return this.creditCardService.create(user.id, newCreditCardArgs);
   }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlFirebaseAuthGuard)
+  deleteCreditCard(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'creditCardId' }) creditCardId: string): Promise<boolean> {
+    return this.creditCardService.delete(user.id, creditCardId);
+  }
 }

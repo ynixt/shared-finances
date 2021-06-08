@@ -10,4 +10,8 @@ export class CreditCardService {
   create(userId: string, creditCard: NewCreditCardArgs): Promise<CreditCard> {
     return this.creditCardRepository.create(userId, creditCard);
   }
+
+  delete(userId: string, creditCardId: string): Promise<boolean> {
+    return this.creditCardRepository.delete(userId, creditCardId);
+  }
 }

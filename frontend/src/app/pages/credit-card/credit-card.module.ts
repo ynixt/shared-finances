@@ -11,6 +11,8 @@ import { CreditCardComponent } from './credit-card.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { NewCreditCardComponent } from './new-credit-card/new-credit-card.component';
 import { FormCreditCardComponent } from './form-credit-card/form-credit-card.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { CovalentDialogsModule } from '@covalent/core/dialogs';
 
 @NgModule({
   declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent],
@@ -23,6 +25,8 @@ import { FormCreditCardComponent } from './form-credit-card/form-credit-card.com
     MatInputModule,
     ReactiveFormsModule,
     CurrencyMaskModule,
+    MatMenuModule,
+    CovalentDialogsModule,
   ],
 })
 export class CreditCardModule {}
