@@ -16,4 +16,10 @@ export class BankAccountResolver {
   newBankAccount(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newBankAccountArgs: NewBankAccountArgs): Promise<BankAccount> {
     return this.bankAccountService.create(user.id, newBankAccountArgs);
   }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlFirebaseAuthGuard)
+  deleteBankAccount(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'bankAccountId' }) bankAccountId: string): Promise<boolean> {
+    return this.bankAccountService.delete(user.id, bankAccountId);
+  }
 }

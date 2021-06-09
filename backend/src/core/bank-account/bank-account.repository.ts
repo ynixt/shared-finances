@@ -29,4 +29,20 @@ export class BankAccountRepository extends MongoEmbededRepository<BankAccount, U
 
     return result.bankAccounts.filter(bankAccount => bankAccount.id === domain.id)[0];
   }
+
+  async delete(userId: string, bankAccountId: string): Promise<boolean> {
+    const result = await this.model
+      .updateOne(
+        { _id: userId },
+        {
+          $pull: {
+            bankAccounts: { id: bankAccountId },
+          },
+        },
+        { new: true },
+      )
+      .exec();
+
+    return result.n > 0;
+  }
 }

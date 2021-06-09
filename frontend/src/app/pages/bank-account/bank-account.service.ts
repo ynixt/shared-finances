@@ -30,4 +30,22 @@ export class BankAccountService {
         map(result => result.data.newBankAccount),
       );
   }
+
+  deleteBankAccount(bankAccountId: string): Observable<boolean> {
+    return this.apollo
+      .mutate<{ deleteBankAccount: boolean }>({
+        mutation: gql`
+          mutation($bankAccountId: String!) {
+            deleteBankAccount(bankAccountId: $bankAccountId)
+          }
+        `,
+        variables: {
+          bankAccountId,
+        },
+      })
+      .pipe(
+        take(1),
+        map(result => result.data.deleteBankAccount),
+      );
+  }
 }

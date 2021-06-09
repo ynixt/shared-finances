@@ -10,4 +10,8 @@ export class BankAccountService {
   create(userId: string, creditCard: NewBankAccountArgs): Promise<BankAccount> {
     return this.bankAccountRepository.create(userId, creditCard);
   }
+
+  delete(userId: string, bankAccountId: string): Promise<boolean> {
+    return this.bankAccountRepository.delete(userId, bankAccountId);
+  }
 }
