@@ -1,12 +1,12 @@
 <mat-nav-list *transloco="let t">
-  <mat-list-item>
-    <span class="item" matLine routerLink="/credit" routerLinkActive="active">
+  <mat-list-item routerLink="/credit" routerLinkActive="active">
+    <span class="item" matLine >
       <mat-icon>credit_card</mat-icon> {{ t('credit-cards') }}
     </span>
   </mat-list-item>
 
-  <mat-list-item>
-    <span class="item" matLine routerLink="/bank" routerLinkActive="active">
+  <mat-list-item routerLink="/bank" routerLinkActive="active">
+    <span class="item" matLine  >
       <mat-icon>account_balance</mat-icon> {{ t('bank-accounts') }}
     </span>
   </mat-list-item>
