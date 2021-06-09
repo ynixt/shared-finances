@@ -1,7 +1,7 @@
 <ng-container *transloco="let t">
   <div class="content credit-card-page">
-    <ng-container *ngIf="creditCards.length > 0; else noCreditCard">
-      <app-title-bar [title]="t('credit-cards')">
+    <ng-container *ngIf="bankAccounts.length > 0; else noBankAccount">
+      <app-title-bar [title]="t('bank-accounts')">
         <div right>
           <a routerLink="new" mat-icon-button aria-label="Edit" [title]="t('new-credit-card')">
             <mat-icon>add</mat-icon>
@@ -9,34 +9,31 @@
         </div>
       </app-title-bar>
 
-      <div class="credit-cards grid md:grid-cols-2 md:gap-4">
-        <mat-card class="credit-card" *ngFor="let creditCard of creditCards">
+      <div class="bank-accounts grid md:grid-cols-2 md:gap-4">
+        <mat-card class="bank-account" *ngFor="let bankAccount of bankAccounts">
           <mat-card-header class="items-center mb-1">
-            <mat-icon mat-card-avatar class="w-auto h-auto">credit_card</mat-icon>
-            <mat-card-title class="mb-0 break-all">{{ creditCard.name }}</mat-card-title>
+            <mat-icon mat-card-avatar class="w-auto h-auto">account_balance</mat-icon>
+            <mat-card-title class="mb-0 break-all">{{ bankAccount.name }}</mat-card-title>
             <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
               <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
-              <a routerLink="{{ creditCard.id }}/edit" mat-menu-item>
+              <a routerLink="{{ bankAccount.id }}/edit" mat-menu-item>
                 <mat-icon>edit</mat-icon>
                 <span>{{ t('edit') }}</span>
               </a>
-              <button (click)="delete(creditCard)" mat-menu-item>
+              <!-- <button (click)="delete(bankAccount)" mat-menu-item>
                 <mat-icon>delete</mat-icon>
                 <span>{{ t('delete') }}</span>
-              </button>
+              </button> -->
             </mat-menu>
           </mat-card-header>
-          <mat-card-content>
-            {{ creditCard.limit }}
-          </mat-card-content>
         </mat-card>
       </div>
     </ng-container>
   </div>
 
-  <ng-template #noCreditCard>
-    <app-no-item [text]="t('no-credit-cards')" [buttonText]="'new-credit-card' | transloco" buttonRouterLink="new"> </app-no-item>
+  <ng-template #noBankAccount>
+    <app-no-item [text]="t('no-bank-accounts')" [buttonText]="'new-bank-account' | transloco" buttonRouterLink="new"> </app-no-item>
   </ng-template>
 </ng-container>

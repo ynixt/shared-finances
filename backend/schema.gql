@@ -2,6 +2,11 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type BankAccount {
+  id: ID!
+  name: String!
+}
+
 type CreditCard {
   id: ID!
   name: String!
@@ -24,6 +29,7 @@ type User {
   photoURL: String
   groups: Group!
   creditCards: [CreditCard!]
+  bankAccounts: [BankAccount!]
 }
 
 type Query {
@@ -40,6 +46,7 @@ type Mutation {
   newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   deleteCreditCard(creditCardId: String!): Boolean!
+  newBankAccount(name: String!): BankAccount!
 }
 
 type Subscription {

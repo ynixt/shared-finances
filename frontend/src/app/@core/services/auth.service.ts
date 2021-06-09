@@ -31,6 +31,10 @@ export class AuthService {
                 paymentDay
                 limit
               }
+              bankAccounts {
+                id
+                name
+              }
             }
           }
         `,

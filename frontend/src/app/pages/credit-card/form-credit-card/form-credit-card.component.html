@@ -1,5 +1,5 @@
 <ng-container *transloco="let t">
-  <form [formGroup]="formGroup">
+  <form [formGroup]="formGroup" (ngSubmit)="save()">
     <div class="inputs grid md:grid-cols-2 md:gap-4">
       <mat-form-field class="field" appearance="outline">
         <mat-label>{{ t('name') }}</mat-label>
@@ -12,14 +12,14 @@
       </mat-form-field>
 
       <mat-form-field class="field" appearance="outline">
-        <mat-label>{{ t('closingDay') }}</mat-label>
+        <mat-label>{{ t('closing-day') }}</mat-label>
         <mat-select formControlName="closingDay">
           <mat-option *ngFor="let value of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }} </mat-option>
         </mat-select>
       </mat-form-field>
 
       <mat-form-field class="field" appearance="outline">
-        <mat-label>{{ t('paymentDay') }}</mat-label>
+        <mat-label>{{ t('payment-day') }}</mat-label>
         <mat-select formControlName="paymentDay">
           <mat-option *ngFor="let value of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }} </mat-option>
         </mat-select>
@@ -29,7 +29,7 @@
     <button
       [disabled]="formGroup.invalid"
       class="add-button w-100 md:w-auto md:ml-auto block"
-      (click)="save()"
+      type="submit"
       mat-raised-button
       color="primary"
     >

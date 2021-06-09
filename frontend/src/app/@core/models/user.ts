@@ -1,3 +1,4 @@
+import { BankAccount } from './bank-account';
 import { CreditCard } from './credit-card';
 
 export interface User {
@@ -8,4 +9,5 @@ export interface User {
   photoURL: string;
   permissions?: any[];
   creditCards?: CreditCard[];
+  bankAccounts?: BankAccount[];
 }

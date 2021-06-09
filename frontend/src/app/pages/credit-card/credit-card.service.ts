@@ -10,7 +10,7 @@ import { CreditCard } from 'src/app/@core/models';
 export class CreditCardService {
   constructor(private apollo: Apollo) {}
 
-  newCreditCard(creditCard: CreditCard): Observable<CreditCard> {
+  newCreditCard(creditCard: Partial<CreditCard>): Observable<CreditCard> {
     return this.apollo
       .mutate<{ newCreditCard: CreditCard }>({
         mutation: gql`

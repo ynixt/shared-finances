@@ -23,6 +23,11 @@ const routes: Routes = [
     canActivate: [PermissionGuard],
   },
   {
+    path: 'bank',
+    loadChildren: () => import('./pages/bank-account/bank-account.module').then(m => m.BankAccountModule),
+    canActivate: [PermissionGuard],
+  },
+  {
     path: '404',
     component: NotFoundComponent,
   },

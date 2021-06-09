@@ -1,6 +1,7 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
+import { BankAccount } from './bankAccount';
 
 import { CreditCard } from './creditCard';
 import { Group } from './group';
@@ -36,6 +37,10 @@ export class User {
   @Prop()
   @Field(() => [CreditCard], { nullable: true })
   creditCards?: CreditCard[];
+
+  @Prop()
+  @Field(() => [BankAccount], { nullable: true })
+  bankAccounts?: BankAccount[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

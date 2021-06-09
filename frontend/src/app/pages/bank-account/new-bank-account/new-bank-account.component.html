@@ -1,0 +1,18 @@
+<ng-container *transloco="let t">
+  <div class="content bank-account-page">
+    <app-title-bar [title]="t('new-bank-account')"></app-title-bar>
+
+    <form [formGroup]="formGroup" (ngSubmit)="save()">
+      <div class="inputs grid">
+        <mat-form-field class="field" appearance="outline">
+          <mat-label>{{ t('name') }}</mat-label>
+          <input formControlName="name" required matInput [placeholder]="t('bank-account-name-placeholder')" />
+        </mat-form-field>
+      </div>
+
+      <button [disabled]="formGroup.invalid" class="add-button md:w-auto md:ml-auto block" type="submit" mat-raised-button color="primary">
+        {{ t('add') }}
+      </button>
+    </form>
+  </div>
+</ng-container>

@@ -4,21 +4,21 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { from, of, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { CreditCard, User } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthDispatchers } from 'src/app/store';
 import { AuthSelectors } from 'src/app/store/services/selectors';
 import { CreditCardService } from './credit-card.service';
 
+@UntilDestroy()
 @Component({
   selector: 'app-credit-card',
   templateUrl: './credit-card.component.html',
   styleUrls: ['./credit-card.component.scss'],
 })
-export class CreditCardComponent implements OnInit, OnDestroy {
+export class CreditCardComponent implements OnInit {
   creditCards: CreditCard[] = [];
-
-  private userSubscription: Subscription;
 
   constructor(
     private creditCardService: CreditCardService,
@@ -32,13 +32,7 @@ export class CreditCardComponent implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.userSubscription = this.authSelector.user$.subscribe(user => this.fillCreditCards(user));
-  }
-
-  ngOnDestroy(): void {
-    if (this.userSubscription) {
-      this.userSubscription.unsubscribe();
-    }
+    this.authSelector.user$.pipe(untilDestroyed(this)).subscribe(user => this.fillCreditCards(user));
   }
 
   async delete(creditCard: CreditCard): Promise<void> {
