@@ -1,8 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
-import { CreditCard } from 'src/app/@core/models';
+import { TranslocoService } from '@ngneat/transloco';
+import { take } from 'rxjs/operators';
+import { CreditCard, User } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
+import { AuthDispatchers } from 'src/app/store';
+import { AuthSelectors } from 'src/app/store/services/selectors';
 import { CreditCardService } from '../credit-card.service';
 
 @Component({
@@ -19,10 +23,33 @@ export class EditCreditCardComponent implements OnInit {
     private creditCardService: CreditCardService,
     private errorService: ErrorService,
     private toast: HotToastService,
+    private translocoService: TranslocoService,
+    private authSelectors: AuthSelectors,
+    private authDispatchers: AuthDispatchers,
   ) {}
 
   ngOnInit(): void {
     this.activatedRoute.params.subscribe(params => this.getCreditCard(params.id));
+  }
+
+  async editCreditCard(creditCardInput: CreditCard): Promise<void> {
+    const creditCardSaved = await this.creditCardService
+      .editCreditCard(creditCardInput)
+      .pipe(
+        take(1),
+        this.toast.observe({
+          loading: this.translocoService.translate('editing'),
+          success: this.translocoService.translate('editing-successful', { name: creditCardInput.name }),
+          error: error =>
+            this.errorService.getInstantErrorMessage(error, 'editing-error', 'editing-error-with-description', {
+              name: creditCardInput.name,
+            }),
+        }),
+      )
+      .toPromise();
+
+    await this.applyNewCreditCardToUser(creditCardSaved);
+    this.router.navigateByUrl('/credit');
   }
 
   private async getCreditCard(creditCardId: string) {
@@ -37,5 +64,13 @@ export class EditCreditCardComponent implements OnInit {
     } catch (err) {
       this.toast.error(this.errorService.getInstantErrorMessage(err, 'generic-error', 'generic-error-with-description'));
     }
+  }
+
+  private async applyNewCreditCardToUser(editingCreditCard: CreditCard): Promise<void> {
+    const currentUser: User = { creditCards: [], ...(await this.authSelectors.currentUser()) };
+
+    currentUser.creditCards = [...currentUser.creditCards.filter(creditCard => creditCard.id !== editingCreditCard.id), editingCreditCard];
+
+    this.authDispatchers.userUpdated(currentUser);
   }
 }

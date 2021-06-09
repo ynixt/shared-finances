@@ -4,7 +4,7 @@ import { FirebaseUserWithId } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { CreditCard } from '../models';
-import { NewCreditCardArgs } from '../models/args';
+import { EditCreditCardArgs, NewCreditCardArgs } from '../models/args';
 import { CreditCardService } from './credit-card.service';
 
 @Resolver(() => CreditCard)
@@ -15,6 +15,12 @@ export class CreditCardResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   newCreditCard(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newCreditCardArgs: NewCreditCardArgs): Promise<CreditCard> {
     return this.creditCardService.create(user.id, newCreditCardArgs);
+  }
+
+  @Mutation(() => CreditCard)
+  @UseGuards(GqlFirebaseAuthGuard)
+  editCreditCard(@GqlCurrentUser() user: FirebaseUserWithId, @Args() editCreditCardArgs: EditCreditCardArgs): Promise<CreditCard> {
+    return this.creditCardService.edit(user.id, editCreditCardArgs);
   }
 
   @Query(() => CreditCard, { nullable: true })

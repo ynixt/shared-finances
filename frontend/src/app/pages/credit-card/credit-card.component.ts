@@ -87,6 +87,6 @@ export class CreditCardComponent implements OnInit, OnDestroy {
   }
 
   private fillCreditCards(user: User): void {
-    this.creditCards = user.creditCards || [];
+    this.creditCards = [...(user.creditCards || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
   }
 }

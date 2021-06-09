@@ -37,6 +37,34 @@ export class CreditCardService {
       );
   }
 
+  editCreditCard(creditCard: CreditCard): Observable<CreditCard> {
+    return this.apollo
+      .mutate<{ editCreditCard: CreditCard }>({
+        mutation: gql`
+          mutation($id: String!, $name: String!, $limit: Float!, $closingDay: Int!, $paymentDay: Int!) {
+            editCreditCard(id: $id, name: $name, limit: $limit, closingDay: $closingDay, paymentDay: $paymentDay) {
+              id
+              name
+              limit
+              closingDay
+              paymentDay
+            }
+          }
+        `,
+        variables: {
+          id: creditCard.id,
+          name: creditCard.name,
+          limit: creditCard.limit,
+          closingDay: creditCard.closingDay,
+          paymentDay: creditCard.paymentDay,
+        },
+      })
+      .pipe(
+        take(1),
+        map(result => result.data.editCreditCard),
+      );
+  }
+
   getById(creditCardId: string): Promise<CreditCard> {
     return this.apollo
       .query<{ creditCard: CreditCard }>({

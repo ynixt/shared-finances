@@ -2,7 +2,11 @@
   <div class="content edit-card-page">
     <app-title-bar [title]="t('edit-credit-card')"></app-title-bar>
 
-    <app-form-credit-card *ngIf="creditCard; else loading" [creditCard]="creditCard"></app-form-credit-card>
+    <app-form-credit-card
+      *ngIf="creditCard; else loading"
+      [creditCard]="creditCard"
+      (creditCardSaved)="editCreditCard($event)"
+    ></app-form-credit-card>
   </div>
 </ng-container>
 

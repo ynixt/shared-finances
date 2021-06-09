@@ -1,7 +1,13 @@
 <ng-container *transloco="let t">
   <div class="content credit-card-page">
     <ng-container *ngIf="creditCards.length > 0; else noCreditCard">
-      <app-title-bar [title]="t('credit-cards')"></app-title-bar>
+      <app-title-bar [title]="t('credit-cards')">
+        <div right>
+          <a routerLink="new" mat-icon-button aria-label="Edit" [title]="t('new-credit-card')">
+            <mat-icon>add</mat-icon>
+          </a>
+        </div>
+      </app-title-bar>
 
       <div class="credit-cards grid md:grid-cols-2 md:gap-4">
         <mat-card class="credit-card" *ngFor="let creditCard of creditCards">

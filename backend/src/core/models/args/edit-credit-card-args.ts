@@ -1,8 +1,9 @@
 import { ArgsType, Field, Float, Int } from '@nestjs/graphql';
 
 @ArgsType()
-export class NewCreditCardArgs {
-  id?: string;
+export class EditCreditCardArgs {
+  @Field()
+  id: string;
 
   @Field(() => Int)
   closingDay: number;
