@@ -35,7 +35,31 @@
   }
 }
 
-mat-list-item.active ::ng-deep .item,
-.item.active {
-  font-weight: 500 !important;
+mat-list-item.active {
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    height: 100%;
+    width: 5px;
+    background: $primary-color;
+  }
+
+  .item,
+  .item.active {
+    font-weight: 500 !important;
+  }
+}
+
+.new-transaction {
+  margin: 16px 16px !important;
+  left: -25px;
+  text-align: left;
+  padding-left: 25px;
+  font-size: 16px;
+
+  .mat-icon {
+    color: #fff;
+    margin-right: 25px;
+  }
 }

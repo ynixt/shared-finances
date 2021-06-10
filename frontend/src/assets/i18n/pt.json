@@ -54,5 +54,6 @@
   "change-name": "Alterar nome",
   "changing-name-successful": "'{{oldName}}' foi alterado com sucesso para '{{newName}}'.",
   "changing-name-error": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.",
-  "changing-name-error-with-description": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.<br>Error: {{error}}."
+  "changing-name-error-with-description": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.<br>Error: {{error}}.",
+  "new-transaction": "Nova transação"
 }
