@@ -4,10 +4,9 @@ import { Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
-import { BankAccount, User } from 'src/app/@core/models';
+import { BankAccount } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthDispatchers, BankAccountDispatchers } from 'src/app/store';
-import { AuthSelectors } from 'src/app/store/services/selectors';
+import { BankAccountDispatchers } from 'src/app/store';
 import { BankAccountService } from '../bank-account.service';
 
 @Component({
