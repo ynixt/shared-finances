@@ -14,7 +14,7 @@ export class BankAccountService {
     return this.apollo
       .mutate<{ newBankAccount: BankAccount }>({
         mutation: gql`
-          mutation ($name: String!) {
+          mutation($name: String!) {
             newBankAccount(name: $name) {
               id
               name
@@ -35,7 +35,7 @@ export class BankAccountService {
     return this.apollo
       .mutate<{ changeBankAccountName: { name: string } }>({
         mutation: gql`
-          mutation ($bankAccountId: String!, $name: String!) {
+          mutation($bankAccountId: String!, $name: String!) {
             changeBankAccountName(bankAccountId: $bankAccountId, name: $name) {
               name
             }
@@ -56,7 +56,7 @@ export class BankAccountService {
     return this.apollo
       .mutate<{ deleteBankAccount: boolean }>({
         mutation: gql`
-          mutation ($bankAccountId: String!) {
+          mutation($bankAccountId: String!) {
             deleteBankAccount(bankAccountId: $bankAccountId)
           }
         `,
