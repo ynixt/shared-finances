@@ -17,8 +17,8 @@ export const initialState: BankAccountState = {
 const bankAccountReducer: ActionReducer<BankAccountState, Action> = createReducer(
   initialState,
   on(BankAccountActions.bankAccountNameChanged, (state, action) => {
-    const bankAccount = [...state.bankAccounts.filter(creditCard => creditCard.id === action.bankAccountId)][0];
-    const bankAccounts = state.bankAccounts.filter(creditCard => creditCard.id !== action.bankAccountId);
+    const bankAccount = [...state.bankAccounts.filter(bankAccount => bankAccount.id === action.bankAccountId)][0];
+    const bankAccounts = state.bankAccounts.filter(bankAccount => bankAccount.id !== action.bankAccountId);
 
     bankAccounts.push({ ...bankAccount, name: action.newName });
 
@@ -29,7 +29,7 @@ const bankAccountReducer: ActionReducer<BankAccountState, Action> = createReduce
     };
   }),
   on(BankAccountActions.bankAccountRemoved, (state, action) => {
-    const bankAccounts = state.bankAccounts.filter(creditCard => creditCard.id !== action.bankAccountId);
+    const bankAccounts = state.bankAccounts.filter(bankAccount => bankAccount.id !== action.bankAccountId);
 
     return {
       ...initialState,

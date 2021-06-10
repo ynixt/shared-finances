@@ -4,10 +4,10 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { CreditCard, User } from 'src/app/@core/models';
+import { CreditCard } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthDispatchers } from 'src/app/store';
-import { AuthSelectors } from 'src/app/store/services/selectors';
+import { CreditCardDispatchers } from 'src/app/store';
+import { CreditCardSelectors } from 'src/app/store/services/selectors';
 import { CreditCardService } from './credit-card.service';
 
 @UntilDestroy()
@@ -21,17 +21,16 @@ export class CreditCardComponent implements OnInit {
 
   constructor(
     private creditCardService: CreditCardService,
-    private authSelector: AuthSelectors,
     private dialogService: TdDialogService,
     private translocoService: TranslocoService,
     private toast: HotToastService,
     private errorService: ErrorService,
-    private authDispatchers: AuthDispatchers,
-    private authSelectors: AuthSelectors,
+    private creditCardSelectors: CreditCardSelectors,
+    private creditCardDispatchers: CreditCardDispatchers,
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.authSelector.user$.pipe(untilDestroyed(this)).subscribe(user => this.fillCreditCards(user));
+    this.creditCardSelectors.creditCards$.pipe(untilDestroyed(this)).subscribe(creditCard => this.fillCreditCards(creditCard));
   }
 
   async delete(creditCard: CreditCard): Promise<void> {
@@ -66,20 +65,12 @@ export class CreditCardComponent implements OnInit {
         .toPromise();
 
       if (removed) {
-        await this.applyCreditCardRemovedOnUnser(creditCard);
+        this.creditCardDispatchers.creditCardRemoved(creditCard.id);
       }
     }
   }
 
-  private async applyCreditCardRemovedOnUnser(creditCardRemoved: CreditCard): Promise<void> {
-    const currentUser: User = { creditCards: [], ...(await this.authSelectors.currentUser()) };
-
-    currentUser.creditCards = currentUser.creditCards.filter(creditCard => creditCard.id !== creditCardRemoved.id);
-
-    this.authDispatchers.userUpdated(currentUser);
-  }
-
-  private fillCreditCards(user: User): void {
-    this.creditCards = [...(user.creditCards || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
+  private fillCreditCards(creditCard: CreditCard[]): void {
+    this.creditCards = [...(creditCard || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
   }
 }

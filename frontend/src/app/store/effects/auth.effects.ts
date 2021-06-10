@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, from } from 'rxjs';
 import { switchMap, map, catchError } from 'rxjs/operators';
 import { AuthService } from 'src/app/@core/services';
-import { AuthActions, BankAccountActions } from '../actions';
+import { AuthActions, BankAccountActions, CreditCardActions } from '../actions';
 
 @Injectable({
   providedIn: 'root',
@@ -32,6 +32,14 @@ export class AuthEffects {
           catchError(error => of(AuthActions.authError({ error }))),
         ),
       ),
+    ),
+  );
+
+  authSuccessCreditCard$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.authSuccess),
+      map(authState => CreditCardActions.getCreditCardsSuccess({ creditCards: authState.user.creditCards })),
+      catchError(error => of(BankAccountActions.getBankAccountsError({ error }))),
     ),
   );
 

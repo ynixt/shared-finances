@@ -3,10 +3,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
-import { CreditCard, User } from 'src/app/@core/models';
+import { CreditCard } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthDispatchers } from 'src/app/store';
-import { AuthSelectors } from 'src/app/store/services/selectors';
+import { CreditCardDispatchers } from 'src/app/store';
 import { CreditCardService } from '../credit-card.service';
 
 @Component({
@@ -24,8 +23,7 @@ export class EditCreditCardComponent implements OnInit {
     private errorService: ErrorService,
     private toast: HotToastService,
     private translocoService: TranslocoService,
-    private authSelectors: AuthSelectors,
-    private authDispatchers: AuthDispatchers,
+    private creditCardDispatchers: CreditCardDispatchers,
   ) {}
 
   ngOnInit(): void {
@@ -48,7 +46,7 @@ export class EditCreditCardComponent implements OnInit {
       )
       .toPromise();
 
-    await this.applyNewCreditCardToUser(creditCardSaved);
+    this.creditCardDispatchers.creditCardChanged(creditCardSaved);
     this.router.navigateByUrl('/credit');
   }
 
@@ -64,13 +62,5 @@ export class EditCreditCardComponent implements OnInit {
     } catch (err) {
       this.toast.error(this.errorService.getInstantErrorMessage(err, 'generic-error', 'generic-error-with-description'));
     }
-  }
-
-  private async applyNewCreditCardToUser(editingCreditCard: CreditCard): Promise<void> {
-    const currentUser: User = { creditCards: [], ...(await this.authSelectors.currentUser()) };
-
-    currentUser.creditCards = [...currentUser.creditCards.filter(creditCard => creditCard.id !== editingCreditCard.id), editingCreditCard];
-
-    this.authDispatchers.userUpdated(currentUser);
   }
 }

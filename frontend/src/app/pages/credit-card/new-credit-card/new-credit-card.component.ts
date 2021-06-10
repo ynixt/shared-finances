@@ -3,10 +3,9 @@ import { Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
-import { CreditCard, User } from 'src/app/@core/models';
+import { CreditCard } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthDispatchers } from 'src/app/store';
-import { AuthSelectors } from 'src/app/store/services/selectors';
+import { CreditCardDispatchers } from 'src/app/store';
 import { CreditCardService } from '../credit-card.service';
 
 @Component({
@@ -18,8 +17,7 @@ export class NewCreditCardComponent implements OnInit {
   constructor(
     private creditCardService: CreditCardService,
     private router: Router,
-    private authSelectors: AuthSelectors,
-    private authDispatchers: AuthDispatchers,
+    private creditCardDispatchers: CreditCardDispatchers,
     private toast: HotToastService,
     private translocoService: TranslocoService,
     private errorService: ErrorService,
@@ -43,15 +41,7 @@ export class NewCreditCardComponent implements OnInit {
       )
       .toPromise();
 
-    await this.applyNewCreditCardToUser(creditCardSaved);
+    this.creditCardDispatchers.creditCardAdded(creditCardSaved);
     this.router.navigateByUrl('/credit');
-  }
-
-  private async applyNewCreditCardToUser(newCreditCard: CreditCard): Promise<void> {
-    const currentUser: User = { creditCards: [], ...(await this.authSelectors.currentUser()) };
-
-    currentUser.creditCards = [...currentUser.creditCards, newCreditCard];
-
-    this.authDispatchers.userUpdated(currentUser);
   }
 }
