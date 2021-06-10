@@ -18,9 +18,9 @@
               <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
-              <a routerLink="{{ bankAccount.id }}/edit" mat-menu-item>
+              <a (click)="changeName(bankAccount)" mat-menu-item>
                 <mat-icon>edit</mat-icon>
-                <span>{{ t('edit') }}</span>
+                <span>{{ t('change-name') }}</span>
               </a>
               <button (click)="delete(bankAccount)" mat-menu-item>
                 <mat-icon>delete</mat-icon>

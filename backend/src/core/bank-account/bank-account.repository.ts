@@ -30,6 +30,22 @@ export class BankAccountRepository extends MongoEmbededRepository<BankAccount, U
     return result.bankAccounts.filter(bankAccount => bankAccount.id === domain.id)[0];
   }
 
+  async changeName(userId: string, bankAccountId: string, newName: string): Promise<BankAccount> {
+    const result = await this.model
+      .findOneAndUpdate(
+        { _id: userId, 'bankAccounts.id': bankAccountId },
+        {
+          $set: {
+            'bankAccounts.$.name': newName,
+          },
+        },
+        { new: true },
+      )
+      .exec();
+
+    return result.bankAccounts.filter(bankAccount => bankAccount.id === bankAccountId)[0];
+  }
+
   async delete(userId: string, bankAccountId: string): Promise<boolean> {
     const result = await this.model
       .updateOne(

@@ -48,8 +48,6 @@ export class BankAccountComponent implements OnInit {
       .toPromise();
 
     if (confirm) {
-      this.toast.observe;
-
       const removed = await this.bankAccountService
         .deleteBankAccount(bankAccount.id)
         .pipe(
@@ -69,6 +67,56 @@ export class BankAccountComponent implements OnInit {
         await this.applyBankAccountRemovedOnUnser(bankAccount);
       }
     }
+  }
+
+  async changeName(bankAccount: BankAccount): Promise<void> {
+    const inputName = await this.dialogService
+      .openPrompt({
+        title: this.translocoService.translate('change-name'),
+        message: '',
+        value: bankAccount.name,
+        cancelButton: this.translocoService.translate('cancel'),
+        acceptButton: this.translocoService.translate('edit'),
+        width: '500px',
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .toPromise();
+
+    if (inputName !== bankAccount.name) {
+      const nameChanged = (
+        await this.bankAccountService
+          .changeBankAccountName(bankAccount.id, inputName)
+          .pipe(
+            take(1),
+            this.toast.observe({
+              loading: this.translocoService.translate('editing'),
+              success: this.translocoService.translate('changing-name-successful', { name: inputName }),
+              error: error =>
+                this.errorService.getInstantErrorMessage(error, 'changing-name-error', 'changing-name-error-with-description', {
+                  oldName: bankAccount.name,
+                  newName: inputName,
+                }),
+            }),
+          )
+          .toPromise()
+      )?.name;
+
+      if (nameChanged != null && nameChanged !== bankAccount.name) {
+        await this.applyBankAccountNameChangedOnUnser(bankAccount.id, nameChanged);
+      }
+    }
+  }
+
+  private async applyBankAccountNameChangedOnUnser(bankAccountId: string, newName: string): Promise<void> {
+    const currentUser: User = { bankAccounts: [], ...(await this.authSelectors.currentUser()) };
+    const bankAccount = [...currentUser.bankAccounts.filter(creditCard => creditCard.id === bankAccountId)][0];
+    const bankAccounts = currentUser.bankAccounts.filter(creditCard => creditCard.id !== bankAccountId);
+
+    bankAccounts.push({ ...bankAccount, name: newName });
+    currentUser.bankAccounts = bankAccounts;
+
+    this.authDispatchers.userUpdated(currentUser);
   }
 
   private async applyBankAccountRemovedOnUnser(bankAccountRemoved: BankAccount): Promise<void> {

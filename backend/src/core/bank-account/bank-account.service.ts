@@ -11,6 +11,10 @@ export class BankAccountService {
     return this.bankAccountRepository.create(userId, creditCard);
   }
 
+  changeName(userId: string, bankAccountId: string, newName: string): Promise<BankAccount> {
+    return this.bankAccountRepository.changeName(userId, bankAccountId, newName);
+  }
+
   delete(userId: string, bankAccountId: string): Promise<boolean> {
     return this.bankAccountRepository.delete(userId, bankAccountId);
   }
