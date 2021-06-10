@@ -28,6 +28,15 @@ const bankAccountReducer: ActionReducer<BankAccountState, Action> = createReduce
       bankAccounts,
     };
   }),
+  on(BankAccountActions.bankAccountAdded, (state, action) => {
+    const bankAccounts = [...state.bankAccounts, action.newBankAccount];
+
+    return {
+      ...initialState,
+      loading: true,
+      bankAccounts,
+    };
+  }),
   on(BankAccountActions.bankAccountRemoved, (state, action) => {
     const bankAccounts = state.bankAccounts.filter(bankAccount => bankAccount.id !== action.bankAccountId);
 

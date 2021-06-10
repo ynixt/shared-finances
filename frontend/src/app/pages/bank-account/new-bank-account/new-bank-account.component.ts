@@ -6,7 +6,7 @@ import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { BankAccount, User } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthDispatchers } from 'src/app/store';
+import { AuthDispatchers, BankAccountDispatchers } from 'src/app/store';
 import { AuthSelectors } from 'src/app/store/services/selectors';
 import { BankAccountService } from '../bank-account.service';
 
@@ -21,8 +21,7 @@ export class NewBankAccountComponent implements OnInit {
   constructor(
     private bankAccountService: BankAccountService,
     private router: Router,
-    private authSelectors: AuthSelectors,
-    private authDispatchers: AuthDispatchers,
+    private bankAccountDispatchers: BankAccountDispatchers,
     private translocoService: TranslocoService,
     private toast: HotToastService,
     private errorService: ErrorService,
@@ -43,7 +42,7 @@ export class NewBankAccountComponent implements OnInit {
   }
 
   private async newBankAccount(bankAccountInput: Partial<BankAccount>): Promise<void> {
-    const creditCardSaved = await this.bankAccountService
+    const bankAccountSaved = await this.bankAccountService
       .newBankAccount(bankAccountInput)
       .pipe(
         take(1),
@@ -58,15 +57,7 @@ export class NewBankAccountComponent implements OnInit {
       )
       .toPromise();
 
-    await this.applyNewBankAccountToUser(creditCardSaved);
+    this.bankAccountDispatchers.bankAccountAdded(bankAccountSaved);
     this.router.navigateByUrl('/bank');
-  }
-
-  private async applyNewBankAccountToUser(newBankAccount: BankAccount): Promise<void> {
-    const currentUser: User = { bankAccounts: [], ...(await this.authSelectors.currentUser()) };
-
-    currentUser.bankAccounts = [...currentUser.bankAccounts, newBankAccount];
-
-    this.authDispatchers.userUpdated(currentUser);
   }
 }
