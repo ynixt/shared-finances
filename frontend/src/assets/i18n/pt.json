@@ -22,6 +22,7 @@
   "add": "Adicionar",
   "edit": "Editar",
   "delete": "Excluir",
+  "close": "Fechar",
   "confirm": "Confirmação",
   "delete-confirm": "Você tem certeza que deseja deletar '{{name}}'?",
   "dashboard": "Dashboard",
@@ -47,6 +48,7 @@
   "credit-card-limit-placeholder": "Limite máximo do cartão.",
   "closing-day": "Dia do fechamento",
   "payment-day": "Dia do vencimento",
+  "bank-account": "Contas bancária",
   "bank-accounts": "Contas bancárias",
   "no-bank-accounts": "Nenhuma conta bancária foi cadastrada. Que tal cadastrar a primeira?",
   "new-bank-account": "Nova conta bancária",
@@ -55,5 +57,15 @@
   "changing-name-successful": "'{{oldName}}' foi alterado com sucesso para '{{newName}}'.",
   "changing-name-error": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.",
   "changing-name-error-with-description": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.<br>Error: {{error}}.",
-  "new-transaction": "Nova transação"
+  "new-transaction": "Nova transação",
+  "revenue": "Receita",
+  "expense": "Despesa",
+  "transfer": "Transferência",
+  "date": "Data",
+  "value": "Valor",
+  "description": "Descrição",
+  "transaction-value-placeholder": "Valor da transação.",
+  "transaction-date-placeholder": "Data em que ocorreu a transação.",
+  "transaction-description-placeholder": "Descreva a transação.",
+  "mat-select-none": "-- Nenhum --"
 }

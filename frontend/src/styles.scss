@@ -30,3 +30,25 @@ body {
 button:focus {
   outline: none;
 }
+
+.td-window-dialog {
+  width: 95vw;
+  height: 95vh;
+  max-width: 95vw !important;
+  max-height: 95vh !important;
+
+  @screen md {
+    width: 50vw;
+    height: 70vh;
+  }
+
+  .mat-toolbar-row > div {
+    display: flex;
+    width: 100%;
+    align-items: center;
+  }
+
+  .td-window-dialog-close {
+    margin-left: auto;
+  }
+}

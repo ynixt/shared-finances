@@ -30,6 +30,8 @@ export function createCurrencyMaskConfig(): CurrencyMaskConfig {
 
 import { registerLocaleData } from '@angular/common';
 import { ErrorService } from './services/error.service';
+import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
+import { MAT_DATE_FORMATS } from '@angular/material/core';
 
 registerLocaleData(localePt, 'pt');
 
@@ -49,6 +51,7 @@ registerLocaleData(localePt, 'pt');
     AngularFireAuthModule,
     AppStoreModule,
     GraphQLModule,
+    MatMomentDateModule,
   ],
   providers: [
     {
@@ -58,6 +61,21 @@ registerLocaleData(localePt, 'pt');
     },
     { provide: LOCALE_ID, useValue: 'pt' },
     { provide: CURRENCY_MASK_CONFIG, useFactory: createCurrencyMaskConfig },
+    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true } },
+    {
+      provide: MAT_DATE_FORMATS,
+      useValue: {
+        parse: {
+          dateInput: ['l', 'LL'],
+        },
+        display: {
+          dateInput: 'L',
+          monthYearLabel: 'MMM YYYY',
+          dateA11yLabel: 'LL',
+          monthYearA11yLabel: 'MMMM YYYY',
+        },
+      },
+    },
     ErrorService,
   ],
   exports: [TranslocoRootModule],

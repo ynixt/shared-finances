@@ -10,6 +10,7 @@ import { HeaderModule } from './components/layout';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ErrorsModule } from './pages/errors';
 import { HotToastModule } from '@ngneat/hot-toast';
+import { NewTransactionModule } from './components/new-transaction/new-transaction.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -25,6 +26,7 @@ import { HotToastModule } from '@ngneat/hot-toast';
     HotToastModule.forRoot({
       position: 'bottom-center',
     }),
+    NewTransactionModule,
   ],
   bootstrap: [AppComponent],
 })

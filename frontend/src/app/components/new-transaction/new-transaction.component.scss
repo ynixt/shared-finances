@@ -1,0 +1,53 @@
+@import 'src/scss/variables.scss';
+
+$transaction-type-bg-transparentize: 0.7;
+
+.revenue {
+  $color: #004d40;
+  background: transparentize($color, $transaction-type-bg-transparentize);
+  color: #fff !important;
+
+  &.mat-button-toggle-checked {
+    background: $color;
+  }
+}
+
+.expense {
+  $color: #b71c1c;
+
+  background: transparentize($color, $transaction-type-bg-transparentize);
+  color: #fff !important;
+
+  &.mat-button-toggle-checked {
+    background: $color;
+  }
+}
+
+.transfer {
+  $color: #1a237e;
+
+  background: transparentize($color, $transaction-type-bg-transparentize);
+  color: #fff !important;
+
+  &.mat-button-toggle-checked {
+    background: $color;
+  }
+}
+
+.transaction-type {
+  .name {
+    display: none;
+
+    @screen md {
+      display: inline;
+    }
+  }
+
+  &.mat-button-toggle-checked {
+    font-weight: 500 !important;
+
+    .name {
+      display: inline;
+    }
+  }
+}

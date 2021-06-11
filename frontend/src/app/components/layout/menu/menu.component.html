@@ -1,5 +1,5 @@
 <mat-nav-list *transloco="let t">
-  <a routerLink="/new-transaction" class="new-transaction block" mat-raised-button color="primary">
+  <a (click)="openNewTransactionDialog()" class="new-transaction block" mat-raised-button color="primary">
     <mat-icon>paid</mat-icon> {{ t('new-transaction') }}
   </a>
 
