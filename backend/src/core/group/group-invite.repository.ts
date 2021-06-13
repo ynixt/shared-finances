@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GroupInvite, GroupInviteDocument } from '../models';
 import { MongoDefaultRepository } from '../data';
+import { MongoRepositoryOptions } from '../data/mongo-repository';
 
 @Injectable()
 export class GroupInviteRepository extends MongoDefaultRepository<GroupInvite, GroupInviteDocument> {
@@ -29,8 +30,8 @@ export class GroupInviteRepository extends MongoDefaultRepository<GroupInvite, G
     return invite;
   }
 
-  deleteById(inviteId: string): any {
-    return this.model.deleteOne({ _id: inviteId });
+  deleteById(inviteId: string, opts?: MongoRepositoryOptions): any {
+    return this.model.deleteOne({ _id: inviteId }, opts);
   }
 
   public deleteWithCreationDateLess(limitDate: string): any {

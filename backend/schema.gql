@@ -53,13 +53,13 @@ type Mutation {
   newBankAccount(name: String!): BankAccount!
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
+  newTransacation(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String!): Transaction!
   createInvite(groupId: String!): String!
   useInvite(invite: String!): String
   updateGroup(id: String!, name: String!): Group
   newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   deleteCreditCard(creditCardId: String!): Boolean!
-  newTransacation(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String!): Transaction!
 }
 
 type Subscription {

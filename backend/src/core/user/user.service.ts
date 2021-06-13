@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { FirebaseAdminSDK, FIREBASE_ADMIN_INJECT } from '@tfarras/nestjs-firebase-admin';
+import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { User } from '../models';
 import { UserRepository } from './user.repository';
 
@@ -41,8 +42,8 @@ export class UserService {
     return user;
   }
 
-  public async addGroupToUser(userId: string, groupId: string): Promise<void> {
-    return this.userRepository.addGroupToUser(userId, groupId);
+  public async addGroupToUser(userId: string, groupId: string, opts?: MongoRepositoryOptions): Promise<void> {
+    return this.userRepository.addGroupToUser(userId, groupId, opts);
   }
 
   private async loadProfile(user: User): Promise<User> {

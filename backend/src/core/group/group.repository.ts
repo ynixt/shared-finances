@@ -5,6 +5,7 @@ import * as mongoose from 'mongoose';
 import { Group, GroupDocument } from '../models';
 import { UpdateGroupArgs } from '../models/args';
 import { MongoDefaultRepository } from '../data';
+import { MongoRepositoryOptions } from '../data/mongo-repository';
 
 @Injectable()
 export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument> {
@@ -53,7 +54,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
     return null;
   }
 
-  async addUserToGroup(groupId: string, userId): Promise<void> {
+  async addUserToGroup(groupId: string, userId, opts?: MongoRepositoryOptions): Promise<void> {
     await this.model.updateOne(
       { _id: groupId },
       {
@@ -61,6 +62,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
           users: userId,
         },
       },
+      opts,
     );
   }
 

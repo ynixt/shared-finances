@@ -57,18 +57,11 @@ export class GroupService {
       return null;
     }
 
-    const transaction = await this.groupRepository.openTransaction();
-
-    try {
-      await this.userService.addGroupToUser(userId, group.id);
-      await this.groupRepository.addUserToGroup(group.id, userId);
-      await this.groupInviteRepository.deleteById(inviteId);
-    } catch (err) {
-      await this.groupRepository.abortTransaction(transaction);
-      throw err;
-    } finally {
-      await this.groupRepository.commitTransaction(transaction);
-    }
+    await this.groupRepository.runInsideTransaction(async opts => {
+      await this.userService.addGroupToUser(userId, group.id, opts);
+      await this.groupRepository.addUserToGroup(group.id, userId, opts);
+      await this.groupInviteRepository.deleteById(inviteId, opts);
+    });
 
     return group.id;
   }

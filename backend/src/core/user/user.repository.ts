@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { MongoDefaultRepository } from '../data';
+import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { User, UserDocument } from '../models';
 
 @Injectable()
@@ -17,7 +18,7 @@ export class UserRepository extends MongoDefaultRepository<User, UserDocument> {
     return user;
   }
 
-  public async addGroupToUser(userId: string, groupId: string): Promise<void> {
+  public async addGroupToUser(userId: string, groupId: string, opts?: MongoRepositoryOptions): Promise<void> {
     await this.model.updateOne(
       { _id: userId },
       {
@@ -25,6 +26,7 @@ export class UserRepository extends MongoDefaultRepository<User, UserDocument> {
           groups: groupId,
         },
       },
+      opts,
     );
   }
 }

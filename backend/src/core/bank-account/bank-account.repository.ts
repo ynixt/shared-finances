@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { ClientSession, Model } from 'mongoose';
 
 import { MongoDefaultRepository } from '../data';
+import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { BankAccount, BankAccountDocument } from '../models';
 
 @Injectable()
@@ -27,8 +28,8 @@ export class BankAccountRepository extends MongoDefaultRepository<BankAccount, B
     return result;
   }
 
-  async delete(userId: string, bankAccountId: string): Promise<boolean> {
-    const result = await this.model.deleteOne({ $and: [{ _id: bankAccountId }, { userId }] }).exec();
+  async delete(userId: string, bankAccountId: string, opts?: MongoRepositoryOptions): Promise<boolean> {
+    const result = await this.model.deleteOne({ $and: [{ _id: bankAccountId }, { userId }] }, opts).exec();
 
     return result.n > 0;
   }
