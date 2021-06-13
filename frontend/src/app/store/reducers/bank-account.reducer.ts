@@ -24,7 +24,7 @@ const bankAccountReducer: ActionReducer<BankAccountState, Action> = createReduce
 
     return {
       ...initialState,
-      loading: true,
+      done: true,
       bankAccounts,
     };
   }),
@@ -33,7 +33,7 @@ const bankAccountReducer: ActionReducer<BankAccountState, Action> = createReduce
 
     return {
       ...initialState,
-      loading: true,
+      done: true,
       bankAccounts,
     };
   }),
@@ -42,7 +42,7 @@ const bankAccountReducer: ActionReducer<BankAccountState, Action> = createReduce
 
     return {
       ...initialState,
-      loading: true,
+      done: true,
       bankAccounts,
     };
   }),
