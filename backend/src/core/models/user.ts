@@ -38,7 +38,6 @@ export class User {
   @Field(() => [CreditCard], { nullable: true })
   creditCards?: CreditCard[];
 
-  @Prop()
   @Field(() => [BankAccount], { nullable: true })
   bankAccounts?: BankAccount[];
 }

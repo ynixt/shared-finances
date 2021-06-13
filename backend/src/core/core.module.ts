@@ -7,6 +7,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { GroupModule } from './group/group.module';
 import { CreditCardModule } from './credit-card/credit-card.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { BankAccountModule } from './bank-account/bank-account.module';
     GroupModule,
     CreditCardModule,
     BankAccountModule,
+    TransactionModule,
   ],
   providers: [],
 })

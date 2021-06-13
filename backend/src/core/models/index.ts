@@ -3,3 +3,4 @@ export * from './group';
 export * from './groupInvite';
 export * from './creditCard';
 export * from './bankAccount';
+export * from './transaction';

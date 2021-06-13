@@ -1,9 +1,14 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { HotToastService } from '@ngneat/hot-toast';
+import { TranslocoService } from '@ngneat/transloco';
 import moment from 'moment';
+import { take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { BankAccount } from 'src/app/@core/models';
+import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthSelectors, BankAccountSelectors } from 'src/app/store/services/selectors';
+import { NewTransactionService } from './new-transaction.service';
 
 interface AccountWithPerson {
   person: string;
@@ -23,7 +28,14 @@ export class NewTransactionComponent implements OnInit {
 
   accountsWithPersons: AccountWithPerson[] = [];
 
-  constructor(private bankAccountSelectors: BankAccountSelectors, private authSelectors: AuthSelectors) {}
+  constructor(
+    private newTransactionService: NewTransactionService,
+    private bankAccountSelectors: BankAccountSelectors,
+    private authSelectors: AuthSelectors,
+    private translocoService: TranslocoService,
+    private toast: HotToastService,
+    private errorService: ErrorService,
+  ) {}
 
   get transactionType() {
     return this.formGroup?.value?.transactionType;
@@ -43,6 +55,37 @@ export class NewTransactionComponent implements OnInit {
     });
 
     this.mountAccounts();
+  }
+
+  async newTransacation(): Promise<void> {
+    if (this.formGroup.valid) {
+      const transacationSaved = await this.newTransactionService
+        .newTransaction({
+          transactionType: this.formGroup.value.transactionType,
+
+          date: this.formGroup.value.date,
+
+          value: this.formGroup.value.value,
+
+          description: this.formGroup.value.description,
+
+          bankAccountId: this.formGroup.value.bankAccount,
+        })
+        .pipe(
+          take(1),
+          this.toast.observe({
+            loading: this.translocoService.translate('creating'),
+            success: this.translocoService.translate('transacation-creating-successful'),
+            error: error =>
+              this.errorService.getInstantErrorMessage(
+                error,
+                'transacation-creating-error-no-name',
+                'transacation-creating-error-with-description',
+              ),
+          }),
+        )
+        .toPromise();
+    }
   }
 
   private async mountAccounts() {

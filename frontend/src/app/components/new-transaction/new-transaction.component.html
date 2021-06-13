@@ -1,29 +1,32 @@
-<td-window-dialog *transloco="let t" [title]="t('new-transaction')" [toolbarColor]="'accent'" [closeLabel]="t('close')"
-  (closed)="closed.emit()">
+<td-window-dialog
+  *transloco="let t"
+  [title]="t('new-transaction')"
+  [toolbarColor]="'accent'"
+  [closeLabel]="t('close')"
+  (closed)="closed.emit()"
+>
   <div class="p-4">
-    <form class="grid" [formGroup]="formGroup">
+    <form class="grid" [formGroup]="formGroup" (ngSubmit)="newTransacation()">
       <mat-button-toggle-group class="mb-4" formControlName="transactionType">
         <mat-button-toggle class="flex-1 transaction-type revenue" [value]="transactionTypeEnum.Revenue">
-          <mat-icon class="mr-2">trending_up</mat-icon> <span class="name">{{t('revenue')}}</span>
+          <mat-icon class="mr-2">trending_up</mat-icon> <span class="name">{{ t('revenue') }}</span>
         </mat-button-toggle>
         <mat-button-toggle class="flex-1 transaction-type expense" [value]="transactionTypeEnum.Expense">
-          <mat-icon class="mr-2">trending_down</mat-icon> <span class="name">{{t('expense')}}</span>
+          <mat-icon class="mr-2">trending_down</mat-icon> <span class="name">{{ t('expense') }}</span>
         </mat-button-toggle>
         <mat-button-toggle class="flex-1 transaction-type transfer" [value]="transactionTypeEnum.Transfer">
-          <mat-icon class="mr-2">sync_alt</mat-icon> <span class="name">{{t('transfer')}}</span>
+          <mat-icon class="mr-2">sync_alt</mat-icon> <span class="name">{{ t('transfer') }}</span>
         </mat-button-toggle>
       </mat-button-toggle-group>
 
       <mat-form-field class="field" appearance="outline">
         <mat-label>{{ t('value') }}</mat-label>
-        <input currencyMask formControlName="value" required matInput
-          [placeholder]="t('transaction-value-placeholder')" />
+        <input currencyMask formControlName="value" required matInput [placeholder]="t('transaction-value-placeholder')" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>{{t('date')}}</mat-label>
-        <input formControlName="date" matInput [matDatepicker]="picker"
-          [placeholder]="t('transaction-date-placeholder')" required>
+        <mat-label>{{ t('date') }}</mat-label>
+        <input formControlName="date" matInput [matDatepicker]="picker" [placeholder]="t('transaction-date-placeholder')" required />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
@@ -34,12 +37,12 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>{{t('bank-account')}}</mat-label>
+        <mat-label>{{ t('bank-account') }}</mat-label>
         <mat-select required formControlName="bankAccount">
-          <mat-option>{{t('mat-select-none')}}</mat-option>
+          <mat-option>{{ t('mat-select-none') }}</mat-option>
           <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person">
             <mat-option *ngFor="let account of accountsPerson.accounts" [value]="account.id">
-              {{account.name}}
+              {{ account.name }}
             </mat-option>
           </mat-optgroup>
         </mat-select>

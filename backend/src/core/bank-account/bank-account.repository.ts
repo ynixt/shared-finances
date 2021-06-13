@@ -1,64 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
-import { MongoEmbededRepository } from '../data';
-import { BankAccount, User, UserDocument } from '../models';
-import { NewBankAccountArgs } from '../models/args';
+import { MongoDefaultRepository } from '../data';
+import { BankAccount, BankAccountDocument } from '../models';
 
 @Injectable()
-export class BankAccountRepository extends MongoEmbededRepository<BankAccount, User, UserDocument> {
-  constructor(@InjectModel(User.name) userDocument: Model<UserDocument>) {
+export class BankAccountRepository extends MongoDefaultRepository<BankAccount, BankAccountDocument> {
+  constructor(@InjectModel(BankAccount.name) userDocument: Model<BankAccountDocument>) {
     super(userDocument);
-  }
-
-  async create(userId: string, domain: NewBankAccountArgs): Promise<BankAccount> {
-    domain = { id: new Types.ObjectId().toHexString(), ...domain };
-
-    const result = await this.model
-      .findOneAndUpdate(
-        { _id: userId },
-        {
-          $addToSet: {
-            bankAccounts: domain,
-          },
-        },
-        { new: true },
-      )
-      .exec();
-
-    return result.bankAccounts.filter(bankAccount => bankAccount.id === domain.id)[0];
   }
 
   async changeName(userId: string, bankAccountId: string, newName: string): Promise<BankAccount> {
     const result = await this.model
       .findOneAndUpdate(
-        { _id: userId, 'bankAccounts.id': bankAccountId },
+        { $and: [{ _id: bankAccountId }, { userId }] },
         {
           $set: {
-            'bankAccounts.$.name': newName,
+            'name': newName,
           },
         },
         { new: true },
       )
       .exec();
 
-    return result.bankAccounts.filter(bankAccount => bankAccount.id === bankAccountId)[0];
+    return result;
   }
 
   async delete(userId: string, bankAccountId: string): Promise<boolean> {
-    const result = await this.model
-      .updateOne(
-        { _id: userId },
-        {
-          $pull: {
-            bankAccounts: { id: bankAccountId },
-          },
-        },
-        { new: true },
-      )
-      .exec();
+    const result = await this.model.deleteOne({ $and: [{ _id: bankAccountId }, { userId }] }).exec();
 
     return result.n > 0;
+  }
+
+  findAllWithUserId(userId: string): Promise<BankAccount[]> {
+    return this.model.find({ userId }).exec();
+  }
+
+  existsWithUserId(userId: string, bankAccountId: string): Promise<boolean> {
+    return this.model.exists({ $and: [{ _id: bankAccountId }, { userId }] });
   }
 }

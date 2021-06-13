@@ -67,5 +67,8 @@
   "transaction-value-placeholder": "Valor da transação.",
   "transaction-date-placeholder": "Data em que ocorreu a transação.",
   "transaction-description-placeholder": "Descreva a transação.",
-  "mat-select-none": "-- Nenhum --"
+  "mat-select-none": "-- Nenhum --",
+  "transacation-creating-successful": "Transação criada com sucesso",
+  "transacation-creating-error-no-name": "Não foi possível criar a transação.",
+  "transacation-creating-error-with-description": "Não foi possível criar a transação.<br>Error: {{error}}."
 }

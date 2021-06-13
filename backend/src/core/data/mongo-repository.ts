@@ -7,6 +7,22 @@ export abstract class MongoRepository<TDomain, TDocument extends any & Document>
     super();
   }
 
+  async runInsideTransaction<TReturn>(code: () => Promise<TReturn>): Promise<TReturn>;
+  async runInsideTransaction(code: () => void): Promise<void>;
+
+  async runInsideTransaction<TReturn>(code: () => Promise<TReturn> | void): Promise<TReturn | void> {
+    const transaction = await this.openTransaction();
+
+    try {
+      return code();
+    } catch (err) {
+      await this.abortTransaction(transaction);
+      throw err;
+    } finally {
+      await this.commitTransaction(transaction);
+    }
+  }
+
   openTransaction(): Promise<ClientSession> {
     return this.model.db.startSession();
   }

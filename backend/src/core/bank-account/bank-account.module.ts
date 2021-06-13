@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from '../models';
+import { BankAccount, BankAccountSchema } from '../models';
 import { BankAccountRepository } from './bank-account.repository';
 import { BankAccountResolver } from './bank-account.resolver';
 import { BankAccountService } from './bank-account.service';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])],
+  imports: [MongooseModule.forFeature([{ name: BankAccount.name, schema: BankAccountSchema }])],
   providers: [BankAccountRepository, BankAccountService, BankAccountResolver],
+  exports: [BankAccountService],
 })
 export class BankAccountModule {}
