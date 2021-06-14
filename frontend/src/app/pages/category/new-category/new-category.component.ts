@@ -3,10 +3,9 @@ import { Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
-import { Category, CreditCard } from 'src/app/@core/models';
+import { Category } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { CreditCardDispatchers } from 'src/app/store';
-import { CategoryService } from '../category.service';
+import { UserCategoryService } from 'src/app/@core/services';
 
 @Component({
   selector: 'app-new-category',
@@ -15,9 +14,8 @@ import { CategoryService } from '../category.service';
 })
 export class NewCategoryComponent implements OnInit {
   constructor(
-    private categoryService: CategoryService,
+    private userCategoryService: UserCategoryService,
     private router: Router,
-    private creditCardDispatchers: CreditCardDispatchers,
     private toast: HotToastService,
     private translocoService: TranslocoService,
     private errorService: ErrorService,
@@ -26,7 +24,7 @@ export class NewCategoryComponent implements OnInit {
   ngOnInit(): void {}
 
   async newCategory(categoryInput: Category): Promise<void> {
-    const creditCardSaved = await this.categoryService
+    await this.userCategoryService
       .newCategory(categoryInput)
       .pipe(
         take(1),
@@ -41,7 +39,6 @@ export class NewCategoryComponent implements OnInit {
       )
       .toPromise();
 
-    // this.creditCardDispatchers.creditCardAdded(creditCardSaved);
     this.router.navigateByUrl('/category');
   }
 }

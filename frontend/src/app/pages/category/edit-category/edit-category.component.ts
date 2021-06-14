@@ -4,8 +4,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { Category } from 'src/app/@core/models';
-import { ErrorService } from 'src/app/@core/services/error.service';
-import { CategoryService } from '../category.service';
+import { UserCategoryService, ErrorService } from 'src/app/@core/services';
 
 @Component({
   selector: 'app-edit-category',
@@ -18,7 +17,7 @@ export class EditCategoryComponent implements OnInit {
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,
-    private categoryService: CategoryService,
+    private userCategoryService: UserCategoryService,
     private errorService: ErrorService,
     private toast: HotToastService,
     private translocoService: TranslocoService,
@@ -29,7 +28,7 @@ export class EditCategoryComponent implements OnInit {
   }
 
   async edit(categoryInput: Category): Promise<void> {
-    await this.categoryService
+    await this.userCategoryService
       .editCategory(categoryInput)
       .pipe(
         take(1),
@@ -49,7 +48,7 @@ export class EditCategoryComponent implements OnInit {
 
   private async getCategory(categoryId: string) {
     try {
-      const category = await this.categoryService.getById(categoryId);
+      const category = await this.userCategoryService.getById(categoryId);
 
       if (!category) {
         this.router.navigateByUrl('/404');

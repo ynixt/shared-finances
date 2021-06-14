@@ -1,3 +1,4 @@
+import invert from 'invert-color';
 import { Component, OnInit } from '@angular/core';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { HotToastService } from '@ngneat/hot-toast';
@@ -7,8 +8,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Category } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { UserCategorySelectors } from 'src/app/store/services/selectors';
-import { CategoryService } from './category.service';
-import invert from 'invert-color';
+import { UserCategoryService } from 'src/app/@core/services';
 
 @UntilDestroy()
 @Component({
@@ -20,7 +20,7 @@ export class CategoryComponent implements OnInit {
   categories: Category[] = [];
 
   constructor(
-    private categoryService: CategoryService,
+    private userCategoryService: UserCategoryService,
     private dialogService: TdDialogService,
     private translocoService: TranslocoService,
     private toast: HotToastService,
@@ -46,7 +46,7 @@ export class CategoryComponent implements OnInit {
       .toPromise();
     if (confirm) {
       this.toast.observe;
-      await this.categoryService
+      await this.userCategoryService
         .deleteCategory(category.id)
         .pipe(
           take(1),
