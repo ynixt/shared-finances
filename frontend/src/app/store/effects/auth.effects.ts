@@ -39,8 +39,8 @@ export class AuthEffects {
     this.actions$.pipe(
       ofType(AuthActions.authSuccess),
       filter(authState => authState.user != null),
-      map(authState => CreditCardActions.getCreditCardsSuccess({ creditCards: authState.user.creditCards })),
-      catchError(error => of(BankAccountActions.getBankAccountsError({ error }))),
+      map(() => CreditCardActions.getCreditCards()),
+      catchError(error => of(CreditCardActions.getCreditCardsError({ error }))),
     ),
   );
 
@@ -57,7 +57,7 @@ export class AuthEffects {
     this.actions$.pipe(
       ofType(AuthActions.authSuccess),
       filter(authState => authState.user != null),
-      map(authState => UserCategoryActions.getUserCategories({ userId: authState.user.id })),
+      map(() => UserCategoryActions.getUserCategories()),
       catchError(error => of(UserCategoryActions.getUserCategoriesError({ error }))),
     ),
   );

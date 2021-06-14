@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
 import { BankAccountService } from '../bank-account';
+import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { Transaction } from '../models';
 import { NewTransactionArgs } from '../models/args';
@@ -12,10 +13,15 @@ export class TransactionService {
     private transacationRepository: TransactionRepository,
     @Inject(forwardRef(() => BankAccountService))
     private bankAccountService: BankAccountService,
+    private creditCardService: CreditCardService,
   ) {}
 
   async create(userId: string, input: NewTransactionArgs): Promise<Transaction> {
-    if (!(await this.bankAccountService.existsWithUserId(userId, input.bankAccountId))) {
+    if (input.bankAccountId != null && !(await this.bankAccountService.existsWithUserId(userId, input.bankAccountId))) {
+      throw new AuthenticationError('');
+    }
+
+    if (input.creditCardId != null && !(await this.creditCardService.existsWithUserId(userId, input.creditCardId))) {
       throw new AuthenticationError('');
     }
 

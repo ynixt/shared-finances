@@ -46,6 +46,12 @@ const creditCardReducer: ActionReducer<CreditCardState, Action> = createReducer(
       creditCards,
     };
   }),
+  on(CreditCardActions.getCreditCards, () => {
+    return {
+      ...initialState,
+      loading: true,
+    };
+  }),
   on(CreditCardActions.getCreditCardsSuccess, (_, action) => {
     return {
       ...initialState,

@@ -24,13 +24,6 @@ export class AuthService {
               name
               email
               photoURL
-              creditCards {
-                id
-                name
-                closingDay
-                paymentDay
-                limit
-              }
               bankAccounts {
                 id
                 name

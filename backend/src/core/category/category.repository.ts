@@ -36,9 +36,7 @@ export class CategoryRepository extends MongoDefaultRepository<Category, Categor
     return result;
   }
 
-  async delete(userId: string, categoryId: string, opts?: MongoRepositoryOptions): Promise<Category | null> {
-    const result = await this.model.findOneAndDelete({ $and: [{ _id: categoryId }, { userId }] }, opts).exec();
-
-    return result;
+  delete(userId: string, categoryId: string, opts?: MongoRepositoryOptions): Promise<Category | null> {
+    return this.model.findOneAndDelete({ $and: [{ _id: categoryId }, { userId }] }, opts).exec();
   }
 }

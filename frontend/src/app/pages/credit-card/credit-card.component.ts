@@ -6,7 +6,6 @@ import { take } from 'rxjs/operators';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { CreditCard } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { CreditCardDispatchers } from 'src/app/store';
 import { CreditCardSelectors } from 'src/app/store/services/selectors';
 import { CreditCardService } from './credit-card.service';
 
@@ -26,7 +25,6 @@ export class CreditCardComponent implements OnInit {
     private toast: HotToastService,
     private errorService: ErrorService,
     private creditCardSelectors: CreditCardSelectors,
-    private creditCardDispatchers: CreditCardDispatchers,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -49,7 +47,7 @@ export class CreditCardComponent implements OnInit {
     if (confirm) {
       this.toast.observe;
 
-      const removed = await this.creditCardService
+      await this.creditCardService
         .deleteCreditCard(creditCard.id)
         .pipe(
           take(1),
@@ -63,10 +61,6 @@ export class CreditCardComponent implements OnInit {
           }),
         )
         .toPromise();
-
-      if (removed) {
-        this.creditCardDispatchers.creditCardRemoved(creditCard.id);
-      }
     }
   }
 

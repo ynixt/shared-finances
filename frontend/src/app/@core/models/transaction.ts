@@ -7,7 +7,8 @@ export interface Transaction {
   date: string;
   value: number;
   description?: string;
-  bankAccountId: string;
+  bankAccountId?: string;
+  creditCardId?: string;
   categoryId?: string;
   category?: Category;
 }

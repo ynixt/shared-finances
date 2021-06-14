@@ -8,18 +8,26 @@ export class CreditCardService {
   constructor(private creditCardRepository: CreditCardRepository) {}
 
   create(userId: string, creditCard: NewCreditCardArgs): Promise<CreditCard> {
-    return this.creditCardRepository.create(userId, creditCard);
+    return this.creditCardRepository.create({ ...creditCard, userId });
   }
 
   getById(userId: string, creditCardId: string): Promise<CreditCard> {
-    return this.creditCardRepository.getById(userId, creditCardId);
+    return this.creditCardRepository.findByUserId(userId, creditCardId);
   }
 
   edit(userId: string, creditCard: EditCreditCardArgs): Promise<CreditCard> {
     return this.creditCardRepository.edit(userId, creditCard);
   }
 
-  delete(userId: string, creditCardId: string): Promise<boolean> {
+  delete(userId: string, creditCardId: string): Promise<CreditCard> {
     return this.creditCardRepository.delete(userId, creditCardId);
+  }
+
+  existsWithUserId(userId: string, creditCardId: string): Promise<boolean> {
+    return this.creditCardRepository.existsWithUserId(userId, creditCardId);
+  }
+
+  findAllWithUserId(userId: string): Promise<CreditCard[]> {
+    return this.creditCardRepository.findAllWithUserId(userId);
   }
 }

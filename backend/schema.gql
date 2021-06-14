@@ -7,14 +7,6 @@ type BankAccount {
   name: String!
 }
 
-type CreditCard {
-  id: ID!
-  name: String!
-  closingDay: Int!
-  paymentDay: Int!
-  limit: Float!
-}
-
 type Group {
   id: ID!
   name: String!
@@ -28,8 +20,15 @@ type User {
   name: String
   photoURL: String
   groups: Group!
-  creditCards: [CreditCard!]
   bankAccounts: [BankAccount!]
+}
+
+type CreditCard {
+  id: ID!
+  name: String!
+  closingDay: Int!
+  paymentDay: Int!
+  limit: Float!
 }
 
 type Category {
@@ -41,6 +40,7 @@ type Category {
 type Transaction {
   id: ID!
   bankAccountId: String!
+  creditCardId: String!
   transactionType: String!
   groupId: String!
   date: String!
@@ -54,30 +54,42 @@ type Query {
   user: User
   categories: [Category!]!
   category(categoryId: String!): Category!
+  creditCard(creditCardId: String!): CreditCard
+  creditCards: [CreditCard!]!
   groups: [Group!]
   group(groupId: String!): Group
-  creditCard(creditCardId: String!): CreditCard
 }
 
 type Mutation {
   newBankAccount(name: String!): BankAccount!
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
-  newTransacation(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String!, categoryId: String): Transaction!
+  newTransacation(
+    transactionType: String!
+    date: String!
+    value: Float!
+    description: String
+    bankAccountId: String
+    creditCardId: String
+    categoryId: String
+  ): Transaction!
   newCategory(name: String!, color: String!): Category!
   editCategory(id: String!, name: String!, color: String!): Category!
   deleteCategory(categoryId: String!): Boolean!
-  createInvite(groupId: String!): String!
-  useInvite(invite: String!): String
-  updateGroup(id: String!, name: String!): Group
   newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   deleteCreditCard(creditCardId: String!): Boolean!
+  createInvite(groupId: String!): String!
+  useInvite(invite: String!): String
+  updateGroup(id: String!, name: String!): Group
 }
 
 type Subscription {
   userCategoryCreated: Category
   userCategoryUpdated: Category
   userCategoryDeleted: Category
+  creditCardCreated: CreditCard
+  creditCardUpdated: CreditCard
+  creditCardDeleted: CreditCard
   groupUpdated(groupId: String!): Group
 }

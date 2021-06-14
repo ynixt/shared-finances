@@ -5,7 +5,6 @@ import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { CreditCard } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { CreditCardDispatchers } from 'src/app/store';
 import { CreditCardService } from '../credit-card.service';
 
 @Component({
@@ -17,7 +16,6 @@ export class NewCreditCardComponent implements OnInit {
   constructor(
     private creditCardService: CreditCardService,
     private router: Router,
-    private creditCardDispatchers: CreditCardDispatchers,
     private toast: HotToastService,
     private translocoService: TranslocoService,
     private errorService: ErrorService,
@@ -26,7 +24,7 @@ export class NewCreditCardComponent implements OnInit {
   ngOnInit(): void {}
 
   async newCreditCard(creditCardInput: CreditCard): Promise<void> {
-    const creditCardSaved = await this.creditCardService
+    await this.creditCardService
       .newCreditCard(creditCardInput)
       .pipe(
         take(1),
@@ -41,7 +39,6 @@ export class NewCreditCardComponent implements OnInit {
       )
       .toPromise();
 
-    this.creditCardDispatchers.creditCardAdded(creditCardSaved);
     this.router.navigateByUrl('/credit');
   }
 }

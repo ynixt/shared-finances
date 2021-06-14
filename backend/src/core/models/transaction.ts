@@ -19,8 +19,24 @@ export class Transaction {
   id: string;
 
   @Field()
-  @Prop({ type: MongooseSchema.Types.ObjectId, index: true, required: true })
-  bankAccountId: string;
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    index: true,
+    required: function () {
+      return this.creditCardId == null;
+    },
+  })
+  bankAccountId?: string;
+
+  @Field()
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    index: true,
+    required: function () {
+      return this.bankAccountId == null;
+    },
+  })
+  creditCardId?: string;
 
   @Field()
   @Prop({ index: true, required: true })

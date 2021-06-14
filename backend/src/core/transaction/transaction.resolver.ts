@@ -14,8 +14,8 @@ export class TransactionResolver {
 
   @Mutation(() => Transaction)
   @UseGuards(GqlFirebaseAuthGuard)
-  newTransacation(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newBankAccountArgs: NewTransactionArgs): Promise<Transaction> {
-    return this.transactionService.create(user.id, newBankAccountArgs);
+  newTransacation(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
+    return this.transactionService.create(user.id, newTransactionArgs);
   }
 
   @ResolveField()
