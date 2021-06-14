@@ -6,6 +6,7 @@ import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { take } from 'rxjs/operators';
+import { ConnectionParams, MessageTypes, SubscriptionClient } from 'subscriptions-transport-ws';
 
 const uri = '/api/graphql'; // <-- add the URL of the GraphQL server here
 export function createApollo(httpLink: HttpLink, angularFireAuth: AngularFireAuth): ApolloClientOptions<any> {
@@ -13,20 +14,67 @@ export function createApollo(httpLink: HttpLink, angularFireAuth: AngularFireAut
     uri,
   });
 
-  const ws = new WebSocketLink({
-    uri: `ws://localhost:3000/graphql`,
-    options: {
-      reconnect: true,
-      connectionParams: async () => {
-        const user = await angularFireAuth.user.pipe(take(1)).toPromise();
-        const token = await user?.getIdToken();
+  let alreadyConfigured = false;
 
-        return {
-          Authorization: `Bearer ${token}`,
-        };
-      },
+  const subscriptionClient = new SubscriptionClient(`ws://localhost:3000/graphql`, {
+    reconnect: true,
+    connectionParams: async () => {
+      const user = await angularFireAuth.user.pipe(take(1)).toPromise();
+      const token = await user?.getIdToken();
+
+      alreadyConfigured = true;
+
+      return {
+        Authorization: `Bearer ${token}`,
+      };
     },
   });
+
+  angularFireAuth.user.subscribe(() => {
+    if (alreadyConfigured) {
+      subscriptionClient.close();
+
+      // Reconnect to the server.
+      subscriptionClient['connect']();
+
+      // Reregister all subscriptions.
+      Object.keys(subscriptionClient.operations).forEach(id => {
+        subscriptionClient['sendMessage'](id, MessageTypes.GQL_START, subscriptionClient.operations[id].options);
+      });
+    }
+  });
+
+  // subscriptionClient.use([
+  //   {
+  //     applyMiddleware(operationOptions, next) {
+  //       new Promise(async resolve => {
+  //         const user = await angularFireAuth.user.pipe(take(1)).toPromise();
+  //         const token = await user?.getIdToken();
+
+  //         operationOptions['Authorization'] = token;
+
+  //         next();
+  //       });
+  //     },
+  //   },
+  // ]);
+
+  const ws = new WebSocketLink(subscriptionClient);
+
+  // const ws = new WebSocketLink({
+  //   uri: `ws://localhost:3000/graphql`,
+  //   options: {
+  //     reconnect: true,
+  //     connectionParams: async () => {
+  //       const user = await angularFireAuth.user.pipe(take(1)).toPromise();
+  //       const token = await user?.getIdToken();
+
+  //       return {
+  //         Authorization: `Bearer ${token}`,
+  //       };
+  //     },
+  //   },
+  // });
 
   const link = split(
     // split based on operation type
@@ -44,6 +92,17 @@ export function createApollo(httpLink: HttpLink, angularFireAuth: AngularFireAut
   return {
     link,
     cache: new InMemoryCache(),
+    defaultOptions: {
+      query: {
+        fetchPolicy: 'no-cache',
+      },
+      mutate: {
+        fetchPolicy: 'no-cache',
+      },
+      watchQuery: {
+        fetchPolicy: 'cache-and-network',
+      },
+    },
   };
 }
 

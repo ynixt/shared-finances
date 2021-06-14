@@ -3,3 +3,4 @@ export * from './auth-type';
 export * from './credit-card';
 export * from './bank-account';
 export * from './transaction';
+export * from './category';

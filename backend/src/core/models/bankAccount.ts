@@ -11,7 +11,7 @@ export class BankAccount {
   id: string;
 
   @Field()
-  @Prop({ unique: true, required: true })
+  @Prop({ required: true })
   name: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, index: true, required: true })

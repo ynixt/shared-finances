@@ -32,6 +32,7 @@ import { registerLocaleData } from '@angular/common';
 import { ErrorService } from './services/error.service';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS } from '@angular/material/core';
+import { UserCategoryService } from './services/user-category.service';
 
 registerLocaleData(localePt, 'pt');
 
@@ -77,6 +78,7 @@ registerLocaleData(localePt, 'pt');
       },
     },
     ErrorService,
+    UserCategoryService,
   ],
   exports: [TranslocoRootModule],
 })

@@ -3,8 +3,6 @@ import { TransactionType } from '../transaction';
 
 @ArgsType()
 export class NewTransactionArgs {
-  id?: string;
-
   @Field()
   transactionType: TransactionType;
 

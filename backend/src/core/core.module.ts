@@ -8,6 +8,7 @@ import { GroupModule } from './group/group.module';
 import { CreditCardModule } from './credit-card/credit-card.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
 import { TransactionModule } from './transaction/transaction.module';
+import { CategoryModule } from './category/category.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TransactionModule } from './transaction/transaction.module';
     CreditCardModule,
     BankAccountModule,
     TransactionModule,
+    CategoryModule,
   ],
   providers: [],
 })

@@ -42,9 +42,8 @@ export class AuthService {
       .pipe(map(result => (result.errors || result.data == null || result.data.user == null ? null : result.data.user)));
   }
 
-  public loginThenGetCurrentUser(type: AuthType): Observable<User | null> {
-    return from(this.login(type)).pipe(
-      switchMap(() => this.getCurrentUser()),
+  public login(type: AuthType): Observable<User | null> {
+    return from(this._login(type)).pipe(
       catchError(error => {
         this.authDispatchers.logout();
         return of(error);
@@ -52,7 +51,7 @@ export class AuthService {
     );
   }
 
-  private async login(type: AuthType): Promise<void> {
+  private async _login(type: AuthType): Promise<void> {
     let userCredentials: firebase.auth.UserCredential;
 
     switch (type) {

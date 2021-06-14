@@ -1,0 +1,11 @@
+<ng-container *transloco="let t">
+  <div class="content edit-category-page">
+    <app-title-bar [title]="t('edit-category')"></app-title-bar>
+
+    <app-form-category *ngIf="category; else loading" [category]="category" (categorySaved)="edit($event)"> </app-form-category>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
+</ng-template>

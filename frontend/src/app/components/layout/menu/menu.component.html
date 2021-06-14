@@ -11,18 +11,29 @@
     <span class="item" matLine> <mat-icon>account_balance</mat-icon> {{ t('bank-accounts') }} </span>
   </mat-list-item>
 
-  <mat-list-item>
-    <span class="item" matLine> <mat-icon>person</mat-icon> {{ t('individual') }} </span>
-  </mat-list-item>
+  <mat-expansion-panel class="mat-elevation-z0">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <span class="item father" matLine> <mat-icon>person</mat-icon> {{ t('individual') }} </span>
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <mat-list-item routerLink="/category" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">
+      <span class="item child" matLine>
+        {{ t('categories') }}
+      </span>
+    </mat-list-item>
+  </mat-expansion-panel>
 
   <mat-expansion-panel class="mat-elevation-z0">
     <mat-expansion-panel-header>
       <mat-panel-title>
-        <span class="item father" matLine routerLink="/finances/shared" routerLinkActive="active" #groupsRla="routerLinkActive">
+        <span class="item father" matLine routerLink="/finances/shared" routerLinkActive="active">
           <mat-icon>groups</mat-icon> {{ t('shared') }}
         </span>
       </mat-panel-title>
     </mat-expansion-panel-header>
+
     <mat-list-item routerLink="/finances/shared" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">
       <span class="item child" matLine>
         {{ t('dashboard') }}

@@ -28,6 +28,11 @@ const routes: Routes = [
     canActivate: [PermissionGuard],
   },
   {
+    path: 'category',
+    loadChildren: () => import('./pages/category/category.module').then(m => m.CategoryModule),
+    canActivate: [PermissionGuard],
+  },
+  {
     path: '404',
     component: NotFoundComponent,
   },

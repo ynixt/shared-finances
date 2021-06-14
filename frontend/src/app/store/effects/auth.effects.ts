@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { of, from } from 'rxjs';
-import { switchMap, map, catchError } from 'rxjs/operators';
+import { switchMap, map, catchError, filter } from 'rxjs/operators';
 import { AuthService } from 'src/app/@core/services';
-import { AuthActions, BankAccountActions, CreditCardActions } from '../actions';
+import { AuthActions, BankAccountActions, CreditCardActions, UserCategoryActions } from '../actions';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +11,7 @@ import { AuthActions, BankAccountActions, CreditCardActions } from '../actions';
 export class AuthEffects {
   constructor(private actions$: Actions, private authService: AuthService) {}
 
-  isLogged$ = createEffect(() =>
+  getCurrentUser$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.getCurrentUser),
       switchMap(() =>
@@ -27,8 +27,8 @@ export class AuthEffects {
     this.actions$.pipe(
       ofType(AuthActions.login),
       switchMap(action =>
-        from(this.authService.loginThenGetCurrentUser(action.authType)).pipe(
-          map(user => AuthActions.authSuccess({ user })),
+        from(this.authService.login(action.authType)).pipe(
+          map(() => AuthActions.getCurrentUser()),
           catchError(error => of(AuthActions.authError({ error }))),
         ),
       ),
@@ -38,6 +38,7 @@ export class AuthEffects {
   authSuccessCreditCard$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.authSuccess),
+      filter(authState => authState.user != null),
       map(authState => CreditCardActions.getCreditCardsSuccess({ creditCards: authState.user.creditCards })),
       catchError(error => of(BankAccountActions.getBankAccountsError({ error }))),
     ),
@@ -46,8 +47,18 @@ export class AuthEffects {
   authSuccessBankAccount$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.authSuccess),
+      filter(authState => authState.user != null),
       map(authState => BankAccountActions.getBankAccountsSuccess({ bankAccounts: authState.user.bankAccounts })),
       catchError(error => of(BankAccountActions.getBankAccountsError({ error }))),
+    ),
+  );
+
+  authSuccessUserCategory$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.authSuccess),
+      filter(authState => authState.user != null),
+      map(authState => UserCategoryActions.getUserCategories({ userId: authState.user.id })),
+      catchError(error => of(UserCategoryActions.getUserCategoriesError({ error }))),
     ),
   );
 }

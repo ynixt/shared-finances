@@ -36,6 +36,7 @@
     "apollo-angular": "^2.6.0",
     "firebase": "^7.0 || ^8.0",
     "graphql": "^15.0.0",
+    "invert-color": "^2.0.0",
     "moment": "^2.29.1",
     "ng2-currency-mask": "^11.0.0",
     "rxjs": "~6.6.0",

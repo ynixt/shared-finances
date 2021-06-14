@@ -1,0 +1,7 @@
+<ng-container *transloco="let t">
+  <div class="content new-credit-card-page">
+    <app-title-bar [title]="t('new-credit-card')"></app-title-bar>
+
+    <app-form-category (categorySaved)="newCategory($event)"></app-form-category>
+  </div>
+</ng-container>

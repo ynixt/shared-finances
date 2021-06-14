@@ -1,0 +1,44 @@
+<ng-container *transloco="let t">
+  <div class="content category-page">
+    <ng-container *ngIf="categories.length > 0; else noCreditCard">
+      <app-title-bar [title]="t('categories')">
+        <div right>
+          <a routerLink="new" mat-icon-button aria-label="Edit" [title]="t('new-category')">
+            <mat-icon>add</mat-icon>
+          </a>
+        </div>
+      </app-title-bar>
+
+      <div class="credit-cards grid md:grid-cols-2 md:gap-4">
+        <mat-card
+          class="credit-card"
+          *ngFor="let category of categories"
+          [style.background]="category.color"
+          [style.color]="getFontColor(category)"
+        >
+          <mat-card-header class="items-center mb-1">
+            <mat-icon mat-card-avatar class="w-auto h-auto">category</mat-icon>
+            <mat-card-title class="mb-0 break-all">{{ category.name }}</mat-card-title>
+            <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <a routerLink="{{ category.id }}/edit" mat-menu-item>
+                <mat-icon>edit</mat-icon>
+                <span>{{ t('edit') }}</span>
+              </a>
+              <button (click)="delete(category)" mat-menu-item>
+                <mat-icon>delete</mat-icon>
+                <span>{{ t('delete') }}</span>
+              </button>
+            </mat-menu>
+          </mat-card-header>
+        </mat-card>
+      </div>
+    </ng-container>
+  </div>
+
+  <ng-template #noCreditCard>
+    <app-no-item [text]="t('no-credit-cards')" [buttonText]="'new-credit-card' | transloco" buttonRouterLink="new"> </app-no-item>
+  </ng-template>
+</ng-container>

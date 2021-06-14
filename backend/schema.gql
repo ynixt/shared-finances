@@ -42,11 +42,19 @@ type Transaction {
   description: String
 }
 
+type Category {
+  id: ID!
+  name: String!
+  color: String!
+}
+
 type Query {
   user: User
   groups: [Group!]
   group(groupId: String!): Group
   creditCard(creditCardId: String!): CreditCard
+  categories: [Category!]!
+  category(categoryId: String!): Category!
 }
 
 type Mutation {
@@ -60,8 +68,14 @@ type Mutation {
   newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   deleteCreditCard(creditCardId: String!): Boolean!
+  newCategory(name: String!, color: String!): Category!
+  editCategory(id: String!, name: String!, color: String!): Category!
+  deleteCategory(categoryId: String!): Boolean!
 }
 
 type Subscription {
   groupUpdated(groupId: String!): Group
+  userCategoryCreated: Category
+  userCategoryUpdated: Category
+  userCategoryDeleted: Category
 }
