@@ -7,14 +7,17 @@
 >
   <div class="p-4">
     <form class="grid" [formGroup]="formGroup" (ngSubmit)="newTransacation()">
-      <mat-button-toggle-group class="mb-4" formControlName="transactionType">
-        <mat-button-toggle class="flex-1 transaction-type revenue" [value]="transactionTypeEnum.Revenue">
+      <mat-button-toggle-group class="flex-wrap md:flex-nowrap mb-4" formControlName="transactionType">
+        <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type revenue" [value]="transactionTypeEnum.Revenue">
           <mat-icon class="mr-2">trending_up</mat-icon> <span class="name">{{ t('revenue') }}</span>
         </mat-button-toggle>
-        <mat-button-toggle class="flex-1 transaction-type expense" [value]="transactionTypeEnum.Expense">
+        <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type expense" [value]="transactionTypeEnum.Expense">
           <mat-icon class="mr-2">trending_down</mat-icon> <span class="name">{{ t('expense') }}</span>
         </mat-button-toggle>
-        <mat-button-toggle class="flex-1 transaction-type transfer" [value]="transactionTypeEnum.Transfer">
+        <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type credit-card" [value]="transactionTypeEnum.CreditCard">
+          <mat-icon class="mr-2">credit_card</mat-icon> <span class="name">{{ t('credit-card') }}</span>
+        </mat-button-toggle>
+        <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type transfer" [value]="transactionTypeEnum.Transfer">
           <mat-icon class="mr-2">sync_alt</mat-icon> <span class="name">{{ t('transfer') }}</span>
         </mat-button-toggle>
       </mat-button-toggle-group>

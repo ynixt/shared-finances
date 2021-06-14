@@ -23,6 +23,17 @@ $transaction-type-bg-transparentize: 0.7;
   }
 }
 
+.credit-card {
+  $color: #212121;
+
+  background: transparentize($color, $transaction-type-bg-transparentize);
+  color: #fff !important;
+
+  &.mat-button-toggle-checked {
+    background: $color;
+  }
+}
+
 .transfer {
   $color: #1a237e;
 
@@ -35,14 +46,6 @@ $transaction-type-bg-transparentize: 0.7;
 }
 
 .transaction-type {
-  .name {
-    display: none;
-
-    @screen md {
-      display: inline;
-    }
-  }
-
   &.mat-button-toggle-checked {
     font-weight: 500 !important;
 

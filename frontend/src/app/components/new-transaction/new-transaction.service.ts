@@ -1,4 +1,5 @@
 import { DragRef } from '@angular/cdk/drag-drop';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Injectable, Renderer2 } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
 import { IDraggableRefs, ResizableDraggableDialog, TdDialogService } from '@covalent/core/dialogs';
@@ -12,9 +13,11 @@ import { NewTransactionComponent } from './new-transaction.component';
   providedIn: 'root',
 })
 export class NewTransactionService {
-  constructor(private dialogService: TdDialogService, private apollo: Apollo) {}
+  constructor(private dialogService: TdDialogService, private apollo: Apollo, private breakpointObserver: BreakpointObserver) {}
 
   openDialog(document: any, renderer2: Renderer2): MatDialogRef<NewTransactionComponent, any> {
+    const isMobile = this.breakpointObserver.isMatched([Breakpoints.Small, Breakpoints.XSmall]);
+
     const { matDialogRef, dragRefSubject }: IDraggableRefs<NewTransactionComponent> = this.dialogService.openDraggable({
       component: NewTransactionComponent,
       dragHandleSelectors: ['mat-toolbar'],
@@ -25,13 +28,15 @@ export class NewTransactionService {
 
     matDialogRef.componentInstance.closed.subscribe(() => matDialogRef.close());
 
-    let resizableDraggableDialog: ResizableDraggableDialog;
-    dragRefSubject.subscribe((dragRf: DragRef) => {
-      resizableDraggableDialog = new ResizableDraggableDialog(document, renderer2, matDialogRef, dragRf);
-    });
+    if (isMobile === false) {
+      let resizableDraggableDialog: ResizableDraggableDialog;
+      dragRefSubject.subscribe((dragRf: DragRef) => {
+        resizableDraggableDialog = new ResizableDraggableDialog(document, renderer2, matDialogRef, dragRf);
+      });
 
-    // Detach resize-ability event listeners after dialog closes
-    matDialogRef.afterClosed().subscribe(() => resizableDraggableDialog.detach());
+      // Detach resize-ability event listeners after dialog closes
+      matDialogRef.afterClosed().subscribe(() => resizableDraggableDialog.detach());
+    }
 
     return matDialogRef;
   }

@@ -32,14 +32,16 @@ button:focus {
 }
 
 .td-window-dialog {
-  width: 95vw;
+  width: 99vw;
   height: 95vh;
-  max-width: 95vw !important;
+  max-width: 99vw !important;
   max-height: 95vh !important;
 
   @screen md {
     width: 50vw;
     height: 70vh;
+    max-width: 95vw !important;
+    max-height: 95vh !important;
   }
 
   .mat-toolbar-row > div {
