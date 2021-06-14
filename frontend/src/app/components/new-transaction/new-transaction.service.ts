@@ -36,32 +36,46 @@ export class NewTransactionService {
     return matDialogRef;
   }
 
-  newTransaction(bankAccount: Partial<Transaction>): Observable<Transaction> {
+  newTransaction(transacation: Partial<Transaction>): Observable<Transaction> {
     return this.apollo
       .mutate<{ newTransacation: Transaction }>({
         mutation: gql`
-          mutation($transactionType: String!, $date: String!, $value: Float!, $description: String!, $bankAccountId: String!) {
+          mutation(
+            $transactionType: String!
+            $date: String!
+            $value: Float!
+            $description: String!
+            $bankAccountId: String!
+            $categoryId: String!
+          ) {
             newTransacation(
               transactionType: $transactionType
               date: $date
               value: $value
               description: $description
               bankAccountId: $bankAccountId
+              categoryId: $categoryId
             ) {
               id
               transactionType
               date
               value
               description
+              category {
+                id
+                name
+                color
+              }
             }
           }
         `,
         variables: {
-          transactionType: bankAccount.transactionType,
-          date: bankAccount.date,
-          value: bankAccount.value,
-          description: bankAccount.description,
-          bankAccountId: bankAccount.bankAccountId,
+          transactionType: transacation.transactionType,
+          date: transacation.date,
+          value: transacation.value,
+          description: transacation.description,
+          bankAccountId: transacation.bankAccountId,
+          categoryId: transacation.categoryId,
         },
       })
       .pipe(

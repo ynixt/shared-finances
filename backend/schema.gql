@@ -32,6 +32,12 @@ type User {
   bankAccounts: [BankAccount!]
 }
 
+type Category {
+  id: ID!
+  name: String!
+  color: String!
+}
+
 type Transaction {
   id: ID!
   bankAccountId: String!
@@ -40,42 +46,45 @@ type Transaction {
   date: String!
   value: Float!
   description: String
-}
-
-type Category {
-  id: ID!
-  name: String!
-  color: String!
+  categoryId: String
+  category: Category
 }
 
 type Query {
   user: User
+  categories: [Category!]!
+  category(categoryId: String!): Category!
   groups: [Group!]
   group(groupId: String!): Group
   creditCard(creditCardId: String!): CreditCard
-  categories: [Category!]!
-  category(categoryId: String!): Category!
 }
 
 type Mutation {
   newBankAccount(name: String!): BankAccount!
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
-  newTransacation(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String!): Transaction!
+  newTransacation(
+    transactionType: String!
+    date: String!
+    value: Float!
+    description: String
+    bankAccountId: String!
+    categoryId: String
+  ): Transaction!
+  newCategory(name: String!, color: String!): Category!
+  editCategory(id: String!, name: String!, color: String!): Category!
+  deleteCategory(categoryId: String!): Boolean!
   createInvite(groupId: String!): String!
   useInvite(invite: String!): String
   updateGroup(id: String!, name: String!): Group
   newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   deleteCreditCard(creditCardId: String!): Boolean!
-  newCategory(name: String!, color: String!): Category!
-  editCategory(id: String!, name: String!, color: String!): Category!
-  deleteCategory(categoryId: String!): Boolean!
 }
 
 type Subscription {
-  groupUpdated(groupId: String!): Group
   userCategoryCreated: Category
   userCategoryUpdated: Category
   userCategoryDeleted: Category
+  groupUpdated(groupId: String!): Group
 }

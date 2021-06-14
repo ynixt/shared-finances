@@ -37,6 +37,22 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline">
+        <mat-label>{{ t('category') }}</mat-label>
+        <input
+          type="text"
+          [placeholder]="t('transaction-category-placeholder')"
+          matInput
+          formControlName="category"
+          [matAutocomplete]="auto"
+        />
+        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [displayWith]="formatCategory">
+          <mat-option *ngFor="let category of filteredCategories$ | async" [value]="category">
+            {{ category.name }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
         <mat-label>{{ t('bank-account') }}</mat-label>
         <mat-select required formControlName="bankAccount">
           <mat-option>{{ t('mat-select-none') }}</mat-option>

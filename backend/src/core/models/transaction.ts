@@ -1,6 +1,7 @@
 import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Category } from './category';
 
 export type TransactionDocument = Transaction & Document;
 
@@ -39,6 +40,13 @@ export class Transaction {
   @Field({ nullable: true })
   @Prop({ maxlength: 50 })
   description?: string;
+
+  @Field({ nullable: true })
+  @Prop()
+  categoryId?: string;
+
+  @Field(() => Category, { nullable: true })
+  category?: Category;
 }
 
 export const TransacationSchema = SchemaFactory.createForClass(Transaction);

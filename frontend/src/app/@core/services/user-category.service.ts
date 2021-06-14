@@ -69,7 +69,7 @@ export class UserCategoryService {
     return this.apollo
       .mutate<{ newCategory: Category }>({
         mutation: gql`
-          mutation ($name: String!, $color: String!) {
+          mutation($name: String!, $color: String!) {
             newCategory(name: $name, color: $color) {
               id
               name
@@ -92,7 +92,7 @@ export class UserCategoryService {
     return this.apollo
       .mutate<{ editCategory: Category }>({
         mutation: gql`
-          mutation ($id: String!, $name: String!, $color: String!) {
+          mutation($id: String!, $name: String!, $color: String!) {
             editCategory(id: $id, name: $name, color: $color) {
               id
               name
@@ -139,7 +139,7 @@ export class UserCategoryService {
     return this.apollo
       .mutate<{ deleteCategory: boolean }>({
         mutation: gql`
-          mutation ($categoryId: String!) {
+          mutation($categoryId: String!) {
             deleteCategory(categoryId: $categoryId)
           }
         `,

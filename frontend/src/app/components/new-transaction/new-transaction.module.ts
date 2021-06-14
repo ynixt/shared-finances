@@ -5,6 +5,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { CovalentDialogsModule } from '@covalent/core/dialogs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 import { NewTransactionComponent } from './new-transaction.component';
 import { SharedModule } from 'src/app/shared';
@@ -26,6 +27,7 @@ import { MatSelectModule } from '@angular/material/select';
     MatDatepickerModule,
     CurrencyMaskModule,
     MatSelectModule,
+    MatAutocompleteModule,
   ],
   providers: [NewTransactionService],
 })

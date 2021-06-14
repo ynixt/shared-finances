@@ -17,4 +17,7 @@ export class NewTransactionArgs {
 
   @Field()
   bankAccountId: string;
+
+  @Field({ nullable: true })
+  categoryId?: string;
 }
