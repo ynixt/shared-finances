@@ -1,15 +1,19 @@
 import { Document } from 'mongoose';
-import { MongoRepository } from './mongo-repository';
+import { MongoRepository, MongoRepositoryOptions } from './mongo-repository';
 
 export abstract class MongoDefaultRepository<TDomain, TDocument extends Document & TDomain> extends MongoRepository<TDomain, TDocument> {
-  async create(domain: Partial<TDomain>): Promise<TDomain> {
-    const createdUser = await this.model.create(domain);
+  async create(domain: Partial<TDomain>, opts?: MongoRepositoryOptions): Promise<TDomain> {
+    const domainsCreated = await this.model.create([domain], opts);
 
-    return this.getById(createdUser.id);
+    if (domainsCreated.length === 1) {
+      return this.getById(domainsCreated[0].id, opts);
+    }
+
+    return null;
   }
 
-  public async getById(id: string): Promise<TDomain> {
-    const document = await this.model.findById(id).exec();
+  public async getById(id: string, opts?: MongoRepositoryOptions): Promise<TDomain> {
+    const document = await this.model.findById(id, undefined, opts).exec();
 
     return document;
   }

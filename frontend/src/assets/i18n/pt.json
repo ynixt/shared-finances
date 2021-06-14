@@ -50,6 +50,7 @@
   "closing-day": "Dia do fechamento",
   "payment-day": "Dia do vencimento",
   "bank-account": "Conta bancária",
+  "bank-account-destiny": "Conta bancária destino",
   "bank-accounts": "Contas bancárias",
   "no-bank-accounts": "Nenhuma conta bancária foi cadastrada. Que tal cadastrar a primeira?",
   "new-bank-account": "Nova conta bancária",

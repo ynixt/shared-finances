@@ -8,6 +8,7 @@ export interface Transaction {
   value: number;
   description?: string;
   bankAccountId?: string;
+  bankAccount2Id?: string;
   creditCardId?: string;
   categoryId?: string;
   category?: Category;

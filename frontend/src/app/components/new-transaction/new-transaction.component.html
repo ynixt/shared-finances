@@ -55,13 +55,37 @@
         </mat-autocomplete>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" *ngIf="transactionType !== transactionTypeEnum.CreditCard">
         <mat-label>{{ t('bank-account') }}</mat-label>
-        <mat-select required formControlName="bankAccount">
+        <mat-select formControlName="bankAccount">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
           <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person">
             <mat-option *ngFor="let account of accountsPerson.accounts" [value]="account.id">
               {{ account.name }}
+            </mat-option>
+          </mat-optgroup>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.Transfer">
+        <mat-label>{{ t('bank-account-destiny') }}</mat-label>
+        <mat-select formControlName="bankAccount2">
+          <mat-option>{{ t('mat-select-none') }}</mat-option>
+          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person">
+            <mat-option *ngFor="let account of accountsPerson.accounts" [value]="account.id">
+              {{ account.name }}
+            </mat-option>
+          </mat-optgroup>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.CreditCard">
+        <mat-label>{{ t('credit-card') }}</mat-label>
+        <mat-select formControlName="creditCard">
+          <mat-option>{{ t('mat-select-none') }}</mat-option>
+          <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person">
+            <mat-option *ngFor="let creditCard of creditsPerson.creditCards" [value]="creditCard.id">
+              {{ creditCard.name }}
             </mat-option>
           </mat-optgroup>
         </mat-select>

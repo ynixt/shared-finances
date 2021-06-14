@@ -70,6 +70,7 @@ type Mutation {
     value: Float!
     description: String
     bankAccountId: String
+    bankAccount2Id: String
     creditCardId: String
     categoryId: String
   ): Transaction!

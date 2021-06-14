@@ -19,7 +19,7 @@ export function createCurrencyMaskConfig(): CurrencyMaskConfig {
 
   return {
     align: 'left',
-    allowNegative: false,
+    allowNegative: true,
     decimal: decimalSeparator,
     precision: 2,
     prefix: `${currencySymbol} `,

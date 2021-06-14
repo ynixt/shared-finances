@@ -23,7 +23,7 @@ export class Transaction {
     type: MongooseSchema.Types.ObjectId,
     index: true,
     required: function () {
-      return this.creditCardId == null;
+      return this.transactionType !== TransactionType.CreditCard;
     },
   })
   bankAccountId?: string;
@@ -33,7 +33,7 @@ export class Transaction {
     type: MongooseSchema.Types.ObjectId,
     index: true,
     required: function () {
-      return this.bankAccountId == null;
+      return this.transactionType === TransactionType.CreditCard;
     },
   })
   creditCardId?: string;

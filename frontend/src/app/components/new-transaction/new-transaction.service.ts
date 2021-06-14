@@ -49,9 +49,11 @@ export class NewTransactionService {
             $transactionType: String!
             $date: String!
             $value: Float!
-            $description: String!
-            $bankAccountId: String!
-            $categoryId: String!
+            $description: String
+            $bankAccountId: String
+            $bankAccount2Id: String
+            $categoryId: String
+            $creditCardId: String
           ) {
             newTransacation(
               transactionType: $transactionType
@@ -59,7 +61,9 @@ export class NewTransactionService {
               value: $value
               description: $description
               bankAccountId: $bankAccountId
+              bankAccount2Id: $bankAccount2Id
               categoryId: $categoryId
+              creditCardId: $creditCardId
             ) {
               id
               transactionType
@@ -80,7 +84,9 @@ export class NewTransactionService {
           value: transacation.value,
           description: transacation.description,
           bankAccountId: transacation.bankAccountId,
+          bankAccount2Id: transacation.bankAccount2Id,
           categoryId: transacation.categoryId,
+          creditCardId: transacation.creditCardId,
         },
       })
       .pipe(
