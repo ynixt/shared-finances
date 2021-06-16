@@ -14,10 +14,14 @@ import { GENERIC_CATEGORY_URL_TOKEN } from '..';
   styleUrls: ['./new-category.component.scss'],
 })
 export class NewCategoryComponent implements OnInit {
-  get individualBreadcrumbUrl() {
+  get individualSharedBreadcrumbUrl() {
     const urls = this.categoryUrl.split('/').slice(0, 3);
     urls[0] = '/' + urls[0];
     return urls;
+  }
+
+  get isIndividual() {
+    return this.categoryUrl.includes('/single/');
   }
 
   get categoriesBreadcrumbUrl() {

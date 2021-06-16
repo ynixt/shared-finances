@@ -23,9 +23,8 @@ const routes: Routes = [
     },
   },
   {
-    path: ':id',
-    component: GroupSinglePageComponent,
-    canActivate: [TitleGuard],
+    path: 'category',
+    loadChildren: () => import('./shared-category/shared-category.module').then(m => m.SharedCategoryModule),
   },
   {
     path: 'invite/:inviteId',
@@ -34,6 +33,11 @@ const routes: Routes = [
     data: {
       title: 'invite',
     },
+  },
+  {
+    path: ':id',
+    component: GroupSinglePageComponent,
+    canActivate: [TitleGuard],
   },
 ];
 
