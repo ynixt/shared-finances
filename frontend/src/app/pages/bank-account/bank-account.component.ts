@@ -82,7 +82,7 @@ export class BankAccountComponent implements OnInit {
       .pipe(take(1))
       .toPromise();
 
-    if (inputName !== bankAccount.name) {
+    if (inputName && inputName !== bankAccount.name) {
       const nameChanged = (
         await this.bankAccountService
           .changeBankAccountName(bankAccount.id, inputName)

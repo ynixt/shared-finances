@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NotFoundComponent } from './pages/errors';
+import { TitleGuard } from './shared';
 import { PermissionGuard } from './shared/permission.guard';
 
 const routes: Routes = [
@@ -20,6 +21,10 @@ const routes: Routes = [
   {
     path: '404',
     component: NotFoundComponent,
+    canActivate: [TitleGuard],
+    data: {
+      title: 'error-404.title',
+    },
   },
   {
     path: '**',

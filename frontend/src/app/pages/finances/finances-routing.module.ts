@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { TitleGuard } from 'src/app/shared';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { FinancesComponent } from './finances.component';
 
@@ -11,6 +12,10 @@ const routes: Routes = [
       {
         path: '',
         component: DashboardComponent,
+        canActivate: [TitleGuard],
+        data: {
+          title: 'finances',
+        },
       },
       {
         path: 'single',

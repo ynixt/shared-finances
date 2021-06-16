@@ -6,6 +6,7 @@ import { Group } from 'src/app/@core/models/group';
 import { GroupsService } from '../groups.service';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
+import { TitleService } from 'src/app/@core/services';
 
 @Component({
   selector: 'app-group-single-page',
@@ -26,6 +27,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     private dialogService: TdDialogService,
     private translocoService: TranslocoService,
     private router: Router,
+    private titleService: TitleService,
   ) {}
 
   ngOnInit(): void {
@@ -92,6 +94,10 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     }
 
     const group = await this.groupsService.getGroup(groupId);
+
+    this.titleService.changeTitle('group-name', {
+      name: group.name,
+    });
 
     if (!group) {
       this.router.navigateByUrl('/404');
