@@ -1,13 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { CategoryComponent } from './category.component';
-import { EditCategoryComponent } from './edit-category/edit-category.component';
-import { NewCategoryComponent } from './new-category/new-category.component';
+import { EditCategoryComponent, NewCategoryComponent } from 'src/app/components/category';
+import { UserCategoryComponent } from './user-category.component';
 
 const routes: Routes = [
   {
     path: '',
-    component: CategoryComponent,
+    component: UserCategoryComponent,
   },
   {
     path: 'new',
@@ -23,4 +22,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class CategoryRoutingModule {}
+export class UserCategoryRoutingModule {}

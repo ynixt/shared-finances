@@ -1,36 +1,38 @@
 import invert from 'invert-color';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Category } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { UserCategorySelectors } from 'src/app/store/services/selectors';
-import { UserCategoryService } from 'src/app/@core/services';
+import { GenericCategoryService } from './generic-category.service';
 
-@UntilDestroy()
 @Component({
   selector: 'app-category',
   templateUrl: './category.component.html',
   styleUrls: ['./category.component.scss'],
 })
 export class CategoryComponent implements OnInit {
-  categories: Category[] = [];
+  private _categories: Category[] = [];
+
+  @Input() set categories(categories: Category[]) {
+    this._categories = [...(categories || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
+  }
+
+  get categories() {
+    return this._categories;
+  }
 
   constructor(
-    private userCategoryService: UserCategoryService,
+    private categoryService: GenericCategoryService,
     private dialogService: TdDialogService,
     private translocoService: TranslocoService,
     private toast: HotToastService,
     private errorService: ErrorService,
-    private userCategorySelectors: UserCategorySelectors,
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    this.userCategorySelectors.categories$.pipe(untilDestroyed(this)).subscribe(categories => this.fillCategories(categories));
-  }
+  ngOnInit(): void {}
 
   async delete(category: Category): Promise<void> {
     const confirm = await this.dialogService
@@ -46,7 +48,7 @@ export class CategoryComponent implements OnInit {
       .toPromise();
     if (confirm) {
       this.toast.observe;
-      await this.userCategoryService
+      await this.categoryService
         .deleteCategory(category.id)
         .pipe(
           take(1),
@@ -65,9 +67,5 @@ export class CategoryComponent implements OnInit {
 
   getFontColor(category: Category): string {
     return invert(category.color, true);
-  }
-
-  private fillCategories(categories: Category[]): void {
-    this.categories = [...(categories || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
   }
 }

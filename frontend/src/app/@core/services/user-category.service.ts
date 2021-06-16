@@ -3,6 +3,7 @@ import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { EmptyObject } from 'apollo-angular/types';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
+import { GenericCategoryService } from 'src/app/components/category';
 
 import { Category } from '../models';
 
@@ -37,7 +38,7 @@ const USER_CATEGORY_DELETED_SUBSCRIPTION = gql`
 @Injectable({
   providedIn: 'root',
 })
-export class UserCategoryService {
+export class UserCategoryService extends GenericCategoryService {
   private categoriesQueryRef: QueryRef<
     {
       categories: Category[];
@@ -45,7 +46,9 @@ export class UserCategoryService {
     EmptyObject
   >;
 
-  constructor(private apollo: Apollo) {}
+  constructor(private apollo: Apollo) {
+    super();
+  }
 
   watchCategories(): Observable<Category[]> {
     this.categoriesQueryRef = this.apollo.watchQuery<{ categories: Category[] }>({

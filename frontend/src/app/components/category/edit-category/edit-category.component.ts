@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { Category } from 'src/app/@core/models';
 import { UserCategoryService, ErrorService } from 'src/app/@core/services';
+import { GENERIC_CATEGORY_URL_TOKEN } from '..';
+import { GenericCategoryService } from '../generic-category.service';
 
 @Component({
   selector: 'app-edit-category',
@@ -17,18 +19,19 @@ export class EditCategoryComponent implements OnInit {
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,
-    private userCategoryService: UserCategoryService,
+    private categoryService: GenericCategoryService,
     private errorService: ErrorService,
     private toast: HotToastService,
     private translocoService: TranslocoService,
+    @Inject(GENERIC_CATEGORY_URL_TOKEN) private categoryUrl: string,
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.activatedRoute.params.subscribe(params => this.getCategory(params.id));
   }
 
   async edit(categoryInput: Category): Promise<void> {
-    await this.userCategoryService
+    await this.categoryService
       .editCategory(categoryInput)
       .pipe(
         take(1),
@@ -43,12 +46,12 @@ export class EditCategoryComponent implements OnInit {
       )
       .toPromise();
 
-    this.router.navigateByUrl('/category');
+    this.router.navigateByUrl(this.categoryUrl);
   }
 
   private async getCategory(categoryId: string) {
     try {
-      const category = await this.userCategoryService.getById(categoryId);
+      const category = await this.categoryService.getById(categoryId);
 
       if (!category) {
         this.router.navigateByUrl('/404');
