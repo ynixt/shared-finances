@@ -16,6 +16,8 @@ import { GenericCategoryService } from './generic-category.service';
 export class CategoryComponent implements OnInit {
   private _categories: Category[] = [];
 
+  @Input() loading = false;
+
   @Input() set categories(categories: Category[]) {
     this._categories = [...(categories || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
   }

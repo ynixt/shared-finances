@@ -1,1 +1,3 @@
-<app-category [categories]="categories"></app-category>
+<app-category *ngIf="categoriesState$ | async as categoriesState" [loading]="categoriesState.loading"
+  [categories]="categoriesState.categories">
+</app-category>

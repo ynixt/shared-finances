@@ -1,11 +1,10 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { Category } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { UserCategoryService } from 'src/app/@core/services';
 import { GenericCategoryService } from '../generic-category.service';
 import { GENERIC_CATEGORY_URL_TOKEN } from '..';
 
