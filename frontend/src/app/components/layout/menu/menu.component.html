@@ -3,22 +3,24 @@
     <mat-icon>paid</mat-icon> {{ t('new-transaction') }}
   </a>
 
-  <mat-list-item routerLink="/credit" routerLinkActive="active">
+  <mat-list-item routerLink="/finances/credit" routerLinkActive="active">
     <span class="item" matLine> <mat-icon>credit_card</mat-icon> {{ t('credit-cards') }} </span>
   </mat-list-item>
 
-  <mat-list-item routerLink="/bank" routerLinkActive="active">
+  <mat-list-item routerLink="/finances/bank" routerLinkActive="active">
     <span class="item" matLine> <mat-icon>account_balance</mat-icon> {{ t('bank-accounts') }} </span>
   </mat-list-item>
 
   <mat-expansion-panel class="mat-elevation-z0">
     <mat-expansion-panel-header>
       <mat-panel-title>
-        <span class="item father" matLine> <mat-icon>person</mat-icon> {{ t('individual') }} </span>
+        <span class="item father" matLine routerLink="/finances/single" routerLinkActive="active">
+          <mat-icon>person</mat-icon> {{ t('individual') }}
+        </span>
       </mat-panel-title>
     </mat-expansion-panel-header>
 
-    <mat-list-item routerLink="/category" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">
+    <mat-list-item routerLink="/finances/single/category" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">
       <span class="item child" matLine>
         {{ t('categories') }}
       </span>

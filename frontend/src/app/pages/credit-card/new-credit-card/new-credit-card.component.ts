@@ -39,6 +39,6 @@ export class NewCreditCardComponent implements OnInit {
       )
       .toPromise();
 
-    this.router.navigateByUrl('/credit');
+    this.router.navigateByUrl('/finances/credit');
   }
 }

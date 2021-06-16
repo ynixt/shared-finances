@@ -57,6 +57,6 @@ export class NewBankAccountComponent implements OnInit {
       .toPromise();
 
     this.bankAccountDispatchers.bankAccountAdded(bankAccountSaved);
-    this.router.navigateByUrl('/bank');
+    this.router.navigateByUrl('/finances/bank');
   }
 }

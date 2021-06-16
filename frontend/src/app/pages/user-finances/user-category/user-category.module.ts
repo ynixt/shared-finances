@@ -11,7 +11,7 @@ import { UserCategoryService } from 'src/app/@core/services';
   declarations: [UserCategoryComponent],
   providers: [
     { provide: GenericCategoryService, useClass: UserCategoryService },
-    { provide: GENERIC_CATEGORY_URL_TOKEN, useValue: '/category' },
+    { provide: GENERIC_CATEGORY_URL_TOKEN, useValue: '/finances/single/category' },
   ],
   imports: [CommonModule, SharedModule, UserCategoryRoutingModule, CategoryModule],
 })
