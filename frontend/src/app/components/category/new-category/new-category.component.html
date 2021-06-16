@@ -1,6 +1,15 @@
 <ng-container *transloco="let t">
   <div class="content new-credit-card-page">
-    <app-title-bar [title]="t('new-credit-card')"></app-title-bar>
+    <app-title-bar>
+      <div custom-title>
+        <td-breadcrumbs>
+          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+          <a td-breadcrumb [routerLink]="individualBreadcrumbUrl">{{ t('individual') }}</a>
+          <a td-breadcrumb [routerLink]="categoriesBreadcrumbUrl">{{ t('categories') }}</a>
+          <td-breadcrumb>{{ t('add') }}</td-breadcrumb>
+        </td-breadcrumbs>
+      </div>
+    </app-title-bar>
 
     <app-form-category (categorySaved)="newCategory($event)"></app-form-category>
   </div>

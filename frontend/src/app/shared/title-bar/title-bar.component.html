@@ -1,5 +1,8 @@
-<div class="title-bar mb-1">
-  <h2 class="title">{{ title }}</h2>
+<div class="title-bar mb-1 flex items-center w-full">
+  <h2 *ngIf="title != null" class="title">{{ title }}</h2>
+  <div class="custom-title w-full" *ngIf="title == null">
+    <ng-content select="[custom-title]"></ng-content>
+  </div>
   <div class="buttons">
     <ng-content select="[right]"></ng-content>
   </div>

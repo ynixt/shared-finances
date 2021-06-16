@@ -1,7 +1,4 @@
 .title-bar {
-  display: flex;
-  align-items: center;
-  width: 100%;
   min-height: 40px;
 
   .title {
@@ -10,5 +7,18 @@
 
   .buttons {
     margin-left: auto;
+  }
+
+  ::ng-deep .td-breadcrumb,
+  .title {
+    font-size: 16px;
+    @screen md {
+      font-size: 18px;
+    }
+  }
+
+  ::ng-deep td-breadcrumb:last-of-type,
+  .title {
+    font-weight: bold;
   }
 }

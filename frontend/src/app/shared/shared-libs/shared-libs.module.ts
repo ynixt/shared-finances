@@ -9,11 +9,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { CovalentLayoutModule } from '@covalent/core/layout';
 import { CovalentStepsModule } from '@covalent/core/steps';
+import { CovalentBreadcrumbsModule } from '@covalent/core/breadcrumbs';
 import { TranslocoModule } from '@ngneat/transloco';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 const layoutModules = [
   ScrollingModule,
@@ -26,8 +27,10 @@ const layoutModules = [
   MatListModule,
   MatProgressSpinnerModule,
 
+  CovalentBreadcrumbsModule,
   CovalentLayoutModule,
   CovalentStepsModule,
+
   TranslocoModule,
 ];
 

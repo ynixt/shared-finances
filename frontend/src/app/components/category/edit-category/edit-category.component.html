@@ -1,6 +1,15 @@
 <ng-container *transloco="let t">
   <div class="content edit-category-page">
-    <app-title-bar [title]="t('edit-category')"></app-title-bar>
+    <app-title-bar>
+      <div custom-title>
+        <td-breadcrumbs>
+          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+          <a td-breadcrumb [routerLink]="individualBreadcrumbUrl">{{ t('individual') }}</a>
+          <a td-breadcrumb [routerLink]="categoriesBreadcrumbUrl">{{ t('categories') }}</a>
+          <td-breadcrumb>{{ t('edit') }}</td-breadcrumb>
+        </td-breadcrumbs>
+      </div>
+    </app-title-bar>
 
     <app-form-category *ngIf="category; else loading" [category]="category" (categorySaved)="edit($event)"> </app-form-category>
   </div>

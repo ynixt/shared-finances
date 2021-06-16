@@ -14,6 +14,16 @@ import { GENERIC_CATEGORY_URL_TOKEN } from '..';
   styleUrls: ['./new-category.component.scss'],
 })
 export class NewCategoryComponent implements OnInit {
+  get individualBreadcrumbUrl() {
+    const urls = this.categoryUrl.split('/').slice(0, 3);
+    urls[0] = '/' + urls[0];
+    return urls;
+  }
+
+  get categoriesBreadcrumbUrl() {
+    return this.categoryUrl;
+  }
+
   constructor(
     private categoryService: GenericCategoryService,
     private router: Router,

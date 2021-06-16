@@ -16,6 +16,16 @@ import { GenericCategoryService } from '../generic-category.service';
 export class EditCategoryComponent implements OnInit {
   category: Category;
 
+  get individualBreadcrumbUrl() {
+    const urls = this.categoryUrl.split('/').slice(0, 3);
+    urls[0] = '/' + urls[0];
+    return urls;
+  }
+
+  get categoriesBreadcrumbUrl() {
+    return this.categoryUrl;
+  }
+
   constructor(
     private router: Router,
     private activatedRoute: ActivatedRoute,

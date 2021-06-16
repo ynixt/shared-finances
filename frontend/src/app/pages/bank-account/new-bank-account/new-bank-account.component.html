@@ -1,6 +1,14 @@
 <ng-container *transloco="let t">
   <div class="content bank-account-page">
-    <app-title-bar [title]="t('new-bank-account')"></app-title-bar>
+    <app-title-bar>
+      <div custom-title>
+        <td-breadcrumbs>
+          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+          <a td-breadcrumb routerLink="/finances/bank">{{ t('bank-accounts') }}</a>
+          <td-breadcrumb>{{ t('add') }}</td-breadcrumb>
+        </td-breadcrumbs>
+      </div>
+    </app-title-bar>
 
     <form [formGroup]="formGroup" (ngSubmit)="save()">
       <div class="inputs grid">

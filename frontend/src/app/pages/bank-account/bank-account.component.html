@@ -1,7 +1,13 @@
 <ng-container *transloco="let t">
   <div class="content credit-card-page">
     <ng-container *ngIf="bankAccounts.length > 0; else noBankAccount">
-      <app-title-bar [title]="t('bank-accounts')">
+      <app-title-bar>
+        <div custom-title>
+          <td-breadcrumbs>
+            <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+            <td-breadcrumb>{{ t('bank-accounts') }}</td-breadcrumb>
+          </td-breadcrumbs>
+        </div>
         <div right>
           <a routerLink="new" mat-icon-button aria-label="Edit" [title]="t('new-credit-card')">
             <mat-icon>add</mat-icon>

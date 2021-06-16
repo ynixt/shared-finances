@@ -1,6 +1,14 @@
 <ng-container *transloco="let t">
   <div class="content edit-card-page">
-    <app-title-bar [title]="t('edit-credit-card')"></app-title-bar>
+    <app-title-bar>
+      <div custom-title>
+        <td-breadcrumbs>
+          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+          <a td-breadcrumb routerLink="/finances/credit">{{ t('credit-cards') }}</a>
+          <td-breadcrumb>{{ t('edit') }}</td-breadcrumb>
+        </td-breadcrumbs>
+      </div>
+    </app-title-bar>
 
     <app-form-credit-card
       *ngIf="creditCard; else loading"
