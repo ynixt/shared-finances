@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, AfterContentChecked, ChangeDetectorRef } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, AfterContentChecked, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
@@ -8,6 +8,7 @@ import { combineLatest, Observable } from 'rxjs';
 import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { BankAccount, Category, CreditCard } from 'src/app/@core/models';
+import { TitleService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthSelectors, BankAccountSelectors, CreditCardSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
 import { NewTransactionService } from './new-transaction.service';
@@ -66,7 +67,7 @@ const initialValue = 0.01;
   templateUrl: './new-transaction.component.html',
   styleUrls: ['./new-transaction.component.scss'],
 })
-export class NewTransactionComponent implements OnInit, AfterContentChecked {
+export class NewTransactionComponent implements OnInit, AfterContentChecked, OnDestroy {
   @Output() closed: EventEmitter<void> = new EventEmitter();
 
   formGroup: FormGroup;
@@ -76,6 +77,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked {
 
   creditCardsWithPersons$: Observable<CreditCardWithPerson[]>;
   filteredCategories$: Observable<Category[]>;
+
+  private previousTitle: string;
 
   constructor(
     private newTransactionService: NewTransactionService,
@@ -87,6 +90,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked {
     private userCategorySelectors: UserCategorySelectors,
     private creditCardSelectors: CreditCardSelectors,
     private cdRef: ChangeDetectorRef,
+    private titleService: TitleService,
   ) {}
 
   get transactionType() {
@@ -97,7 +101,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked {
     return this.formGroup?.value?.date;
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.formGroup = new FormGroup({
       transactionType: new FormControl(TransactionType.Revenue, [Validators.required]),
       date: new FormControl(moment().startOf('day'), [Validators.required]),
@@ -108,6 +112,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked {
       category: new FormControl(undefined),
       creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
     });
+
+    this.previousTitle = await this.titleService.getCurrentTitle();
+    this.titleService.changeTitle('new-transaction');
 
     this.mountAccounts();
     this.mountFilteredCategories();
@@ -134,6 +141,10 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked {
         this.formGroup.get('bankAccount').updateValueAndValidity();
         this.formGroup.get('creditCard').updateValueAndValidity();
       });
+  }
+
+  async ngOnDestroy(): Promise<void> {
+    await this.titleService.changeTitle(this.previousTitle);
   }
 
   ngAfterContentChecked(): void {
