@@ -17,6 +17,13 @@
     }
   }
 
+  ::ng-deep .td-breadcrumbs {
+    @screen md {
+      flex-wrap: wrap;
+      display: flex;
+    }
+  }
+
   ::ng-deep td-breadcrumb:last-of-type,
   .title {
     font-weight: bold;
