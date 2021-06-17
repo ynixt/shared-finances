@@ -19,6 +19,7 @@ type User {
   email: String
   name: String
   photoURL: String
+  groupsId: [String!]!
   groups: Group!
   bankAccounts: [BankAccount!]
 }

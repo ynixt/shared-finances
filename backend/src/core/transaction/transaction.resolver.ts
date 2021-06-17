@@ -1,6 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql';
-import { FirebaseUserWithId } from '../auth/firebase-strategy';
+import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { CategoryService } from '../category';
@@ -14,7 +14,7 @@ export class TransactionResolver {
 
   @Mutation(() => Transaction)
   @UseGuards(GqlFirebaseAuthGuard)
-  newTransacation(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
+  newTransacation(@GqlCurrentUser() user: FBUser, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
     return this.transactionService.create(user.id, newTransactionArgs);
   }
 

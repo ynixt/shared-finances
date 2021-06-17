@@ -2,7 +2,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { ErrorUtilService } from 'src/shared';
-import { FirebaseUserWithId } from '../auth/firebase-strategy';
+import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { UpdateGroupArgs } from '../models/args';
@@ -21,13 +21,13 @@ export class GroupResolver {
 
   @Query(() => [Group], { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
-  async groups(@GqlCurrentUser() user: FirebaseUserWithId) {
+  async groups(@GqlCurrentUser() user: FBUser) {
     return this.groupService.getGroupsByUserId(user.id);
   }
 
   @Query(() => Group, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
-  async group(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'groupId' }) groupId: string) {
+  async group(@GqlCurrentUser() user: FBUser, @Args({ name: 'groupId' }) groupId: string) {
     return this.errorUtilService.tryToGetItem(
       async () => {
         return await this.groupService.getGroup(user.id, groupId);
@@ -38,19 +38,19 @@ export class GroupResolver {
 
   @Mutation(() => String)
   @UseGuards(GqlFirebaseAuthGuard)
-  async createInvite(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'groupId' }) groupId: string) {
+  async createInvite(@GqlCurrentUser() user: FBUser, @Args({ name: 'groupId' }) groupId: string) {
     return this.groupService.generateInvite(user.id, groupId);
   }
 
   @Mutation(() => String, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
-  async useInvite(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'invite' }) inviteId: string) {
+  async useInvite(@GqlCurrentUser() user: FBUser, @Args({ name: 'invite' }) inviteId: string) {
     return this.groupService.useInvite(user.id, inviteId);
   }
 
   @Mutation(() => Group, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
-  async updateGroup(@GqlCurrentUser() user: FirebaseUserWithId, @Args() group: UpdateGroupArgs) {
+  async updateGroup(@GqlCurrentUser() user: FBUser, @Args() group: UpdateGroupArgs) {
     const groupUpdated = await this.groupService.updateGroup(user.id, group);
 
     if (groupUpdated) {
@@ -62,12 +62,7 @@ export class GroupResolver {
 
   @Subscription(() => Group, {
     nullable: true,
-    filter: async (payload, variables, context): Promise<boolean> => {
-      return (
-        payload?.groupUpdated?.id === variables.groupId &&
-        (await GroupService.instance.userHasAccessToGroup(context.req.user.id, variables.groupId))
-      );
-    },
+    filter: (payload, variables, context) => context.req.user.groupsId.includes(variables.groupId),
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

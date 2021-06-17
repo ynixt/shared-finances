@@ -1,6 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Resolver } from '@nestjs/graphql';
-import { FirebaseUserWithId } from '../auth/firebase-strategy';
+import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { BankAccount } from '../models';
@@ -13,14 +13,14 @@ export class BankAccountResolver {
 
   @Mutation(() => BankAccount)
   @UseGuards(GqlFirebaseAuthGuard)
-  newBankAccount(@GqlCurrentUser() user: FirebaseUserWithId, @Args() newBankAccountArgs: NewBankAccountArgs): Promise<BankAccount> {
+  newBankAccount(@GqlCurrentUser() user: FBUser, @Args() newBankAccountArgs: NewBankAccountArgs): Promise<BankAccount> {
     return this.bankAccountService.create(user.id, newBankAccountArgs);
   }
 
   @Mutation(() => BankAccount)
   @UseGuards(GqlFirebaseAuthGuard)
   changeBankAccountName(
-    @GqlCurrentUser() user: FirebaseUserWithId,
+    @GqlCurrentUser() user: FBUser,
     @Args({ name: 'bankAccountId' }) bankAccountId: string,
     @Args({ name: 'name' }) name: string,
   ): Promise<BankAccount> {
@@ -29,7 +29,7 @@ export class BankAccountResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(GqlFirebaseAuthGuard)
-  deleteBankAccount(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'bankAccountId' }) bankAccountId: string): Promise<boolean> {
+  deleteBankAccount(@GqlCurrentUser() user: FBUser, @Args({ name: 'bankAccountId' }) bankAccountId: string): Promise<boolean> {
     return this.bankAccountService.delete(user.id, bankAccountId);
   }
 }

@@ -6,11 +6,7 @@ import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
-  public static instance: UserService;
-
-  constructor(private userRepository: UserRepository, @Inject(FIREBASE_ADMIN_INJECT) private firebaseAdmin: FirebaseAdminSDK) {
-    UserService.instance = this;
-  }
+  constructor(private userRepository: UserRepository, @Inject(FIREBASE_ADMIN_INJECT) private firebaseAdmin: FirebaseAdminSDK) {}
 
   public async getOrCreateUser(uid: string): Promise<User> {
     let user = await this.getUserByUid(uid);
@@ -32,12 +28,8 @@ export class UserService {
     return user;
   }
 
-  public async getUserByUid(uid: string, loadProfile = false): Promise<User> {
+  public async getUserByUid(uid: string): Promise<User> {
     const user = await this.userRepository.getByUid(uid);
-
-    if (user != null && loadProfile) {
-      await this.loadProfile(user);
-    }
 
     return user;
   }

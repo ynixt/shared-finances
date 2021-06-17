@@ -30,6 +30,9 @@ export class User {
   public photoURL?: string;
 
   @Prop([{ type: MongooseSchema.Types.ObjectId, index: true }])
+  @Field(() => [String])
+  groupsId?: string[];
+
   @Field(() => Group)
   groups?: Group[];
 

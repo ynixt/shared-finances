@@ -9,15 +9,11 @@ import { GroupInviteRepository } from './group-invite.repository';
 
 @Injectable()
 export class GroupService {
-  public static instance: GroupService;
-
   constructor(
     private userService: UserService,
     private groupRepository: GroupRepository,
     private groupInviteRepository: GroupInviteRepository,
-  ) {
-    GroupService.instance = this;
-  }
+  ) {}
 
   public getGroupsByUserId(userId: string): Promise<Group[]> {
     return this.groupRepository.getAllByUserId(userId);

@@ -4,8 +4,9 @@ import { ExtractJwt } from 'passport-jwt';
 import { FirebaseAuthStrategy, FirebaseUser } from '@tfarras/nestjs-firebase-auth';
 import { UserService } from '../user/user.service';
 
-export interface FirebaseUserWithId extends FirebaseUser {
+export interface FBUser extends FirebaseUser {
   id: string;
+  groupsId: string[];
 }
 
 @Injectable()
@@ -17,12 +18,13 @@ export class FirebaseStrategy extends PassportStrategy(FirebaseAuthStrategy, 'fi
     });
   }
 
-  async validate(payload: FirebaseUser): Promise<FirebaseUserWithId> {
+  async validate(payload: FirebaseUser): Promise<FBUser> {
     const user = await this.userService.getOrCreateUser(payload.uid);
 
     return {
       ...payload,
       id: user.id,
+      groupsId: [...user.groupsId].map(objectId => (objectId as any).toHexString()),
     };
   }
 }

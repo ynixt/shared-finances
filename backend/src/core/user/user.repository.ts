@@ -13,7 +13,7 @@ export class UserRepository extends MongoDefaultRepository<User, UserDocument> {
   }
 
   public async getByUid(uid: string): Promise<User> {
-    const user = await this.model.findOne({ uid });
+    const user = await this.model.findOne({ uid }).exec();
 
     return user;
   }
