@@ -1,19 +1,30 @@
 <ng-container *transloco="let t">
   <div class="content edit-category-page">
-    <app-title-bar>
-      <div custom-title>
-        <td-breadcrumbs>
-          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
-          <a td-breadcrumb [routerLink]="individualSharedBreadcrumbUrl">
-            {{ t(isIndividual ? 'individual' : 'shared') }}
-          </a>
-          <a td-breadcrumb [routerLink]="categoriesBreadcrumbUrl">{{ t('categories') }}</a>
-          <td-breadcrumb>{{ t('edit') }}</td-breadcrumb>
-        </td-breadcrumbs>
-      </div>
-    </app-title-bar>
+    <ng-container *ngIf="category; else loading">
+      <app-title-bar>
+        <div custom-title>
+          <td-breadcrumbs *ngIf="category.group == null">
+            <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+            <a td-breadcrumb [routerLink]="individualSharedBreadcrumbUrl">{{ t('individual') }}</a>
+            <a td-breadcrumb [routerLink]="categoriesBreadcrumbUrl">{{ t('categories') }}</a>
+            <td-breadcrumb>{{ t('edit') }}</td-breadcrumb>
+          </td-breadcrumbs>
 
-    <app-form-category *ngIf="category; else loading" [category]="category" (categorySaved)="edit($event)"> </app-form-category>
+          <td-breadcrumbs *ngIf="category.group">
+            <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+            <a td-breadcrumb routerLink="/finances/shared">{{ t('shared') }}</a>
+            <a td-breadcrumb routerLink="/finances/shared/groups">{{ t('groups') }}</a>
+            <a td-breadcrumb routerLink="/finances/shared/{{ category.group.id }}">{{
+              t('group-name', { 'name': category.group.name })
+            }}</a>
+            <a td-breadcrumb routerLink="/finances/shared/{{ category.group.id }}/category">{{ t('categories') }}</a>
+            <td-breadcrumb>{{ t('edit') }}</td-breadcrumb>
+          </td-breadcrumbs>
+        </div>
+      </app-title-bar>
+
+      <app-form-category [category]="category" (categorySaved)="edit($event)"> </app-form-category>
+    </ng-container>
   </div>
 </ng-container>
 

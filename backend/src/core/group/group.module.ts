@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { GroupInvite, GroupInviteSchema, Group, GroupSchema } from '../models';
 import { UserModule } from '../user/user.module';
@@ -13,8 +13,9 @@ import { GroupService } from './group.service';
       { name: Group.name, schema: GroupSchema },
       { name: GroupInvite.name, schema: GroupInviteSchema },
     ]),
-    UserModule,
+    forwardRef(() => UserModule),
   ],
   providers: [GroupService, GroupResolver, GroupRepository, GroupInviteRepository],
+  exports: [GroupService],
 })
 export class GroupModule {}

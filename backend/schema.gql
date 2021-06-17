@@ -35,6 +35,7 @@ type Category {
   id: ID!
   name: String!
   color: String!
+  group: Group
 }
 
 type Transaction {
@@ -52,12 +53,12 @@ type Transaction {
 
 type Query {
   user: User
-  categories: [Category!]!
-  category(categoryId: String!): Category!
-  creditCard(creditCardId: String!): CreditCard
-  creditCards: [CreditCard!]!
+  categories(groupId: String): [Category!]!
+  category(groupId: String, categoryId: String!): Category
   groups: [Group!]
   group(groupId: String!): Group
+  creditCard(creditCardId: String!): CreditCard
+  creditCards: [CreditCard!]!
 }
 
 type Mutation {
@@ -66,22 +67,28 @@ type Mutation {
   deleteBankAccount(bankAccountId: String!): Boolean!
   newTransacation(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String): Transaction!
   newCategory(name: String!, color: String!): Category!
+  newGroupCategory(name: String!, color: String!, groupId: String!): Category!
   editCategory(id: String!, name: String!, color: String!): Category!
+  editGroupCategory(id: String!, name: String!, color: String!): Category!
   deleteCategory(categoryId: String!): Boolean!
-  newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
-  editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
-  deleteCreditCard(creditCardId: String!): Boolean!
+  deleteGroupCategory(categoryId: String!): Boolean!
   createInvite(groupId: String!): String!
   useInvite(invite: String!): String
   updateGroup(id: String!, name: String!): Group
+  newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
+  editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
+  deleteCreditCard(creditCardId: String!): Boolean!
 }
 
 type Subscription {
   userCategoryCreated: Category
   userCategoryUpdated: Category
   userCategoryDeleted: Category
+  groupCategoryCreated: Category
+  groupCategoryUpdated: Category
+  groupCategoryDeleted: Category
+  groupUpdated(groupId: String!): Group
   creditCardCreated: CreditCard
   creditCardUpdated: CreditCard
   creditCardDeleted: CreditCard
-  groupUpdated(groupId: String!): Group
 }

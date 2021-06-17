@@ -1,22 +1,35 @@
 <ng-container *transloco="let t">
-  <app-title-bar [title]="t('group-name', { 'name': group?.name })">
-    <div right>
-      <button mat-icon-button aria-label="Edit" [title]="t('create-share-url')" (click)="editGroup()">
-        <mat-icon>edit</mat-icon>
-      </button>
-      <button
-        mat-icon-button
-        aria-label="Share"
-        [title]="t('edit-group')"
-        (click)="createInvite()"
-        *ngIf="!sharedLinkLoading; else loading"
-      >
-        <mat-icon>share</mat-icon>
-      </button>
-    </div>
-  </app-title-bar>
+  <div class="content group-single-page" *ngIf="group != null; else loadingTemplate">
+    <app-title-bar>
+      <div custom-title>
+        <td-breadcrumbs>
+          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+          <a td-breadcrumb routerLink="/finances/shared">{{ t('shared') }}</a>
+          <a td-breadcrumb routerLink="/finances/shared/groups">{{ t('groups') }}</a>
+          <td-breadcrumb>{{ t('group-name', { 'name': group.name }) }}</td-breadcrumb>
+        </td-breadcrumbs>
+      </div>
+
+      <div right>
+        <button mat-icon-button aria-label="Edit" [title]="t('create-share-url')" (click)="editGroup()">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          aria-label="Share"
+          [title]="t('edit-group')"
+          (click)="createInvite()"
+          *ngIf="!sharedLinkLoading; else loadingTemplate"
+        >
+          <mat-icon>share</mat-icon>
+        </button>
+      </div>
+    </app-title-bar>
+
+    <a routerLink="category">Category</a>
+  </div>
 </ng-container>
 
-<ng-template #loading>
+<ng-template #loadingTemplate>
   <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
 </ng-template>

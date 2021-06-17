@@ -23,10 +23,6 @@ const routes: Routes = [
     },
   },
   {
-    path: 'category',
-    loadChildren: () => import('./shared-category/shared-category.module').then(m => m.SharedCategoryModule),
-  },
-  {
     path: 'invite/:inviteId',
     component: InviteComponent,
     canActivate: [TitleGuard],
@@ -38,6 +34,10 @@ const routes: Routes = [
     path: ':id',
     component: GroupSinglePageComponent,
     canActivate: [TitleGuard],
+  },
+  {
+    path: ':groupId/category',
+    loadChildren: () => import('./shared-category/shared-category.module').then(m => m.SharedCategoryModule),
   },
 ];
 

@@ -1,6 +1,6 @@
 <div class="title-bar mb-1 flex items-center w-full">
   <h2 *ngIf="title != null" class="title">{{ title }}</h2>
-  <div class="custom-title w-full" *ngIf="title == null">
+  <div class="custom-title flex-grow" *ngIf="title == null">
     <ng-content select="[custom-title]"></ng-content>
   </div>
   <div class="buttons">

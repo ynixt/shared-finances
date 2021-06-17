@@ -1,6 +1,7 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
+import { ErrorUtilService } from 'src/shared';
 import { FirebaseUserWithId } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
@@ -16,7 +17,7 @@ enum GroupPubTrigger {
 
 @Resolver(() => Group)
 export class GroupResolver {
-  constructor(private groupService: GroupService) {}
+  constructor(private groupService: GroupService, private errorUtilService: ErrorUtilService) {}
 
   @Query(() => [Group], { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
@@ -27,7 +28,12 @@ export class GroupResolver {
   @Query(() => Group, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
   async group(@GqlCurrentUser() user: FirebaseUserWithId, @Args({ name: 'groupId' }) groupId: string) {
-    return this.groupService.getGroup(user.id, groupId);
+    return this.errorUtilService.tryToGetItem(
+      async () => {
+        return await this.groupService.getGroup(user.id, groupId);
+      },
+      () => null,
+    );
   }
 
   @Mutation(() => String)

@@ -27,6 +27,10 @@ export class GroupService {
     return this.groupRepository.getByUserIdGroupId(userId, groupId);
   }
 
+  public getGroupWithoutCheckPermission(groupId: string): Promise<Group> {
+    return this.groupRepository.getById(groupId);
+  }
+
   public async updateGroup(userId: string, newGroup: UpdateGroupArgs): Promise<Group | null> {
     return this.groupRepository.update(userId, newGroup);
   }

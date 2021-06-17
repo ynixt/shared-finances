@@ -4,7 +4,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { Category } from 'src/app/@core/models';
-import { UserCategoryService, ErrorService } from 'src/app/@core/services';
+import { ErrorService } from 'src/app/@core/services';
 import { GENERIC_CATEGORY_URL_TOKEN } from '..';
 import { GenericCategoryService } from '../generic-category.service';
 
@@ -22,10 +22,6 @@ export class EditCategoryComponent implements OnInit {
     return urls;
   }
 
-  get isIndividual() {
-    return this.categoryUrl.includes('/single/');
-  }
-
   get categoriesBreadcrumbUrl() {
     return this.categoryUrl;
   }
@@ -41,7 +37,7 @@ export class EditCategoryComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.activatedRoute.params.subscribe(params => this.getCategory(params.id));
+    this.activatedRoute.params.subscribe(params => this.getCategory(params.id, params.groupId));
   }
 
   async edit(categoryInput: Category): Promise<void> {
@@ -60,12 +56,12 @@ export class EditCategoryComponent implements OnInit {
       )
       .toPromise();
 
-    this.router.navigateByUrl(this.categoryUrl);
+    this.router.navigateByUrl(this.categoryUrl.replace(':groupId', this.category.group?.id));
   }
 
-  private async getCategory(categoryId: string) {
+  private async getCategory(categoryId: string, groupId?: string) {
     try {
-      const category = await this.categoryService.getById(categoryId);
+      const category = await this.categoryService.getById(categoryId, groupId);
 
       if (!category) {
         this.router.navigateByUrl('/404');

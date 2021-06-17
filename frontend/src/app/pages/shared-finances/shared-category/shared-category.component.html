@@ -1,13 +1,15 @@
 <ng-container *transloco="let t">
   <app-category
     *ngIf="categoriesState$ | async as categoriesState"
-    [loading]="categoriesState.loading"
+    [loading]="categoriesState.loading || !group"
     [categories]="categoriesState.categories"
   >
     <div custom-title>
-      <td-breadcrumbs *ngIf="!categoriesState.loading">
-        <a td-breadcrumb [routerLink]="['/finances']">{{ t('finances') }}</a>
-        <a td-breadcrumb [routerLink]="['/finances', 'shared']">{{ t('shared') }}</a>
+      <td-breadcrumbs *ngIf="!categoriesState.loading && this.group">
+        <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+        <a td-breadcrumb routerLink="/finances/shared">{{ t('shared') }}</a>
+        <a td-breadcrumb routerLink="/finances/shared/groups">{{ t('groups') }}</a>
+        <a td-breadcrumb routerLink="/finances/shared/{{ group.id }}">{{ t('group-name', { 'name': group.name }) }}</a>
         <td-breadcrumb>{{ t('categories') }}</td-breadcrumb>
       </td-breadcrumbs>
     </div>

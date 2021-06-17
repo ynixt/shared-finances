@@ -20,6 +20,6 @@ export class TransactionResolver {
 
   @ResolveField()
   async category(@Parent() category: Category) {
-    return this.categoryService.getById(category.userId, category.id);
+    return this.categoryService.getWithoutCheckPermission(category.id);
   }
 }

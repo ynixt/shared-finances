@@ -13,9 +13,9 @@
           </div>
         </app-title-bar>
 
-        <div class="credit-cards grid md:grid-cols-2 md:gap-4">
+        <div class="categories grid md:grid-cols-2 md:gap-4">
           <mat-card
-            class="credit-card"
+            class="category"
             *ngFor="let category of categories"
             [style.background]="category.color"
             [style.color]="getFontColor(category)"
@@ -44,7 +44,7 @@
   </div>
 
   <ng-template #noCategoryTemplate>
-    <app-no-item [text]="t('no-credit-cards')" [buttonText]="'new-credit-card' | transloco" buttonRouterLink="new"> </app-no-item>
+    <app-no-item [text]="t('no-categories')" [buttonText]="'new-category' | transloco" buttonRouterLink="new"> </app-no-item>
   </ng-template>
 
   <ng-template #loadingTemplate>

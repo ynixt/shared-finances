@@ -8,3 +8,9 @@ export class NewCategoryArgs {
   @Field()
   color: string;
 }
+
+@ArgsType()
+export class NewGroupCategoryArgs extends NewCategoryArgs {
+  @Field()
+  groupId: string;
+}

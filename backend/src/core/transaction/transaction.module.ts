@@ -12,7 +12,7 @@ import { TransactionService } from './transaction.service';
   imports: [
     MongooseModule.forFeature([{ name: Transaction.name, schema: TransacationSchema }]),
     forwardRef(() => BankAccountModule),
-    CategoryModule,
+    forwardRef(() => CategoryModule),
     CreditCardModule,
   ],
   providers: [TransactionRepository, TransactionResolver, TransactionService, TransactionResolver],

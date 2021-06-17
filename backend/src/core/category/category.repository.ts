@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, UpdateQuery } from 'mongoose';
 import { MongoDefaultRepository } from '../data';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { Category, CategoryDocument } from '../models';
@@ -15,14 +15,30 @@ export class CategoryRepository extends MongoDefaultRepository<Category, Categor
     return this.model.find({ userId }).exec();
   }
 
+  findAllWithGroupId(groupId: string): Promise<Category[]> {
+    return this.model.find({ groupId }).exec();
+  }
+
   findByUserId(userId: string, categoryId: string): Promise<Category | null> {
     return this.model.findOne({ $and: [{ _id: categoryId }, { userId }] }).exec();
   }
 
+  findByGroupId(groupId: string, categoryId: string): Promise<Category | null> {
+    return this.model.findOne({ $and: [{ _id: categoryId }, { groupId }] }).exec();
+  }
+
   async update(domain: Category): Promise<Category> {
+    let updateQuery: UpdateQuery<CategoryDocument>;
+
+    if (domain.userId != null) {
+      updateQuery = { userId: domain.userId };
+    } else {
+      updateQuery = { groupId: domain.groupId };
+    }
+
     const result = await this.model
       .findOneAndUpdate(
-        { $and: [{ _id: domain.id }, { userId: domain.userId }] },
+        { $and: [{ _id: domain.id }, updateQuery] },
         {
           $set: {
             'name': domain.name,
@@ -38,5 +54,9 @@ export class CategoryRepository extends MongoDefaultRepository<Category, Categor
 
   delete(userId: string, categoryId: string, opts?: MongoRepositoryOptions): Promise<Category | null> {
     return this.model.findOneAndDelete({ $and: [{ _id: categoryId }, { userId }] }, opts).exec();
+  }
+
+  deleteFromGroup(groupId: string, categoryId: string, opts?: MongoRepositoryOptions): Promise<Category | null> {
+    return this.model.findOneAndDelete({ $and: [{ _id: categoryId }, { groupId }] }, opts).exec();
   }
 }

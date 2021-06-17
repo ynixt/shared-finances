@@ -30,6 +30,7 @@
   "individual": "Individual",
   "shared": "Compartilhado",
   "manage-groups": "Gerenciar grupos",
+  "groups": "Grupos",
   "create-share-url": "Gerar link compartilhavel",
   "link-created": "Link criado",
   "link-created-message": "Link gerado com sucesso. Agora é só enviar o link abaixo para a pessoa! Lembrando que este link é de USO ÚNICO.",
@@ -82,5 +83,6 @@
   "color": "Cor",
   "category-name-placeholder": "Algo que te ajude a identificar categoria",
   "category-color-placeholder": "Uma cor que te ajude a identificar categoria",
-  "invite": "Convite"
+  "invite": "Convite",
+  "no-categories": "Nenhuma categoria foi cadastrada. Que tal cadastrar a primeira?"
 }

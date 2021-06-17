@@ -1,6 +1,7 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Group } from './group';
 
 export type CategoryDocument = Category & Document;
 
@@ -35,6 +36,9 @@ export class Category {
     },
   })
   groupId?: string;
+
+  @Field(() => Group, { nullable: true })
+  group?: Group;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
