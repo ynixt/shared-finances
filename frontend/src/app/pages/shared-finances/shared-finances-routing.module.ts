@@ -19,7 +19,7 @@ const routes: Routes = [
     component: GroupsComponent,
     canActivate: [TitleGuard],
     data: {
-      title: 'manage-groups',
+      title: 'groups',
     },
   },
   {
