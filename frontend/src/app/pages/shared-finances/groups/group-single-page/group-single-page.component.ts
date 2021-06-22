@@ -3,10 +3,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { Group } from 'src/app/@core/models/group';
-import { GroupsService } from '../groups.service';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
-import { TitleService } from 'src/app/@core/services';
+import { TitleService, GroupsService } from 'src/app/@core/services';
 
 @Component({
   selector: 'app-group-single-page',

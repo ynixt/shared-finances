@@ -38,6 +38,13 @@ export class UserService {
     return this.userRepository.addGroupToUser(userId, groupId, opts);
   }
 
+  public async getByGroupWithoutCheckPermission(groupId: string): Promise<User[]> {
+    const users = await this.userRepository.getByGroup(groupId);
+
+    // TODO: store user profile in database to avoid this
+    return await Promise.all(users.map(user => this.loadProfile(user)));
+  }
+
   private async loadProfile(user: User): Promise<User> {
     const firebaseUserRecord = await this.firebaseAdmin.auth().getUser(user.uid);
 

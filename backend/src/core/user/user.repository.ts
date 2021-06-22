@@ -18,12 +18,20 @@ export class UserRepository extends MongoDefaultRepository<User, UserDocument> {
     return user;
   }
 
+  public getByGroup(groupId: string): Promise<User[]> {
+    return this.model
+      .find({
+        groupsId: groupId,
+      })
+      .exec();
+  }
+
   public async addGroupToUser(userId: string, groupId: string, opts?: MongoRepositoryOptions): Promise<void> {
     await this.model.updateOne(
       { _id: userId },
       {
         $addToSet: {
-          groups: groupId,
+          groupsId: groupId,
         },
       },
       opts,

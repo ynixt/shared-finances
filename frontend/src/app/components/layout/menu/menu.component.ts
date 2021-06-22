@@ -16,7 +16,7 @@ export class MenuComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  openNewTransactionDialog() {
-    this.newTransactionService.openDialog(this.document, this.renderer2);
+  openNewTransactionDialog(shared = false) {
+    this.newTransactionService.openDialog(this.document, this.renderer2, shared);
   }
 }

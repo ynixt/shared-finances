@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Group } from 'src/app/@core/models/group';
-import { GroupsService } from './groups.service';
+import { GroupsService } from 'src/app/@core/services/groups.service';
 
 @Component({
   selector: 'app-groups',

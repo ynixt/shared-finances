@@ -21,6 +21,7 @@ export class AuthService {
         query: gql`
           query GetUser {
             user {
+              id
               name
               email
               photoURL

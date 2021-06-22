@@ -1,5 +1,6 @@
-import { Component, EventEmitter, OnInit, Output, AfterContentChecked, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, AfterContentChecked, ChangeDetectorRef, OnDestroy, Inject } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -7,19 +8,21 @@ import moment from 'moment';
 import { combineLatest, Observable } from 'rxjs';
 import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
-import { BankAccount, Category, CreditCard } from 'src/app/@core/models';
-import { TitleService } from 'src/app/@core/services';
+import { BankAccount, Category, CreditCard, User } from 'src/app/@core/models';
+import { Group } from 'src/app/@core/models/group';
+import { GroupsService, TitleService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthSelectors, BankAccountSelectors, CreditCardSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
+import { NewTransactionComponentArgs } from './new-transaction-component-args';
 import { NewTransactionService } from './new-transaction.service';
 
 interface AccountWithPerson {
-  person: string;
+  person: Partial<User>;
   accounts: BankAccount[];
 }
 
 interface CreditCardWithPerson {
-  person: string;
+  person: Partial<User>;
   creditCards: CreditCard[];
 }
 
@@ -59,6 +62,18 @@ function requiredWhenTransactionTypeIsCredit(formControl: AbstractControl) {
   return null;
 }
 
+function requiredIfShared(shared: boolean, formControl: AbstractControl) {
+  if (!formControl.parent) {
+    return null;
+  }
+
+  if (shared) {
+    return Validators.required(formControl);
+  }
+
+  return null;
+}
+
 const initialValue = 0.01;
 
 @UntilDestroy()
@@ -72,11 +87,11 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   formGroup: FormGroup;
   transactionTypeEnum = TransactionType;
-
   accountsWithPersons: AccountWithPerson[] = [];
-
   creditCardsWithPersons$: Observable<CreditCardWithPerson[]>;
   filteredCategories$: Observable<Category[]>;
+  shared: boolean;
+  groups: Group[];
 
   private previousTitle: string;
 
@@ -91,7 +106,11 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     private creditCardSelectors: CreditCardSelectors,
     private cdRef: ChangeDetectorRef,
     private titleService: TitleService,
-  ) {}
+    private groupsService: GroupsService,
+    @Inject(MAT_DIALOG_DATA) data: NewTransactionComponentArgs,
+  ) {
+    this.shared = data.shared;
+  }
 
   get transactionType() {
     return this.formGroup?.value?.transactionType;
@@ -99,6 +118,10 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   get date() {
     return this.formGroup?.value?.date;
+  }
+
+  get group() {
+    return this.formGroup?.value?.group;
   }
 
   async ngOnInit(): Promise<void> {
@@ -111,14 +134,25 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       bankAccount2: new FormControl(undefined, requiredWhenTransactionTypeIsTransfer),
       category: new FormControl(undefined),
       creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
+      group: new FormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
     });
 
     this.previousTitle = await this.titleService.getCurrentTitle();
     this.titleService.changeTitle('new-transaction');
 
+    this.mountGroups();
     this.mountAccounts();
     this.mountFilteredCategories();
     this.mountCreditCards();
+
+    if (this.shared) {
+      this.formGroup
+        .get('group')
+        .valueChanges.pipe(untilDestroyed(this))
+        .subscribe(group => {
+          this.mountAccounts(group);
+        });
+    }
 
     this.formGroup
       .get('transactionType')
@@ -153,16 +187,36 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   async newTransacation(): Promise<void> {
     if (this.formGroup.valid) {
+      let user: Partial<User>;
+      let user2: Partial<User>;
+
+      const bankAccount = this.formGroup.value.bankAccount;
+      const bankAccount2 = this.formGroup.value.bankAccount2;
+      const creditCard = this.formGroup.value.creditCard;
+
+      if (bankAccount) {
+        user = { id: bankAccount.personId };
+
+        if (bankAccount2) {
+          user2 = { id: bankAccount2.personId };
+        }
+      } else {
+        user = { id: creditCard.personId };
+      }
+
       await this.newTransactionService
         .newTransaction({
           transactionType: this.formGroup.value.transactionType,
           date: this.formGroup.value.date,
           value: this.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
           description: this.formGroup.value.description,
-          bankAccountId: this.formGroup.value.bankAccount,
-          bankAccount2Id: this.formGroup.value.bankAccount2,
-          creditCardId: this.formGroup.value.creditCard,
+          bankAccountId: bankAccount?.accountId,
+          bankAccount2Id: bankAccount2?.accountId,
+          creditCardId: creditCard?.creditCardId,
           categoryId: this.formGroup.value.category?.id,
+          groupId: this.group?.id,
+          user,
+          user2,
         })
         .pipe(
           take(1),
@@ -185,12 +239,22 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     return category?.name;
   }
 
-  private async mountAccounts() {
+  private async mountAccounts(group?: Group) {
     this.accountsWithPersons = [];
 
     const user = await this.authSelectors.currentUser();
 
-    this.accountsWithPersons.push({ person: user.name, accounts: await this.bankAccountSelectors.currentBankAccounts() });
+    this.accountsWithPersons.push({ person: user, accounts: await this.bankAccountSelectors.currentBankAccounts() });
+
+    if (this.shared) {
+      group?.users.forEach(userFromGroup => {
+        if (userFromGroup.id !== user.id && userFromGroup.bankAccounts?.length > 0) {
+          this.accountsWithPersons.push({ person: userFromGroup, accounts: userFromGroup.bankAccounts });
+        }
+      });
+    }
+
+    this.accountsWithPersons = this.accountsWithPersons.sort((a, b) => a.person.name.localeCompare(b.person.name));
   }
 
   private mountFilteredCategories(): void {
@@ -218,7 +282,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       map(combined => ({ creditCards: combined[0], user: combined[1] })),
       map(combined => [
         {
-          person: combined.user.name,
+          person: combined.user,
           creditCards: combined.creditCards.sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
         },
       ]),
@@ -237,5 +301,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     }
 
     return value;
+  }
+
+  private async mountGroups(): Promise<void> {
+    this.groups = this.shared ? await this.groupsService.getGroupsWithUsers() : undefined;
   }
 }

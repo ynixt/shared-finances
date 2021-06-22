@@ -33,7 +33,7 @@ import { ErrorService } from './services/error.service';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS } from '@angular/material/core';
 import { UserCategoryService } from './services/user-category.service';
-import { CreditCardService } from './services';
+import { CreditCardService, GroupsService } from './services';
 import { TitleService } from './services';
 
 registerLocaleData(localePt, 'pt');
@@ -83,6 +83,7 @@ registerLocaleData(localePt, 'pt');
     UserCategoryService,
     CreditCardService,
     TitleService,
+    GroupsService,
   ],
   exports: [TranslocoRootModule],
 })

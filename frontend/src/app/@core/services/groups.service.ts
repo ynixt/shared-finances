@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Group } from 'src/app/@core/models/group';
 import { Apollo, gql } from 'apollo-angular';
-import { catchError, map, take } from 'rxjs/operators';
-import { from, Observable, of, Subscription } from 'rxjs';
+import { map, take } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +19,42 @@ export class GroupsService {
               groups {
                 id
                 name
+              }
+            }
+          `,
+        })
+        .pipe(take(1))
+        .toPromise();
+
+      if (result.errors || result.data == null || result.data.groups == null) {
+        return [];
+      }
+
+      return result.data.groups;
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }
+
+  async getGroupsWithUsers(): Promise<Group[] | null> {
+    // TODO: It would be better to just search for the user when selecting the group and then search for bank accounts and credit cards in just one query.
+    try {
+      const result = await this.apollo
+        .query<{ groups: Group[] }>({
+          query: gql`
+            query GetGroups {
+              groups {
+                id
+                name
+                users {
+                  id
+                  name
+                  bankAccounts {
+                    id
+                    name
+                  }
+                }
               }
             }
           `,

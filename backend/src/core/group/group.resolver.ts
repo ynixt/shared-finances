@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
@@ -7,6 +7,7 @@ import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { UpdateGroupArgs } from '../models/args';
 import { Group } from '../models/group';
+import { UserService } from '../user';
 import { GroupService } from './group.service';
 
 const pubSub = new PubSub();
@@ -17,7 +18,7 @@ enum GroupPubTrigger {
 
 @Resolver(() => Group)
 export class GroupResolver {
-  constructor(private groupService: GroupService, private errorUtilService: ErrorUtilService) {}
+  constructor(private groupService: GroupService, private errorUtilService: ErrorUtilService, private userService: UserService) {}
 
   @Query(() => [Group], { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
@@ -68,5 +69,10 @@ export class GroupResolver {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   groupUpdated(@Args({ name: 'groupId' }) groupId: string) {
     return pubSub.asyncIterator(GroupPubTrigger.groupUpdated);
+  }
+
+  @ResolveField()
+  async users(@Parent() group: Group) {
+    return this.userService.getByGroupWithoutCheckPermission(group.id);
   }
 }

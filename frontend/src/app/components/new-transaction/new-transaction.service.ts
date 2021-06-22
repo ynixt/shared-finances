@@ -7,6 +7,7 @@ import { Apollo, gql } from 'apollo-angular';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
+import { NewTransactionComponentArgs } from './new-transaction-component-args';
 import { NewTransactionComponent } from './new-transaction.component';
 
 @Injectable({
@@ -15,14 +16,19 @@ import { NewTransactionComponent } from './new-transaction.component';
 export class NewTransactionService {
   constructor(private dialogService: TdDialogService, private apollo: Apollo, private breakpointObserver: BreakpointObserver) {}
 
-  openDialog(document: any, renderer2: Renderer2): MatDialogRef<NewTransactionComponent, any> {
+  openDialog(document: any, renderer2: Renderer2, shared: boolean): MatDialogRef<NewTransactionComponent, any> {
     const isMobile = this.breakpointObserver.isMatched([Breakpoints.Small, Breakpoints.XSmall]);
+
+    const data: NewTransactionComponentArgs = {
+      shared,
+    };
 
     const { matDialogRef, dragRefSubject }: IDraggableRefs<NewTransactionComponent> = this.dialogService.openDraggable({
       component: NewTransactionComponent,
       dragHandleSelectors: ['mat-toolbar'],
       config: {
-        panelClass: ['td-window-dialog'], // pass this class in to ensure certain css is properly added
+        panelClass: ['td-window-dialog'],
+        data,
       },
     });
 
@@ -34,14 +40,13 @@ export class NewTransactionService {
         resizableDraggableDialog = new ResizableDraggableDialog(document, renderer2, matDialogRef, dragRf);
       });
 
-      // Detach resize-ability event listeners after dialog closes
       matDialogRef.afterClosed().subscribe(() => resizableDraggableDialog.detach());
     }
 
     return matDialogRef;
   }
 
-  newTransaction(transacation: Partial<Transaction>): Observable<Transaction> {
+  newTransaction(transaction: Partial<Transaction>): Observable<Transaction> {
     return this.apollo
       .mutate<{ newTransacation: Transaction }>({
         mutation: gql`
@@ -54,6 +59,9 @@ export class NewTransactionService {
             $bankAccount2Id: String
             $categoryId: String
             $creditCardId: String
+            $groupId: String
+            $firstUserId: String!
+            $secondUserId: String
           ) {
             newTransacation(
               transactionType: $transactionType
@@ -64,6 +72,9 @@ export class NewTransactionService {
               bankAccount2Id: $bankAccount2Id
               categoryId: $categoryId
               creditCardId: $creditCardId
+              groupId: $groupId
+              firstUserId: $firstUserId
+              secondUserId: $secondUserId
             ) {
               id
               transactionType
@@ -79,14 +90,17 @@ export class NewTransactionService {
           }
         `,
         variables: {
-          transactionType: transacation.transactionType,
-          date: transacation.date,
-          value: transacation.value,
-          description: transacation.description,
-          bankAccountId: transacation.bankAccountId,
-          bankAccount2Id: transacation.bankAccount2Id,
-          categoryId: transacation.categoryId,
-          creditCardId: transacation.creditCardId,
+          transactionType: transaction.transactionType,
+          date: transaction.date,
+          value: transaction.value,
+          description: transaction.description,
+          bankAccountId: transaction.bankAccountId,
+          bankAccount2Id: transaction.bankAccount2Id,
+          categoryId: transaction.categoryId,
+          creditCardId: transaction.creditCardId,
+          groupId: transaction.groupId,
+          firstUserId: transaction.user?.id,
+          secondUserId: transaction.user2?.id,
         },
       })
       .pipe(

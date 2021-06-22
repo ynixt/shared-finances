@@ -17,7 +17,10 @@ export class Group {
   name: string;
 
   @Prop([{ type: MongooseSchema.Types.ObjectId, index: true }])
-  @Field(() => User)
+  @Field(() => [String], { nullable: true })
+  usersId?: string[];
+
+  @Field(() => [User], { nullable: true })
   users?: User[];
 }
 

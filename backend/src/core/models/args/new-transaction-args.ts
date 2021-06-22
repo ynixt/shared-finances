@@ -26,4 +26,13 @@ export class NewTransactionArgs {
 
   @Field({ nullable: true })
   categoryId?: string;
+
+  @Field({ nullable: true })
+  groupId?: string;
+
+  @Field()
+  firstUserId: string;
+
+  @Field({ nullable: true })
+  secondUserId: string;
 }

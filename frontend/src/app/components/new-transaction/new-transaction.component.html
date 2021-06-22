@@ -1,6 +1,6 @@
 <td-window-dialog
   *transloco="let t"
-  [title]="t('new-transaction')"
+  [title]="t('new-transaction-' + (shared ? 'shared' : 'individual'))"
   [toolbarColor]="'accent'"
   [closeLabel]="t('close')"
   (closed)="closed.emit()"
@@ -21,6 +21,16 @@
           <mat-icon class="mr-2">sync_alt</mat-icon> <span class="name">{{ t('transfer') }}</span>
         </mat-button-toggle>
       </mat-button-toggle-group>
+
+      <mat-form-field appearance="outline" *ngIf="shared">
+        <mat-label>{{ t('group') }}</mat-label>
+        <mat-select formControlName="group" required>
+          <mat-option>{{ t('mat-select-none') }}</mat-option>
+          <mat-option *ngFor="let group of groups" [value]="group">
+            {{ group.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
       <mat-form-field class="field" appearance="outline">
         <mat-label>{{ t('value') }}</mat-label>
@@ -59,8 +69,11 @@
         <mat-label>{{ t('bank-account') }}</mat-label>
         <mat-select formControlName="bankAccount">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
-          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person">
-            <mat-option *ngFor="let account of accountsPerson.accounts" [value]="account.id">
+          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person.name">
+            <mat-option
+              *ngFor="let account of accountsPerson.accounts"
+              [value]="{ accountId: account.id, personId: accountsPerson.person.id }"
+            >
               {{ account.name }}
             </mat-option>
           </mat-optgroup>
@@ -71,8 +84,11 @@
         <mat-label>{{ t('bank-account-destiny') }}</mat-label>
         <mat-select formControlName="bankAccount2">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
-          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person">
-            <mat-option *ngFor="let account of accountsPerson.accounts" [value]="account.id">
+          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person.name">
+            <mat-option
+              *ngFor="let account of accountsPerson.accounts"
+              [value]="{ accountId: account.id, personId: accountsPerson.person.id }"
+            >
               {{ account.name }}
             </mat-option>
           </mat-optgroup>
@@ -83,8 +99,11 @@
         <mat-label>{{ t('credit-card') }}</mat-label>
         <mat-select formControlName="creditCard">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
-          <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person">
-            <mat-option *ngFor="let creditCard of creditsPerson.creditCards" [value]="creditCard.id">
+          <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person.name">
+            <mat-option
+              *ngFor="let creditCard of creditsPerson.creditCards"
+              [value]="{ creditCardId: creditCard.id, personId: creditsPerson.person.id }"
+            >
               {{ creditCard.name }}
             </mat-option>
           </mat-optgroup>

@@ -14,7 +14,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
   }
 
   public async getAllByUserId(userId: string): Promise<Group[]> {
-    const groups = await this.model.find({ users: { $elemMatch: { $eq: userId } } });
+    const groups = await this.model.find({ usersId: { $elemMatch: { $eq: userId } } });
 
     return groups;
   }
@@ -26,7 +26,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
           {
             _id: groupId,
           },
-          { users: { $elemMatch: { $eq: userId } } },
+          { usersId: { $elemMatch: { $eq: userId } } },
         ],
       })
       .exec();
@@ -41,7 +41,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
           {
             _id: newGroup.id,
           },
-          { users: { $elemMatch: { $eq: userId } } },
+          { usersId: { $elemMatch: { $eq: userId } } },
         ],
       },
       { name: newGroup.name },
@@ -59,7 +59,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
       { _id: groupId },
       {
         $addToSet: {
-          users: userId,
+          usersId: userId,
         },
       },
       opts,
@@ -71,7 +71,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
 
   public async groupHasUser(userId: string, options: { groupId?: string; group?: Group }): Promise<boolean> {
     if (options.groupId != null) {
-      return this.model.exists({ $and: [{ _id: options.groupId }, { users: { $elemMatch: { $eq: userId } } }] });
+      return this.model.exists({ $and: [{ _id: options.groupId }, { usersId: { $elemMatch: { $eq: userId } } }] });
     }
 
     if (options.group != null) {
