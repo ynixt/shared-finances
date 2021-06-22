@@ -54,6 +54,10 @@ export class GroupsService {
                     id
                     name
                   }
+                  creditCards {
+                    id
+                    name
+                  }
                 }
               }
             }

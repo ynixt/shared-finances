@@ -7,6 +7,14 @@ type BankAccount {
   name: String!
 }
 
+type CreditCard {
+  id: ID!
+  name: String!
+  closingDay: Int!
+  paymentDay: Int!
+  limit: Float!
+}
+
 type Group {
   id: ID!
   name: String!
@@ -23,14 +31,7 @@ type User {
   groupsId: [String!]!
   groups: Group!
   bankAccounts: [BankAccount!]
-}
-
-type CreditCard {
-  id: ID!
-  name: String!
-  closingDay: Int!
-  paymentDay: Int!
-  limit: Float!
+  creditCards: [CreditCard!]
 }
 
 type Category {

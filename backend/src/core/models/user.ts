@@ -3,6 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
 import { BankAccount } from './bankAccount';
+import { CreditCard } from './creditCard';
 import { Group } from './group';
 
 export type UserDocument = User & Document;
@@ -38,6 +39,9 @@ export class User {
 
   @Field(() => [BankAccount], { nullable: true })
   bankAccounts?: BankAccount[];
+
+  @Field(() => [CreditCard], { nullable: true })
+  creditCards?: CreditCard[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

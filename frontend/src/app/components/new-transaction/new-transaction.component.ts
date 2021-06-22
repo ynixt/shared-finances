@@ -5,7 +5,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment from 'moment';
-import { combineLatest, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { BankAccount, Category, CreditCard, User } from 'src/app/@core/models';
@@ -94,6 +94,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   groups: Group[];
 
   private previousTitle: string;
+  private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
 
   constructor(
     private newTransactionService: NewTransactionService,
@@ -246,13 +247,23 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
     this.accountsWithPersons.push({ person: user, accounts: await this.bankAccountSelectors.currentBankAccounts() });
 
+    const creditCardFromOtherUsers: CreditCardWithPerson[] = [];
+
     if (this.shared) {
       group?.users.forEach(userFromGroup => {
-        if (userFromGroup.id !== user.id && userFromGroup.bankAccounts?.length > 0) {
-          this.accountsWithPersons.push({ person: userFromGroup, accounts: userFromGroup.bankAccounts });
+        if (userFromGroup.id !== user.id) {
+          if (userFromGroup.bankAccounts?.length > 0) {
+            this.accountsWithPersons.push({ person: userFromGroup, accounts: userFromGroup.bankAccounts });
+          }
+
+          if (userFromGroup.creditCards?.length > 0) {
+            creditCardFromOtherUsers.push({ person: userFromGroup, creditCards: userFromGroup.creditCards });
+          }
         }
       });
     }
+
+    this.creditCardFromOtherUsers.next(creditCardFromOtherUsers);
 
     this.accountsWithPersons = this.accountsWithPersons.sort((a, b) => a.person.name.localeCompare(b.person.name));
   }
@@ -278,14 +289,21 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   private mountCreditCards(): void {
-    this.creditCardsWithPersons$ = combineLatest([this.creditCardSelectors.creditCards$, this.authSelectors.user$]).pipe(
-      map(combined => ({ creditCards: combined[0], user: combined[1] })),
-      map(combined => [
-        {
-          person: combined.user,
-          creditCards: combined.creditCards.sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
-        },
-      ]),
+    this.creditCardsWithPersons$ = combineLatest([
+      this.creditCardSelectors.creditCards$,
+      this.authSelectors.user$,
+      this.creditCardFromOtherUsers.asObservable(),
+    ]).pipe(
+      map(combined => ({ creditCards: combined[0], user: combined[1], creditCardFromOtherUsers: combined[2] })),
+      map(combined =>
+        [
+          {
+            person: combined.user,
+            creditCards: combined.creditCards.sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
+          },
+          ...combined.creditCardFromOtherUsers,
+        ].sort((a, b) => a.person.name.localeCompare(b.person.name)),
+      ),
     );
   }
 
