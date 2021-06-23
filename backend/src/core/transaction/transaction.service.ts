@@ -45,6 +45,10 @@ export class TransactionService {
     return this.transacationRepository.deleteByBankAccountId(bankAccountId, opts);
   }
 
+  async getBalanceByBankAccountWithoutCheckPermission(bankAccountId: string): Promise<number> {
+    return this.transacationRepository.getBalanceByBankAccount(bankAccountId);
+  }
+
   private async validPermissions(user: FBUser, input: NewTransactionArgs) {
     // Must be a group of the logged user
     if (input.groupId != null) {

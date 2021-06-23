@@ -1,4 +1,4 @@
-import { LOCALE_ID, NgModule } from '@angular/core';
+import { DEFAULT_CURRENCY_CODE, LOCALE_ID, NgModule } from '@angular/core';
 import { CommonModule, getCurrencySymbol, getLocaleCurrencyCode } from '@angular/common';
 import { AngularFireModule } from '@angular/fire';
 import { AngularFireAuthModule } from '@angular/fire/auth';
@@ -63,6 +63,10 @@ registerLocaleData(localePt, 'pt');
       multi: true,
     },
     { provide: LOCALE_ID, useValue: 'pt' },
+    {
+      provide: DEFAULT_CURRENCY_CODE,
+      useValue: 'BRL'
+    },
     { provide: CURRENCY_MASK_CONFIG, useFactory: createCurrencyMaskConfig },
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true } },
     {

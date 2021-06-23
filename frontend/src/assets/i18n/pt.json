@@ -86,5 +86,6 @@
   "category-name-placeholder": "Algo que te ajude a identificar categoria",
   "category-color-placeholder": "Uma cor que te ajude a identificar categoria",
   "invite": "Convite",
-  "no-categories": "Nenhuma categoria foi cadastrada. Que tal cadastrar a primeira?"
+  "no-categories": "Nenhuma categoria foi cadastrada. Que tal cadastrar a primeira?",
+  "balance-value": "Saldo: {{value}}"
 }

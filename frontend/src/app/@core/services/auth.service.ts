@@ -28,6 +28,7 @@ export class AuthService {
               bankAccounts {
                 id
                 name
+                balance
               }
             }
           }

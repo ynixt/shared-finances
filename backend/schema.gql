@@ -5,6 +5,7 @@
 type BankAccount {
   id: ID!
   name: String!
+  balance: Float!
 }
 
 type CreditCard {

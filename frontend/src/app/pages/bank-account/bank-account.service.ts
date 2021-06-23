@@ -18,6 +18,7 @@ export class BankAccountService {
             newBankAccount(name: $name) {
               id
               name
+              balance
             }
           }
         `,
