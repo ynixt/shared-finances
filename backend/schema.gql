@@ -5,7 +5,6 @@
 type BankAccount {
   id: ID!
   name: String!
-  balance: Float!
 }
 
 type CreditCard {
@@ -48,6 +47,7 @@ type Transaction {
   creditCardId: String!
   transactionType: String!
   groupId: String!
+  group: Group
   date: String!
   value: Float!
   description: String
@@ -55,8 +55,18 @@ type Transaction {
   category: Category
 }
 
+type TransactionsPage {
+  items: [Transaction!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+}
+
 type Query {
   user: User
+  bankAccount(bankAccountId: String!): BankAccount
+  bankAccountBalance(maxDate: String, bankAccountId: String!): Float
+  transactions(minDate: String, maxDate: String, pageSize: Int = 20, page: Int = 1, bankAccountId: String!): TransactionsPage
   categories(groupId: String): [Category!]!
   category(groupId: String, categoryId: String!): Category
   groups: [Group!]

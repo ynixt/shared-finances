@@ -2,6 +2,7 @@ import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import { Category } from './category';
+import { Group } from './group';
 
 export type TransactionDocument = Transaction & Document;
 
@@ -45,6 +46,9 @@ export class Transaction {
   @Field()
   @Prop({ type: MongooseSchema.Types.ObjectId, index: true })
   groupId?: string;
+
+  @Field(() => Group, { nullable: true })
+  group?: Group;
 
   @Field()
   @Prop({ index: true, required: true })

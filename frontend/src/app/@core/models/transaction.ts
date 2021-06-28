@@ -1,5 +1,6 @@
 import { TransactionType } from '../enums';
 import { Category } from './category';
+import { Group } from './group';
 import { User } from './user';
 
 export interface Transaction {
@@ -13,6 +14,7 @@ export interface Transaction {
   creditCardId?: string;
   categoryId?: string;
   category?: Category;
+  group?: Group;
   groupId?: string;
   user: Partial<User>;
   user2?: Partial<User>;

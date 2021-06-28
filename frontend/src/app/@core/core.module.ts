@@ -35,8 +35,10 @@ import { MAT_DATE_FORMATS } from '@angular/material/core';
 import { UserCategoryService } from './services/user-category.service';
 import { CreditCardService, GroupsService } from './services';
 import { TitleService } from './services';
+import moment from 'moment';
 
 registerLocaleData(localePt, 'pt');
+moment.locale('pt');
 
 @NgModule({
   imports: [
@@ -65,7 +67,7 @@ registerLocaleData(localePt, 'pt');
     { provide: LOCALE_ID, useValue: 'pt' },
     {
       provide: DEFAULT_CURRENCY_CODE,
-      useValue: 'BRL'
+      useValue: 'BRL',
     },
     { provide: CURRENCY_MASK_CONFIG, useFactory: createCurrencyMaskConfig },
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true } },

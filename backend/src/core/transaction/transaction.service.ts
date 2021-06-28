@@ -1,11 +1,12 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
+import { Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { BankAccountService } from '../bank-account';
 import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { GroupService } from '../group';
-import { Transaction, TransactionType } from '../models';
+import { Transaction, TransactionType, TransactionsPage } from '../models';
 import { NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
 
@@ -45,8 +46,28 @@ export class TransactionService {
     return this.transacationRepository.deleteByBankAccountId(bankAccountId, opts);
   }
 
-  async getBalanceByBankAccountWithoutCheckPermission(bankAccountId: string): Promise<number> {
-    return this.transacationRepository.getBalanceByBankAccount(bankAccountId);
+  async findAll(
+    user: FBUser,
+    args: { bankAccountId?: string; maxDate?: string; minDate?: string },
+    pagination?: Pagination,
+  ): Promise<TransactionsPage>;
+
+  async findAll(
+    user: FBUser,
+    args: { bankAccountId: string; maxDate?: string; minDate?: string },
+    pagination: Pagination,
+  ): Promise<TransactionsPage> {
+    return this.transacationRepository.getByBankAccountId(args.bankAccountId, args, pagination);
+  }
+
+  async getBalanceByBankAccount(user: FBUser, bankAccountId: string, args?: { maxDate: string }): Promise<number> {
+    const bankAccount = await this.bankAccountService.findById(user.id, bankAccountId);
+
+    if (bankAccount != null) {
+      return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
+    }
+
+    return null;
   }
 
   private async validPermissions(user: FBUser, input: NewTransactionArgs) {
@@ -57,8 +78,8 @@ export class TransactionService {
       }
     }
 
-    // User one must be access to group of the logged user
-    if (!(await this.groupService.userHasAccessToGroup(input.firstUserId, input.groupId))) {
+    // User one must be the logged user or an user that can access the group of the logged user
+    if (input.firstUserId !== user.id && !(await this.groupService.userHasAccessToGroup(input.firstUserId, input.groupId))) {
       throw new AuthenticationError('');
     }
 

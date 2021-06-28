@@ -16,12 +16,17 @@
       </app-title-bar>
 
       <div class="bank-accounts grid md:grid-cols-2 md:gap-4">
-        <mat-card class="bank-account" *ngFor="let bankAccount of bankAccounts">
+        <mat-card [routerLink]="bankAccount.id" class="bank-account cursor-pointer" *ngFor="let bankAccount of bankAccounts">
           <mat-card-header class="items-center mb-1">
             <mat-icon mat-card-avatar class="w-auto h-auto">account_balance</mat-icon>
             <mat-card-title class="mb-0 break-all">{{ bankAccount.name }}</mat-card-title>
-            <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu"
-              aria-label="Example icon-button with a menu">
+            <button
+              (click)="$event.stopPropagation()"
+              class="ml-auto"
+              mat-icon-button
+              [matMenuTriggerFor]="menu"
+              aria-label="Example icon-button with a menu"
+            >
               <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
@@ -35,16 +40,12 @@
               </button>
             </mat-menu>
           </mat-card-header>
-          <mat-card-content>
-            {{ t('balance-value', {value: (bankAccount.balance ?? 0) | currency }) }}
-          </mat-card-content>
         </mat-card>
       </div>
     </ng-container>
   </div>
 
   <ng-template #noBankAccount>
-    <app-no-item [text]="t('no-bank-accounts')" [buttonText]="'new-bank-account' | transloco" buttonRouterLink="new">
-    </app-no-item>
+    <app-no-item [text]="t('no-bank-accounts')" [buttonText]="'new-bank-account' | transloco" buttonRouterLink="new"> </app-no-item>
   </ng-template>
 </ng-container>

@@ -61,6 +61,7 @@
   "changing-name-successful": "'{{oldName}}' foi alterado com sucesso para '{{newName}}'.",
   "changing-name-error": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.",
   "changing-name-error-with-description": "Não foi possível alterar o nome de '{{oldName}}' para '{{newName}}'.<br>Error: {{error}}.",
+  "transactions": "Transações",
   "new-transaction": "Nova transação",
   "new-transaction-individual": "Nova transação individual",
   "new-transaction-shared": "Nova transação compartilhada",
@@ -80,6 +81,7 @@
   "transaction-category-placeholder": "Escolha uma categoria.",
   "categories": "Categorias",
   "category": "Categoria",
+  "category-name": "Categoria: {{name}}",
   "new-category": "Nova categoria",
   "edit-category": "Editar categoria",
   "color": "Cor",
@@ -87,5 +89,7 @@
   "category-color-placeholder": "Uma cor que te ajude a identificar categoria",
   "invite": "Convite",
   "no-categories": "Nenhuma categoria foi cadastrada. Que tal cadastrar a primeira?",
-  "balance-value": "Saldo: {{value}}"
+  "balance": "Saldo",
+  "transaction-type": "Tipo",
+  "page-of": "Página {{n1}} de {{n2}}"
 }

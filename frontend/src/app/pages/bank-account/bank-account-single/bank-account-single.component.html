@@ -1,0 +1,91 @@
+<ng-container *transloco="let t">
+  <div class="content bank-account-single-page">
+    <ng-container *ngIf="bankAccount; else loadingTemplate">
+      <app-title-bar>
+        <div custom-title>
+          <td-breadcrumbs>
+            <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+            <a td-breadcrumb routerLink="/finances/bank">{{ t('bank-accounts') }}</a>
+            <td-breadcrumb>{{ bankAccount.name }}</td-breadcrumb>
+          </td-breadcrumbs>
+        </div>
+      </app-title-bar>
+
+      <app-month-bar class="pb-4" (dateChange)="dateChanged($event)"></app-month-bar>
+
+      <div class="cards grid md:grid-cols-3 md:gap-4 pb-4">
+        <ng-template #loadingCard>
+          <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
+        </ng-template>
+
+        <mat-card class="card">
+          <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+            <span class="text-gray-400 mb-2">{{ t('balance') }}</span>
+            <h3 class="m-0" *ngIf="balance != null; else loadingCard">{{ balance | currency }}</h3>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="transactions-title flex items-center">
+        <h2 class="m-0">{{ t('transactions') }}</h2>
+        <button mat-icon-button class="ml-auto" (click)="getTransactions()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+
+      <ng-container *ngIf="transactionsPage$ | async as transactionsPage; else loadingTemplate">
+        <mat-list class="transactions">
+          <mat-list-item class="transaction" [class.negative]="transaction.value < 0" *ngFor="let transaction of transactionsPage.items">
+            <mat-icon
+              [title]="t(getTransactionTranslateKey(transaction))"
+              class="transaction-type cursor-default {{ getTransactionCssColor(transaction) }}"
+              matListIcon
+            >
+              {{ getIconForTransaction(transaction) }}
+            </mat-icon>
+            <h3 matLine class="transaction-value">{{ transaction.value | currency | spaceOnSignal }}</h3>
+            <h3 matLine *ngIf="transaction.description != null">{{ transaction.description }}</h3>
+            <h3 matLine *ngIf="transaction.category != null" class="flex items-center">
+              <span class="cat-dot mr-2" [style.background-color]="transaction.category.color"></span>
+              {{ transaction.category.name }}
+            </h3>
+            <p matLine>{{ transaction.date | date }}</p>
+            <p matLine *ngIf="transaction.group != null">{{ t('group-name', { name: transaction.group.name }) }}</p>
+            <button mat-icon-button [matMenuTriggerFor]="transactionMoreMenu">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+
+            <mat-menu #transactionMoreMenu="matMenu">
+              <div class="new-transaction-menu">
+                <div class="actions">
+                  <button mat-menu-item (click)="editTransaction(transaction)">
+                    <mat-icon>edit</mat-icon>
+                    <span>{{ t('edit') }}</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteTransaction(transaction)">
+                    <mat-icon>delete</mat-icon>
+                    <span>{{ t('delete') }}</span>
+                  </button>
+                </div>
+              </div>
+            </mat-menu>
+          </mat-list-item>
+        </mat-list>
+        <td-paging-bar
+          #pagingBar
+          [initialPage]="transactionsPage.page"
+          [firstLast]="true"
+          [pageSize]="pageSize"
+          [total]="transactionsPage.total"
+          (change)="getTransactions($event.page)"
+        >
+          {{ t('page-of', { n1: pagingBar.page, n2: pagingBar.maxPage, range: pagingBar.range }) }}
+        </td-paging-bar>
+      </ng-container>
+    </ng-container>
+  </div>
+</ng-container>
+
+<ng-template #loadingTemplate>
+  <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
+</ng-template>

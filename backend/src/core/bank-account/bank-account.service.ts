@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
+import { Types } from 'mongoose';
 import { BankAccount } from '../models';
 import { NewBankAccountArgs } from '../models/args';
 import { TransactionService } from '../transaction';
@@ -14,6 +15,16 @@ export class BankAccountService {
 
   create(userId: string, newBankAccount: NewBankAccountArgs): Promise<BankAccount> {
     return this.bankAccountRepository.create({ ...newBankAccount, userId });
+  }
+
+  async findById(userId: string, bankAccountId: string): Promise<BankAccount> {
+    const bankAccount = await this.bankAccountRepository.getById(bankAccountId);
+
+    if (bankAccount != null && (bankAccount.userId as unknown as Types.ObjectId).toHexString() !== userId) {
+      throw new AuthenticationError('');
+    }
+
+    return bankAccount;
   }
 
   findAllWithUserId(userId: string): Promise<BankAccount[]> {

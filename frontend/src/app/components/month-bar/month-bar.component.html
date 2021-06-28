@@ -1,0 +1,16 @@
+<div class="month-bar flex items-center justify-center">
+  <button mat-icon-button (click)="previousMonth()">
+    <mat-icon>navigate_before</mat-icon>
+  </button>
+
+  <button mat-button class="month mx-6" (click)="picker.open()">
+    <h3 class="capitalize my-0 mx-2">{{ date?.format('MMMM') }}</h3>
+    <input matInput [(ngModel)]="date" [matDatepicker]="picker" class="invisible w-0 h-0 p-0 m-0" />
+  </button>
+
+  <mat-datepicker startView="year" (monthSelected)="chosenMonthHandler($event, picker)" #picker></mat-datepicker>
+
+  <button mat-icon-button (click)="nextMonth()">
+    <mat-icon>navigate_next</mat-icon>
+  </button>
+</div>

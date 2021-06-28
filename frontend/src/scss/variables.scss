@@ -25,3 +25,8 @@ $config: mat-get-color-config($theme);
 $background: map.get($config, 'background');
 
 $primary-color: mat-color($primary);
+
+$expense-color: #b71c1c;
+$credit-card-color: #212121;
+$transfer-color: #1a237e;
+$revenue-color: #004d40;
