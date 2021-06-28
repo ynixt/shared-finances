@@ -233,6 +233,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
           }),
         )
         .toPromise();
+
+        this.closed.next();
     }
   }
 
