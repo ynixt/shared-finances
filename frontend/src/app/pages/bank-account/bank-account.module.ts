@@ -10,12 +10,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { CovalentDialogsModule } from '@covalent/core/dialogs';
-import { CovalentDataTableModule } from '@covalent/core/data-table';
-import { CovalentPagingModule } from '@covalent/core/paging';
 
 import { BankAccountSingleComponent } from './bank-account-single/bank-account-single.component';
-import { MatOptionModule } from '@angular/material/core';
 import { MonthBarModule } from 'src/app/components/month-bar';
+import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
 
 @NgModule({
   declarations: [BankAccountComponent, NewBankAccountComponent, BankAccountSingleComponent],
@@ -28,10 +26,8 @@ import { MonthBarModule } from 'src/app/components/month-bar';
     MatFormFieldModule,
     MatInputModule,
     CovalentDialogsModule,
-    CovalentDataTableModule,
-    CovalentPagingModule,
-    MatOptionModule,
     MonthBarModule,
+    TransactionsTableModule,
   ],
 })
 export class BankAccountModule {}

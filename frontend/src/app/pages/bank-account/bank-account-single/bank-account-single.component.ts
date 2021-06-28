@@ -1,10 +1,8 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ITdDataTableColumn } from '@covalent/core/data-table';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
 import { switchMap } from 'rxjs/operators';
-import { TransactionType } from 'src/app/@core/enums';
 import { BankAccount, Page, Transaction } from 'src/app/@core/models';
 import { BankAccountService } from '../bank-account.service';
 
@@ -21,8 +19,6 @@ export class BankAccountSingleComponent implements OnInit {
 
   transactionsPage$: Promise<Page<Transaction>>;
   balance: number;
-
-  columns: ITdDataTableColumn[];
 
   private monthDate: Moment;
 
@@ -55,45 +51,6 @@ export class BankAccountSingleComponent implements OnInit {
   public async editTransaction(transaction: Transaction) {}
 
   public async deleteTransaction(transaction: Transaction) {}
-
-  public getIconForTransaction(transaction: Transaction) {
-    switch (transaction.transactionType) {
-      case TransactionType.CreditCard:
-        return 'credit_card';
-      case TransactionType.Expense:
-        return 'trending_down';
-      case TransactionType.Revenue:
-        return 'trending_up';
-      case TransactionType.Transfer:
-        return 'sync_alt';
-    }
-  }
-
-  public getTransactionTranslateKey(transaction: Transaction) {
-    switch (transaction.transactionType) {
-      case TransactionType.CreditCard:
-        return 'credit-card';
-      case TransactionType.Expense:
-        return 'expense';
-      case TransactionType.Revenue:
-        return 'revenue';
-      case TransactionType.Transfer:
-        return 'transfer';
-    }
-  }
-
-  public getTransactionCssColor(transaction: Transaction) {
-    switch (transaction.transactionType) {
-      case TransactionType.CreditCard:
-        return 'credit-card-color';
-      case TransactionType.Expense:
-        return 'expense-color';
-      case TransactionType.Revenue:
-        return 'revenue-color';
-      case TransactionType.Transfer:
-        return 'transfer-color';
-    }
-  }
 
   public async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;

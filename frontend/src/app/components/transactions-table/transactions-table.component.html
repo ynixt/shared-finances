@@ -1,0 +1,62 @@
+<div class="transactions-table" *transloco="let t">
+  <div class="transactions-title flex items-center">
+    <h2 class="m-0">{{ t('transactions') }}</h2>
+    <button mat-icon-button class="ml-auto" (click)="getTransactions()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <ng-container *ngIf="transactionsPage$ | async as transactionsPage; else loadingTemplate">
+    <mat-list class="transactions">
+      <mat-list-item class="transaction" [class.negative]="transaction.value < 0" *ngFor="let transaction of transactionsPage.items">
+        <mat-icon
+          [title]="t(getTransactionTranslateKey(transaction))"
+          class="transaction-type cursor-default {{ getTransactionCssColor(transaction) }}"
+          matListIcon
+        >
+          {{ getIconForTransaction(transaction) }}
+        </mat-icon>
+        <h3 matLine class="transaction-value">{{ transaction.value | currency | spaceOnSignal }}</h3>
+        <h3 matLine *ngIf="transaction.description != null">{{ transaction.description }}</h3>
+        <h3 matLine *ngIf="transaction.category != null" class="flex items-center">
+          <span class="cat-dot mr-2" [style.background-color]="transaction.category.color"></span>
+          {{ transaction.category.name }}
+        </h3>
+        <p matLine>{{ transaction.date | date }}</p>
+        <p matLine *ngIf="transaction.group != null">{{ t('group-name', { name: transaction.group.name }) }}</p>
+        <button mat-icon-button [matMenuTriggerFor]="transactionMoreMenu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+
+        <mat-menu #transactionMoreMenu="matMenu">
+          <div class="new-transaction-menu">
+            <div class="actions">
+              <button mat-menu-item (click)="editTransaction(transaction)">
+                <mat-icon>edit</mat-icon>
+                <span>{{ t('edit') }}</span>
+              </button>
+              <button mat-menu-item (click)="deleteTransaction(transaction)">
+                <mat-icon>delete</mat-icon>
+                <span>{{ t('delete') }}</span>
+              </button>
+            </div>
+          </div>
+        </mat-menu>
+      </mat-list-item>
+    </mat-list>
+    <td-paging-bar
+      #pagingBar
+      [initialPage]="transactionsPage.page"
+      [firstLast]="true"
+      [pageSize]="pageSize"
+      [total]="transactionsPage.total"
+      (change)="getTransactions($event.page)"
+    >
+      {{ t('page-of', { n1: pagingBar.page, n2: pagingBar.maxPage, range: pagingBar.range }) }}
+    </td-paging-bar>
+  </ng-container>
+</div>
+
+<ng-template #loadingTemplate>
+  <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
+</ng-template>
