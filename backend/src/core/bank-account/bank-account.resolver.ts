@@ -54,4 +54,9 @@ export class BankAccountResolver {
   ) {
     return this.transactionService.getBalanceByBankAccount(user, bankAccountId, { maxDate });
   }
+
+  @ResolveField()
+  async balance(@Parent() bankAccount: BankAccount) {
+    return this.transactionService.getBalanceByBankAccountWithoutCheckPermission(bankAccount.id);
+  }
 }

@@ -4,10 +4,9 @@ import firebase from 'firebase/app';
 
 import { AuthType, User } from '../models';
 import { AuthDispatchers } from 'src/app/store';
-import { Apollo, gql, QueryRef } from 'apollo-angular';
-import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { Apollo, gql } from 'apollo-angular';
+import { catchError, map } from 'rxjs/operators';
 import { from, Observable, of } from 'rxjs';
-import { EmptyObject } from 'apollo-angular/types';
 
 @Injectable({
   providedIn: 'root',
@@ -28,6 +27,7 @@ export class AuthService {
               bankAccounts {
                 id
                 name
+                balance
               }
             }
           }

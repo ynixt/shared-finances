@@ -28,7 +28,7 @@
 
       <app-transactions-table
         [transactionsPage$]="transactionsPage$"
-        [pageSize]="20"
+        [pageSize]="pageSize"
         (getTransactionsRequested)="getTransactions($event.page)"
         (editTransactionRequested)="editTransaction($event)"
         (deleteTransactionRequested)="deleteTransaction($event)"

@@ -40,7 +40,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     return new TransactionsPage(await this.paginationService.convertQueryToPage(query, pagination));
   }
 
-  async getBalanceByBankAccountId(bankAccountId: string, args?: { maxDate: string }): Promise<number> {
+  async getBalanceByBankAccountId(bankAccountId: string, args?: { maxDate?: string }): Promise<number> {
     try {
       const aggregate = this.model.aggregate([
         {

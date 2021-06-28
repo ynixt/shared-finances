@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 
@@ -16,6 +16,9 @@ export class BankAccount {
 
   @Prop({ type: MongooseSchema.Types.ObjectId, index: true, required: true })
   userId: string;
+
+  @Field(() => Float, { nullable: true })
+  balance?: string;
 }
 
 export const BankAccountSchema = SchemaFactory.createForClass(BankAccount);

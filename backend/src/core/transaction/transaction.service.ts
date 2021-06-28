@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
+import * as moment from 'moment';
 import { Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { BankAccountService } from '../bank-account';
@@ -60,14 +61,22 @@ export class TransactionService {
     return this.transacationRepository.getByBankAccountId(args.bankAccountId, args, pagination);
   }
 
-  async getBalanceByBankAccount(user: FBUser, bankAccountId: string, args?: { maxDate: string }): Promise<number> {
+  async getBalanceByBankAccount(user: FBUser, bankAccountId: string, args: { maxDate?: string } = {}): Promise<number> {
     const bankAccount = await this.bankAccountService.findById(user.id, bankAccountId);
+
+    args.maxDate ??= moment.utc().toISOString();
 
     if (bankAccount != null) {
       return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
     }
 
     return null;
+  }
+
+  async getBalanceByBankAccountWithoutCheckPermission(bankAccountId: string, args: { maxDate?: string } = {}): Promise<number> {
+    args.maxDate ??= moment.utc().endOf('month').toISOString();
+
+    return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
   }
 
   private async validPermissions(user: FBUser, input: NewTransactionArgs) {

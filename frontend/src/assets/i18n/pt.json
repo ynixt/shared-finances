@@ -90,6 +90,7 @@
   "invite": "Convite",
   "no-categories": "Nenhuma categoria foi cadastrada. Que tal cadastrar a primeira?",
   "balance": "Saldo",
+  "balance-value": "Saldo: {{value}}",
   "transaction-type": "Tipo",
   "page-of": "Página {{n1}} de {{n2}}"
 }
