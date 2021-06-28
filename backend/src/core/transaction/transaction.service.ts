@@ -74,7 +74,7 @@ export class TransactionService {
   }
 
   async getBalanceByBankAccountWithoutCheckPermission(bankAccountId: string, args: { maxDate?: string } = {}): Promise<number> {
-    args.maxDate ??= moment.utc().endOf('month').toISOString();
+    args.maxDate ??= moment.utc().toISOString();
 
     return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
   }
