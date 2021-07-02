@@ -98,6 +98,9 @@ type Mutation {
 }
 
 type Subscription {
+  transactionCreated(bankAccountId: String): Transaction
+  transactionUpdated(bankAccountId: String): Transaction
+  transactionDeleted(bankAccountId: String): Transaction
   userCategoryCreated: Category
   userCategoryUpdated: Category
   userCategoryDeleted: Category

@@ -5,6 +5,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
+import { merge, Observable, Subscription } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { BankAccount, Page, Transaction } from 'src/app/@core/models';
 import { ErrorService, TransactionService } from 'src/app/@core/services';
@@ -22,10 +23,11 @@ export class BankAccountSingleComponent implements OnInit {
   bankAccount: BankAccount;
   pageSize = 20;
 
-  transactionsPage$: Promise<Page<Transaction>>;
+  transactionsPage$: Observable<Page<Transaction>>;
   balance: number;
 
   private monthDate: Moment;
+  private transactionsChangeSubscription: Subscription;
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -51,7 +53,7 @@ export class BankAccountSingleComponent implements OnInit {
       .subscribe(bankAccount => this.getBankAccount(bankAccount));
   }
 
-  public async getTransactions(page = 1): Promise<void> {
+  public getTransactions(page = 1): void {
     this.transactionsPage$ = this.bankAccountService.getTransactions(
       this.bankAccount.id,
       { maxDate: moment(this.monthDate).endOf('month'), minDate: moment(this.monthDate).startOf('month') },
@@ -100,6 +102,22 @@ export class BankAccountSingleComponent implements OnInit {
   }
 
   private getInfoBasedOnBank() {
-    return Promise.all([this.getBalance(), this.getTransactions()]);
+    this.getTransactions();
+    this.reloadBalanceOnTransactions();
+    return this.getBalance();
+  }
+
+  private reloadBalanceOnTransactions(): void {
+    this.transactionsChangeSubscription?.unsubscribe();
+
+    this.transactionsChangeSubscription = merge(
+      this.bankAccountService.onTransactionCreated(this.bankAccount.id),
+      this.bankAccountService.onTransactionUpdated(this.bankAccount.id),
+      this.bankAccountService.onTransactionDeleted(this.bankAccount.id),
+    )
+      .pipe(untilDestroyed(this))
+      .subscribe(async () => {
+        await this.getBalance();
+      });
   }
 }

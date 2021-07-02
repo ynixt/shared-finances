@@ -1,5 +1,7 @@
 import { UseGuards } from '@nestjs/common';
-import { Query, Args, Mutation, Parent, ResolveField, Resolver, Int } from '@nestjs/graphql';
+import { Query, Args, Mutation, Parent, ResolveField, Resolver, Int, Subscription } from '@nestjs/graphql';
+import { PubSub } from 'apollo-server-express';
+import { Types } from 'mongoose';
 import { ErrorUtilService, INITIAL_PAGE, MAX_PAGE_SIZE, Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
@@ -9,6 +11,14 @@ import { GroupService } from '../group';
 import { Category, Transaction, TransactionsPage } from '../models';
 import { EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionService } from './transaction.service';
+
+const pubSub = new PubSub();
+
+enum TransactionPubTrigger {
+  transactionCreated = 'transactionCreated',
+  transactionDeleted = 'transactionDeleted',
+  transactionUpdated = 'transactionUpdated',
+}
 
 @Resolver(() => Transaction)
 export class TransactionResolver {
@@ -38,20 +48,41 @@ export class TransactionResolver {
 
   @Mutation(() => Transaction)
   @UseGuards(GqlFirebaseAuthGuard)
-  newTransaction(@GqlCurrentUser() user: FBUser, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
-    return this.transactionService.create(user, newTransactionArgs);
+  async newTransaction(@GqlCurrentUser() user: FBUser, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
+    const transactionCreated = await this.transactionService.create(user, newTransactionArgs);
+
+    if (transactionCreated) {
+      const usersDestination = await this.getUsersDestinationForPub(transactionCreated);
+      pubSub.publish(TransactionPubTrigger.transactionCreated, { transactionCreated, usersDestination });
+    }
+
+    return transactionCreated;
   }
 
   @Mutation(() => Transaction)
   @UseGuards(GqlFirebaseAuthGuard)
-  editTransaction(@GqlCurrentUser() user: FBUser, @Args() editTransactionArgs: EditTransactionArgs): Promise<Transaction> {
-    return this.transactionService.edit(user, editTransactionArgs);
+  async editTransaction(@GqlCurrentUser() user: FBUser, @Args() editTransactionArgs: EditTransactionArgs): Promise<Transaction> {
+    const transactionUpdated = await this.transactionService.edit(user, editTransactionArgs);
+
+    if (transactionUpdated) {
+      const usersDestination = await this.getUsersDestinationForPub(transactionUpdated);
+      pubSub.publish(TransactionPubTrigger.transactionUpdated, { transactionUpdated, usersDestination });
+    }
+
+    return transactionUpdated;
   }
 
   @Mutation(() => Boolean)
   @UseGuards(GqlFirebaseAuthGuard)
-  deleteTransaction(@GqlCurrentUser() user: FBUser, @Args('transactionId') transactionId: string): Promise<boolean> {
-    return this.transactionService.deleteById(user, transactionId);
+  async deleteTransaction(@GqlCurrentUser() user: FBUser, @Args('transactionId') transactionId: string): Promise<boolean> {
+    const transactionDeleted = await this.transactionService.deleteById(user, transactionId);
+
+    if (transactionDeleted) {
+      const usersDestination = await this.getUsersDestinationForPub(transactionDeleted);
+      pubSub.publish(TransactionPubTrigger.transactionDeleted, { transactionDeleted, usersDestination });
+    }
+
+    return transactionDeleted != null;
   }
 
   @ResolveField()
@@ -70,5 +101,71 @@ export class TransactionResolver {
     }
 
     return null;
+  }
+
+  @Subscription(() => Transaction, {
+    nullable: true,
+    filter: async (payload, variables, context): Promise<boolean> => {
+      const isToThisUser = payload?.usersDestination?.includes(context.req.user.id);
+
+      if (isToThisUser) {
+        if (variables.bankAccountId != null && payload?.transactionCreated?.bankAccountId != null) {
+          return isToThisUser && variables.bankAccountId === payload.transactionCreated.bankAccountId.toHexString();
+        }
+      }
+
+      return isToThisUser;
+    },
+  })
+  @UseGuards(GqlFirebaseAuthGuard)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  transactionCreated(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
+    return pubSub.asyncIterator(TransactionPubTrigger.transactionCreated);
+  }
+
+  @Subscription(() => Transaction, {
+    nullable: true,
+    filter: async (payload, variables, context): Promise<boolean> => {
+      const isToThisUser = payload?.usersDestination?.includes(context.req.user.id);
+
+      if (isToThisUser) {
+        if (variables.bankAccountId != null && payload?.transactionUpdated?.bankAccountId != null) {
+          return isToThisUser && variables.bankAccountId === payload.transactionUpdated.bankAccountId.toHexString();
+        }
+      }
+
+      return isToThisUser;
+    },
+  })
+  @UseGuards(GqlFirebaseAuthGuard)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  transactionUpdated(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
+    return pubSub.asyncIterator(TransactionPubTrigger.transactionUpdated);
+  }
+
+  @Subscription(() => Transaction, {
+    nullable: true,
+    filter: async (payload, variables, context): Promise<boolean> => {
+      const isToThisUser = payload?.usersDestination?.includes(context.req.user.id);
+
+      if (isToThisUser) {
+        if (variables.bankAccountId != null && payload?.transactionDeleted?.bankAccountId != null) {
+          return isToThisUser && variables.bankAccountId === payload.transactionDeleted.bankAccountId.toHexString();
+        }
+      }
+
+      return isToThisUser;
+    },
+  })
+  @UseGuards(GqlFirebaseAuthGuard)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  transactionDeleted(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
+    return pubSub.asyncIterator(TransactionPubTrigger.transactionDeleted);
+  }
+
+  private async getUsersDestinationForPub(transaction: Transaction): Promise<string[]> {
+    return transaction.userId != null
+      ? [(transaction.userId as unknown as Types.ObjectId).toHexString()]
+      : await this.groupService.getUsersIdFromGroup(transaction.groupId);
   }
 }

@@ -30,9 +30,10 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
             'creditCardId': domain.creditCardId,
             'categoryId': domain.categoryId,
             'groupId': domain.groupId,
+            'userId': domain.firstUserId,
           },
         },
-        { new: true },
+        { new: true, omitUndefined: true },
       )
       .exec();
 

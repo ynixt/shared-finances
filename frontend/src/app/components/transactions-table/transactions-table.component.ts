@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { TranslocoService } from '@ngneat/transloco';
+import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { Page, Transaction } from 'src/app/@core/models';
@@ -15,7 +16,7 @@ export interface TransactionsRequested {
   styleUrls: ['./transactions-table.component.scss'],
 })
 export class TransactionsTableComponent implements OnInit {
-  @Input() transactionsPage$: Promise<Page<Transaction>>;
+  @Input() transactionsPage$: Promise<Page<Transaction>> | Observable<Page<Transaction>>;
   @Input() pageSize = 20;
 
   @Output() getTransactionsRequested = new EventEmitter<TransactionsRequested>();

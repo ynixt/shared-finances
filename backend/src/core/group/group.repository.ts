@@ -66,6 +66,12 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
     );
   }
 
+  async getUsersIdFromGroup(groupId: string, opts?: MongoRepositoryOptions): Promise<string[]> {
+    const group = await this.model.findById(groupId, undefined, opts).select('usersId').exec();
+
+    return group ? group.usersId.map(userObjectId => (userObjectId as unknown as mongoose.Types.ObjectId).toHexString()) : [];
+  }
+
   public groupHasUser(userId: string, options: { groupId: string }): Promise<boolean>;
   public groupHasUser(userId: string, options: { group: Group }): Promise<boolean>;
 

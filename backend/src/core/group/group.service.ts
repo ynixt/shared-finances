@@ -69,4 +69,8 @@ export class GroupService {
   public userHasAccessToGroup(userId: string, groupId: string): Promise<boolean> {
     return this.groupRepository.groupHasUser(userId, { groupId });
   }
+
+  getUsersIdFromGroup(groupId: string): Promise<string[]> {
+    return this.groupRepository.getUsersIdFromGroup(groupId);
+  }
 }

@@ -32,11 +32,14 @@ export class TransactionService {
       input.value *= -1;
 
       return this.transacationRepository.runInsideTransaction(async opts => {
-        await this.transacationRepository.create({ ...input, bankAccountId: bankAccount2Id, value: input.value * -1 }, opts);
-        return this.transacationRepository.create(input, opts);
+        await this.transacationRepository.create(
+          { ...input, bankAccountId: bankAccount2Id, userId: input.secondUserId, value: input.value * -1 },
+          opts,
+        );
+        return this.transacationRepository.create({ ...input, userId: input.firstUserId }, opts);
       });
     } else {
-      return this.transacationRepository.create(input);
+      return this.transacationRepository.create({ ...input, userId: input.firstUserId });
     }
   }
 
@@ -59,11 +62,13 @@ export class TransactionService {
     return this.transacationRepository.getById(transactionId, opts);
   }
 
-  async deleteById(user: FBUser, transactionId: string, opts?: MongoRepositoryOptions): Promise<boolean> {
+  async deleteById(user: FBUser, transactionId: string, opts?: MongoRepositoryOptions): Promise<Transaction> {
     const transaction = await this.getById(transactionId);
 
     if (await this.validPermissionsOnExistingTransaction(user, transaction)) {
-      return this.transacationRepository.deleteById(transactionId, opts);
+      const deleted = await this.transacationRepository.deleteById(transactionId, opts);
+
+      return deleted ? transaction : null;
     }
 
     throw new AuthenticationError('');
