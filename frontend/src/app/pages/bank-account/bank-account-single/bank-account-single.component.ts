@@ -62,8 +62,14 @@ export class BankAccountSingleComponent implements OnInit {
   }
 
   public async getBalance(): Promise<void> {
+    let maxDate = moment(this.monthDate).endOf('month');
+
+    if (maxDate.isAfter(moment())) {
+      maxDate = moment();
+    }
+
     this.balance = undefined;
-    this.balance = await this.bankAccountService.getBalance(this.bankAccount.id, { maxDate: this.monthDate });
+    this.balance = await this.bankAccountService.getBalance(this.bankAccount.id, { maxDate: maxDate });
   }
 
   public async editTransaction(transaction: Transaction) {
