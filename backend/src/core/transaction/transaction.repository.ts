@@ -5,6 +5,7 @@ import { Pagination, PaginationService } from 'src/shared';
 import { MongoDefaultRepository } from '../data';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { Transaction, TransactionDocument, TransactionsPage } from '../models';
+import { EditTransactionArgs } from '../models/args';
 
 @Injectable()
 export class TransactionRepository extends MongoDefaultRepository<Transaction, TransactionDocument> {
@@ -13,6 +14,35 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     private paginationService: PaginationService,
   ) {
     super(transactionDocument);
+  }
+
+  async edit(domain: EditTransactionArgs): Promise<Transaction> {
+    const result = await this.model
+      .findOneAndUpdate(
+        { _id: domain.transactionId },
+        {
+          $set: {
+            'transactionType': domain.transactionType,
+            'date': domain.date,
+            'value': domain.value,
+            'description': domain.description,
+            'bankAccountId': domain.bankAccountId,
+            'creditCardId': domain.creditCardId,
+            'categoryId': domain.categoryId,
+            'groupId': domain.groupId,
+          },
+        },
+        { new: true },
+      )
+      .exec();
+
+    return result;
+  }
+
+  async deleteById(transactionId: string, opts?: MongoRepositoryOptions): Promise<boolean> {
+    const result = await this.model.deleteOne({ _id: transactionId }, opts);
+
+    return result.n > 0;
   }
 
   async deleteByBankAccountId(bankAccountId: string, opts?: MongoRepositoryOptions): Promise<void> {
@@ -69,9 +99,3 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     }
   }
 }
-
-/**
- * Incluir botão para trocar mes/ano da conta bancária
- * esse mes/ano deve ser enviado como maior data possível no filtro do saldo
- * separar o saldo em uma req a parte
- */

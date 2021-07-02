@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
+import { UserInputError } from 'apollo-server-express';
 import * as moment from 'moment';
 import { Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
@@ -8,7 +9,7 @@ import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { GroupService } from '../group';
 import { Transaction, TransactionType, TransactionsPage } from '../models';
-import { NewTransactionArgs } from '../models/args';
+import { EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
 
 @Injectable()
@@ -37,6 +38,35 @@ export class TransactionService {
     } else {
       return this.transacationRepository.create(input);
     }
+  }
+
+  async edit(user: FBUser, input: EditTransactionArgs): Promise<Transaction> {
+    const transaction = await this.getById(input.transactionId);
+
+    if (await this.validPermissionsOnExistingTransaction(user, transaction)) {
+      await this.validPermissions(user, input);
+
+      if (input.transactionType === TransactionType.Transfer || transaction.transactionType === TransactionType.Transfer) {
+        throw new UserInputError('For now is not possible to edit a transfer transaction.');
+      } else {
+        return this.transacationRepository.edit(input);
+      }
+    }
+    throw new AuthenticationError('');
+  }
+
+  getById(transactionId: string, opts?: MongoRepositoryOptions): Promise<Transaction> {
+    return this.transacationRepository.getById(transactionId, opts);
+  }
+
+  async deleteById(user: FBUser, transactionId: string, opts?: MongoRepositoryOptions): Promise<boolean> {
+    const transaction = await this.getById(transactionId);
+
+    if (await this.validPermissionsOnExistingTransaction(user, transaction)) {
+      return this.transacationRepository.deleteById(transactionId, opts);
+    }
+
+    throw new AuthenticationError('');
   }
 
   async deleteByBankAccountId(userId: string, bankAccountId: string, opts?: MongoRepositoryOptions): Promise<void> {
@@ -77,6 +107,18 @@ export class TransactionService {
     args.maxDate ??= moment.utc().toISOString();
 
     return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
+  }
+
+  private async validPermissionsOnExistingTransaction(user: FBUser, transaction: Transaction) {
+    if (
+      (transaction.groupId != null && user.groupsId.includes(transaction.groupId)) ||
+      (transaction.bankAccountId != null && (await this.bankAccountService.existsWithUserId(user.id, transaction.bankAccountId))) ||
+      (transaction.creditCardId != null && (await this.creditCardService.existsWithUserId(user.id, transaction.bankAccountId)))
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   private async validPermissions(user: FBUser, input: NewTransactionArgs) {

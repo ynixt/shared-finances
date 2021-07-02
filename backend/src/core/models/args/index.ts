@@ -5,3 +5,4 @@ export * from './new-bank-account-args';
 export * from './new-transaction-args';
 export * from './new-category-args';
 export * from './edit-category-args';
+export * from './edit-transaction-args';

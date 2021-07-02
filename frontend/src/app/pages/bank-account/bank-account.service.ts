@@ -54,6 +54,7 @@ export class BankAccountService {
                   name
                   color
                 }
+                bankAccountId
               }
               total
               page

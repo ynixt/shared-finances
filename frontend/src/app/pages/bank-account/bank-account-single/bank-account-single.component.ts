@@ -1,9 +1,14 @@
-import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, Inject, OnInit, Renderer2, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HotToastService } from '@ngneat/hot-toast';
+import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
 import { BankAccount, Page, Transaction } from 'src/app/@core/models';
+import { ErrorService, TransactionService } from 'src/app/@core/services';
+import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { BankAccountService } from '../bank-account.service';
 
 @UntilDestroy()
@@ -22,7 +27,18 @@ export class BankAccountSingleComponent implements OnInit {
 
   private monthDate: Moment;
 
-  constructor(private activatedRoute: ActivatedRoute, private bankAccountService: BankAccountService, private router: Router) {}
+  constructor(
+    private activatedRoute: ActivatedRoute,
+    private bankAccountService: BankAccountService,
+    private router: Router,
+    private transactionService: TransactionService,
+    private translocoService: TranslocoService,
+    private toast: HotToastService,
+    private errorService: ErrorService,
+    private newTransactionDialogService: NewTransactionDialogService,
+    @Inject(DOCUMENT) private document: any,
+    private renderer2: Renderer2,
+  ) {}
 
   ngOnInit(): void {
     this.activatedRoute.params
@@ -48,9 +64,26 @@ export class BankAccountSingleComponent implements OnInit {
     this.balance = await this.bankAccountService.getBalance(this.bankAccount.id, { maxDate: this.monthDate });
   }
 
-  public async editTransaction(transaction: Transaction) {}
+  public async editTransaction(transaction: Transaction) {
+    this.newTransactionDialogService.openDialog(this.document, this.renderer2, transaction.group != null, transaction);
+  }
 
-  public async deleteTransaction(transaction: Transaction) {}
+  public async deleteTransaction(transaction: Transaction) {
+    await this.transactionService
+      .deleteTransaction(transaction.id)
+      .pipe(
+        take(1),
+        this.toast.observe({
+          loading: this.translocoService.translate('deleting'),
+          success: this.translocoService.translate('deleting-successful', { name: transaction.description }),
+          error: error =>
+            this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
+              name: transaction.description,
+            }),
+        }),
+      )
+      .toPromise();
+  }
 
   public async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;

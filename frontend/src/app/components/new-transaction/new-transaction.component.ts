@@ -8,13 +8,12 @@ import moment from 'moment';
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
-import { BankAccount, Category, CreditCard, User } from 'src/app/@core/models';
+import { BankAccount, Category, CreditCard, Transaction, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
-import { GroupsService, TitleService } from 'src/app/@core/services';
+import { GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthSelectors, BankAccountSelectors, CreditCardSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
 import { NewTransactionComponentArgs } from './new-transaction-component-args';
-import { NewTransactionService } from './new-transaction.service';
 
 interface AccountWithPerson {
   person: Partial<User>;
@@ -92,12 +91,13 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   filteredCategories$: Observable<Category[]>;
   shared: boolean;
   groups: Group[];
+  editingTransaction: Transaction;
 
   private previousTitle: string;
   private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
 
   constructor(
-    private newTransactionService: NewTransactionService,
+    private transactionService: TransactionService,
     private bankAccountSelectors: BankAccountSelectors,
     private authSelectors: AuthSelectors,
     private translocoService: TranslocoService,
@@ -111,6 +111,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     @Inject(MAT_DIALOG_DATA) data: NewTransactionComponentArgs,
   ) {
     this.shared = data.shared;
+    this.editingTransaction = data.transaction != null ? { ...data.transaction } : undefined;
   }
 
   get transactionType() {
@@ -127,13 +128,15 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   async ngOnInit(): Promise<void> {
     this.formGroup = new FormGroup({
-      transactionType: new FormControl(TransactionType.Revenue, [Validators.required]),
-      date: new FormControl(moment().startOf('day'), [Validators.required]),
-      value: new FormControl(initialValue, [Validators.required]),
-      description: new FormControl(undefined, [Validators.maxLength(50)]),
+      transactionType: new FormControl(this.editingTransaction?.transactionType ?? TransactionType.Revenue, [Validators.required]),
+      date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
+        Validators.required,
+      ]),
+      value: new FormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
+      description: new FormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
       bankAccount: new FormControl(undefined, requiredWhenTransactionTypeIsNotCredit),
       bankAccount2: new FormControl(undefined, requiredWhenTransactionTypeIsTransfer),
-      category: new FormControl(undefined),
+      category: new FormControl(this.editingTransaction?.category),
       creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
       group: new FormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
     });
@@ -186,7 +189,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     this.cdRef.detectChanges();
   }
 
-  async newTransacation(): Promise<void> {
+  async saveTransacation(): Promise<void> {
     if (this.formGroup.valid) {
       let user: Partial<User>;
       let user2: Partial<User>;
@@ -205,41 +208,98 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         user = { id: creditCard.personId };
       }
 
-      await this.newTransactionService
-        .newTransaction({
-          transactionType: this.formGroup.value.transactionType,
-          date: this.formGroup.value.date,
-          value: this.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
-          description: this.formGroup.value.description,
-          bankAccountId: bankAccount?.accountId,
-          bankAccount2Id: bankAccount2?.accountId,
-          creditCardId: creditCard?.creditCardId,
-          categoryId: this.formGroup.value.category?.id,
-          groupId: this.group?.id,
-          user,
-          user2,
-        })
-        .pipe(
-          take(1),
-          this.toast.observe({
-            loading: this.translocoService.translate('creating'),
-            success: this.translocoService.translate('transacation-creating-successful'),
-            error: error =>
-              this.errorService.getInstantErrorMessage(
-                error,
-                'transacation-creating-error-no-name',
-                'transacation-creating-error-with-description',
-              ),
-          }),
-        )
-        .toPromise();
-
+      await (this.editingTransaction
+        ? this.editTransacation(bankAccount, bankAccount2, creditCard, user, user2)
+        : this.newTransacation(bankAccount, bankAccount2, creditCard, user, user2));
       this.closed.next();
     }
   }
 
   formatCategory(category: Category): string {
     return category?.name;
+  }
+
+  creditCardInputValueCompare(obj1: any, obj2: any) {
+    return obj1 === obj2 || (obj1 && obj2 && obj1.creditCardId === obj2.creditCardId && obj1.creditsPerson === obj2.creditsPerson);
+  }
+
+  bankAccountInputValueCompare(obj1: any, obj2: any) {
+    return obj1 === obj2 || (obj1 && obj2 && obj1.accountId === obj2.accountId && obj1.personId === obj2.personId);
+  }
+
+  private async editTransacation(
+    bankAccount: any,
+    bankAccount2: any,
+    creditCard: any,
+    user: Partial<User>,
+    user2: Partial<User>,
+  ): Promise<void> {
+    await this.transactionService
+      .editTransaction({
+        id: this.editingTransaction.id,
+        transactionType: this.formGroup.value.transactionType,
+        date: this.formGroup.value.date,
+        value: this.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
+        description: this.formGroup.value.description,
+        bankAccountId: bankAccount?.accountId,
+        bankAccount2Id: bankAccount2?.accountId,
+        creditCardId: creditCard?.creditCardId,
+        categoryId: this.formGroup.value.category?.id,
+        groupId: this.group?.id,
+        user,
+        user2,
+      })
+      .pipe(
+        take(1),
+        this.toast.observe({
+          loading: this.translocoService.translate('editing'),
+          success: this.translocoService.translate('transacation-editing-successful'),
+          error: error =>
+            this.errorService.getInstantErrorMessage(
+              error,
+              'transacation-editing-error-no-name',
+              'transacation-editing-error-with-description',
+            ),
+        }),
+      )
+      .toPromise();
+  }
+
+  private async newTransacation(
+    bankAccount: any,
+    bankAccount2: any,
+    creditCard: any,
+    user: Partial<User>,
+    user2: Partial<User>,
+  ): Promise<void> {
+    await this.transactionService
+      .newTransaction({
+        transactionType: this.formGroup.value.transactionType,
+        date: this.formGroup.value.date,
+        value: this.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
+        description: this.formGroup.value.description,
+        bankAccountId: bankAccount?.accountId,
+        bankAccount2Id: bankAccount2?.accountId,
+        creditCardId: creditCard?.creditCardId,
+        categoryId: this.formGroup.value.category?.id,
+        groupId: this.group?.id,
+        user,
+        user2,
+      })
+      .pipe(
+        take(1),
+        this.toast.observe({
+          loading: this.translocoService.translate('creating'),
+          success: this.translocoService.translate('transacation-creating-successful'),
+          error: error =>
+            this.errorService.getInstantErrorMessage(
+              error,
+              'transacation-creating-error-no-name',
+              'transacation-creating-error-with-description',
+            ),
+        }),
+      )
+      .toPromise();
   }
 
   private async mountAccounts(group?: Group) {
@@ -268,6 +328,17 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     this.creditCardFromOtherUsers.next(creditCardFromOtherUsers);
 
     this.accountsWithPersons = this.accountsWithPersons.sort((a, b) => a.person.name.localeCompare(b.person.name));
+
+    if (this.editingTransaction?.bankAccountId != null) {
+      const accountWithPerson = this.accountsWithPersons.find(
+        accountWithPerson =>
+          accountWithPerson.accounts.find(bankAccount => bankAccount.id === this.editingTransaction.bankAccountId) != null,
+      );
+
+      this.formGroup
+        .get('bankAccount')
+        .setValue({ accountId: this.editingTransaction.bankAccountId, personId: accountWithPerson.person.id });
+    }
   }
 
   private mountFilteredCategories(): void {
@@ -307,6 +378,19 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         ].sort((a, b) => a.person.name.localeCompare(b.person.name)),
       ),
     );
+
+    if (this.editingTransaction?.creditCardId != null) {
+      this.creditCardsWithPersons$.pipe(take(1)).subscribe(creditCardsWithPersons => {
+        const creditCardWithPerson = creditCardsWithPersons.find(
+          creditCardsWithPerson =>
+            creditCardsWithPerson.creditCards.find(creditCard => creditCard.id === this.editingTransaction.creditCardId) != null,
+        );
+
+        this.formGroup
+          .get('creditCard')
+          .setValue({ creditCardId: this.editingTransaction.creditCardId, personId: creditCardWithPerson.person.id });
+      });
+    }
   }
 
   private isTransactionNegative(transactionType: TransactionType): boolean {
@@ -325,5 +409,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   private async mountGroups(): Promise<void> {
     this.groups = this.shared ? await this.groupsService.getGroupsWithUsers() : undefined;
+
+    if (this.editingTransaction?.group != null) {
+      this.formGroup.get('group').setValue(this.groups.find(group => group.id === this.editingTransaction.group.id));
+    }
   }
 }

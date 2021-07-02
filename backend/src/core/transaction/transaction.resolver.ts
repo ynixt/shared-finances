@@ -7,7 +7,7 @@ import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { CategoryService } from '../category';
 import { GroupService } from '../group';
 import { Category, Transaction, TransactionsPage } from '../models';
-import { NewTransactionArgs } from '../models/args';
+import { EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionService } from './transaction.service';
 
 @Resolver(() => Transaction)
@@ -38,8 +38,20 @@ export class TransactionResolver {
 
   @Mutation(() => Transaction)
   @UseGuards(GqlFirebaseAuthGuard)
-  newTransacation(@GqlCurrentUser() user: FBUser, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
+  newTransaction(@GqlCurrentUser() user: FBUser, @Args() newTransactionArgs: NewTransactionArgs): Promise<Transaction> {
     return this.transactionService.create(user, newTransactionArgs);
+  }
+
+  @Mutation(() => Transaction)
+  @UseGuards(GqlFirebaseAuthGuard)
+  editTransaction(@GqlCurrentUser() user: FBUser, @Args() editTransactionArgs: EditTransactionArgs): Promise<Transaction> {
+    return this.transactionService.edit(user, editTransactionArgs);
+  }
+
+  @Mutation(() => Boolean)
+  @UseGuards(GqlFirebaseAuthGuard)
+  deleteTransaction(@GqlCurrentUser() user: FBUser, @Args('transactionId') transactionId: string): Promise<boolean> {
+    return this.transactionService.deleteById(user, transactionId);
   }
 
   @ResolveField()

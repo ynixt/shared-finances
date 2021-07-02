@@ -1,4 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { TdDialogService } from '@covalent/core/dialogs';
+import { TranslocoService } from '@ngneat/transloco';
+import { take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { Page, Transaction } from 'src/app/@core/models';
 
@@ -19,7 +22,7 @@ export class TransactionsTableComponent implements OnInit {
   @Output() editTransactionRequested = new EventEmitter<Transaction>();
   @Output() deleteTransactionRequested = new EventEmitter<Transaction>();
 
-  constructor() {}
+  constructor(private dialogService: TdDialogService, private translocoService: TranslocoService) {}
 
   ngOnInit(): void {}
 
@@ -31,8 +34,22 @@ export class TransactionsTableComponent implements OnInit {
     this.editTransactionRequested.next(transaction);
   }
 
-  public deleteTransaction(transaction: Transaction) {
-    this.deleteTransactionRequested.next(transaction);
+  public async deleteTransaction(transaction: Transaction) {
+    const confirm = await this.dialogService
+      .openConfirm({
+        title: this.translocoService.translate('confirm'),
+        message: this.translocoService.translate('delete-confirm', { name: transaction.description }),
+        cancelButton: this.translocoService.translate('cancel'),
+        acceptButton: this.translocoService.translate('delete'),
+        width: '500px',
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .toPromise();
+
+    if (confirm) {
+      this.deleteTransactionRequested.next(transaction);
+    }
   }
 
   public getIconForTransaction(transaction: Transaction) {

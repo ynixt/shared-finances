@@ -1,12 +1,12 @@
 <td-window-dialog
   *transloco="let t"
-  [title]="t('new-transaction-' + (shared ? 'shared' : 'individual'))"
+  [title]="t((editingTransaction ? 'edit' : 'new') + '-transaction-' + (shared ? 'shared' : 'individual'))"
   [toolbarColor]="'accent'"
   [closeLabel]="t('close')"
   (closed)="closed.emit()"
 >
   <div class="p-4">
-    <form class="grid" [formGroup]="formGroup" (ngSubmit)="newTransacation()">
+    <form class="grid" [formGroup]="formGroup" (ngSubmit)="saveTransacation()">
       <mat-button-toggle-group class="flex-wrap md:flex-nowrap mb-4" formControlName="transactionType">
         <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type revenue" [value]="transactionTypeEnum.Revenue">
           <mat-icon class="mr-2">trending_up</mat-icon> <span class="name">{{ t('revenue') }}</span>
@@ -17,7 +17,11 @@
         <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type credit-card" [value]="transactionTypeEnum.CreditCard">
           <mat-icon class="mr-2">credit_card</mat-icon> <span class="name">{{ t('credit-card') }}</span>
         </mat-button-toggle>
-        <mat-button-toggle class="w-6/12 md:w-auto md:flex-1 transaction-type transfer" [value]="transactionTypeEnum.Transfer">
+        <mat-button-toggle
+          *ngIf="editingTransaction == null"
+          class="w-6/12 md:w-auto md:flex-1 transaction-type transfer"
+          [value]="transactionTypeEnum.Transfer"
+        >
           <mat-icon class="mr-2">sync_alt</mat-icon> <span class="name">{{ t('transfer') }}</span>
         </mat-button-toggle>
       </mat-button-toggle-group>
@@ -67,7 +71,7 @@
 
       <mat-form-field appearance="outline" *ngIf="transactionType !== transactionTypeEnum.CreditCard">
         <mat-label>{{ t('bank-account') }}</mat-label>
-        <mat-select formControlName="bankAccount">
+        <mat-select formControlName="bankAccount" [compareWith]="bankAccountInputValueCompare">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
           <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person.name">
             <mat-option
@@ -82,7 +86,7 @@
 
       <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.Transfer">
         <mat-label>{{ t('bank-account-destiny') }}</mat-label>
-        <mat-select formControlName="bankAccount2">
+        <mat-select formControlName="bankAccount2" [compareWith]="bankAccountInputValueCompare">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
           <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person.name">
             <mat-option
@@ -97,7 +101,7 @@
 
       <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.CreditCard">
         <mat-label>{{ t('credit-card') }}</mat-label>
-        <mat-select formControlName="creditCard">
+        <mat-select formControlName="creditCard" [compareWith]="creditCardInputValueCompare">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
           <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person.name">
             <mat-option
@@ -111,7 +115,7 @@
       </mat-form-field>
 
       <button [disabled]="formGroup.invalid" class="add-button md:w-auto md:ml-auto block" type="submit" mat-raised-button color="primary">
-        {{ t('add') }}
+        {{ t(editingTransaction ? 'edit' : 'add') }}
       </button>
     </form>
   </div>

@@ -19,7 +19,7 @@ export class Transaction {
   @Field(() => ID)
   id: string;
 
-  @Field()
+  @Field({ nullable: true })
   @Prop({
     type: MongooseSchema.Types.ObjectId,
     index: true,
@@ -29,7 +29,7 @@ export class Transaction {
   })
   bankAccountId?: string;
 
-  @Field()
+  @Field({ nullable: true })
   @Prop({
     type: MongooseSchema.Types.ObjectId,
     index: true,
@@ -43,9 +43,12 @@ export class Transaction {
   @Prop({ index: true, required: true })
   transactionType: TransactionType;
 
-  @Field()
+  @Field({ nullable: true })
   @Prop({ type: MongooseSchema.Types.ObjectId, index: true })
   groupId?: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, index: true })
+  userId?: string;
 
   @Field(() => Group, { nullable: true })
   group?: Group;

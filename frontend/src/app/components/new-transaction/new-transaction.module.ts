@@ -9,7 +9,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 import { NewTransactionComponent } from './new-transaction.component';
 import { SharedModule } from 'src/app/shared';
-import { NewTransactionService } from './new-transaction.service';
+import { NewTransactionDialogService } from './new-transaction-dialog.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CurrencyMaskModule } from 'ng2-currency-mask';
 import { MatSelectModule } from '@angular/material/select';
@@ -29,6 +29,6 @@ import { MatSelectModule } from '@angular/material/select';
     MatSelectModule,
     MatAutocompleteModule,
   ],
-  providers: [NewTransactionService],
+  providers: [NewTransactionDialogService],
 })
 export class NewTransactionModule {}

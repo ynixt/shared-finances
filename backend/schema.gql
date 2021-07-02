@@ -44,10 +44,10 @@ type Category {
 
 type Transaction {
   id: ID!
-  bankAccountId: String!
-  creditCardId: String!
+  bankAccountId: String
+  creditCardId: String
   transactionType: String!
-  groupId: String!
+  groupId: String
   group: Group
   date: String!
   value: Float!
@@ -80,7 +80,9 @@ type Mutation {
   newBankAccount(name: String!): BankAccount!
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
-  newTransacation(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
+  newTransaction(transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
+  editTransaction(transactionId: String!, transactionType: String!, date: String!, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
+  deleteTransaction(transactionId: String!): Boolean!
   newCategory(name: String!, color: String!): Category!
   newGroupCategory(name: String!, color: String!, groupId: String!): Category!
   editCategory(id: String!, name: String!, color: String!): Category!

@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, Inject, OnInit, Renderer2 } from '@angular/core';
-import { NewTransactionService } from '../../new-transaction/new-transaction.service';
+import { NewTransactionDialogService } from '../../new-transaction/new-transaction-dialog.service';
 
 @Component({
   selector: 'app-menu',
@@ -9,7 +9,7 @@ import { NewTransactionService } from '../../new-transaction/new-transaction.ser
 })
 export class MenuComponent implements OnInit {
   constructor(
-    private newTransactionService: NewTransactionService,
+    private newTransactionService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
   ) {}
