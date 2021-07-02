@@ -44,7 +44,7 @@ export class EditCreditCardComponent implements OnInit {
       )
       .toPromise();
 
-    this.router.navigateByUrl('/credit');
+    this.router.navigateByUrl('/finances/credit');
   }
 
   private async getCreditCard(creditCardId: string) {
