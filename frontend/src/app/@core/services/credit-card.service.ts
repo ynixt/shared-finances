@@ -42,17 +42,10 @@ const CREDIT_CARD_DELETED_SUBSCRIPTION = gql`
   providedIn: 'root',
 })
 export class CreditCardService {
-  private creditCardQueryRef: QueryRef<
-    {
-      creditCards: CreditCard[];
-    },
-    EmptyObject
-  >;
-
   constructor(private apollo: Apollo) {}
 
   watchCreditCards(): Observable<CreditCard[]> {
-    this.creditCardQueryRef = this.apollo.watchQuery<{ creditCards: CreditCard[] }>({
+    const creditCardQueryRef = this.apollo.watchQuery<{ creditCards: CreditCard[] }>({
       query: gql`
         query creditCards {
           creditCards {
@@ -66,13 +59,20 @@ export class CreditCardService {
       `,
     });
 
-    this.subscribeToChanges();
+    this.subscribeToChanges(creditCardQueryRef);
 
-    return this.creditCardQueryRef.valueChanges.pipe(map(result => result.data.creditCards));
+    return creditCardQueryRef.valueChanges.pipe(map(result => result.data.creditCards));
   }
 
-  private subscribeToChanges() {
-    this.creditCardQueryRef.subscribeToMore({
+  private subscribeToChanges(
+    creditCardQueryRef: QueryRef<
+      {
+        creditCards: CreditCard[];
+      },
+      EmptyObject
+    >,
+  ) {
+    creditCardQueryRef.subscribeToMore({
       document: CREDIT_CARD_CREATED_SUBSCRIPTION,
       updateQuery: (prev, { subscriptionData }) => {
         const creditCards = prev.creditCards ?? [];
@@ -87,7 +87,7 @@ export class CreditCardService {
       },
     });
 
-    this.creditCardQueryRef.subscribeToMore({
+    creditCardQueryRef.subscribeToMore({
       document: CREDIT_CARD_UPDATED_SUBSCRIPTION,
       updateQuery: (prev, { subscriptionData }) => {
         const editedCreditCard = subscriptionData.data.creditCardUpdated;
@@ -102,7 +102,7 @@ export class CreditCardService {
       },
     });
 
-    this.creditCardQueryRef.subscribeToMore({
+    creditCardQueryRef.subscribeToMore({
       document: CREDIT_CARD_DELETED_SUBSCRIPTION,
       updateQuery: (prev, { subscriptionData }) => {
         prev = {
