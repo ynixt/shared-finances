@@ -6,6 +6,8 @@ import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
 import { Chart } from '../models/chart';
 
+export const DEFAULT_MINIMUM_MONTHS = 4;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -163,7 +165,7 @@ export class TransactionService {
     bankAccountNamesById: Map<string, string>,
     initialMonthIfNoChart: Moment | string,
     args?: { bankAccountId: string; maxDate?: Moment; minDate?: Moment },
-    minimumMonths = 4,
+    minimumMonths = DEFAULT_MINIMUM_MONTHS,
   ): Promise<Chart[]> {
     const transactionsChartQueryRef = this.apollo.watchQuery<{ transactionsChart: Chart[] }>({
       query: gql`

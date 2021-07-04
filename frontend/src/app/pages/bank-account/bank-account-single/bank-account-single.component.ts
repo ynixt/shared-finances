@@ -9,7 +9,7 @@ import { merge, Observable, Subscription } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { BankAccount, Page, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
-import { ErrorService, TransactionService } from 'src/app/@core/services';
+import { DEFAULT_MINIMUM_MONTHS, ErrorService, TransactionService } from 'src/app/@core/services';
 import { DateUtil } from 'src/app/@core/util';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { BankAccountService } from '../bank-account.service';
@@ -92,6 +92,7 @@ export class BankAccountSingleComponent implements OnInit {
     const charts = await this.transactionService.getTransactionsChart(bankAccountNamesById, this.getMaxDate().add(1), {
       bankAccountId: this.bankAccount.id,
       maxDate: this.getMaxDate(false),
+      minDate: moment(this.getMaxDate(false)).subtract(DEFAULT_MINIMUM_MONTHS, 'month'),
     });
 
     this.transactionsGroupedYearMonth = charts;
