@@ -97,5 +97,6 @@
   "balance": "Saldo",
   "balance-value": "Saldo: {{value}}",
   "transaction-type": "Tipo",
-  "page-of": "Página {{n1}} de {{n2}}"
+  "page-of": "Página {{n1}} de {{n2}}",
+  "transaction-future-warning": "Essa é uma transação futura e não é contabilizada no saldo."
 }

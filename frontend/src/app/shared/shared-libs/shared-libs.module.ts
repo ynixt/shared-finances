@@ -15,6 +15,7 @@ import { CovalentLayoutModule } from '@covalent/core/layout';
 import { CovalentStepsModule } from '@covalent/core/steps';
 import { CovalentBreadcrumbsModule } from '@covalent/core/breadcrumbs';
 import { TranslocoModule } from '@ngneat/transloco';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 const layoutModules = [
   ScrollingModule,
@@ -26,6 +27,7 @@ const layoutModules = [
   MatDividerModule,
   MatListModule,
   MatProgressSpinnerModule,
+  MatTooltipModule,
 
   CovalentBreadcrumbsModule,
   CovalentLayoutModule,

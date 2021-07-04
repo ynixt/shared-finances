@@ -1,10 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { TranslocoService } from '@ngneat/transloco';
+import { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { Page, Transaction } from 'src/app/@core/models';
+import { DateUtil } from 'src/app/@core/util';
 
 export interface TransactionsRequested {
   page: number;
@@ -33,6 +35,10 @@ export class TransactionsTableComponent implements OnInit {
 
   public editTransaction(transaction: Transaction) {
     this.editTransactionRequested.next(transaction);
+  }
+
+  public dateIsBiggerThanToday(date: string | Moment) {
+    return DateUtil.dateIsBiggerThanToday(date);
   }
 
   public async deleteTransaction(transaction: Transaction) {

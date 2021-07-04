@@ -8,7 +8,12 @@
 
   <ng-container *ngIf="transactionsPage$ | async as transactionsPage; else loadingTemplate">
     <mat-list class="transactions space-y-6">
-      <mat-list-item class="transaction" [class.negative]="transaction.value < 0" *ngFor="let transaction of transactionsPage.items">
+      <mat-list-item
+        class="transaction"
+        [class.transaction-future]="dateIsBiggerThanToday(transaction.date)"
+        [class.negative]="transaction.value < 0"
+        *ngFor="let transaction of transactionsPage.items"
+      >
         <mat-icon
           [title]="t(getTransactionTranslateKey(transaction))"
           class="transaction-type cursor-default {{ getTransactionCssColor(transaction) }}"
@@ -24,6 +29,13 @@
         </h3>
         <p matLine>{{ transaction.date | date }}</p>
         <p matLine *ngIf="transaction.group != null">{{ t('group-name', { name: transaction.group.name }) }}</p>
+
+        <mat-icon
+          [matTooltip]="t('transaction-future-warning')"
+          matTooltipClass="transaction-future-tooltip"
+          *ngIf="dateIsBiggerThanToday(transaction.date)"
+          >warning</mat-icon
+        >
         <button mat-icon-button [matMenuTriggerFor]="transactionMoreMenu">
           <mat-icon>more_vert</mat-icon>
         </button>
