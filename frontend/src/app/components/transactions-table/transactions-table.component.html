@@ -31,6 +31,7 @@
         <p matLine *ngIf="transaction.group != null">{{ t('group-name', { name: transaction.group.name }) }}</p>
 
         <mat-icon
+          class="cursor-help"
           [matTooltip]="t('transaction-future-warning')"
           matTooltipClass="transaction-future-tooltip"
           *ngIf="dateIsBiggerThanToday(transaction.date)"
