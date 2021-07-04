@@ -83,16 +83,14 @@ export class BankAccountSingleComponent implements OnInit {
   }
 
   public async getChart(): Promise<void> {
-    const maxDate = this.getMaxDate();
-
     this.transactionsGroupedYearMonth = undefined;
 
     const bankAccountNamesById = new Map<string, string>();
     bankAccountNamesById.set(this.bankAccount.id, this.bankAccount.name);
 
-    const charts = await this.transactionService.getTransactionsChart(bankAccountNamesById, {
+    const charts = await this.transactionService.getTransactionsChart(bankAccountNamesById, this.getMaxDate().add(1), {
       bankAccountId: this.bankAccount.id,
-      maxDate: maxDate,
+      maxDate: this.getMaxDate(),
     });
 
     this.transactionsGroupedYearMonth = charts;

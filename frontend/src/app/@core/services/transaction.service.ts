@@ -161,6 +161,7 @@ export class TransactionService {
 
   getTransactionsChart(
     bankAccountNamesById: Map<string, string>,
+    initialMonthIfNoChart: Moment | string,
     args?: { bankAccountId: string; maxDate?: Moment; minDate?: Moment },
     minimumMonths = 4,
   ): Promise<Chart[]> {
@@ -189,7 +190,7 @@ export class TransactionService {
         map(result => {
           const charts: Chart[] = result.data.transactionsChart.map(chart => {
             const dateFormat = 'MM/YYYY';
-            const firstDate = chart.series[0].name;
+            const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
             const series = chart.series.map(serie => ({
               ...serie,
               name: moment(serie.name).format(dateFormat),
