@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
@@ -92,6 +92,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   shared: boolean;
   groups: Group[];
   editingTransaction: Transaction;
+  creditCardBillDateOptions: Moment[] = [];
 
   private previousTitle: string;
   private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
@@ -122,27 +123,31 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     return this.formGroup?.value?.date;
   }
 
+  get creditCard() {
+    return this.formGroup?.value?.creditCard;
+  }
+
   get group() {
     return this.formGroup?.value?.group;
   }
 
+  get creditCardBillDateFormControl() {
+    return this.formGroup.get('creditCardBillDate');
+  }
+
+  get creditCardBillDate() {
+    return this.creditCardBillDateFormControl.value;
+  }
+
   async ngOnInit(): Promise<void> {
-    this.formGroup = new FormGroup({
-      transactionType: new FormControl(this.editingTransaction?.transactionType ?? TransactionType.Revenue, [Validators.required]),
-      date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
-        Validators.required,
-      ]),
-      value: new FormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
-      description: new FormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
-      bankAccount: new FormControl(undefined, requiredWhenTransactionTypeIsNotCredit),
-      bankAccount2: new FormControl(undefined, requiredWhenTransactionTypeIsTransfer),
-      category: new FormControl(this.editingTransaction?.category),
-      creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
-      group: new FormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
-    });
+    this.createFormGroup();
 
     this.previousTitle = await this.titleService.getCurrentTitle();
     this.titleService.changeTitle('new-transaction');
+
+    if (this.date != null && this.creditCard != null) {
+      this.creditCardBillDateFormControl.enable();
+    }
 
     this.mountGroups();
     this.mountAccounts();
@@ -158,27 +163,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         });
     }
 
-    this.formGroup
-      .get('transactionType')
-      .valueChanges.pipe(untilDestroyed(this))
-      .subscribe(transactionType => {
-        const value = this.formGroup.value.value || initialValue;
-
-        this.formGroup.get('value').setValue(this.ifNecessaryMakeValueNegative(value, transactionType));
-
-        if (transactionType !== TransactionType.Transfer) {
-          this.formGroup.get('bankAccount2').setValue(undefined);
-        }
-
-        if (transactionType === TransactionType.CreditCard) {
-          this.formGroup.get('bankAccount').setValue(undefined);
-        } else {
-          this.formGroup.get('creditCard').setValue(undefined);
-        }
-
-        this.formGroup.get('bankAccount').updateValueAndValidity();
-        this.formGroup.get('creditCard').updateValueAndValidity();
-      });
+    this.watchTransactionTypeChanges();
+    this.mountCreditCardBillDateOptions();
   }
 
   async ngOnDestroy(): Promise<void> {
@@ -248,6 +234,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         groupId: this.group?.id,
         user,
         user2,
+        creditCardBillDate: this.creditCardBillDate,
       })
       .pipe(
         take(1),
@@ -285,6 +272,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         groupId: this.group?.id,
         user,
         user2,
+        creditCardBillDate: this.creditCardBillDate,
       })
       .pipe(
         take(1),
@@ -413,5 +401,121 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     if (this.editingTransaction?.group != null) {
       this.formGroup.get('group').setValue(this.groups.find(group => group.id === this.editingTransaction.group.id));
     }
+  }
+
+  private createFormGroup(): void {
+    this.formGroup = new FormGroup({
+      transactionType: new FormControl(this.editingTransaction?.transactionType ?? TransactionType.Revenue, [Validators.required]),
+      date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
+        Validators.required,
+      ]),
+      creditCardBillDate: new FormControl(
+        {
+          value: this.editingTransaction?.creditCardBillDate ? moment(this.editingTransaction?.creditCardBillDate) : '',
+          disabled: true,
+        },
+        [requiredWhenTransactionTypeIsCredit],
+      ),
+      value: new FormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
+      description: new FormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
+      bankAccount: new FormControl(undefined, requiredWhenTransactionTypeIsNotCredit),
+      bankAccount2: new FormControl(undefined, requiredWhenTransactionTypeIsTransfer),
+      category: new FormControl(this.editingTransaction?.category),
+      creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
+      group: new FormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
+    });
+  }
+
+  private watchTransactionTypeChanges(): void {
+    this.formGroup
+      .get('transactionType')
+      .valueChanges.pipe(untilDestroyed(this))
+      .subscribe(transactionType => {
+        const value = this.formGroup.value.value || initialValue;
+
+        this.formGroup.get('value').setValue(this.ifNecessaryMakeValueNegative(value, transactionType));
+
+        if (transactionType !== TransactionType.Transfer) {
+          this.formGroup.get('bankAccount2').setValue(undefined);
+        }
+
+        if (transactionType === TransactionType.CreditCard) {
+          this.formGroup.get('bankAccount').setValue(undefined);
+        } else {
+          this.formGroup.get('creditCard').setValue(undefined);
+          this.creditCardBillDateFormControl.setValue(undefined);
+        }
+
+        this.formGroup.get('bankAccount').updateValueAndValidity();
+        this.formGroup.get('creditCard').updateValueAndValidity();
+        this.creditCardBillDateFormControl.updateValueAndValidity();
+      });
+  }
+
+  private mountCreditCardBillDateOptions(): void {
+    combineLatest([
+      this.formGroup.get('date').valueChanges.pipe(startWith(this.date)),
+      this.formGroup.get('creditCard').valueChanges.pipe(startWith(this.creditCard)),
+      this.creditCardsWithPersons$,
+    ])
+      .pipe(untilDestroyed(this))
+      .subscribe(combined => {
+        const newOptions: Moment[] = [];
+
+        const newDate: string = combined[0];
+        const newCreditCardWithPerson: { creditCardId: string; personId: string } = combined[1];
+        const creditCardsWithPersons: CreditCardWithPerson[] = combined[2];
+
+        let closingDay: number;
+
+        if (newDate != null && newCreditCardWithPerson != null && creditCardsWithPersons != null) {
+          const newCreditCard = creditCardsWithPersons
+            .find(obj => obj.person.id === newCreditCardWithPerson.personId)
+            .creditCards.find(creditCard => creditCard.id === newCreditCardWithPerson.creditCardId);
+
+          closingDay = newCreditCard.closingDay;
+
+          for (let i = -2; i <= 2; i++) {
+            const dateForThisOption = moment(newDate).date(closingDay);
+
+            if (dateForThisOption.isSame(newDate, 'month') === false) {
+              // month with less days, like february
+
+              dateForThisOption.subtract(1, 'day');
+            }
+
+            newOptions.push(dateForThisOption.add(i, 'month'));
+          }
+          this.creditCardBillDateFormControl.enable();
+        } else {
+          this.creditCardBillDateFormControl.disable();
+        }
+
+        this.creditCardBillDateOptions = newOptions;
+
+        this.setCreditCardBillDate(newDate, closingDay);
+      });
+  }
+
+  private setCreditCardBillDate(date: string, closingDay?: number) {
+    let oneMonthSkipped = false;
+    const billDate = this.creditCardBillDateOptions.find(option => {
+      const isSameMonth = moment(date).isSame(option, 'month');
+      const isSameOrAfterClosingDay = moment(date).date() >= closingDay;
+
+      if (isSameMonth || oneMonthSkipped) {
+        if (isSameOrAfterClosingDay && !oneMonthSkipped) {
+          oneMonthSkipped = true;
+          return false;
+        } else {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    this.creditCardBillDateFormControl.setValue(billDate);
+    this.creditCardBillDateFormControl.updateValueAndValidity();
   }
 }

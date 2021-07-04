@@ -7,6 +7,7 @@ export interface Transaction {
   id: string;
   transactionType: TransactionType;
   date: string;
+  creditCardBillDate?: string;
   value: number;
   description?: string;
   bankAccountId?: string;

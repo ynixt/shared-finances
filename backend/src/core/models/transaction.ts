@@ -57,6 +57,15 @@ export class Transaction {
   @Prop({ index: true, required: true })
   date: string;
 
+  @Field({ nullable: true })
+  @Prop({
+    index: true,
+    required: function () {
+      return this.transactionType === TransactionType.CreditCard;
+    },
+  })
+  creditCardBillDate?: string;
+
   @Field(() => Float)
   @Prop({ required: true })
   value: number;

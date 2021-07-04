@@ -114,6 +114,16 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.CreditCard">
+        <mat-label>{{ t('credit-card-bill-date') }}</mat-label>
+        <mat-select formControlName="creditCardBillDate">
+          <mat-option>{{ t('mat-select-none') }}</mat-option>
+          <mat-option *ngFor="let option of creditCardBillDateOptions" [value]="option">
+            {{ option.format('L') }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <button [disabled]="formGroup.invalid" class="add-button md:w-auto md:ml-auto block" type="submit" mat-raised-button color="primary">
         {{ t(editingTransaction ? 'edit' : 'add') }}
       </button>

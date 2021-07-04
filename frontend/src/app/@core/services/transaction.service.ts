@@ -30,6 +30,7 @@ export class TransactionService {
             $groupId: String
             $firstUserId: String!
             $secondUserId: String
+            $creditCardBillDate: String
           ) {
             newTransaction(
               transactionType: $transactionType
@@ -43,6 +44,7 @@ export class TransactionService {
               groupId: $groupId
               firstUserId: $firstUserId
               secondUserId: $secondUserId
+              creditCardBillDate: $creditCardBillDate
             ) {
               id
               transactionType
@@ -69,6 +71,7 @@ export class TransactionService {
           groupId: transaction.groupId,
           firstUserId: transaction.user?.id,
           secondUserId: transaction.user2?.id,
+          creditCardBillDate: transaction.creditCardBillDate,
         },
       })
       .pipe(
@@ -94,6 +97,7 @@ export class TransactionService {
             $groupId: String
             $firstUserId: String!
             $secondUserId: String
+            $creditCardBillDate: String
           ) {
             editTransaction(
               transactionId: $transactionId
@@ -108,6 +112,7 @@ export class TransactionService {
               groupId: $groupId
               firstUserId: $firstUserId
               secondUserId: $secondUserId
+              creditCardBillDate: $creditCardBillDate
             ) {
               id
               transactionType
@@ -135,6 +140,7 @@ export class TransactionService {
           groupId: transaction.groupId,
           firstUserId: transaction.user?.id,
           secondUserId: transaction.user2?.id,
+          creditCardBillDate: transaction.creditCardBillDate,
         },
       })
       .pipe(

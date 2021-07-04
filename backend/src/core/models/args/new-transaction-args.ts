@@ -9,6 +9,9 @@ export class NewTransactionArgs {
   @Field()
   date: string;
 
+  @Field({ nullable: true })
+  creditCardBillDate?: string;
+
   @Field(() => Float)
   value: number;
 
