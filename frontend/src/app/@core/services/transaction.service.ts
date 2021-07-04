@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
+import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
+import { Chart } from '../models/chart';
 
 @Injectable({
   providedIn: 'root',
@@ -155,5 +157,64 @@ export class TransactionService {
         take(1),
         map(result => result.data.deleteTransaction),
       );
+  }
+
+  getTransactionsChart(
+    bankAccountNamesById: Map<string, string>,
+    args?: { bankAccountId: string; maxDate?: Moment; minDate?: Moment },
+    minimumMonths = 4,
+  ): Promise<Chart[]> {
+    const transactionsChartQueryRef = this.apollo.watchQuery<{ transactionsChart: Chart[] }>({
+      query: gql`
+        query($bankAccountId: String, $timezone: String!, $maxDate: String, $minDate: String) {
+          transactionsChart(bankAccountId: $bankAccountId, timezone: $timezone, maxDate: $maxDate, minDate: $minDate) {
+            name
+            series {
+              name
+              value
+            }
+          }
+        }
+      `,
+      variables: {
+        bankAccountId: args.bankAccountId,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        maxDate: args?.maxDate?.toISOString(),
+        minDate: args?.minDate?.toISOString(),
+      },
+    });
+
+    return transactionsChartQueryRef.valueChanges
+      .pipe(
+        map(result => {
+          const charts: Chart[] = result.data.transactionsChart.map(chart => {
+            const dateFormat = 'MM/YYYY';
+            const firstDate = chart.series[0].name;
+            const series = chart.series.map(serie => ({
+              ...serie,
+              name: moment(serie.name).format(dateFormat),
+            }));
+
+            if (series.length < minimumMonths) {
+              const missing = minimumMonths - series.length;
+
+              for (let i = 0; i < missing; i++) {
+                series.splice(i, 0, {
+                  name: moment(firstDate)
+                    .subtract(missing - i, 'month')
+                    .format(dateFormat),
+                  value: 0,
+                });
+              }
+            }
+
+            return { name: bankAccountNamesById.get(chart.name), series };
+          });
+
+          return charts;
+        }),
+        take(1),
+      )
+      .toPromise();
   }
 }

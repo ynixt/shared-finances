@@ -5,6 +5,7 @@ import { CategoryModule } from '../category';
 import { CreditCardModule } from '../credit-card';
 import { GroupModule } from '../group';
 import { TransacationSchema, Transaction } from '../models';
+import { TransactionChartService } from './transaction-chart.service';
 import { TransactionRepository } from './transaction.repository';
 import { TransactionResolver } from './transaction.resolver';
 import { TransactionService } from './transaction.service';
@@ -17,7 +18,7 @@ import { TransactionService } from './transaction.service';
     GroupModule,
     CreditCardModule,
   ],
-  providers: [TransactionRepository, TransactionResolver, TransactionService, TransactionResolver],
+  providers: [TransactionRepository, TransactionResolver, TransactionService, TransactionResolver, TransactionChartService],
   exports: [TransactionService],
 })
 export class TransactionModule {}

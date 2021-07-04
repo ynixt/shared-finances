@@ -8,6 +8,7 @@ import moment, { Moment } from 'moment';
 import { merge, Observable, Subscription } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { BankAccount, Page, Transaction } from 'src/app/@core/models';
+import { Chart } from 'src/app/@core/models/chart';
 import { ErrorService, TransactionService } from 'src/app/@core/services';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { BankAccountService } from '../bank-account.service';
@@ -20,6 +21,19 @@ import { BankAccountService } from '../bank-account.service';
   encapsulation: ViewEncapsulation.None,
 })
 export class BankAccountSingleComponent implements OnInit {
+  transactionsGroupedYearMonth: Chart[];
+
+  // options
+  legend: boolean = true;
+  showLabels: boolean = true;
+  animations: boolean = true;
+  showYAxisLabel: boolean = true;
+  showXAxisLabel: boolean = true;
+
+  colorScheme = {
+    domain: ['#5AA454'],
+  };
+
   bankAccount: BankAccount;
   pageSize = 20;
 
@@ -62,14 +76,26 @@ export class BankAccountSingleComponent implements OnInit {
   }
 
   public async getBalance(): Promise<void> {
-    let maxDate = moment(this.monthDate).endOf('month');
-
-    if (maxDate.isAfter(moment())) {
-      maxDate = moment();
-    }
+    const maxDate = this.getMaxDate();
 
     this.balance = undefined;
     this.balance = await this.bankAccountService.getBalance(this.bankAccount.id, { maxDate: maxDate });
+  }
+
+  public async getChart(): Promise<void> {
+    const maxDate = this.getMaxDate();
+
+    this.transactionsGroupedYearMonth = undefined;
+
+    const bankAccountNamesById = new Map<string, string>();
+    bankAccountNamesById.set(this.bankAccount.id, this.bankAccount.name);
+
+    const charts = await this.transactionService.getTransactionsChart(bankAccountNamesById, {
+      bankAccountId: this.bankAccount.id,
+      maxDate: maxDate,
+    });
+
+    this.transactionsGroupedYearMonth = charts;
   }
 
   public async editTransaction(transaction: Transaction) {
@@ -109,11 +135,11 @@ export class BankAccountSingleComponent implements OnInit {
 
   private getInfoBasedOnBank() {
     this.getTransactions();
-    this.reloadBalanceOnTransactions();
-    return this.getBalance();
+    this.transactionsChange();
+    return Promise.all([this.getBalance(), this.getChart()]);
   }
 
-  private reloadBalanceOnTransactions(): void {
+  private transactionsChange(): void {
     this.transactionsChangeSubscription?.unsubscribe();
 
     this.transactionsChangeSubscription = merge(
@@ -123,7 +149,17 @@ export class BankAccountSingleComponent implements OnInit {
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {
-        await this.getBalance();
+        await Promise.all([this.getBalance(), this.getChart()]);
       });
+  }
+
+  private getMaxDate() {
+    let maxDate = moment(this.monthDate).endOf('month');
+
+    if (maxDate.isAfter(moment())) {
+      maxDate = moment();
+    }
+
+    return maxDate;
   }
 }

@@ -83,7 +83,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
       if (args?.maxDate) {
         aggregate.match({
-          date: { '$lt': args.maxDate },
+          date: { '$lte': args.maxDate },
         });
       }
 
@@ -98,5 +98,46 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     } catch (err) {
       console.error(err);
     }
+  }
+
+  getByBankAccountIdGroupedByDate(
+    bankAccountId: string,
+    timezone: string,
+    args?: { minDate?: string; maxDate?: string },
+  ): Promise<{ _id: { month: number; year: number }; balance: number }[]> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          bankAccountId: new Types.ObjectId(bankAccountId),
+        },
+      },
+    ]);
+
+    if (args?.minDate) {
+      aggregate.match({
+        date: { '$gte': args.minDate },
+      });
+    }
+
+    if (args?.maxDate) {
+      aggregate.match({
+        date: { '$lte': args.maxDate },
+      });
+    }
+
+    aggregate.project({
+      date: { '$dateFromString': { dateString: '$date' } },
+      value: 1,
+    });
+
+    aggregate.group({
+      _id: {
+        month: { $month: { date: '$date', timezone } },
+        year: { $year: { date: '$date', timezone } },
+      },
+      balance: { $sum: '$value' },
+    });
+
+    return aggregate.exec();
   }
 }

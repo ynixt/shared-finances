@@ -63,11 +63,22 @@ type TransactionsPage {
   pageSize: Int!
 }
 
+type ChartSerie {
+  name: String!
+  value: Float!
+}
+
+type Chart {
+  name: String!
+  series: [ChartSerie!]!
+}
+
 type Query {
   user: User
   bankAccount(bankAccountId: String!): BankAccount
   bankAccountBalance(maxDate: String, bankAccountId: String!): Float
   transactions(minDate: String, maxDate: String, pageSize: Int = 20, page: Int = 1, bankAccountId: String!): TransactionsPage
+  transactionsChart(minDate: String, maxDate: String, bankAccountId: String, timezone: String!): [Chart!]
   categories(groupId: String): [Category!]!
   category(groupId: String, categoryId: String!): Category
   groups: [Group!]
