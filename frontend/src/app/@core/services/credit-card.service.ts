@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { EmptyObject } from 'apollo-angular/types';
+import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -114,5 +115,47 @@ export class CreditCardService {
         };
       },
     });
+  }
+
+  nextBillDate(date: string | Moment, closingDay: number, amountAhead = 1): Moment {
+    const dateForThisOption = moment(date).date(closingDay);
+
+    if (dateForThisOption.isSame(date, 'month') === false) {
+      // month with less days, like february
+
+      dateForThisOption.subtract(1, 'day');
+    }
+
+    return dateForThisOption.add(amountAhead, 'month');
+  }
+
+  findCreditCardBillDate(date: string | Moment, creditCardBillDateOptions: Array<Moment | string>, closingDay: number): Moment | undefined {
+    let oneMonthSkipped = false;
+
+    creditCardBillDateOptions = [...creditCardBillDateOptions];
+
+    return creditCardBillDateOptions
+      .sort((b1, b2) => {
+        const b1Str = typeof b1 === 'string' ? b1 : b1.toISOString();
+        const b2Str = typeof b2 === 'string' ? b2 : b2.toISOString();
+
+        return b1Str.localeCompare(b2Str);
+      })
+      .map(option => moment(option))
+      .find(option => {
+        const isSameMonth = moment(date).isSame(option, 'month');
+        const isSameOrAfterClosingDay = moment(date).date() >= closingDay;
+
+        if (isSameMonth || oneMonthSkipped) {
+          if (isSameOrAfterClosingDay && !oneMonthSkipped) {
+            oneMonthSkipped = true;
+            return false;
+          } else {
+            return true;
+          }
+        }
+
+        return false;
+      });
   }
 }

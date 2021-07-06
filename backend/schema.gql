@@ -14,6 +14,7 @@ type CreditCard {
   closingDay: Int!
   paymentDay: Int!
   limit: Float!
+  billDates: [String!]
 }
 
 type Group {

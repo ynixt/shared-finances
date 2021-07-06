@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { TitleGuard } from 'src/app/shared';
+import { CreditCardSingleComponent } from './credit-card-single/credit-card-single.component';
 import { CreditCardComponent } from './credit-card.component';
 import { EditCreditCardComponent } from './edit-credit-card/edit-credit-card.component';
 import { NewCreditCardComponent } from './new-credit-card/new-credit-card.component';
@@ -20,6 +21,14 @@ const routes: Routes = [
     canActivate: [TitleGuard],
     data: {
       title: 'new-credit-card',
+    },
+  },
+  {
+    path: ':creditCardId',
+    component: CreditCardSingleComponent,
+    canActivate: [TitleGuard],
+    data: {
+      title: 'credit-card',
     },
   },
   {

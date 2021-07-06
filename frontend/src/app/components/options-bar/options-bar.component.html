@@ -1,0 +1,19 @@
+<div class="credit-card-bill-date-bar flex items-center justify-center">
+  <button mat-icon-button (click)="previousValue()" [disabled]="this.currentIndex === 0">
+    <mat-icon>navigate_before</mat-icon>
+  </button>
+
+  <button mat-button [matMenuTriggerFor]="menuOptions" [matTooltip]="title">
+    <h3 class="capitalize my-0 mx-2">{{ formatValue(values[currentIndex]) }}</h3>
+  </button>
+
+  <mat-menu #menuOptions="matMenu">
+    <button mat-menu-item *ngFor="let value of values; let i = index" (click)="changeIndex(i)">
+      <span [class.font-bold]="i === this.currentIndex">{{ formatValue(value) }}</span>
+    </button>
+  </mat-menu>
+
+  <button mat-icon-button (click)="nextValue()" [disabled]="this.currentIndex === this.values.length - 1">
+    <mat-icon>navigate_next</mat-icon>
+  </button>
+</div>

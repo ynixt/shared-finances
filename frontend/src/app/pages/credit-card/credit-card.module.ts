@@ -14,9 +14,11 @@ import { FormCreditCardComponent } from './form-credit-card/form-credit-card.com
 import { MatMenuModule } from '@angular/material/menu';
 import { CovalentDialogsModule } from '@covalent/core/dialogs';
 import { EditCreditCardComponent } from './edit-credit-card/edit-credit-card.component';
+import { CreditCardSingleComponent } from './credit-card-single/credit-card-single.component';
+import { OptionsBarModule } from 'src/app/components/options-bar';
 
 @NgModule({
-  declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent, EditCreditCardComponent],
+  declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent, EditCreditCardComponent, CreditCardSingleComponent],
   imports: [
     CommonModule,
     CreditCardRoutingModule,
@@ -28,6 +30,7 @@ import { EditCreditCardComponent } from './edit-credit-card/edit-credit-card.com
     CurrencyMaskModule,
     MatMenuModule,
     CovalentDialogsModule,
+    OptionsBarModule,
   ],
 })
 export class CreditCardModule {}

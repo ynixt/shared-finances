@@ -114,6 +114,12 @@ export class TransactionService {
     return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
   }
 
+  async getCreditCardBillDatesWithoutCheckPermission(creditCardId: string): Promise<string[]> {
+    const queryResponse = (await this.transacationRepository.getCreditCardBillDates(creditCardId)) ?? [];
+
+    return queryResponse.map(qr => qr._id.creditCardBillDate).sort((b1, b2) => b1.localeCompare(b2));
+  }
+
   private async validPermissionsOnExistingTransaction(user: FBUser, transaction: Transaction) {
     if (
       (transaction.groupId != null && user.groupsId.includes(transaction.groupId)) ||

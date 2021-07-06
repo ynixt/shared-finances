@@ -141,4 +141,21 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
     return aggregate.exec();
   }
+
+  getCreditCardBillDates(creditCardId: string): Promise<{ _id: { creditCardBillDate: string } }[]> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          creditCardId: new Types.ObjectId(creditCardId),
+        },
+      },
+      {
+        $group: {
+          _id: { creditCardBillDate: '$creditCardBillDate' },
+        },
+      },
+    ]);
+
+    return aggregate.exec();
+  }
 }

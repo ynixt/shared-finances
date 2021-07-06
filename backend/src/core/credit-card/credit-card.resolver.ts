@@ -1,11 +1,12 @@
-import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
+import { forwardRef, Inject, UseGuards } from '@nestjs/common';
+import { Args, Mutation, Resolver, Query, Subscription, ResolveField, Parent } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { CreditCard } from '../models';
 import { EditCreditCardArgs, NewCreditCardArgs } from '../models/args';
+import { TransactionService } from '../transaction';
 import { CreditCardService } from './credit-card.service';
 
 const pubSub = new PubSub();
@@ -18,7 +19,10 @@ enum CreditCardPubTrigger {
 
 @Resolver(() => CreditCard)
 export class CreditCardResolver {
-  constructor(private creditCardService: CreditCardService) {}
+  constructor(
+    private creditCardService: CreditCardService,
+    @Inject(forwardRef(() => TransactionService)) private transactionService: TransactionService,
+  ) {}
 
   @Mutation(() => CreditCard)
   @UseGuards(GqlFirebaseAuthGuard)
@@ -99,5 +103,10 @@ export class CreditCardResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   creditCardDeleted() {
     return pubSub.asyncIterator(CreditCardPubTrigger.creditCardDeleted);
+  }
+
+  @ResolveField()
+  async billDates(@Parent() creditCard: CreditCard) {
+    return this.transactionService.getCreditCardBillDatesWithoutCheckPermission(creditCard.id);
   }
 }

@@ -28,6 +28,9 @@ export class CreditCard {
   @Field(() => Float)
   @Prop()
   limit: number;
+
+  @Field(() => [String], { nullable: true })
+  billDates?: string[];
 }
 
 export const CreditCardSchema = SchemaFactory.createForClass(CreditCard);

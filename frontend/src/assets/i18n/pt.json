@@ -99,5 +99,6 @@
   "transaction-type": "Tipo",
   "page-of": "Página {{n1}} de {{n2}}",
   "transaction-future-warning": "Essa é uma transação futura e não é contabilizada no saldo.",
-  "credit-card-bill-date": "Fatura"
+  "credit-card-bill-date": "Fatura",
+  "credit-card-bill-date-explanation": "Data da fatura (data de fechamento do cartão)"
 }

@@ -4,4 +4,5 @@ export interface CreditCard {
   closingDay: number;
   paymentDay: number;
   limit: number;
+  billDates?: string[];
 }

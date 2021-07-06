@@ -10,7 +10,7 @@ import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { BankAccount, Category, CreditCard, Transaction, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
-import { GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
+import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthSelectors, BankAccountSelectors, CreditCardSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
 import { NewTransactionComponentArgs } from './new-transaction-component-args';
@@ -110,6 +110,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     private titleService: TitleService,
     private groupsService: GroupsService,
     @Inject(MAT_DIALOG_DATA) data: NewTransactionComponentArgs,
+    private creditCardService: CreditCardService,
   ) {
     this.shared = data.shared;
     this.editingTransaction = data.transaction != null ? { ...data.transaction } : undefined;
@@ -476,16 +477,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
           closingDay = newCreditCard.closingDay;
 
           for (let i = -2; i <= 2; i++) {
-            const dateForThisOption = moment(newDate).date(closingDay);
-
-            if (dateForThisOption.isSame(newDate, 'month') === false) {
-              // month with less days, like february
-
-              dateForThisOption.subtract(1, 'day');
-            }
-
-            newOptions.push(dateForThisOption.add(i, 'month'));
+            newOptions.push(this.creditCardService.nextBillDate(newDate, closingDay, i));
           }
+
           this.creditCardBillDateFormControl.enable();
         } else {
           this.creditCardBillDateFormControl.disable();
@@ -498,22 +492,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   private setCreditCardBillDate(date: string, closingDay?: number) {
-    let oneMonthSkipped = false;
-    const billDate = this.creditCardBillDateOptions.find(option => {
-      const isSameMonth = moment(date).isSame(option, 'month');
-      const isSameOrAfterClosingDay = moment(date).date() >= closingDay;
-
-      if (isSameMonth || oneMonthSkipped) {
-        if (isSameOrAfterClosingDay && !oneMonthSkipped) {
-          oneMonthSkipped = true;
-          return false;
-        } else {
-          return true;
-        }
-      }
-
-      return false;
-    });
+    const billDate = this.creditCardService.findCreditCardBillDate(date, this.creditCardBillDateOptions, closingDay);
 
     this.creditCardBillDateFormControl.setValue(billDate);
     this.creditCardBillDateFormControl.updateValueAndValidity();
