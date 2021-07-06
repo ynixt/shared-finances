@@ -15,7 +15,7 @@
         *ngFor="let transaction of transactionsPage.items"
       >
         <mat-icon
-          [title]="t(getTransactionTranslateKey(transaction))"
+          [matTooltip]="t(getTransactionTranslateKey(transaction))"
           class="transaction-type cursor-default {{ getTransactionCssColor(transaction) }}"
           matListIcon
         >

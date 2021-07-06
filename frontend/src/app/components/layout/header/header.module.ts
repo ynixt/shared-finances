@@ -13,6 +13,7 @@ import { CovalentStepsModule } from '@covalent/core/steps';
 import { CovalentLayoutModule } from '@covalent/core/layout';
 import { MatListModule } from '@angular/material/list';
 import { MenuModule } from '../menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [HeaderComponent],
@@ -29,6 +30,7 @@ import { MenuModule } from '../menu';
     CovalentStepsModule,
     MatListModule,
     MenuModule,
+    MatTooltipModule,
   ],
   exports: [HeaderComponent],
 })

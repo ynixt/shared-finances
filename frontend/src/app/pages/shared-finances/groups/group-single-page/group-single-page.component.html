@@ -11,13 +11,13 @@
       </div>
 
       <div right>
-        <button mat-icon-button aria-label="Edit" [title]="t('create-share-url')" (click)="editGroup()">
+        <button mat-icon-button aria-label="Edit" [matTooltip]="t('edit-group')" (click)="editGroup()">
           <mat-icon>edit</mat-icon>
         </button>
         <button
           mat-icon-button
           aria-label="Share"
-          [title]="t('edit-group')"
+          [matTooltip]="t('create-share-url')"
           (click)="createInvite()"
           *ngIf="!sharedLinkLoading; else loadingTemplate"
         >

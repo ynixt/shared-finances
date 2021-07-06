@@ -48,7 +48,7 @@
             </mat-menu>
           </ng-container>
 
-          <button *ngIf="userState.user == null" mat-icon-button (click)="login()" [title]="t('login')">
+          <button *ngIf="userState.user == null" mat-icon-button (click)="login()" [matTooltip]="t('login')">
             <mat-icon>login</mat-icon>
           </button>
         </div>

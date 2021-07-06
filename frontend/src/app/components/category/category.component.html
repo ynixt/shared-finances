@@ -7,7 +7,7 @@
             <ng-content select="[custom-title]"></ng-content>
           </div>
           <div right>
-            <a routerLink="new" mat-icon-button aria-label="Edit" [title]="t('new-category')">
+            <a routerLink="new" mat-icon-button aria-label="New" [matTooltip]="t('new-category')">
               <mat-icon>add</mat-icon>
             </a>
           </div>
@@ -23,7 +23,7 @@
             <mat-card-header class="items-center mb-1">
               <mat-icon mat-card-avatar class="w-auto h-auto">category</mat-icon>
               <mat-card-title class="mb-0 break-all">{{ category.name }}</mat-card-title>
-              <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+              <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu">
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #menu="matMenu">
