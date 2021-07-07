@@ -116,7 +116,7 @@
 
       <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.CreditCard">
         <mat-label>{{ t('credit-card-bill-date') }}</mat-label>
-        <mat-select formControlName="creditCardBillDate">
+        <mat-select formControlName="creditCardBillDate" [compareWith]="creditCardBillDateInputValueCompare">
           <mat-option>{{ t('mat-select-none') }}</mat-option>
           <mat-option *ngFor="let option of creditCardBillDateOptions" [value]="option">
             {{ option.format('L') }}

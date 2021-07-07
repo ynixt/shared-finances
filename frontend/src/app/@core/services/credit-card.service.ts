@@ -129,6 +129,12 @@ export class CreditCardService {
     return dateForThisOption.add(amountAhead, 'month');
   }
 
+  previousBillDate(date: string | Moment, closingDay: number, amountAhead = 1): Moment {
+    const dateForThisOption = moment(date).date(closingDay);
+
+    return dateForThisOption.subtract(amountAhead, 'month');
+  }
+
   findCreditCardBillDate(date: string | Moment, creditCardBillDateOptions: Array<Moment | string>, closingDay: number): Moment | undefined {
     let oneMonthSkipped = false;
 

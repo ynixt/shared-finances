@@ -1,6 +1,6 @@
 import { UseGuards } from '@nestjs/common';
 import { Query, Args, Mutation, Parent, ResolveField, Resolver, Int, Subscription } from '@nestjs/graphql';
-import { PubSub } from 'apollo-server-express';
+import { PubSub, UserInputError } from 'apollo-server-express';
 import { Types } from 'mongoose';
 import { ErrorUtilService, INITIAL_PAGE, MAX_PAGE_SIZE, Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
@@ -35,17 +35,24 @@ export class TransactionResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   async transactions(
     @GqlCurrentUser() user: FBUser,
-    @Args({ name: 'bankAccountId' }) bankAccountId: string,
     @Args({ name: 'page', type: () => Int, nullable: true, defaultValue: INITIAL_PAGE }) page: number,
     @Args({ name: 'pageSize', type: () => Int, nullable: true, defaultValue: MAX_PAGE_SIZE }) pageSize: number,
+    @Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string,
+    @Args({ name: 'creditCardId', nullable: true }) creditCardId?: string,
     @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
     @Args({ name: 'minDate', nullable: true }) minDate?: string,
   ) {
     const pagination = new Pagination({ page, pageSize });
 
-    return this.errorUtilService.tryToGetItem(async () =>
-      this.transactionService.findAll(user, { bankAccountId, minDate, maxDate }, pagination),
-    );
+    return this.errorUtilService.tryToGetItem(async () => {
+      if (bankAccountId != null) {
+        return this.transactionService.findAll(user, { bankAccountId, minDate, maxDate }, pagination);
+      } else if (creditCardId != null) {
+        return this.transactionService.findAll(user, { creditCardId, minDate, maxDate }, pagination);
+      }
+
+      throw new UserInputError('id is missing');
+    });
   }
 
   @Mutation(() => Transaction)

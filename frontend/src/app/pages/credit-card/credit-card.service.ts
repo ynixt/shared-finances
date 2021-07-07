@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
+import { Moment } from 'moment';
 import { from, Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { CreditCard } from 'src/app/@core/models';
+import { CreditCard, Page, Pagination, Transaction } from 'src/app/@core/models';
 
 @Injectable({
   providedIn: 'root',
@@ -107,5 +108,51 @@ export class CreditCardService {
         take(1),
         map(result => result.data.deleteCreditCard),
       );
+  }
+
+  getTransactions(
+    creditCardId: string,
+    args?: { maxDate?: Moment; minDate?: Moment },
+    pagination?: Pagination,
+  ): Observable<Page<Transaction>> {
+    const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
+      query: gql`
+        query($creditCardId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String) {
+          transactions(creditCardId: $creditCardId, page: $page, pageSize: $pageSize, maxDate: $maxDate, minDate: $minDate) {
+            items {
+              id
+              transactionType
+              group {
+                id
+                name
+              }
+              date
+              value
+              description
+              category {
+                id
+                name
+                color
+              }
+              creditCardId
+            }
+            total
+            page
+            pageSize
+          }
+        }
+      `,
+      variables: {
+        creditCardId,
+        page: pagination?.page,
+        pageSize: pagination?.pageSize,
+        maxDate: args?.maxDate?.toISOString(),
+        minDate: args?.minDate?.toISOString(),
+      },
+    });
+
+    // this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId);
+
+    return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
   }
 }

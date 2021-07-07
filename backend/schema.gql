@@ -79,7 +79,7 @@ type Query {
   user: User
   bankAccount(bankAccountId: String!): BankAccount
   bankAccountBalance(maxDate: String, bankAccountId: String!): Float
-  transactions(minDate: String, maxDate: String, pageSize: Int = 20, page: Int = 1, bankAccountId: String!): TransactionsPage
+  transactions(minDate: String, maxDate: String, creditCardId: String, bankAccountId: String, pageSize: Int = 20, page: Int = 1): TransactionsPage
   transactionsChart(minDate: String, maxDate: String, bankAccountId: String, timezone: String!): [Chart!]
   categories(groupId: String): [Category!]!
   category(groupId: String, categoryId: String!): Category

@@ -214,6 +214,10 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     return obj1 === obj2 || (obj1 && obj2 && obj1.accountId === obj2.accountId && obj1.personId === obj2.personId);
   }
 
+  creditCardBillDateInputValueCompare(obj1: any, obj2: any) {
+    return obj1 === obj2 || ('toISOString' in obj1 && 'toISOString' in obj2 && obj1?.toISOString() === obj2?.toISOString());
+  }
+
   private async editTransacation(
     bankAccount: any,
     bankAccount2: any,

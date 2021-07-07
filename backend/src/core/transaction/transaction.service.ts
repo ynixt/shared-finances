@@ -84,16 +84,28 @@ export class TransactionService {
 
   async findAll(
     user: FBUser,
-    args: { bankAccountId?: string; maxDate?: string; minDate?: string },
-    pagination?: Pagination,
+    args: { bankAccountId: string; maxDate?: string; minDate?: string },
+    pagination: Pagination,
   ): Promise<TransactionsPage>;
 
   async findAll(
     user: FBUser,
-    args: { bankAccountId: string; maxDate?: string; minDate?: string },
+    args: { creditCardId: string; maxDate?: string; minDate?: string },
     pagination: Pagination,
+  ): Promise<TransactionsPage>;
+
+  async findAll(
+    user: FBUser,
+    args: { bankAccountId?: string; creditCardId?: string; maxDate?: string; minDate?: string },
+    pagination?: Pagination,
   ): Promise<TransactionsPage> {
-    return this.transacationRepository.getByBankAccountId(args.bankAccountId, args, pagination);
+    if (args.bankAccountId != null) {
+      return this.transacationRepository.getByBankAccountId(args.bankAccountId, args, pagination);
+    }
+
+    if (args.creditCardId != null) {
+      return this.transacationRepository.getByCreditCardId(args.creditCardId, args, pagination);
+    }
   }
 
   async getBalanceByBankAccount(user: FBUser, bankAccountId: string, args: { maxDate?: string } = {}): Promise<number> {
@@ -124,7 +136,7 @@ export class TransactionService {
     if (
       (transaction.groupId != null && user.groupsId.includes(transaction.groupId)) ||
       (transaction.bankAccountId != null && (await this.bankAccountService.existsWithUserId(user.id, transaction.bankAccountId))) ||
-      (transaction.creditCardId != null && (await this.creditCardService.existsWithUserId(user.id, transaction.bankAccountId)))
+      (transaction.creditCardId != null && (await this.creditCardService.existsWithUserId(user.id, transaction.creditCardId)))
     ) {
       return true;
     }

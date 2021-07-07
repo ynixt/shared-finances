@@ -16,6 +16,7 @@ import { CovalentDialogsModule } from '@covalent/core/dialogs';
 import { EditCreditCardComponent } from './edit-credit-card/edit-credit-card.component';
 import { CreditCardSingleComponent } from './credit-card-single/credit-card-single.component';
 import { OptionsBarModule } from 'src/app/components/options-bar';
+import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
 
 @NgModule({
   declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent, EditCreditCardComponent, CreditCardSingleComponent],
@@ -31,6 +32,7 @@ import { OptionsBarModule } from 'src/app/components/options-bar';
     MatMenuModule,
     CovalentDialogsModule,
     OptionsBarModule,
+    TransactionsTableModule
   ],
 })
 export class CreditCardModule {}

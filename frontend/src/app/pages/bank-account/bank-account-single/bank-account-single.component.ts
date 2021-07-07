@@ -24,7 +24,6 @@ import { BankAccountService } from '../bank-account.service';
 export class BankAccountSingleComponent implements OnInit {
   transactionsGroupedYearMonth: Chart[];
 
-  // options
   legend: boolean = true;
   showLabels: boolean = true;
   animations: boolean = true;
@@ -37,7 +36,6 @@ export class BankAccountSingleComponent implements OnInit {
 
   bankAccount: BankAccount;
   pageSize = 20;
-
   transactionsPage$: Observable<Page<Transaction>>;
   balance: number;
 
@@ -121,7 +119,7 @@ export class BankAccountSingleComponent implements OnInit {
 
   public async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
-    await this.getInfoBasedOnBank();
+    await this.getInfoBasedOnBankAndDate();
   }
 
   private async getBankAccount(bankAccount: BankAccount) {
@@ -133,7 +131,7 @@ export class BankAccountSingleComponent implements OnInit {
     this.bankAccount = bankAccount;
   }
 
-  private getInfoBasedOnBank() {
+  private getInfoBasedOnBankAndDate() {
     this.getTransactions();
     this.transactionsChange();
     return Promise.all([this.getBalance(), this.getChart()]);
