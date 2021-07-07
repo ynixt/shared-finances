@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { TranslocoService } from '@ngneat/transloco';
 import { Moment } from 'moment';
@@ -16,6 +16,7 @@ export interface TransactionsRequested {
   selector: 'app-transactions-table',
   templateUrl: './transactions-table.component.html',
   styleUrls: ['./transactions-table.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class TransactionsTableComponent implements OnInit {
   @Input() transactionsPage$: Promise<Page<Transaction>> | Observable<Page<Transaction>>;
