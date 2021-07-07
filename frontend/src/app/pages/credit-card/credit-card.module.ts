@@ -32,7 +32,7 @@ import { TransactionsTableModule } from 'src/app/components/transactions-table/t
     MatMenuModule,
     CovalentDialogsModule,
     OptionsBarModule,
-    TransactionsTableModule
+    TransactionsTableModule,
   ],
 })
 export class CreditCardModule {}

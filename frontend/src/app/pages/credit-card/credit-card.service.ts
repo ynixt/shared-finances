@@ -1,9 +1,40 @@
 import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo, gql, QueryRef } from 'apollo-angular';
+import { EmptyObject } from 'apollo-angular/types';
 import { Moment } from 'moment';
 import { from, Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { CreditCard, Page, Pagination, Transaction } from 'src/app/@core/models';
+
+const TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION = gql`
+  subscription creditCardTransactionUpdated($creditCardId: String!) {
+    creditCardTransactionUpdated(creditCardId: $creditCardId) {
+      id
+      transactionType
+      group {
+        id
+        name
+      }
+      date
+      value
+      description
+      category {
+        id
+        name
+        color
+      }
+      creditCardId
+    }
+  }
+`;
+
+const TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION = gql`
+  subscription creditCardTransactionDeleted($creditCardId: String!) {
+    creditCardTransactionDeleted(creditCardId: $creditCardId) {
+      id
+    }
+  }
+`;
 
 @Injectable({
   providedIn: 'root',
@@ -151,8 +182,72 @@ export class CreditCardService {
       },
     });
 
-    // this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId);
+    this.subscribeToTransactionChanges(transactionsQueryRef, creditCardId);
 
     return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
+  }
+
+  private subscribeToTransactionChanges(
+    transactionsQueryRef: QueryRef<
+      {
+        transactions: Page<Transaction>;
+      },
+      EmptyObject
+    >,
+    creditCardId: string,
+  ) {
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION,
+      variables: {
+        creditCardId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (prev.transactions != null) {
+          const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+          transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+
+          const transactionUpdatedIndex = transactionsPage.items.findIndex(
+            item => item.id === subscriptionData.data.creditCardTransactionUpdated.id,
+          );
+
+          if (transactionUpdatedIndex != -1) {
+            transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.creditCardTransactionUpdated;
+          }
+
+          prev = {
+            transactions: transactionsPage,
+          };
+          return {
+            ...prev,
+          };
+        }
+
+        return prev;
+      },
+    });
+
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION,
+      variables: {
+        creditCardId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (prev.transactions != null) {
+          const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+          transactionsPage.items = transactionsPage.items.filter(item => item.id !== subscriptionData.data.creditCardTransactionDeleted.id);
+
+          prev = {
+            transactions: transactionsPage,
+          };
+          return {
+            ...prev,
+          };
+        }
+
+        return prev;
+      },
+    });
   }
 }

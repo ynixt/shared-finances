@@ -7,24 +7,24 @@ import { map, take } from 'rxjs/operators';
 import { BankAccount, Page, Pagination, Transaction } from 'src/app/@core/models';
 
 const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
-  subscription transactionCreated($bankAccountId: String!) {
-    transactionCreated(bankAccountId: $bankAccountId) {
+  subscription bankAccountTransactionCreated($bankAccountId: String!) {
+    bankAccountTransactionCreated(bankAccountId: $bankAccountId) {
       id
     }
   }
 `;
 
 const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE = gql`
-  subscription transactionUpdated($bankAccountId: String!) {
-    transactionUpdated(bankAccountId: $bankAccountId) {
+  subscription bankAccountTransactionUpdated($bankAccountId: String!) {
+    bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
       id
     }
   }
 `;
 
 const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION = gql`
-  subscription transactionUpdated($bankAccountId: String!) {
-    transactionUpdated(bankAccountId: $bankAccountId) {
+  subscription bankAccountTransactionUpdated($bankAccountId: String!) {
+    bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
       id
       transactionType
       group {
@@ -45,8 +45,8 @@ const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION = gql`
 `;
 
 const TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION = gql`
-  subscription transactionDeleted($bankAccountId: String!) {
-    transactionDeleted(bankAccountId: $bankAccountId) {
+  subscription bankAccountTransactionDeleted($bankAccountId: String!) {
+    bankAccountTransactionDeleted(bankAccountId: $bankAccountId) {
       id
     }
   }
@@ -78,35 +78,35 @@ export class BankAccountService {
 
   onTransactionCreated(bankAccountId: string): Observable<string> {
     return this.apollo
-      .subscribe<{ transactionCreated: { id: string } }>({
+      .subscribe<{ bankAccountTransactionCreated: { id: string } }>({
         query: TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE,
         variables: {
           bankAccountId,
         },
       })
-      .pipe(map(result => result.data.transactionCreated.id));
+      .pipe(map(result => result.data.bankAccountTransactionCreated.id));
   }
 
   onTransactionUpdated(bankAccountId: string): Observable<string> {
     return this.apollo
-      .subscribe<{ transactionUpdated: { id: string } }>({
+      .subscribe<{ bankAccountTransactionUpdated: { id: string } }>({
         query: TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE,
         variables: {
           bankAccountId,
         },
       })
-      .pipe(map(result => result.data.transactionUpdated.id));
+      .pipe(map(result => result.data.bankAccountTransactionUpdated.id));
   }
 
   onTransactionDeleted(bankAccountId: string): Observable<string> {
     return this.apollo
-      .subscribe<{ transactionDeleted: { id: string } }>({
+      .subscribe<{ bankAccountTransactionDeleted: { id: string } }>({
         query: TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION,
         variables: {
           bankAccountId,
         },
       })
-      .pipe(map(result => result.data.transactionDeleted.id));
+      .pipe(map(result => result.data.bankAccountTransactionDeleted.id));
   }
 
   getTransactions(
@@ -175,10 +175,12 @@ export class BankAccountService {
 
           transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
 
-          const transactionUpdatedIndex = transactionsPage.items.findIndex(item => item.id === subscriptionData.data.transactionUpdated.id);
+          const transactionUpdatedIndex = transactionsPage.items.findIndex(
+            item => item.id === subscriptionData.data.bankAccountTransactionUpdated.id,
+          );
 
           if (transactionUpdatedIndex != -1) {
-            transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.transactionUpdated;
+            transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.bankAccountTransactionUpdated;
           }
 
           prev = {
@@ -202,7 +204,9 @@ export class BankAccountService {
         if (prev.transactions != null) {
           const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
 
-          transactionsPage.items = transactionsPage.items.filter(item => item.id !== subscriptionData.data.transactionDeleted.id);
+          transactionsPage.items = transactionsPage.items.filter(
+            item => item.id !== subscriptionData.data.bankAccountTransactionDeleted.id,
+          );
 
           prev = {
             transactions: transactionsPage,

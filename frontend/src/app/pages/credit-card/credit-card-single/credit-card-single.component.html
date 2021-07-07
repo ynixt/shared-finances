@@ -27,14 +27,13 @@
       </app-options-bar>
 
       <app-transactions-table
-      [transactionsPage$]="transactionsPage$"
-      [pageSize]="pageSize"
-      (getTransactionsRequested)="getTransactions($event.page)"
-      (editTransactionRequested)="editTransaction($event)"
-      (deleteTransactionRequested)="deleteTransaction($event)"
-    >
-    </app-transactions-table>
-
+        [transactionsPage$]="transactionsPage$"
+        [pageSize]="pageSize"
+        (getTransactionsRequested)="getTransactions($event.page)"
+        (editTransactionRequested)="editTransaction($event)"
+        (deleteTransactionRequested)="deleteTransaction($event)"
+      >
+      </app-transactions-table>
     </ng-container>
   </div>
 </ng-container>
