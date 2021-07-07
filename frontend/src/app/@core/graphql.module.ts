@@ -1,15 +1,38 @@
 import { NgModule } from '@angular/core';
 import { APOLLO_OPTIONS } from 'apollo-angular';
 import { ApolloClientOptions, InMemoryCache, split } from '@apollo/client/core';
+import { onError } from '@apollo/client/link/error';
 import { HttpLink } from 'apollo-angular/http';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { take } from 'rxjs/operators';
-import { ConnectionParams, MessageTypes, SubscriptionClient } from 'subscriptions-transport-ws';
+import { MessageTypes, SubscriptionClient } from 'subscriptions-transport-ws';
+import { HotToastService } from '@ngneat/hot-toast';
+import { TranslocoService } from '@ngneat/transloco';
 
-const uri = '/api/graphql'; // <-- add the URL of the GraphQL server here
-export function createApollo(httpLink: HttpLink, angularFireAuth: AngularFireAuth): ApolloClientOptions<any> {
+const uri = '/api/graphql';
+export function createApollo(
+  httpLink: HttpLink,
+  angularFireAuth: AngularFireAuth,
+  hotToastService: HotToastService,
+  translocoService: TranslocoService,
+): ApolloClientOptions<any> {
+  const errorLink = onError(({ graphQLErrors, networkError }) => {
+    if (networkError) {
+      translocoService
+        .selectTranslate('server-offline')
+        .pipe(take(1))
+        .toPromise()
+        .then(msg => {
+          hotToastService.error(msg, {
+            autoClose: false,
+            dismissible: true,
+          });
+        });
+    }
+  });
+
   const http = httpLink.create({
     uri,
   });
@@ -90,7 +113,7 @@ export function createApollo(httpLink: HttpLink, angularFireAuth: AngularFireAut
   );
 
   return {
-    link,
+    link: errorLink.concat(link),
     cache: new InMemoryCache(),
     defaultOptions: {
       query: {
@@ -111,7 +134,7 @@ export function createApollo(httpLink: HttpLink, angularFireAuth: AngularFireAut
     {
       provide: APOLLO_OPTIONS,
       useFactory: createApollo,
-      deps: [HttpLink, AngularFireAuth],
+      deps: [HttpLink, AngularFireAuth, HotToastService, TranslocoService],
     },
   ],
 })
