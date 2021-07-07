@@ -41,6 +41,7 @@ export function createApollo(
 
   const subscriptionClient = new SubscriptionClient(`ws://localhost:3000/graphql`, {
     reconnect: true,
+    reconnectionAttempts: 5,
     connectionParams: async () => {
       const user = await angularFireAuth.user.pipe(take(1)).toPromise();
       const token = await user?.getIdToken();
