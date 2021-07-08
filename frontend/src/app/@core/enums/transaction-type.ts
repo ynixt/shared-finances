@@ -3,4 +3,5 @@ export enum TransactionType {
   Expense = 'Expense',
   Transfer = 'Transfer',
   CreditCard = 'CreditCard',
+  CreditCardBillPayment = 'CreditCardBillPayment',
 }

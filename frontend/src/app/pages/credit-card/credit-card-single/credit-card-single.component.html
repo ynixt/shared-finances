@@ -26,6 +26,19 @@
       >
       </app-options-bar>
 
+      <div class="cards grid md:grid-cols-3 md:gap-4 pb-4">
+        <ng-template #loadingCard>
+          <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
+        </ng-template>
+
+        <mat-card class="card cursor-pointer" (click)="openPayBillDialog()">
+          <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+            <span class="text-gray-400 mb-2"></span>
+            <h3 class="m-0">{{ t('pay') }}</h3>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
       <app-transactions-table
         [transactionsPage$]="transactionsPage$"
         [pageSize]="pageSize"

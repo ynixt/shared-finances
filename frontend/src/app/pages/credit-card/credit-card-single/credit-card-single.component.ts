@@ -11,6 +11,7 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { DOCUMENT } from '@angular/common';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
+import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-card-bill-payment';
 
 @UntilDestroy()
 @Component({
@@ -39,6 +40,7 @@ export class CreditCardSingleComponent implements OnInit {
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
+    private creditCardBillPaymentDialogService: CreditCardBillPaymentDialogService
   ) {}
 
   ngOnInit(): void {
@@ -98,6 +100,10 @@ export class CreditCardSingleComponent implements OnInit {
         }),
       )
       .toPromise();
+  }
+  
+  openPayBillDialog(): void {
+    this.creditCardBillPaymentDialogService.openDialog(this.document, this.renderer2);
   }
 
   private getInfoBasedOnCreditCardAndDate(): void {

@@ -1,0 +1,13 @@
+<td-window-dialog
+  *transloco="let t"
+  [title]="t('pay-credit-card-bill')"
+  [toolbarColor]="'accent'"
+  [closeLabel]="t('close')"
+  (closed)="closed.emit()"
+>
+  <div class="p-4">
+    <form class="grid" [formGroup]="formGroup" (ngSubmit)="save()">
+    </form>
+  </div>
+
+</td-window-dialog>

@@ -11,6 +11,7 @@ export enum TransactionType {
   Expense = 'Expense',
   Transfer = 'Transfer',
   CreditCard = 'CreditCard',
+  CreditCardBillPayment = 'CreditCardBillPayment',
 }
 
 @ObjectType()
@@ -34,7 +35,7 @@ export class Transaction {
     type: MongooseSchema.Types.ObjectId,
     index: true,
     required: function () {
-      return this.transactionType === TransactionType.CreditCard;
+      return this.transactionType === TransactionType.CreditCard || this.transactionType === TransactionType.CreditCardBillPayment;
     },
   })
   creditCardId?: string;

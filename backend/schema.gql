@@ -94,6 +94,7 @@ type Mutation {
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
   newTransaction(transactionType: String!, date: String!, creditCardBillDate: String, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
+  payCreditCardBill(date: String!, creditCardBillDate: String!, bankAccountId: String!, creditCardId: String!, value: Float!, description: String, groupId: String): Transaction!
   editTransaction(transactionId: String!, transactionType: String!, date: String!, creditCardBillDate: String, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
   deleteTransaction(transactionId: String!): Boolean!
   newCategory(name: String!, color: String!): Category!

@@ -9,7 +9,7 @@ import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { GroupService } from '../group';
 import { Transaction, TransactionType, TransactionsPage } from '../models';
-import { EditTransactionArgs, NewTransactionArgs } from '../models/args';
+import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
 
 @Injectable()
@@ -41,6 +41,12 @@ export class TransactionService {
     } else {
       return this.transacationRepository.create({ ...input, userId: input.firstUserId });
     }
+  }
+
+  async payCreditCardBill(user: FBUser, input: BillPaymentCreditCardArgs): Promise<Transaction> {
+    await this.validPermissionsForPayCreditCardBill(user, input);
+
+    return this.transacationRepository.create({ ...input, userId: user.id });
   }
 
   async edit(user: FBUser, input: EditTransactionArgs): Promise<Transaction> {
@@ -174,6 +180,23 @@ export class TransactionService {
 
     // Credit card (if there is) must belongs to first user
     if (input.creditCardId != null && !(await this.creditCardService.existsWithUserId(input.firstUserId, input.creditCardId))) {
+      throw new AuthenticationError('');
+    }
+  }
+
+  private async validPermissionsForPayCreditCardBill(user: FBUser, input: BillPaymentCreditCardArgs) {
+    // Must be a group of the logged user
+    if (input.groupId != null && user.groupsId.includes(input.groupId) === false) {
+      throw new AuthenticationError('');
+    }
+
+    // Bank account must belongs to first user
+    if (input.bankAccountId != null && !(await this.bankAccountService.existsWithUserId(user.id, input.bankAccountId))) {
+      throw new AuthenticationError('');
+    }
+
+    // Credit card must belongs to first user
+    if (input.creditCardId != null && !(await this.creditCardService.existsWithUserId(user.id, input.creditCardId))) {
       throw new AuthenticationError('');
     }
   }

@@ -9,7 +9,7 @@ import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { CategoryService } from '../category';
 import { GroupService } from '../group';
 import { Category, Chart, Transaction, TransactionsPage } from '../models';
-import { EditTransactionArgs, NewTransactionArgs } from '../models/args';
+import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionChartService } from './transaction-chart.service';
 import { TransactionService } from './transaction.service';
 
@@ -71,12 +71,36 @@ export class TransactionResolver {
           bankAccountTransactionCreated: transactionCreated,
           usersDestination,
         });
-      } else if (transactionCreated.creditCardId != null) {
+      }
+
+      if (transactionCreated.creditCardId != null) {
         pubSub.publish(TransactionPubTrigger.creditCardTransactionCreated, {
           creditCardTransactionCreated: transactionCreated,
           usersDestination,
         });
       }
+    }
+
+    return transactionCreated;
+  }
+
+  @Mutation(() => Transaction)
+  @UseGuards(GqlFirebaseAuthGuard)
+  async payCreditCardBill(@GqlCurrentUser() user: FBUser, @Args() billPaymentArgs: BillPaymentCreditCardArgs): Promise<Transaction> {
+    const transactionCreated = await this.transactionService.payCreditCardBill(user, billPaymentArgs);
+
+    if (transactionCreated) {
+      const usersDestination = await this.getUsersDestinationForPub(transactionCreated);
+
+      pubSub.publish(TransactionPubTrigger.bankAccountTransactionCreated, {
+        bankAccountTransactionCreated: transactionCreated,
+        usersDestination,
+      });
+
+      pubSub.publish(TransactionPubTrigger.creditCardTransactionCreated, {
+        creditCardTransactionCreated: transactionCreated,
+        usersDestination,
+      });
     }
 
     return transactionCreated;
@@ -95,7 +119,9 @@ export class TransactionResolver {
           bankAccountTransactionUpdated: transactionUpdated,
           usersDestination,
         });
-      } else if (transactionUpdated.creditCardId != null) {
+      }
+
+      if (transactionUpdated.creditCardId != null) {
         pubSub.publish(TransactionPubTrigger.creditCardTransactionUpdated, {
           creditCardTransactionUpdated: transactionUpdated,
           usersDestination,
@@ -119,7 +145,9 @@ export class TransactionResolver {
           bankAccountTransactionDeleted: transactionDeleted,
           usersDestination,
         });
-      } else if (transactionDeleted.creditCardId != null) {
+      }
+
+      if (transactionDeleted.creditCardId != null) {
         pubSub.publish(TransactionPubTrigger.creditCardTransactionDeleted, {
           creditCardTransactionDeleted: transactionDeleted,
           usersDestination,

@@ -6,3 +6,4 @@ export * from './new-transaction-args';
 export * from './new-category-args';
 export * from './edit-category-args';
 export * from './edit-transaction-args';
+export * from './bill-payment-credit-card-args';

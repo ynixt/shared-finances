@@ -70,6 +70,8 @@ export class TransactionsTableComponent implements OnInit {
         return 'trending_up';
       case TransactionType.Transfer:
         return 'sync_alt';
+      case TransactionType.CreditCardBillPayment:
+        return 'credit_card_off';
     }
   }
 
@@ -83,6 +85,8 @@ export class TransactionsTableComponent implements OnInit {
         return 'revenue';
       case TransactionType.Transfer:
         return 'transfer';
+      case TransactionType.CreditCardBillPayment:
+        return 'credit-card-bill-payment';
     }
   }
 
@@ -96,6 +100,8 @@ export class TransactionsTableComponent implements OnInit {
         return 'revenue-color';
       case TransactionType.Transfer:
         return 'transfer-color';
+      case TransactionType.CreditCardBillPayment:
+        return 'credit-card-bill-payment-color';
     }
   }
 }
