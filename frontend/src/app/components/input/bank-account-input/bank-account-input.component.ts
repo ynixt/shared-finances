@@ -21,8 +21,7 @@ export class BankAccountInputComponent extends ControlValueAccessorConnector<Acc
   accountsWithPersons: AccountWithPerson[] = [];
 
   @Input() title: string;
-
-  group: Group;
+  @Input() autoMount = true;
 
   constructor(
     private authSelectors: AuthSelectors,
@@ -33,7 +32,9 @@ export class BankAccountInputComponent extends ControlValueAccessorConnector<Acc
   }
 
   ngOnInit(): void {
-    this.mountAccounts();
+    if (this.autoMount) {
+      this.mountAccounts();
+    }
   }
 
   bankAccountInputValueCompare(obj1: any, obj2: any): boolean {
@@ -45,17 +46,19 @@ export class BankAccountInputComponent extends ControlValueAccessorConnector<Acc
       creditCardsWithPerson => creditCardsWithPerson.accounts.find(account => account.id === bankAccountId) != null,
     );
 
-    this.control.setValue({ accountId: bankAccountId, personId: bankAccountWithPerson.person.id });
+    if (bankAccountWithPerson) {
+      this.control.setValue({ accountId: bankAccountId, personId: bankAccountWithPerson.person.id });
+    }
   }
 
-  private async mountAccounts(group?: Group): Promise<void> {
+  async mountAccounts(group?: Group): Promise<void> {
     this.accountsWithPersons = [];
 
     const user = await this.authSelectors.currentUser();
 
     this.accountsWithPersons.push({ person: user, accounts: await this.bankAccountSelectors.currentBankAccounts() });
 
-    if (this.group != null) {
+    if (group != null) {
       group?.users.forEach(userFromGroup => {
         if (userFromGroup.id !== user.id) {
           if (userFromGroup.bankAccounts?.length > 0) {

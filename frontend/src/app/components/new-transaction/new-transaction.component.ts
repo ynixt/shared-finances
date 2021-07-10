@@ -149,17 +149,19 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     }
 
     this.mountGroups();
-    this.selectCurrentBankAccount();
     this.mountFilteredCategories();
-    this.selectCurrentCreditCard();
 
     if (this.shared) {
       this.formGroup
         .get('group')
         .valueChanges.pipe(untilDestroyed(this))
         .subscribe(group => {
-          this.selectCurrentBankAccount(group);
+          this.bankAccountInput?.mountAccounts(group).then(() => this.selectCurrentBankAccount());
+          this.creditCardInput?.mountCreditCards(group).then(() => this.selectCurrentCreditCard());
         });
+    } else {
+      this.selectCurrentBankAccount();
+      this.selectCurrentCreditCard();
     }
 
     this.watchTransactionTypeChanges();
@@ -287,7 +289,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       .toPromise();
   }
 
-  private async selectCurrentBankAccount(group?: Group) {
+  private async selectCurrentBankAccount() {
     if (this.editingTransaction?.bankAccountId != null) {
       this.bankAccountInput.selectBankAccount(this.editingTransaction.bankAccountId);
     }

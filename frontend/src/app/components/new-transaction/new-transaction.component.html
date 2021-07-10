@@ -73,15 +73,21 @@
         [formControlName]="'bankAccount'"
         [title]="t('bank-account')"
         *ngIf="transactionType !== transactionTypeEnum.CreditCard"
+        [autoMount]="!shared"
       ></app-bank-account-input>
 
       <app-bank-account-input
         [formControlName]="'bankAccount2'"
         [title]="t('bank-account-destiny')"
         *ngIf="transactionType === transactionTypeEnum.Transfer"
+        [autoMount]="!shared"
       ></app-bank-account-input>
 
-      <app-credit-card-input *ngIf="transactionType === transactionTypeEnum.CreditCard" [formControlName]="'creditCard'">
+      <app-credit-card-input
+        *ngIf="transactionType === transactionTypeEnum.CreditCard"
+        [formControlName]="'creditCard'"
+        [autoMount]="!shared"
+      >
       </app-credit-card-input>
 
       <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.CreditCard">
