@@ -1,4 +1,14 @@
-import { Component, EventEmitter, OnInit, Output, AfterContentChecked, ChangeDetectorRef, OnDestroy, Inject } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  OnInit,
+  Output,
+  AfterContentChecked,
+  ChangeDetectorRef,
+  OnDestroy,
+  Inject,
+  ViewChild,
+} from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { HotToastService } from '@ngneat/hot-toast';
@@ -13,6 +23,7 @@ import { Group } from 'src/app/@core/models/group';
 import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { AuthSelectors, BankAccountSelectors, CreditCardSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
+import { CreditCardInputComponent } from '../credit-card-input';
 import { NewTransactionComponentArgs } from './new-transaction-component-args';
 
 interface AccountWithPerson {
@@ -87,12 +98,13 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   formGroup: FormGroup;
   transactionTypeEnum = TransactionType;
   accountsWithPersons: AccountWithPerson[] = [];
-  creditCardsWithPersons$: Observable<CreditCardWithPerson[]>;
   filteredCategories$: Observable<Category[]>;
   shared: boolean;
   groups: Group[];
   editingTransaction: Transaction;
   creditCardBillDateOptions: Moment[] = [];
+
+  @ViewChild(CreditCardInputComponent) creditCardInput: CreditCardInputComponent;
 
   private previousTitle: string;
   private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
@@ -146,14 +158,14 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     this.previousTitle = await this.titleService.getCurrentTitle();
     this.titleService.changeTitle('new-transaction');
 
-    if (this.date != null && this.creditCard != null) {
-      this.creditCardBillDateFormControl.enable();
+    if (this.transactionType === TransactionType.CreditCard) {
+      this.mountCreditCardBillDateOptions();
     }
 
     this.mountGroups();
     this.mountAccounts();
     this.mountFilteredCategories();
-    this.mountCreditCards();
+    this.selectCurrentCreditCard();
 
     if (this.shared) {
       this.formGroup
@@ -165,7 +177,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     }
 
     this.watchTransactionTypeChanges();
-    this.mountCreditCardBillDateOptions();
   }
 
   async ngOnDestroy(): Promise<void> {
@@ -215,7 +226,10 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   creditCardBillDateInputValueCompare(obj1: any, obj2: any) {
-    return obj1 === obj2 || ('toISOString' in obj1 && 'toISOString' in obj2 && obj1?.toISOString() === obj2?.toISOString());
+    return (
+      obj1 === obj2 ||
+      (obj1 != null && obj2 != null && 'toISOString' in obj1 && 'toISOString' in obj2 && obj1?.toISOString() === obj2?.toISOString())
+    );
   }
 
   private async editTransacation(
@@ -354,35 +368,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     );
   }
 
-  private mountCreditCards(): void {
-    this.creditCardsWithPersons$ = combineLatest([
-      this.creditCardSelectors.creditCards$,
-      this.authSelectors.user$,
-      this.creditCardFromOtherUsers.asObservable(),
-    ]).pipe(
-      map(combined => ({ creditCards: combined[0], user: combined[1], creditCardFromOtherUsers: combined[2] })),
-      map(combined =>
-        [
-          {
-            person: combined.user,
-            creditCards: combined.creditCards.sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
-          },
-          ...combined.creditCardFromOtherUsers,
-        ].sort((a, b) => a.person.name.localeCompare(b.person.name)),
-      ),
-    );
-
+  private selectCurrentCreditCard(): void {
     if (this.editingTransaction?.creditCardId != null) {
-      this.creditCardsWithPersons$.pipe(take(1)).subscribe(creditCardsWithPersons => {
-        const creditCardWithPerson = creditCardsWithPersons.find(
-          creditCardsWithPerson =>
-            creditCardsWithPerson.creditCards.find(creditCard => creditCard.id === this.editingTransaction.creditCardId) != null,
-        );
-
-        this.formGroup
-          .get('creditCard')
-          .setValue({ creditCardId: this.editingTransaction.creditCardId, personId: creditCardWithPerson.person.id });
-      });
+      this.creditCardInput.selectCreditCard(this.editingTransaction.creditCardId);
     }
   }
 
@@ -446,6 +434,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
         if (transactionType === TransactionType.CreditCard) {
           this.formGroup.get('bankAccount').setValue(undefined);
+          setTimeout(() => {
+            this.mountCreditCardBillDateOptions();
+          });
         } else {
           this.formGroup.get('creditCard').setValue(undefined);
           this.creditCardBillDateFormControl.setValue(undefined);
@@ -461,7 +452,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     combineLatest([
       this.formGroup.get('date').valueChanges.pipe(startWith(this.date)),
       this.formGroup.get('creditCard').valueChanges.pipe(startWith(this.creditCard)),
-      this.creditCardsWithPersons$,
+      this.creditCardInput.creditCardsWithPersons$,
     ])
       .pipe(untilDestroyed(this))
       .subscribe(combined => {

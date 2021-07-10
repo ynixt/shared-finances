@@ -1,0 +1,12 @@
+<mat-form-field *transloco="let t" appearance="outline" class="w-full">
+  <mat-label>{{ t('credit-card') }}</mat-label>
+  <mat-select *transloco="let t" [compareWith]="creditCardInputValueCompare" [formControl]="control">
+    <mat-option>{{ t('mat-select-none') }}</mat-option>
+    <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person.name">
+      <mat-option *ngFor="let creditCard of creditsPerson.creditCards"
+        [value]="{ creditCardId: creditCard.id, personId: creditsPerson.person.id }">
+        {{ creditCard.name }}
+      </mat-option>
+    </mat-optgroup>
+  </mat-select>
+</mat-form-field>

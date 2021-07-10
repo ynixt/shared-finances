@@ -13,6 +13,7 @@ import { NewTransactionDialogService } from './new-transaction-dialog.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CurrencyMaskModule } from 'ng2-currency-mask';
 import { MatSelectModule } from '@angular/material/select';
+import { CreditCardInputModule } from '../credit-card-input';
 
 @NgModule({
   declarations: [NewTransactionComponent],
@@ -28,6 +29,7 @@ import { MatSelectModule } from '@angular/material/select';
     CurrencyMaskModule,
     MatSelectModule,
     MatAutocompleteModule,
+    CreditCardInputModule,
   ],
   providers: [NewTransactionDialogService],
 })
