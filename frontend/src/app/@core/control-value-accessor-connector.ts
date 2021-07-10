@@ -1,7 +1,7 @@
 import { ControlContainer, ControlValueAccessor, FormControl } from '@angular/forms';
-import { Injectable, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
-@Injectable()
+@Component({ template: `` })
 export abstract class ControlValueAccessorConnector<T> implements ControlValueAccessor {
   value: T;
   onChange = (_: T) => {};

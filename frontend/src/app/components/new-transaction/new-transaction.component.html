@@ -69,35 +69,17 @@
         </mat-autocomplete>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" *ngIf="transactionType !== transactionTypeEnum.CreditCard">
-        <mat-label>{{ t('bank-account') }}</mat-label>
-        <mat-select formControlName="bankAccount" [compareWith]="bankAccountInputValueCompare">
-          <mat-option>{{ t('mat-select-none') }}</mat-option>
-          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person.name">
-            <mat-option
-              *ngFor="let account of accountsPerson.accounts"
-              [value]="{ accountId: account.id, personId: accountsPerson.person.id }"
-            >
-              {{ account.name }}
-            </mat-option>
-          </mat-optgroup>
-        </mat-select>
-      </mat-form-field>
+      <app-bank-account-input
+        [formControlName]="'bankAccount'"
+        [title]="t('bank-account')"
+        *ngIf="transactionType !== transactionTypeEnum.CreditCard"
+      ></app-bank-account-input>
 
-      <mat-form-field appearance="outline" *ngIf="transactionType === transactionTypeEnum.Transfer">
-        <mat-label>{{ t('bank-account-destiny') }}</mat-label>
-        <mat-select formControlName="bankAccount2" [compareWith]="bankAccountInputValueCompare">
-          <mat-option>{{ t('mat-select-none') }}</mat-option>
-          <mat-optgroup *ngFor="let accountsPerson of accountsWithPersons" [label]="accountsPerson.person.name">
-            <mat-option
-              *ngFor="let account of accountsPerson.accounts"
-              [value]="{ accountId: account.id, personId: accountsPerson.person.id }"
-            >
-              {{ account.name }}
-            </mat-option>
-          </mat-optgroup>
-        </mat-select>
-      </mat-form-field>
+      <app-bank-account-input
+        [formControlName]="'bankAccount2'"
+        [title]="t('bank-account-destiny')"
+        *ngIf="transactionType === transactionTypeEnum.Transfer"
+      ></app-bank-account-input>
 
       <app-credit-card-input *ngIf="transactionType === transactionTypeEnum.CreditCard" [formControlName]="'creditCard'">
       </app-credit-card-input>

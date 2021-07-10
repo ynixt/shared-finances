@@ -15,26 +15,16 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
-import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
+import { combineLatest, Observable } from 'rxjs';
 import { map, startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
-import { BankAccount, Category, CreditCard, Transaction, User } from 'src/app/@core/models';
+import { Category, Transaction, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
 import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthSelectors, BankAccountSelectors, CreditCardSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
-import { CreditCardInputComponent } from '../credit-card-input';
+import { AuthSelectors, BankAccountSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
+import { BankAccountInputComponent, CreditCardInputComponent, CreditCardWithPerson } from '../input';
 import { NewTransactionComponentArgs } from './new-transaction-component-args';
-
-interface AccountWithPerson {
-  person: Partial<User>;
-  accounts: BankAccount[];
-}
-
-interface CreditCardWithPerson {
-  person: Partial<User>;
-  creditCards: CreditCard[];
-}
 
 function requiredWhenTransactionTypeIsNotCredit(formControl: AbstractControl) {
   if (!formControl.parent) {
@@ -97,7 +87,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   formGroup: FormGroup;
   transactionTypeEnum = TransactionType;
-  accountsWithPersons: AccountWithPerson[] = [];
   filteredCategories$: Observable<Category[]>;
   shared: boolean;
   groups: Group[];
@@ -105,19 +94,16 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   creditCardBillDateOptions: Moment[] = [];
 
   @ViewChild(CreditCardInputComponent) creditCardInput: CreditCardInputComponent;
+  @ViewChild(BankAccountInputComponent) bankAccountInput: BankAccountInputComponent;
 
   private previousTitle: string;
-  private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
 
   constructor(
     private transactionService: TransactionService,
-    private bankAccountSelectors: BankAccountSelectors,
-    private authSelectors: AuthSelectors,
     private translocoService: TranslocoService,
     private toast: HotToastService,
     private errorService: ErrorService,
     private userCategorySelectors: UserCategorySelectors,
-    private creditCardSelectors: CreditCardSelectors,
     private cdRef: ChangeDetectorRef,
     private titleService: TitleService,
     private groupsService: GroupsService,
@@ -163,7 +149,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     }
 
     this.mountGroups();
-    this.mountAccounts();
+    this.selectCurrentBankAccount();
     this.mountFilteredCategories();
     this.selectCurrentCreditCard();
 
@@ -172,7 +158,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         .get('group')
         .valueChanges.pipe(untilDestroyed(this))
         .subscribe(group => {
-          this.mountAccounts(group);
+          this.selectCurrentBankAccount(group);
         });
     }
 
@@ -215,14 +201,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   formatCategory(category: Category): string {
     return category?.name;
-  }
-
-  creditCardInputValueCompare(obj1: any, obj2: any) {
-    return obj1 === obj2 || (obj1 && obj2 && obj1.creditCardId === obj2.creditCardId && obj1.creditsPerson === obj2.creditsPerson);
-  }
-
-  bankAccountInputValueCompare(obj1: any, obj2: any) {
-    return obj1 === obj2 || (obj1 && obj2 && obj1.accountId === obj2.accountId && obj1.personId === obj2.personId);
   }
 
   creditCardBillDateInputValueCompare(obj1: any, obj2: any) {
@@ -309,42 +287,9 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       .toPromise();
   }
 
-  private async mountAccounts(group?: Group) {
-    this.accountsWithPersons = [];
-
-    const user = await this.authSelectors.currentUser();
-
-    this.accountsWithPersons.push({ person: user, accounts: await this.bankAccountSelectors.currentBankAccounts() });
-
-    const creditCardFromOtherUsers: CreditCardWithPerson[] = [];
-
-    if (this.shared) {
-      group?.users.forEach(userFromGroup => {
-        if (userFromGroup.id !== user.id) {
-          if (userFromGroup.bankAccounts?.length > 0) {
-            this.accountsWithPersons.push({ person: userFromGroup, accounts: userFromGroup.bankAccounts });
-          }
-
-          if (userFromGroup.creditCards?.length > 0) {
-            creditCardFromOtherUsers.push({ person: userFromGroup, creditCards: userFromGroup.creditCards });
-          }
-        }
-      });
-    }
-
-    this.creditCardFromOtherUsers.next(creditCardFromOtherUsers);
-
-    this.accountsWithPersons = this.accountsWithPersons.sort((a, b) => a.person.name.localeCompare(b.person.name));
-
+  private async selectCurrentBankAccount(group?: Group) {
     if (this.editingTransaction?.bankAccountId != null) {
-      const accountWithPerson = this.accountsWithPersons.find(
-        accountWithPerson =>
-          accountWithPerson.accounts.find(bankAccount => bankAccount.id === this.editingTransaction.bankAccountId) != null,
-      );
-
-      this.formGroup
-        .get('bankAccount')
-        .setValue({ accountId: this.editingTransaction.bankAccountId, personId: accountWithPerson.person.id });
+      this.bankAccountInput.selectBankAccount(this.editingTransaction.bankAccountId);
     }
   }
 

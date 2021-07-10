@@ -30,8 +30,6 @@ export class CreditCardInputComponent extends ControlValueAccessorConnector<Cred
   private _creditCards: CreditCard[];
 
   @Input() group: Group;
-  @Input() formControl: FormControl;
-  @Input() formControlName: string;
 
   @Output() creditCardsChange = new BehaviorSubject<CreditCard[]>([]);
 
