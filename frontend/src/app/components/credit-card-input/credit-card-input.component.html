@@ -3,8 +3,10 @@
   <mat-select *transloco="let t" [compareWith]="creditCardInputValueCompare" [formControl]="control">
     <mat-option>{{ t('mat-select-none') }}</mat-option>
     <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person.name">
-      <mat-option *ngFor="let creditCard of creditsPerson.creditCards"
-        [value]="{ creditCardId: creditCard.id, personId: creditsPerson.person.id }">
+      <mat-option
+        *ngFor="let creditCard of creditsPerson.creditCards"
+        [value]="{ creditCardId: creditCard.id, personId: creditsPerson.person.id }"
+      >
         {{ creditCard.name }}
       </mat-option>
     </mat-optgroup>

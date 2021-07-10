@@ -40,7 +40,7 @@ export class CreditCardSingleComponent implements OnInit {
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
-    private creditCardBillPaymentDialogService: CreditCardBillPaymentDialogService
+    private creditCardBillPaymentDialogService: CreditCardBillPaymentDialogService,
   ) {}
 
   ngOnInit(): void {
@@ -101,7 +101,7 @@ export class CreditCardSingleComponent implements OnInit {
       )
       .toPromise();
   }
-  
+
   openPayBillDialog(): void {
     this.creditCardBillPaymentDialogService.openDialog(this.document, this.renderer2);
   }
