@@ -22,7 +22,7 @@ import { Category, Transaction, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
 import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { AuthSelectors, BankAccountSelectors, UserCategorySelectors } from 'src/app/store/services/selectors';
+import { UserCategorySelectors } from 'src/app/store/services/selectors';
 import { BankAccountInputComponent, CreditCardInputComponent, CreditCardWithPerson } from '../input';
 import { NewTransactionComponentArgs } from './new-transaction-component-args';
 
@@ -92,6 +92,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   groups: Group[];
   editingTransaction: Transaction;
   creditCardBillDateOptions: Moment[] = [];
+  loading = false;
 
   @ViewChild(CreditCardInputComponent) creditCardInput: CreditCardInputComponent;
   @ViewChild(BankAccountInputComponent) bankAccountInput: BankAccountInputComponent;
@@ -139,32 +140,11 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   async ngOnInit(): Promise<void> {
-    this.createFormGroup();
+    this.loading = true;
 
-    this.previousTitle = await this.titleService.getCurrentTitle();
-    this.titleService.changeTitle('new-transaction');
+    await this.initializeComponent();
 
-    if (this.transactionType === TransactionType.CreditCard) {
-      this.mountCreditCardBillDateOptions();
-    }
-
-    this.mountGroups();
-    this.mountFilteredCategories();
-
-    if (this.shared) {
-      this.formGroup
-        .get('group')
-        .valueChanges.pipe(untilDestroyed(this))
-        .subscribe(group => {
-          this.bankAccountInput?.mountAccounts(group).then(() => this.selectCurrentBankAccount());
-          this.creditCardInput?.mountCreditCards(group).then(() => this.selectCurrentCreditCard());
-        });
-    } else {
-      this.selectCurrentBankAccount();
-      this.selectCurrentCreditCard();
-    }
-
-    this.watchTransactionTypeChanges();
+    this.loading = false;
   }
 
   async ngOnDestroy(): Promise<void> {
@@ -210,6 +190,56 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       obj1 === obj2 ||
       (obj1 != null && obj2 != null && 'toISOString' in obj1 && 'toISOString' in obj2 && obj1?.toISOString() === obj2?.toISOString())
     );
+  }
+
+  private async initializeComponent() {
+    this.createFormGroup();
+
+    this.previousTitle = await this.titleService.getCurrentTitle();
+    this.titleService.changeTitle('new-transaction');
+
+    if (this.transactionType === TransactionType.CreditCard) {
+      this.mountCreditCardBillDateOptions();
+    }
+
+    this.mountFilteredCategories();
+
+    if (this.shared) {
+      await this.initializeComponentGroupTransaction();
+    } else {
+      await this.initializeComponentSingleTransaction();
+    }
+
+    this.watchTransactionTypeChanges();
+  }
+
+  private async initializeComponentSingleTransaction(): Promise<void> {
+    await this.selectCurrentBankAccount();
+    this.selectCurrentCreditCard();
+  }
+
+  private async initializeComponentGroupTransaction(): Promise<void> {
+    await Promise.all([
+      new Promise<void>(resolve => {
+        if (this.editingTransaction == null) {
+          // in a new transaction there's no group. So it's necessary resolve promise.
+          resolve();
+        }
+
+        this.formGroup
+          .get('group')
+          .valueChanges.pipe(untilDestroyed(this))
+          .subscribe(group => {
+            Promise.all([
+              this.bankAccountInput?.mountAccounts(group).then(() => this.selectCurrentBankAccount()),
+              this.creditCardInput?.mountCreditCards(group).then(() => this.selectCurrentCreditCard()),
+            ])
+              .then(() => resolve())
+              .catch(err => console.error(err));
+          });
+      }),
+      this.mountGroups(),
+    ]);
   }
 
   private async editTransacation(
