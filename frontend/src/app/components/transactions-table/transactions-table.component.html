@@ -44,7 +44,11 @@
         <mat-menu #transactionMoreMenu="matMenu">
           <div class="new-transaction-menu">
             <div class="actions">
-              <button [disabled]="transaction.transactionType === 'Transfer'" mat-menu-item (click)="editTransaction(transaction)">
+              <button
+                [disabled]="transaction.transactionType === 'Transfer' || transaction.transactionType === 'CreditCardBillPayment'"
+                mat-menu-item
+                (click)="editTransaction(transaction)"
+              >
                 <mat-icon>edit</mat-icon>
                 <span>{{ t('edit') }}</span>
               </button>

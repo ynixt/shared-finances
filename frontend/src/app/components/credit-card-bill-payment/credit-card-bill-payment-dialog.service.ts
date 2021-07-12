@@ -13,12 +13,12 @@ import { CreditCardBillPaymentComponent } from './credit-card-bill-payment.compo
 export class CreditCardBillPaymentDialogService {
   constructor(private dialogService: TdDialogService, private breakpointObserver: BreakpointObserver) {}
 
-  openDialog(document: any, renderer2: Renderer2, transactionForEdit?: Transaction): MatDialogRef<CreditCardBillPaymentComponent, any> {
+  openDialog(
+    document: any,
+    renderer2: Renderer2,
+    data: CreditCardBillPaymentComponentArgs,
+  ): MatDialogRef<CreditCardBillPaymentComponent, any> {
     const isMobile = this.breakpointObserver.isMatched([Breakpoints.Small, Breakpoints.XSmall]);
-
-    const data: CreditCardBillPaymentComponentArgs = {
-      transaction: transactionForEdit,
-    };
 
     const { matDialogRef, dragRefSubject }: IDraggableRefs<CreditCardBillPaymentComponent> = this.dialogService.openDraggable({
       component: CreditCardBillPaymentComponent,

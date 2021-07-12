@@ -46,7 +46,7 @@ export class TransactionService {
   async payCreditCardBill(user: FBUser, input: BillPaymentCreditCardArgs): Promise<Transaction> {
     await this.validPermissionsForPayCreditCardBill(user, input);
 
-    return this.transacationRepository.create({ ...input, userId: user.id });
+    return this.transacationRepository.create({ ...input, userId: user.id, transactionType: TransactionType.CreditCardBillPayment });
   }
 
   async edit(user: FBUser, input: EditTransactionArgs): Promise<Transaction> {

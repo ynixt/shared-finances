@@ -80,6 +80,54 @@ export class TransactionService {
       );
   }
 
+  payCreditCardBill(transaction: Partial<Transaction>): Observable<Transaction> {
+    return this.apollo
+      .mutate<{ payCreditCardBill: Transaction }>({
+        mutation: gql`
+          mutation(
+            $date: String!
+            $value: Float!
+            $description: String
+            $bankAccountId: String!
+            $creditCardId: String!
+            $creditCardBillDate: String!
+          ) {
+            payCreditCardBill(
+              date: $date
+              value: $value
+              description: $description
+              bankAccountId: $bankAccountId
+              creditCardId: $creditCardId
+              creditCardBillDate: $creditCardBillDate
+            ) {
+              id
+              transactionType
+              date
+              value
+              description
+              category {
+                id
+                name
+                color
+              }
+            }
+          }
+        `,
+        variables: {
+          date: transaction.date,
+          value: transaction.value,
+          description: transaction.description,
+          bankAccountId: transaction.bankAccountId,
+          creditCardId: transaction.creditCardId,
+          creditCardBillDate: transaction.creditCardBillDate,
+        },
+      })
+      .pipe(
+        take(1),
+        map(result => result.data.payCreditCardBill),
+      );
+  }
+
   editTransaction(transaction: Transaction): Observable<Transaction> {
     return this.apollo
       .mutate<{ editTransaction: Transaction }>({

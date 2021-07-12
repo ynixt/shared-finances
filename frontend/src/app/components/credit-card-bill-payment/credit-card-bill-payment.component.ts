@@ -1,5 +1,16 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { Component, EventEmitter, Inject, OnInit, Output } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { HotToastService } from '@ngneat/hot-toast';
+import { TranslocoService } from '@ngneat/transloco';
+import moment, { Moment } from 'moment';
+import { take } from 'rxjs/operators';
+
+import { CreditCard, Transaction } from 'src/app/@core/models';
+import { ErrorService, TransactionService } from 'src/app/@core/services';
+import { CreditCardBillPaymentComponentArgs } from './credit-card-bill-payment-component-args';
+
+const initialValue = 0.01;
 
 @Component({
   selector: 'app-credit-card-bill-payment',
@@ -10,10 +21,69 @@ export class CreditCardBillPaymentComponent implements OnInit {
   @Output() closed: EventEmitter<void> = new EventEmitter();
 
   formGroup: FormGroup;
+  editingTransaction: Transaction;
+  creditCard: CreditCard;
+  creditCardBillDate: Moment;
 
-  constructor() {}
+  constructor(
+    @Inject(MAT_DIALOG_DATA) data: CreditCardBillPaymentComponentArgs,
+    private transactionService: TransactionService,
+    private translocoService: TranslocoService,
+    private toast: HotToastService,
+    private errorService: ErrorService,
+  ) {
+    this.editingTransaction = data.transaction;
+    this.creditCard = data.creditCard;
+    this.creditCardBillDate = moment(data.creditCardBillDate);
+  }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.formGroup = new FormGroup({
+      value: new FormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
+      bankAccount: new FormControl(undefined, [Validators.required]),
+      date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
+        Validators.required,
+      ]),
+      creditCardBillDate: new FormControl(
+        {
+          value: this.editingTransaction?.creditCardBillDate
+            ? moment(this.editingTransaction?.creditCardBillDate)
+            : this.creditCardBillDate,
+          disabled: true,
+        },
+        [Validators.required],
+      ),
+      description: new FormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
+    });
+  }
 
-  save(): void {}
+  async save(): Promise<void> {
+    if (this.formGroup.valid) {
+      await this.transactionService
+        .payCreditCardBill({
+          value: this.formGroup.value.value,
+          bankAccountId: this.formGroup.value.bankAccount.accountId,
+          creditCardId: this.creditCard.id,
+          description: this.formGroup.value.description,
+          creditCardBillDate: this.creditCardBillDate.toISOString(),
+          date: this.formGroup.value.date,
+        })
+        .pipe(
+          take(1),
+          this.toast.observe({
+            loading: this.translocoService.translate('paying'),
+            success: this.translocoService.translate('credit-card-bill-paying-successful'),
+            error: error =>
+              this.errorService.getInstantErrorMessage(
+                error,
+                'credit-card-bill-paying-error-no-name',
+                'credit-card-bill-paying-error-with-description',
+              ),
+          }),
+        )
+        .toPromise();
+
+      this.closed.next();
+    }
+  }
 }

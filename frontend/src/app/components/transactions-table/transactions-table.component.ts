@@ -46,7 +46,7 @@ export class TransactionsTableComponent implements OnInit {
     const confirm = await this.dialogService
       .openConfirm({
         title: this.translocoService.translate('confirm'),
-        message: this.translocoService.translate('delete-confirm', { name: transaction.description }),
+        message: this.translocoService.translate('delete-confirm', { name: transaction.description ?? '' }),
         cancelButton: this.translocoService.translate('cancel'),
         acceptButton: this.translocoService.translate('delete'),
         width: '500px',
@@ -71,7 +71,7 @@ export class TransactionsTableComponent implements OnInit {
       case TransactionType.Transfer:
         return 'sync_alt';
       case TransactionType.CreditCardBillPayment:
-        return 'credit_card_off';
+        return 'credit_score';
     }
   }
 

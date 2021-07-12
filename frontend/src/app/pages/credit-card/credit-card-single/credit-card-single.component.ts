@@ -6,7 +6,7 @@ import { switchMap, take } from 'rxjs/operators';
 import { CreditCard, Page, Transaction } from 'src/app/@core/models';
 import { CreditCardService } from '../credit-card.service';
 import { CreditCardService as CreditCardCoreService, ErrorService, TransactionService } from 'src/app/@core/services'; // TODO change name of this service or join them
-import { merge, Observable, Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { DOCUMENT } from '@angular/common';
@@ -27,7 +27,6 @@ export class CreditCardSingleComponent implements OnInit {
   transactionsPage$: Observable<Page<Transaction>>;
 
   private monthDate: Moment;
-  private transactionsChangeSubscription: Subscription;
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -92,7 +91,7 @@ export class CreditCardSingleComponent implements OnInit {
         take(1),
         this.toast.observe({
           loading: this.translocoService.translate('deleting'),
-          success: this.translocoService.translate('deleting-successful', { name: transaction.description }),
+          success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
           error: error =>
             this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
               name: transaction.description,
@@ -103,7 +102,10 @@ export class CreditCardSingleComponent implements OnInit {
   }
 
   openPayBillDialog(): void {
-    this.creditCardBillPaymentDialogService.openDialog(this.document, this.renderer2);
+    this.creditCardBillPaymentDialogService.openDialog(this.document, this.renderer2, {
+      creditCard: this.creditCard,
+      creditCardBillDate: moment(this.monthDate).startOf('day'),
+    });
   }
 
   private getInfoBasedOnCreditCardAndDate(): void {

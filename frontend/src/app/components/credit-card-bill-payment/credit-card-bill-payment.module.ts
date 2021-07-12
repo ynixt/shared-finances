@@ -10,6 +10,7 @@ import { CurrencyMaskModule } from 'ng2-currency-mask';
 import { CreditCardBillPaymentComponent } from './credit-card-bill-payment.component';
 import { SharedModule } from 'src/app/shared';
 import { CreditCardBillPaymentDialogService } from './credit-card-bill-payment-dialog.service';
+import { BankAccountInputModule } from '../input';
 
 @NgModule({
   declarations: [CreditCardBillPaymentComponent],
@@ -23,6 +24,7 @@ import { CreditCardBillPaymentDialogService } from './credit-card-bill-payment-d
     MatInputModule,
     MatDatepickerModule,
     CurrencyMaskModule,
+    BankAccountInputModule,
   ],
   exports: [CreditCardBillPaymentComponent],
 })

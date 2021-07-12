@@ -107,7 +107,7 @@ export class BankAccountSingleComponent implements OnInit {
         take(1),
         this.toast.observe({
           loading: this.translocoService.translate('deleting'),
-          success: this.translocoService.translate('deleting-successful', { name: transaction.description }),
+          success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
           error: error =>
             this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
               name: transaction.description,
