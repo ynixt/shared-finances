@@ -4,7 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
-import { CreditCard } from '../models';
+import { CreditCard, CreditCardSummary } from '../models';
 import { EditCreditCardArgs, NewCreditCardArgs } from '../models/args';
 import { TransactionService } from '../transaction';
 import { CreditCardService } from './credit-card.service';
@@ -52,6 +52,16 @@ export class CreditCardResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   creditCard(@GqlCurrentUser() user: FBUser, @Args({ name: 'creditCardId' }) creditCardId: string): Promise<CreditCard | null> {
     return this.creditCardService.getById(user.id, creditCardId);
+  }
+
+  @Query(() => CreditCardSummary, { nullable: true })
+  @UseGuards(GqlFirebaseAuthGuard)
+  creditCardSummary(
+    @GqlCurrentUser() user: FBUser,
+    @Args({ name: 'creditCardId' }) creditCardId: string,
+    @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
+  ): Promise<CreditCardSummary | null> {
+    return this.transactionService.getCreditCardSummary(user, creditCardId, { maxDate });
   }
 
   @Query(() => [CreditCard])

@@ -254,7 +254,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         id: this.editingTransaction.id,
         transactionType: this.formGroup.value.transactionType,
         date: this.formGroup.value.date,
-        value: this.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
+        value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
         description: this.formGroup.value.description,
         bankAccountId: bankAccount?.accountId,
         bankAccount2Id: bankAccount2?.accountId,
@@ -292,7 +292,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       .newTransaction({
         transactionType: this.formGroup.value.transactionType,
         date: this.formGroup.value.date,
-        value: this.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
+        value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
         description: this.formGroup.value.description,
         bankAccountId: bankAccount?.accountId,
         bankAccount2Id: bankAccount2?.accountId,
@@ -351,20 +351,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     }
   }
 
-  private isTransactionNegative(transactionType: TransactionType): boolean {
-    return [TransactionType.CreditCard, TransactionType.Expense].includes(transactionType);
-  }
-
-  private ifNecessaryMakeValueNegative(value: number, transactionType: TransactionType): number {
-    const isTransactionNegative = this.isTransactionNegative(transactionType);
-
-    if ((isTransactionNegative && value > 0) || (!isTransactionNegative && value < 0)) {
-      return value * -1;
-    }
-
-    return value;
-  }
-
   private async mountGroups(): Promise<void> {
     this.groups = this.shared ? await this.groupsService.getGroupsWithUsers() : undefined;
 
@@ -403,7 +389,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       .subscribe(transactionType => {
         const value = this.formGroup.value.value || initialValue;
 
-        this.formGroup.get('value').setValue(this.ifNecessaryMakeValueNegative(value, transactionType));
+        this.formGroup.get('value').setValue(this.transactionService.ifNecessaryMakeValueNegative(value, transactionType));
 
         if (transactionType !== TransactionType.Transfer) {
           this.formGroup.get('bankAccount2').setValue(undefined);

@@ -5,12 +5,13 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import moment, { Moment } from 'moment';
 import { take } from 'rxjs/operators';
+import { TransactionType } from 'src/app/@core/enums';
 
 import { CreditCard, Transaction } from 'src/app/@core/models';
 import { ErrorService, TransactionService } from 'src/app/@core/services';
 import { CreditCardBillPaymentComponentArgs } from './credit-card-bill-payment-component-args';
 
-const initialValue = 0.01;
+const initialValue = -0.01;
 
 @Component({
   selector: 'app-credit-card-bill-payment',
@@ -61,7 +62,7 @@ export class CreditCardBillPaymentComponent implements OnInit {
     if (this.formGroup.valid) {
       await this.transactionService
         .payCreditCardBill({
-          value: this.formGroup.value.value,
+          value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, TransactionType.CreditCardBillPayment),
           bankAccountId: this.formGroup.value.bankAccount.accountId,
           creditCardId: this.creditCard.id,
           description: this.formGroup.value.description,

@@ -4,6 +4,7 @@ import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
+import { TransactionType } from '../enums';
 import { Chart } from '../models/chart';
 
 export const DEFAULT_MINIMUM_MONTHS = 4;
@@ -18,7 +19,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ newTransaction: Transaction }>({
         mutation: gql`
-          mutation(
+          mutation (
             $transactionType: String!
             $date: String!
             $value: Float!
@@ -84,7 +85,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ payCreditCardBill: Transaction }>({
         mutation: gql`
-          mutation(
+          mutation (
             $date: String!
             $value: Float!
             $description: String
@@ -132,7 +133,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ editTransaction: Transaction }>({
         mutation: gql`
-          mutation(
+          mutation (
             $transactionId: String!
             $transactionType: String!
             $date: String!
@@ -201,7 +202,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ deleteTransaction: boolean }>({
         mutation: gql`
-          mutation($transactionId: String!) {
+          mutation ($transactionId: String!) {
             deleteTransaction(transactionId: $transactionId)
           }
         `,
@@ -223,7 +224,7 @@ export class TransactionService {
   ): Promise<Chart[]> {
     const transactionsChartQueryRef = this.apollo.watchQuery<{ transactionsChart: Chart[] }>({
       query: gql`
-        query($bankAccountId: String, $timezone: String!, $maxDate: String, $minDate: String) {
+        query ($bankAccountId: String, $timezone: String!, $maxDate: String, $minDate: String) {
           transactionsChart(bankAccountId: $bankAccountId, timezone: $timezone, maxDate: $maxDate, minDate: $minDate) {
             name
             series {
@@ -273,5 +274,19 @@ export class TransactionService {
         take(1),
       )
       .toPromise();
+  }
+
+  isTransactionNegative(transactionType: TransactionType): boolean {
+    return [TransactionType.CreditCard, TransactionType.Expense, TransactionType.CreditCardBillPayment].includes(transactionType);
+  }
+
+  ifNecessaryMakeValueNegative(value: number, transactionType: TransactionType): number {
+    const isTransactionNegative = this.isTransactionNegative(transactionType);
+
+    if ((isTransactionNegative && value > 0) || (!isTransactionNegative && value < 0)) {
+      return value * -1;
+    }
+
+    return value;
   }
 }

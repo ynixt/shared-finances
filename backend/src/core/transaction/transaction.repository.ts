@@ -4,7 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Pagination, PaginationService } from 'src/shared';
 import { MongoDefaultRepository } from '../data';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
-import { Transaction, TransactionDocument, TransactionsPage } from '../models';
+import { CreditCardSummary, Transaction, TransactionDocument, TransactionsPage } from '../models';
 import { EditTransactionArgs } from '../models/args';
 
 @Injectable()
@@ -94,32 +94,84 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
   }
 
   async getBalanceByBankAccountId(bankAccountId: string, args?: { maxDate?: string }): Promise<number> {
-    try {
-      const aggregate = this.model.aggregate([
-        {
-          $match: {
-            bankAccountId: new Types.ObjectId(bankAccountId),
-          },
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          bankAccountId: new Types.ObjectId(bankAccountId),
         },
-      ]);
+      },
+    ]);
 
-      if (args?.maxDate) {
-        aggregate.match({
-          date: { '$lte': args.maxDate },
-        });
-      }
-
-      aggregate.group({
-        _id: null,
-        balance: { $sum: '$value' },
+    if (args?.maxDate) {
+      aggregate.match({
+        date: { '$lte': args.maxDate },
       });
-
-      const result = await aggregate.exec();
-
-      return result.length === 1 ? result[0].balance : 0;
-    } catch (err) {
-      console.error(err);
     }
+
+    aggregate.group({
+      _id: null,
+      balance: { $sum: '$value' },
+    });
+
+    const result = await aggregate.exec();
+
+    return result.length === 1 ? result[0].balance : 0;
+  }
+
+  async getCreditCardSummary(creditCardId: string, args?: { maxDate?: string }): Promise<CreditCardSummary> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          creditCardId: new Types.ObjectId(creditCardId),
+        },
+      },
+    ]);
+
+    if (args?.maxDate) {
+      aggregate.match({
+        date: { '$lte': args.maxDate },
+      });
+    }
+
+    aggregate.project({
+      expenses: {
+        $cond: [
+          {
+            $eq: ['$transactionType', 'CreditCard'],
+          },
+          '$value',
+          0,
+        ],
+      },
+      payments: {
+        $cond: [
+          {
+            $eq: ['$transactionType', 'CreditCardBillPayment'],
+          },
+          '$value',
+          0,
+        ],
+      },
+    });
+
+    aggregate.group({
+      _id: null,
+      expenses: { $sum: '$expenses' },
+      payments: { $sum: '$payments' },
+    });
+
+    aggregate.project({
+      expenses: '$expenses',
+      payments: { $multiply: ['$payments', -1] },
+    });
+
+    aggregate.addFields({
+      bill: { $sum: ['$expenses', '$payments'] },
+    });
+
+    const result = await aggregate.exec();
+
+    return result.length === 1 ? result[0] : null;
   }
 
   getByBankAccountIdGroupedByDate(

@@ -75,6 +75,12 @@ type Chart {
   series: [ChartSerie!]!
 }
 
+type CreditCardSummary {
+  bill: Float!
+  expenses: Float!
+  payments: Float!
+}
+
 type Query {
   user: User
   bankAccount(bankAccountId: String!): BankAccount
@@ -86,6 +92,7 @@ type Query {
   groups: [Group!]
   group(groupId: String!): Group
   creditCard(creditCardId: String!): CreditCard
+  creditCardSummary(maxDate: String, creditCardId: String!): CreditCardSummary
   creditCards: [CreditCard!]!
 }
 
