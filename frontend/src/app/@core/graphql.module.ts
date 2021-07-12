@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { APOLLO_OPTIONS } from 'apollo-angular';
 import { ApolloClientOptions, InMemoryCache, split } from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
+import { ServerError } from '@apollo/client/link/utils';
 import { HttpLink } from 'apollo-angular/http';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
@@ -19,7 +20,7 @@ export function createApollo(
   translocoService: TranslocoService,
 ): ApolloClientOptions<any> {
   const errorLink = onError(({ graphQLErrors, networkError }) => {
-    if (networkError) {
+    if (networkError != null && 'status' in networkError && (<any>networkError).status === 504) {
       translocoService
         .selectTranslate('server-offline')
         .pipe(take(1))
@@ -68,37 +69,7 @@ export function createApollo(
     }
   });
 
-  // subscriptionClient.use([
-  //   {
-  //     applyMiddleware(operationOptions, next) {
-  //       new Promise(async resolve => {
-  //         const user = await angularFireAuth.user.pipe(take(1)).toPromise();
-  //         const token = await user?.getIdToken();
-
-  //         operationOptions['Authorization'] = token;
-
-  //         next();
-  //       });
-  //     },
-  //   },
-  // ]);
-
   const ws = new WebSocketLink(subscriptionClient);
-
-  // const ws = new WebSocketLink({
-  //   uri: `ws://localhost:3000/graphql`,
-  //   options: {
-  //     reconnect: true,
-  //     connectionParams: async () => {
-  //       const user = await angularFireAuth.user.pipe(take(1)).toPromise();
-  //       const token = await user?.getIdToken();
-
-  //       return {
-  //         Authorization: `Bearer ${token}`,
-  //       };
-  //     },
-  //   },
-  // });
 
   const link = split(
     // split based on operation type
