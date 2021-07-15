@@ -16,27 +16,53 @@
         </div>
       </app-title-bar>
 
-      <app-options-bar
-        [title]="t('credit-card-bill-date-explanation')"
-        class="pb-4"
-        [formatValue]="formatValue"
-        [values]="creditCard.billDates"
-        [currentIndex]="billDateIndex"
-        (valueChange)="dateChanged($event)"
-      >
-      </app-options-bar>
+      <div class="pb-6">
+        <app-options-bar
+          [title]="t('credit-card-bill-date-explanation')"
+          [formatValue]="formatValue"
+          [values]="creditCard.billDates"
+          [currentIndex]="billDateIndex"
+          (valueChange)="dateChanged($event)"
+        >
+        </app-options-bar>
+      </div>
 
-      <div class="cards grid md:grid-cols-3 md:gap-4 pb-4">
+      <div class="cards grid md:grid-cols-3 gap-4 pb-4">
         <ng-template #loadingCard>
           <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
         </ng-template>
 
-        <mat-card class="card cursor-pointer" (click)="openPayBillDialog()">
+        <mat-card class="card">
           <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
-            <span class="text-gray-400 mb-2"></span>
-            <h3 class="m-0">{{ t('pay') }}</h3>
+            <span class="text-gray-400 mb-2">{{ t('bill-value') }}</span>
+            <h3 class="m-0" *ngIf="creditCardSummary?.bill != null; else loadingCard">{{ creditCardSummary.bill | currency }}</h3>
           </mat-card-content>
         </mat-card>
+
+        <mat-card class="card">
+          <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+            <span class="text-gray-400 mb-2">{{ t('month-expenses') }}</span>
+            <h3 class="m-0" *ngIf="creditCardSummary?.bill != null; else loadingCard">
+              {{ creditCardSummary.expensesOfThisBill | currency }}
+            </h3>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="card" [class.bg-red-200]="closedBill && creditCardSummary?.bill > 0">
+          <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+            <span class="text-gray-400 mb-2">{{ closedBill ? t('bill-closed') : t('bill-open') }}</span>
+
+            <ng-container *ngIf="creditCardSummary?.bill != null; else loadingCard">
+              <h3 class="m-0" *ngIf="creditCardSummary.bill > 0 && creditCardSummary.payments > 0">{{ t('partial-paid') }}</h3>
+              <h3 class="m-0" *ngIf="creditCardSummary.bill == 0">{{ t('paid') }}</h3>
+              <h3 class="m-0" *ngIf="creditCardSummary.bill > 0 && creditCardSummary.payments == 0">{{ t('not-paid') }}</h3>
+            </ng-container>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 pb-6">
+        <button (click)="openPayBillDialog()" mat-flat-button color="primary">{{ t('pay') }}</button>
       </div>
 
       <app-transactions-table

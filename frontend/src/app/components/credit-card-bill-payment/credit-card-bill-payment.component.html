@@ -6,6 +6,9 @@
   (closed)="closed.emit()"
 >
   <div class="p-4">
+    <td-message *ngIf="noBill" [label]="t('no-bill-warning')" class="flex items-center justify-center warning-message mb-4" icon="warning">
+    </td-message>
+
     <form class="grid" [formGroup]="formGroup" (ngSubmit)="save()">
       <mat-form-field class="field" appearance="outline">
         <mat-label>{{ t('value') }}</mat-label>

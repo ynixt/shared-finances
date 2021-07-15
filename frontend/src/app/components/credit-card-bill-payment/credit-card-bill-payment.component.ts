@@ -25,6 +25,9 @@ export class CreditCardBillPaymentComponent implements OnInit {
   editingTransaction: Transaction;
   creditCard: CreditCard;
   creditCardBillDate: Moment;
+  noBill: boolean;
+
+  private billValue: number;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) data: CreditCardBillPaymentComponentArgs,
@@ -36,11 +39,13 @@ export class CreditCardBillPaymentComponent implements OnInit {
     this.editingTransaction = data.transaction;
     this.creditCard = data.creditCard;
     this.creditCardBillDate = moment(data.creditCardBillDate);
+    this.noBill = data.billValue == null;
+    this.billValue = data.billValue ?? initialValue;
   }
 
   ngOnInit(): void {
     this.formGroup = new FormGroup({
-      value: new FormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
+      value: new FormControl(this.editingTransaction?.value ?? this.billValue, [Validators.required]),
       bankAccount: new FormControl(undefined, [Validators.required]),
       date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
         Validators.required,

@@ -5,3 +5,4 @@ export * from './bank-account';
 export * from './transaction';
 export * from './category';
 export * from './page';
+export * from './credit-card-summary';

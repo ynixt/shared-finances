@@ -5,4 +5,5 @@ export interface CreditCardBillPaymentComponentArgs {
   creditCard: CreditCard;
   creditCardBillDate: string | Moment;
   transaction?: Transaction;
+  billValue?: number;
 }

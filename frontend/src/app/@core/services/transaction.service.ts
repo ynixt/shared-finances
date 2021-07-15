@@ -19,7 +19,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ newTransaction: Transaction }>({
         mutation: gql`
-          mutation (
+          mutation(
             $transactionType: String!
             $date: String!
             $value: Float!
@@ -85,7 +85,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ payCreditCardBill: Transaction }>({
         mutation: gql`
-          mutation (
+          mutation(
             $date: String!
             $value: Float!
             $description: String
@@ -133,7 +133,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ editTransaction: Transaction }>({
         mutation: gql`
-          mutation (
+          mutation(
             $transactionId: String!
             $transactionType: String!
             $date: String!
@@ -202,7 +202,7 @@ export class TransactionService {
     return this.apollo
       .mutate<{ deleteTransaction: boolean }>({
         mutation: gql`
-          mutation ($transactionId: String!) {
+          mutation($transactionId: String!) {
             deleteTransaction(transactionId: $transactionId)
           }
         `,
@@ -224,7 +224,7 @@ export class TransactionService {
   ): Promise<Chart[]> {
     const transactionsChartQueryRef = this.apollo.watchQuery<{ transactionsChart: Chart[] }>({
       query: gql`
-        query ($bankAccountId: String, $timezone: String!, $maxDate: String, $minDate: String) {
+        query($bankAccountId: String, $timezone: String!, $maxDate: String, $minDate: String) {
           transactionsChart(bankAccountId: $bankAccountId, timezone: $timezone, maxDate: $maxDate, minDate: $minDate) {
             name
             series {

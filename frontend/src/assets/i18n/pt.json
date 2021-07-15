@@ -111,7 +111,15 @@
   "credit-card-bill-date-explanation": "Data da fatura (data de fechamento do cartão)",
   "server-offline": "Não foi possível estabelecer uma conexão com o servidor",
   "pay": "Pagar",
+  "paid": "Pago",
+  "not-paid": "Não pago",
+  "partial-paid": "Pago parcialmente",
   "pay-credit-card-bill": "Pagar fatura - {{creditCardName}}",
   "edit-payment-credit-card-bill": "Editar pagamento da fatura - {{creditCardName}}",
-  "edit-payment": "Editar pagamento"
+  "edit-payment": "Editar pagamento",
+  "no-bill-warning": "Atenção: Esse cartão de crédito não possui pagamentos faltantes.",
+  "bill-value": "Valor da fatura",
+  "month-expenses": "Gastos do mês",
+  "bill-open": "Fatura em aberto",
+  "bill-closed": "Fatura fechada"
 }

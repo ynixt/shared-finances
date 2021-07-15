@@ -59,9 +59,9 @@ export class CreditCardResolver {
   creditCardSummary(
     @GqlCurrentUser() user: FBUser,
     @Args({ name: 'creditCardId' }) creditCardId: string,
-    @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
+    @Args({ name: 'maxCreditCardBillDate' }) maxCreditCardBillDate?: string,
   ): Promise<CreditCardSummary | null> {
-    return this.transactionService.getCreditCardSummary(user, creditCardId, { maxDate });
+    return this.transactionService.getCreditCardSummary(user, creditCardId, maxCreditCardBillDate);
   }
 
   @Query(() => [CreditCard])

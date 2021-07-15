@@ -143,13 +143,20 @@ export class CreditCardService {
 
   getTransactions(
     creditCardId: string,
-    args?: { maxDate?: Moment; minDate?: Moment },
+    args?: { maxDate?: Moment; minDate?: Moment; creditCardBillDate?: Moment },
     pagination?: Pagination,
   ): Observable<Page<Transaction>> {
     const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
       query: gql`
-        query($creditCardId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String) {
-          transactions(creditCardId: $creditCardId, page: $page, pageSize: $pageSize, maxDate: $maxDate, minDate: $minDate) {
+        query($creditCardId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String, $creditCardBillDate: String) {
+          transactions(
+            creditCardId: $creditCardId
+            page: $page
+            pageSize: $pageSize
+            maxDate: $maxDate
+            minDate: $minDate
+            creditCardBillDate: $creditCardBillDate
+          ) {
             items {
               id
               transactionType
@@ -179,6 +186,7 @@ export class CreditCardService {
         pageSize: pagination?.pageSize,
         maxDate: args?.maxDate?.toISOString(),
         minDate: args?.minDate?.toISOString(),
+        creditCardBillDate: args?.creditCardBillDate?.toISOString(),
       },
     });
 

@@ -74,7 +74,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
   async getByCreditCardId(
     creditCardId: string,
-    args?: { maxDate?: string; minDate?: string },
+    args?: { maxDate?: string; minDate?: string; creditCardBillDate?: string },
     pagination = new Pagination(),
     opts?: MongoRepositoryOptions,
   ): Promise<TransactionsPage> {
@@ -86,6 +86,10 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
     if (args?.maxDate) {
       query.and([{ date: { '$lte': args.maxDate } }]);
+    }
+
+    if (args?.creditCardBillDate) {
+      query.and([{ creditCardBillDate: args.creditCardBillDate }]);
     }
 
     query.sort({ date: -1 });
@@ -118,20 +122,19 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     return result.length === 1 ? result[0].balance : 0;
   }
 
-  async getCreditCardSummary(creditCardId: string, args?: { maxDate?: string }): Promise<CreditCardSummary> {
+  async getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string): Promise<CreditCardSummary> {
     const aggregate = this.model.aggregate([
       {
         $match: {
           creditCardId: new Types.ObjectId(creditCardId),
         },
       },
+      {
+        $match: {
+          creditCardBillDate: { $lte: maxCreditCardBillDate },
+        },
+      },
     ]);
-
-    if (args?.maxDate) {
-      aggregate.match({
-        date: { '$lte': args.maxDate },
-      });
-    }
 
     aggregate.project({
       expenses: {
@@ -152,17 +155,32 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
           0,
         ],
       },
+      creditCardBillDate: '$creditCardBillDate',
+    });
+
+    aggregate.addFields({
+      expensesOfThisBill: {
+        $cond: [
+          {
+            $eq: ['$creditCardBillDate', maxCreditCardBillDate],
+          },
+          '$expenses',
+          0,
+        ],
+      },
     });
 
     aggregate.group({
       _id: null,
       expenses: { $sum: '$expenses' },
       payments: { $sum: '$payments' },
+      expensesOfThisBill: { $sum: '$expensesOfThisBill' },
     });
 
     aggregate.project({
-      expenses: '$expenses',
       payments: { $multiply: ['$payments', -1] },
+      expensesOfThisBill: { $multiply: ['$expensesOfThisBill', -1] },
+      expenses: { $multiply: ['$expenses', -1] },
     });
 
     aggregate.addFields({

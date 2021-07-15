@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { CovalentDialogsModule } from '@covalent/core/dialogs';
 import { CurrencyMaskModule } from 'ng2-currency-mask';
+import { CovalentMessageModule } from '@covalent/core/message';
 
 import { CreditCardBillPaymentComponent } from './credit-card-bill-payment.component';
 import { SharedModule } from 'src/app/shared';
@@ -25,6 +26,7 @@ import { BankAccountInputModule } from '../input';
     MatDatepickerModule,
     CurrencyMaskModule,
     BankAccountInputModule,
+    CovalentMessageModule,
   ],
   exports: [CreditCardBillPaymentComponent],
 })

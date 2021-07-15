@@ -79,20 +79,21 @@ type CreditCardSummary {
   bill: Float!
   expenses: Float!
   payments: Float!
+  expensesOfThisBill: Float!
 }
 
 type Query {
   user: User
   bankAccount(bankAccountId: String!): BankAccount
   bankAccountBalance(maxDate: String, bankAccountId: String!): Float
-  transactions(minDate: String, maxDate: String, creditCardId: String, bankAccountId: String, pageSize: Int = 20, page: Int = 1): TransactionsPage
+  transactions(creditCardBillDate: String, minDate: String, maxDate: String, creditCardId: String, bankAccountId: String, pageSize: Int = 20, page: Int = 1): TransactionsPage
   transactionsChart(minDate: String, maxDate: String, bankAccountId: String, timezone: String!): [Chart!]
   categories(groupId: String): [Category!]!
   category(groupId: String, categoryId: String!): Category
   groups: [Group!]
   group(groupId: String!): Group
   creditCard(creditCardId: String!): CreditCard
-  creditCardSummary(maxDate: String, creditCardId: String!): CreditCardSummary
+  creditCardSummary(maxCreditCardBillDate: String!, creditCardId: String!): CreditCardSummary
   creditCards: [CreditCard!]!
 }
 

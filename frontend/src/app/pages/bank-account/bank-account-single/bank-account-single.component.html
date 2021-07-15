@@ -11,7 +11,9 @@
         </div>
       </app-title-bar>
 
-      <app-month-bar class="pb-4" (dateChange)="dateChanged($event)"></app-month-bar>
+      <div class="pb-6">
+        <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
+      </div>
 
       <div class="cards grid md:grid-cols-3 md:gap-4 pb-4">
         <ng-template #loadingCard>
@@ -26,7 +28,7 @@
         </mat-card>
       </div>
 
-      <div class="h-3/5 md:h-80 chart flex justify-center items-center">
+      <div class="h-3/5 md:h-80 chart flex justify-center items-center mb-6">
         <ngx-charts-line-chart
           *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
           [scheme]="colorScheme"

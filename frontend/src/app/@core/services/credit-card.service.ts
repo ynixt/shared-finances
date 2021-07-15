@@ -3,9 +3,9 @@ import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { EmptyObject } from 'apollo-angular/types';
 import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
-import { CreditCard } from '../models';
+import { CreditCard, CreditCardSummary } from '../models';
 
 const CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
   subscription creditCardCreated {
@@ -63,6 +63,31 @@ export class CreditCardService {
     this.subscribeToChanges(creditCardQueryRef);
 
     return creditCardQueryRef.valueChanges.pipe(map(result => result.data.creditCards));
+  }
+
+  getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string | Moment): Promise<CreditCardSummary> {
+    const creditCardQueryRef = this.apollo.query<{ creditCardSummary: CreditCardSummary }>({
+      query: gql`
+        query creditCardSummary($creditCardId: String!, $maxCreditCardBillDate: String!) {
+          creditCardSummary(creditCardId: $creditCardId, maxCreditCardBillDate: $maxCreditCardBillDate) {
+            bill
+            expensesOfThisBill
+            payments
+          }
+        }
+      `,
+      variables: {
+        creditCardId,
+        maxCreditCardBillDate: moment(maxCreditCardBillDate).utc().toISOString(),
+      },
+    });
+
+    return creditCardQueryRef
+      .pipe(
+        take(1),
+        map(result => result.data.creditCardSummary),
+      )
+      .toPromise();
   }
 
   private subscribeToChanges(

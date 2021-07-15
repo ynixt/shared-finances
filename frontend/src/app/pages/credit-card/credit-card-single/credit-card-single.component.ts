@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
 import { switchMap, take } from 'rxjs/operators';
-import { CreditCard, Page, Transaction } from 'src/app/@core/models';
+import { CreditCard, CreditCardSummary, Page, Transaction } from 'src/app/@core/models';
 import { CreditCardService } from '../credit-card.service';
 import { CreditCardService as CreditCardCoreService, ErrorService, TransactionService } from 'src/app/@core/services'; // TODO change name of this service or join them
 import { Observable } from 'rxjs';
@@ -22,11 +22,17 @@ import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-ca
 export class CreditCardSingleComponent implements OnInit {
   creditCard: CreditCard;
   billDateIndex: number;
+  creditCardSummary: CreditCardSummary;
 
   pageSize = 20;
   transactionsPage$: Observable<Page<Transaction>>;
 
-  private monthDate: Moment;
+  private monthDate: Moment | string;
+  private billDateOfCurrentMonth: Moment;
+
+  get closedBill() {
+    return moment(this.monthDate).isSame(this.billDateOfCurrentMonth) === false;
+  }
 
   constructor(
     private activatedRoute: ActivatedRoute,
@@ -53,11 +59,11 @@ export class CreditCardSingleComponent implements OnInit {
       .subscribe(creditCard => this.getCreditCard(creditCard));
   }
 
-  getCreditCard(creditCard: CreditCard) {
+  async getCreditCard(creditCard: CreditCard): Promise<void> {
     this.creditCard = creditCard;
 
     this.setBillDateOfCurrentDate();
-    this.getInfoBasedOnCreditCardAndDate();
+    await this.getInfoBasedOnCreditCardAndDate();
   }
 
   formatValue(date: string): string {
@@ -66,15 +72,14 @@ export class CreditCardSingleComponent implements OnInit {
 
   async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
-    this.getInfoBasedOnCreditCardAndDate();
+    await this.getInfoBasedOnCreditCardAndDate();
   }
 
   getTransactions(page = 1): void {
     this.transactionsPage$ = this.creditCardService.getTransactions(
       this.creditCard.id,
       {
-        maxDate: moment(this.monthDate).startOf('day'),
-        minDate: this.creditCardCoreService.previousBillDate(moment(this.monthDate), this.creditCard.closingDay).endOf('day'),
+        creditCardBillDate: moment(this.monthDate),
       },
       { page, pageSize: this.pageSize },
     );
@@ -105,11 +110,19 @@ export class CreditCardSingleComponent implements OnInit {
     this.creditCardBillPaymentDialogService.openDialog(this.document, this.renderer2, {
       creditCard: this.creditCard,
       creditCardBillDate: moment(this.monthDate).startOf('day'),
+      billValue: this.creditCardSummary.bill,
     });
   }
 
-  private getInfoBasedOnCreditCardAndDate(): void {
+  private async getInfoBasedOnCreditCardAndDate(): Promise<void> {
     this.getTransactions();
+    await this.getCreditCardSummary();
+  }
+
+  private async getCreditCardSummary(): Promise<void> {
+    this.creditCardSummary = undefined;
+    this.creditCardSummary = (await this.creditCardCoreService.getCreditCardSummary(this.creditCard.id, this.monthDate)) ?? { bill: 0 };
+    console.log(this.creditCardSummary);
   }
 
   private setBillDateOfCurrentDate() {
@@ -123,14 +136,14 @@ export class CreditCardSingleComponent implements OnInit {
       ];
     }
 
-    const billDateOfCurrentDate = this.creditCardCoreService.findCreditCardBillDate(
+    this.billDateOfCurrentMonth = this.creditCardCoreService.findCreditCardBillDate(
       moment(),
       this.creditCard.billDates,
       this.creditCard.closingDay,
     );
 
-    this.billDateIndex = this.creditCard.billDates.indexOf(billDateOfCurrentDate.toISOString());
-    this.monthDate = billDateOfCurrentDate;
+    this.billDateIndex = this.creditCard.billDates.indexOf(this.billDateOfCurrentMonth.toISOString());
+    this.monthDate = this.billDateOfCurrentMonth;
   }
 
   // private transactionsChange(): void {

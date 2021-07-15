@@ -10,4 +10,7 @@ export class CreditCardSummary {
 
   @Field(() => Float)
   payments: number;
+
+  @Field(() => Float)
+  expensesOfThisBill: number;
 }

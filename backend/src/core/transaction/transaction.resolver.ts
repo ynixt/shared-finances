@@ -44,6 +44,7 @@ export class TransactionResolver {
     @Args({ name: 'creditCardId', nullable: true }) creditCardId?: string,
     @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
     @Args({ name: 'minDate', nullable: true }) minDate?: string,
+    @Args({ name: 'creditCardBillDate', nullable: true }) creditCardBillDate?: string,
   ) {
     const pagination = new Pagination({ page, pageSize });
 
@@ -51,7 +52,7 @@ export class TransactionResolver {
       if (bankAccountId != null) {
         return this.transactionService.findAll(user, { bankAccountId, minDate, maxDate }, pagination);
       } else if (creditCardId != null) {
-        return this.transactionService.findAll(user, { creditCardId, minDate, maxDate }, pagination);
+        return this.transactionService.findAll(user, { creditCardId, minDate, maxDate, creditCardBillDate }, pagination);
       }
 
       throw new UserInputError('id is missing');

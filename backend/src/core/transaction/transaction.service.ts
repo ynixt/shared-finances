@@ -96,13 +96,13 @@ export class TransactionService {
 
   async findAll(
     user: FBUser,
-    args: { creditCardId: string; maxDate?: string; minDate?: string },
+    args: { creditCardId: string; maxDate?: string; minDate?: string; creditCardBillDate?: string },
     pagination: Pagination,
   ): Promise<TransactionsPage>;
 
   async findAll(
     user: FBUser,
-    args: { bankAccountId?: string; creditCardId?: string; maxDate?: string; minDate?: string },
+    args: { bankAccountId?: string; creditCardId?: string; maxDate?: string; minDate?: string; creditCardBillDate?: string },
     pagination?: Pagination,
   ): Promise<TransactionsPage> {
     if (args.bankAccountId != null) {
@@ -126,13 +126,11 @@ export class TransactionService {
     return null;
   }
 
-  async getCreditCardSummary(user: FBUser, creditCardId: string, args: { maxDate?: string } = {}): Promise<CreditCardSummary> {
+  async getCreditCardSummary(user: FBUser, creditCardId: string, maxCreditCardBillDate: string): Promise<CreditCardSummary> {
     const creditCard = await this.creditCardService.getById(user.id, creditCardId);
 
-    args.maxDate ??= moment.utc().toISOString();
-
     if (creditCard != null) {
-      return this.transacationRepository.getCreditCardSummary(creditCardId, args);
+      return this.transacationRepository.getCreditCardSummary(creditCardId, maxCreditCardBillDate);
     }
 
     return null;
