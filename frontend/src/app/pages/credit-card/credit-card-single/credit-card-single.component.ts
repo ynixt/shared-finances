@@ -122,7 +122,6 @@ export class CreditCardSingleComponent implements OnInit {
   private async getCreditCardSummary(): Promise<void> {
     this.creditCardSummary = undefined;
     this.creditCardSummary = (await this.creditCardCoreService.getCreditCardSummary(this.creditCard.id, this.monthDate)) ?? { bill: 0 };
-    console.log(this.creditCardSummary);
   }
 
   private setBillDateOfCurrentDate() {
