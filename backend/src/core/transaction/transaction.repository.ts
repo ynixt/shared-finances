@@ -184,7 +184,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     });
 
     aggregate.addFields({
-      bill: { $sum: ['$expenses', '$payments'] },
+      bill: { $subtract: ['$expenses', '$payments'] },
     });
 
     const result = await aggregate.exec();
