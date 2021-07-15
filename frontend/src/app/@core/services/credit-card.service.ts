@@ -39,6 +39,30 @@ const CREDIT_CARD_DELETED_SUBSCRIPTION = gql`
   }
 `;
 
+const TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
+  subscription creditCardTransactionCreated($creditCardId: String!) {
+    creditCardTransactionCreated(creditCardId: $creditCardId) {
+      id
+    }
+  }
+`;
+
+const TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION = gql`
+  subscription creditCardTransactionUpdated($creditCardId: String!) {
+    creditCardTransactionUpdated(creditCardId: $creditCardId) {
+      id
+    }
+  }
+`;
+
+const TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION = gql`
+  subscription creditCardTransactionDeleted($creditCardId: String!) {
+    creditCardTransactionDeleted(creditCardId: $creditCardId) {
+      id
+    }
+  }
+`;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -88,6 +112,39 @@ export class CreditCardService {
         map(result => result.data.creditCardSummary),
       )
       .toPromise();
+  }
+
+  onTransactionCreated(creditCardId: string): Observable<string> {
+    return this.apollo
+      .subscribe<{ creditCardTransactionCreated: { id: string } }>({
+        query: TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION,
+        variables: {
+          creditCardId,
+        },
+      })
+      .pipe(map(result => result.data.creditCardTransactionCreated.id));
+  }
+
+  onTransactionUpdated(creditCardId: string): Observable<string> {
+    return this.apollo
+      .subscribe<{ creditCardTransactionUpdated: { id: string } }>({
+        query: TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION,
+        variables: {
+          creditCardId,
+        },
+      })
+      .pipe(map(result => result.data.creditCardTransactionUpdated.id));
+  }
+
+  onTransactionDeleted(creditCardId: string): Observable<string> {
+    return this.apollo
+      .subscribe<{ creditCardTransactionDeleted: { id: string } }>({
+        query: TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION,
+        variables: {
+          creditCardId,
+        },
+      })
+      .pipe(map(result => result.data.creditCardTransactionDeleted.id));
   }
 
   private subscribeToChanges(

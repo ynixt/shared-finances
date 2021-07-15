@@ -6,7 +6,7 @@ import { switchMap, take } from 'rxjs/operators';
 import { CreditCard, CreditCardSummary, Page, Transaction } from 'src/app/@core/models';
 import { CreditCardService } from '../credit-card.service';
 import { CreditCardService as CreditCardCoreService, ErrorService, TransactionService } from 'src/app/@core/services'; // TODO change name of this service or join them
-import { Observable } from 'rxjs';
+import { merge, Observable, Subscription } from 'rxjs';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { DOCUMENT } from '@angular/common';
@@ -29,6 +29,7 @@ export class CreditCardSingleComponent implements OnInit {
 
   private monthDate: Moment | string;
   private billDateOfCurrentMonth: Moment;
+  private transactionsChangeSubscription: Subscription;
 
   get closedBill() {
     return moment(this.monthDate).isSame(this.billDateOfCurrentMonth) === false;
@@ -63,6 +64,7 @@ export class CreditCardSingleComponent implements OnInit {
     this.creditCard = creditCard;
 
     this.setBillDateOfCurrentDate();
+    this.getInfoBasedOnCreditCard();
     await this.getInfoBasedOnCreditCardAndDate();
   }
 
@@ -114,6 +116,10 @@ export class CreditCardSingleComponent implements OnInit {
     });
   }
 
+  private getInfoBasedOnCreditCard(): void {
+    this.transactionsChange();
+  }
+
   private async getInfoBasedOnCreditCardAndDate(): Promise<void> {
     this.getTransactions();
     await this.getCreditCardSummary();
@@ -145,17 +151,17 @@ export class CreditCardSingleComponent implements OnInit {
     this.monthDate = this.billDateOfCurrentMonth;
   }
 
-  // private transactionsChange(): void {
-  //   this.transactionsChangeSubscription?.unsubscribe();
+  private transactionsChange(): void {
+    this.transactionsChangeSubscription?.unsubscribe();
 
-  //   this.transactionsChangeSubscription = merge(
-  //     this.bankAccountService.onTransactionCreated(this.bankAccount.id),
-  //     this.bankAccountService.onTransactionUpdated(this.bankAccount.id),
-  //     this.bankAccountService.onTransactionDeleted(this.bankAccount.id),
-  //   )
-  //     .pipe(untilDestroyed(this))
-  //     .subscribe(async () => {
-  //       await Promise.all([this.getBalance(), this.getChart()]);
-  //     });
-  // }
+    this.transactionsChangeSubscription = merge(
+      this.creditCardCoreService.onTransactionCreated(this.creditCard.id),
+      this.creditCardCoreService.onTransactionUpdated(this.creditCard.id),
+      this.creditCardCoreService.onTransactionDeleted(this.creditCard.id),
+    )
+      .pipe(untilDestroyed(this))
+      .subscribe(async () => {
+        await this.getInfoBasedOnCreditCardAndDate();
+      });
+  }
 }
