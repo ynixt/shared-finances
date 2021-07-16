@@ -14,6 +14,7 @@ import { CovalentLayoutModule } from '@covalent/core/layout';
 import { MatListModule } from '@angular/material/list';
 import { MenuModule } from '../menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
   declarations: [HeaderComponent],
@@ -31,6 +32,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatListModule,
     MenuModule,
     MatTooltipModule,
+    RouterModule,
   ],
   exports: [HeaderComponent],
 })

@@ -60,4 +60,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   login(): void {
     this.router.navigateByUrl('/auth/login');
   }
+
+  getToolbarLink(userIsLogged: boolean): string {
+    return userIsLogged ? '/finances' : '/';
+  }
 }
