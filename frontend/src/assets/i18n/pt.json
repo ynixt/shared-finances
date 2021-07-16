@@ -121,5 +121,9 @@
   "bill-value": "Valor da fatura",
   "month-expenses": "Gastos do mês",
   "bill-open": "Fatura em aberto",
-  "bill-closed": "Fatura fechada"
+  "bill-closed": "Fatura fechada",
+  "google-login": "Entrar com Google",
+  "login-card-title": "Organizar suas finanças nunca foi tão fácil",
+  "login-card-text": "Não importa se você divide as contas com alguém. Nós iremos te ajudar a manter tudo organizadinho. Entre já, é <strong>gratuito</strong>!",
+  "login-card-policies": "Ao utilizar o {{appName}}, você está de acordo com os Termos de Uso e Política de Privacidade"
 }

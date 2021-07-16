@@ -1,1 +1,16 @@
-<button (click)="loginByGoogle()">Google</button>
+<div *transloco="let t" class="login-page flex w-full min-h-full sm:h-full flex-col items-center justify-center px-2 md:px-20">
+  <mat-card class="card-login grid w-full sm:grid-cols-2 gap-4 items-center justify-center md:py-8 px-4">
+    <div class="info-area flex items-center justify-center text-center flex-col">
+      <h2 class="text-2xl font-bold m-0">{{ t('login-card-title') }}</h2>
+
+      <img class="visual sm:w-auto my-2 sm:my-6" src="/assets/images/login/rich.svg" />
+
+      <p class="leading-6 text-base hidden sm:block" [innerHTML]="t('login-card-text')"></p>
+    </div>
+    <div class="login-area flex items-center justify-center flex-col">
+      <app-google-button></app-google-button>
+
+      <p class="policies mt-8 px-6 text-center">{{ t('login-card-policies', { appName: t('app-title') }) }}</p>
+    </div>
+  </mat-card>
+</div>

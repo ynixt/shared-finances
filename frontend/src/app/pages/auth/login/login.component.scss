@@ -1,0 +1,29 @@
+@import 'src/scss/breakpoints';
+
+.login-google {
+  background: url('/assets/images/login/btn_google_signin_dark_normal_web.png');
+  width: 191px;
+  height: 46px;
+}
+
+.card-login {
+  max-width: 1366px;
+
+  .info-area {
+    .visual {
+      height: 400px;
+
+      @include layout-bp(xs) {
+        height: auto;
+      }
+    }
+
+    p {
+      color: rgb(128, 128, 128);
+    }
+  }
+
+  .policies {
+    font-size: 80%;
+  }
+}
