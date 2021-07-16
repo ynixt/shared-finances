@@ -12,7 +12,12 @@
           </mat-nav-list>
         </div>
       </td-navigation-drawer>
-      <td-layout-nav-list [toolbarTitle]="t('app-title')" [navigationRoute]="getToolbarLink(userState.user != null)" [opened]="!isMobile && userState.user != null" mode="side">
+      <td-layout-nav-list
+        [toolbarTitle]="t('app-title')"
+        [navigationRoute]="getToolbarLink(userState.user != null)"
+        [opened]="!isMobile && userState.user != null"
+        mode="side"
+      >
         <div td-sidenav-content>
           <app-menu></app-menu>
         </div>
@@ -20,7 +25,9 @@
           <button mat-icon-button td-menu-button [tdLayoutToggle]="true" *ngIf="isMobile && userState.user != null">
             <mat-icon>menu</mat-icon>
           </button>
-          <a [routerLink]="getToolbarLink(userState.user != null)"><span *ngIf="isMobile || userState.user == null">{{ t('app-title') }}</span></a>
+          <a [routerLink]="getToolbarLink(userState.user != null)"
+            ><span *ngIf="isMobile || userState.user == null">{{ t('app-title') }}</span></a
+          >
 
           <span class="example-spacer"></span>
 
