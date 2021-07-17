@@ -1,1 +1,68 @@
-Clique <a routerLink="/auth/login">aqui</a> para entrar.
+<div *transloco="let t" class="home-page">
+  <section class="section-header flex justify-center bg-white px-2 md:px-20 py-4 md:py-16">
+    <div class="grid md:grid-cols-2 md:gap-4 w-max-1366 self-start">
+      <div class="flex flex-col justify-center">
+        <h1>{{ t('home.section-header.title') }}</h1>
+
+        <p class="leading-6 text-base text-gray-500">{{ t('home.section-header.subtitle') }}</p>
+
+        <div class="buttons">
+          <a routerLink="/auth/login" mat-raised-button color="primary" class="px-12 py-2 my-10">{{ t('start-free') }}</a>
+          <a href="https://github.com/ynixt/shared-finances" mat-raised-button class="px-12 py-2 my-10 mx-2">GitHub</a>
+        </div>
+      </div>
+
+      <div class="flex hidden sm:block">
+        <img src="/assets/images/home/guy.svg" />
+      </div>
+    </div>
+
+    <a class="scroll-down-button hidden sm:block" (click)="scrollToElement(benefits)">
+      <mat-icon class="benefit-ico text-5xl">arrow_drop_down</mat-icon>
+    </a>
+  </section>
+
+  <section #benefits class="flex justify-center bg-white px-2 md:px-20 py-4 md:py-0 md:pb-8">
+    <div class="grid flex-grow md:grid-cols-4 gap-8 md:gap-4 w-max-1366">
+      <div class="benefit text-center">
+        <mat-icon class="benefit-ico text-5xl">groups</mat-icon>
+
+        <h2>{{ t('create-groups') }}</h2>
+
+        <p class="text-gray-500">{{ t('home.section-benefits.groups-description') }}</p>
+      </div>
+      <div class="benefit text-center">
+        <mat-icon class="benefit-ico text-5xl">credit_card</mat-icon>
+
+        <h2>{{ t('manage-cards') }}</h2>
+
+        <p class="text-gray-500">{{ t('home.section-benefits.cards-description') }}</p>
+      </div>
+      <div class="benefit text-center">
+        <mat-icon class="benefit-ico text-5xl">account_balance</mat-icon>
+
+        <h2>{{ t('manage-bank-accounts') }}</h2>
+
+        <p class="text-gray-500">{{ t('home.section-benefits.bank-accounts-description') }}</p>
+      </div>
+      <div class="benefit text-center">
+        <mat-icon class="benefit-ico text-5xl">analytics</mat-icon>
+
+        <h2>{{ t('track-reports') }}</h2>
+
+        <p class="text-gray-500">{{ t('home.section-benefits.reports-description') }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section #benefits class="flex justify-center px-2 md:px-20 py-8">
+    <div class="flex flex-col w-max-1366 w-full">
+      <h1 class="title">{{ t('screenshots') }}</h1>
+
+      <div class="flex md:gap-4 justify-center items-center">
+        <img class="demo-image" src="/assets/images/home/bank-accounts.png" />
+        <img class="demo-image" src="/assets/images/home/credit-card.png" />
+      </div>
+    </div>
+  </section>
+</div>

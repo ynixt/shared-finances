@@ -5,6 +5,7 @@ import { AuthDispatchers } from 'src/app/store';
 import { AuthState } from 'src/app/store/reducers/auth.reducer';
 import { AuthSelectors } from 'src/app/store/services/selectors';
 import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-header',
@@ -20,15 +21,22 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private observerSmallSubscription: Subscription;
   private observerMediumSubscription: Subscription;
 
+  get isHome() {
+    return ['', '/'].includes(this.location.path());
+  }
+
   constructor(
     private authSelectors: AuthSelectors,
     private authDispatchers: AuthDispatchers,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
     this.userState$ = this.authSelectors.state$;
+
+    console.log(this.location.path());
 
     this.observerSmallSubscription = this.breakpointObserver
       .observe([Breakpoints.Small, Breakpoints.XSmall])
@@ -63,5 +71,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   getToolbarLink(userIsLogged: boolean): string {
     return userIsLogged ? '/finances' : '/';
+  }
+
+  shouldShowMenu(userIsLogged: boolean) {
+    return this.isHome === false && userIsLogged;
   }
 }

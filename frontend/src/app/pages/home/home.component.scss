@@ -1,0 +1,20 @@
+@import 'src/scss/breakpoints';
+
+@include layout-bp(gt-xs) {
+  .section-header {
+    height: 100vh;
+  }
+}
+
+.demo-image {
+  height: 500px;
+}
+
+.scroll-down-button {
+  font-size: 800%;
+  position: absolute;
+  bottom: 50px;
+  right: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+}

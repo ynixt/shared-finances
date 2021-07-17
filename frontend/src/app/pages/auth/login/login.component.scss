@@ -7,8 +7,6 @@
 }
 
 .card-login {
-  max-width: 1366px;
-
   .info-area {
     .visual {
       height: 400px;
@@ -16,10 +14,6 @@
       @include layout-bp(xs) {
         height: auto;
       }
-    }
-
-    p {
-      color: rgb(128, 128, 128);
     }
   }
 

@@ -26,4 +26,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.authSubscription.unsubscribe();
     }
   }
+
+  scrollToElement($element: HTMLElement): void {
+    $element.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+  }
 }

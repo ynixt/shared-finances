@@ -2,7 +2,7 @@
   <ng-container *ngIf="userState$ | async as userState">
     <td-layout class="layout-nav-list-demo" sidenavWidth="280px">
       <td-navigation-drawer flex [sidenavTitle]="t('app-title')">
-        <app-menu></app-menu>
+        <app-menu *ngIf="shouldShowMenu(userState.user !== null)"></app-menu>
         <div td-navigation-drawer-menu>
           <mat-nav-list>
             <a mat-list-item>
@@ -15,18 +15,18 @@
       <td-layout-nav-list
         [toolbarTitle]="t('app-title')"
         [navigationRoute]="getToolbarLink(userState.user != null)"
-        [opened]="!isMobile && userState.user != null"
+        [opened]="!isMobile && shouldShowMenu(userState.user != null)"
         mode="side"
       >
         <div td-sidenav-content>
-          <app-menu></app-menu>
+          <app-menu *ngIf="shouldShowMenu(userState.user !== null)"></app-menu>
         </div>
         <div class="row" td-toolbar-content>
-          <button mat-icon-button td-menu-button [tdLayoutToggle]="true" *ngIf="isMobile && userState.user != null">
+          <button mat-icon-button td-menu-button [tdLayoutToggle]="true" *ngIf="isMobile && shouldShowMenu(userState.user != null)">
             <mat-icon>menu</mat-icon>
           </button>
           <a [routerLink]="getToolbarLink(userState.user != null)"
-            ><span *ngIf="isMobile || userState.user == null">{{ t('app-title') }}</span></a
+            ><span *ngIf="isMobile || !shouldShowMenu(userState.user != null)">{{ t('app-title') }}</span></a
           >
 
           <span class="example-spacer"></span>
@@ -55,9 +55,9 @@
             </mat-menu>
           </ng-container>
 
-          <button *ngIf="userState.user == null" mat-icon-button (click)="login()" [matTooltip]="t('login')">
+          <a *ngIf="userState.user == null" mat-icon-button routerLink="/auth/login" [matTooltip]="t('login')">
             <mat-icon>login</mat-icon>
-          </button>
+          </a>
         </div>
         <ng-content select="[content]"></ng-content>
       </td-layout-nav-list>

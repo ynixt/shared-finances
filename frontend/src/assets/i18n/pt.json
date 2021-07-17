@@ -125,5 +125,23 @@
   "google-login": "Entrar com Google",
   "login-card-title": "Organizar suas finanças nunca foi tão fácil",
   "login-card-text": "Não importa se você divide as contas com alguém. Nós iremos te ajudar a manter tudo organizadinho. Entre já, é <strong>gratuito</strong>!",
-  "login-card-policies": "Ao utilizar o {{appName}}, você está de acordo com os Termos de Uso e Política de Privacidade"
+  "login-card-policies": "Ao utilizar o {{appName}}, você está de acordo com os Termos de Uso e Política de Privacidade",
+  "home": {
+    "section-header": {
+      "title": "Controle suas finanças familiares ou individuais",
+      "subtitle": "Saber quanto você e sua família gastam não precisa ser complexo. Venha conhecer a nova era da organização financeira e alcance seus objetivos."
+    },
+    "section-benefits": {
+      "groups-description": "Crie grupos para inserir despesas em comum para sua família ou um grupo de amigos.",
+      "cards-description": "Acompanhe suas faturas e não seja pego de surpresa.",
+      "bank-accounts-description": "Acompanhe seu saldo e não fique no vermelho.",
+      "reports-description": "Confira análises mensais sobre sua vida financeira."
+    }
+  },
+  "start-free": "Começar grátis",
+  "screenshots": "Capturas de tela",
+  "create-groups": "Crie grupos",
+  "manage-cards": "Gerencie seus cartões",
+  "manage-bank-accounts": "Gerencie suas contas bancárias",
+  "track-reports" : "Acompanhe relatórios"
 }
