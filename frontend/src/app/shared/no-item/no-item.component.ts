@@ -9,6 +9,7 @@ export class NoItemComponent implements OnInit {
   @Input() text: string;
   @Input() buttonText: string;
   @Input() buttonRouterLink: string;
+  @Input() buttonClick: () => void;
 
   constructor() {}
 
