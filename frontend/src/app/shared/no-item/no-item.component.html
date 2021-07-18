@@ -1,8 +1,10 @@
 <div class="no-item items-center flex justify-content-center justify-center flex-col">
-  <img class="no-item-image mb-8" src="/assets/images/no-item.svg"/>
+  <img class="no-item-image mb-8" src="/assets/images/no-item.svg" />
 
   <h2 class="text-center">{{ text }}</h2>
 
-  <a *ngIf="buttonRouterLink != null" [routerLink]="buttonRouterLink" class="btn mt-2" mat-raised-button color="primary">{{ buttonText }}</a>
+  <a *ngIf="buttonRouterLink != null" [routerLink]="buttonRouterLink" class="btn mt-2" mat-raised-button color="primary">{{
+    buttonText
+  }}</a>
   <a *ngIf="buttonClick" (click)="buttonClick()" class="btn mt-2" mat-raised-button color="primary">{{ buttonText }}</a>
 </div>
