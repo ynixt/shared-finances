@@ -4,7 +4,7 @@ import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
-import { BankAccount, Chart } from '../models';
+import { BankAccount, BankAccountSummary, Chart } from '../models';
 import { NewBankAccountArgs } from '../models/args';
 import { TransactionChartService, TransactionService } from '../transaction';
 import { BankAccountService } from './bank-account.service';
@@ -46,14 +46,14 @@ export class BankAccountResolver {
     return this.bankAccountService.delete(user.id, bankAccountId);
   }
 
-  @Query(() => Float, { nullable: true })
+  @Query(() => BankAccountSummary, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
-  async bankAccountBalance(
+  async bankAccountSummary(
     @GqlCurrentUser() user: FBUser,
     @Args({ name: 'bankAccountId' }) bankAccountId: string,
     @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
   ) {
-    return this.transactionService.getBalanceByBankAccount(user, bankAccountId, { maxDate });
+    return this.transactionService.getBankAccountSummary(user, bankAccountId, { maxDate });
   }
 
   @ResolveField()

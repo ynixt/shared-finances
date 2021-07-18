@@ -108,7 +108,7 @@
   "balance-value": "Saldo: {{value}}",
   "transaction-type": "Tipo",
   "page-of": "Página {{n1}} de {{n2}}",
-  "transaction-future-warning": "Essa é uma transação futura e não é contabilizada no saldo.",
+  "transaction-future-warning": "Essa é uma transação futura.",
   "credit-card-bill-date": "Fatura",
   "credit-card-bill-date-explanation": "Data da fatura (data de fechamento do cartão)",
   "server-offline": "Não foi possível estabelecer uma conexão com o servidor",
@@ -145,5 +145,9 @@
   "create-groups": "Crie grupos",
   "manage-cards": "Gerencie seus cartões",
   "manage-bank-accounts": "Gerencie suas contas bancárias",
-  "track-reports" : "Acompanhe relatórios"
+  "track-reports" : "Acompanhe relatórios",
+  "expenses": "Despesas",
+  "revenues": "Receitas",
+  "show-future-transaction": "Exibir transações futuras",
+  "hide-future-transaction": "Esconder transações futuras"
 }

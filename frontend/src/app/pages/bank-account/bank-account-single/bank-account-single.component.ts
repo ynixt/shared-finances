@@ -8,7 +8,7 @@ import moment, { Moment } from 'moment';
 import { merge, Observable, Subscription } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
-import { BankAccount, Page, Transaction } from 'src/app/@core/models';
+import { BankAccount, BankAccountSummary, Page, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
 import { ErrorService, TransactionService } from 'src/app/@core/services';
 import { DateUtil } from 'src/app/@core/util';
@@ -24,6 +24,8 @@ import { BankAccountService } from '../bank-account.service';
 })
 export class BankAccountSingleComponent implements OnInit {
   transactionsGroupedYearMonth: Chart[];
+  transactionsGroupedYearMonthExpenses: Chart[];
+  transactionsGroupedYearMonthRevenues: Chart[];
 
   legend: boolean = true;
   showLabels: boolean = true;
@@ -31,14 +33,19 @@ export class BankAccountSingleComponent implements OnInit {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
+  disallowFutureOnSameMonth = true;
+
   colorScheme = {
     domain: ['#5AA454'],
+  };
+  colorSchemeExpense = {
+    domain: ['#E44D25'],
   };
 
   bankAccount: BankAccount;
   pageSize = 20;
   transactionsPage$: Observable<Page<Transaction>>;
-  balance: number;
+  bankAccountSummary: BankAccountSummary;
 
   private monthDate: Moment;
   private transactionsChangeSubscription: Subscription;
@@ -78,8 +85,8 @@ export class BankAccountSingleComponent implements OnInit {
   public async getBalance(): Promise<void> {
     const maxDate = this.getMaxDate();
 
-    this.balance = undefined;
-    this.balance = await this.bankAccountService.getBalance(this.bankAccount.id, { maxDate: maxDate });
+    this.bankAccountSummary = undefined;
+    this.bankAccountSummary = await this.bankAccountService.getBankAccountSummary(this.bankAccount.id, { maxDate: maxDate });
   }
 
   public async getChart(): Promise<void> {
@@ -90,11 +97,18 @@ export class BankAccountSingleComponent implements OnInit {
 
     const charts = await this.bankAccountService.getTransactionsChart(bankAccountNamesById, this.getMaxDate().add(1), {
       bankAccountId: this.bankAccount.id,
-      maxDate: this.getMaxDate(false),
+      maxDate: this.getMaxDate(),
       minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, 'month'),
     });
 
-    this.transactionsGroupedYearMonth = charts;
+    this.transactionsGroupedYearMonthExpenses = charts.filter(chart => chart.name.includes(this.translocoService.translate('expenses')));
+    this.transactionsGroupedYearMonthRevenues = charts.filter(chart => chart.name.includes(this.translocoService.translate('revenues')));
+
+    this.transactionsGroupedYearMonth = charts.filter(
+      chart =>
+        this.transactionsGroupedYearMonthExpenses.includes(chart) == false &&
+        this.transactionsGroupedYearMonthRevenues.includes(chart) == false,
+    );
   }
 
   public async editTransaction(transaction: Transaction) {
@@ -120,6 +134,11 @@ export class BankAccountSingleComponent implements OnInit {
 
   public async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
+    await this.getInfoBasedOnBankAndDate();
+  }
+
+  async toggleDisallowFutureOnSameMonth(): Promise<void> {
+    this.disallowFutureOnSameMonth = !this.disallowFutureOnSameMonth;
     await this.getInfoBasedOnBankAndDate();
   }
 
@@ -157,7 +176,7 @@ export class BankAccountSingleComponent implements OnInit {
    * @param disallowFutureOnSameMonth If true AND 'monthDate' is the same month as the current month, the date that will be returned will be the current date.
    * @returns
    */
-  private getMaxDate(disallowFutureOnSameMonth = true) {
+  private getMaxDate(disallowFutureOnSameMonth = this.disallowFutureOnSameMonth) {
     let maxDate = moment(this.monthDate).endOf('month');
 
     if (disallowFutureOnSameMonth && moment(this.monthDate).isSame(moment(), 'month') && DateUtil.dateIsBiggerThanToday(maxDate)) {

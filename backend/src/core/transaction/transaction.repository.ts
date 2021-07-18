@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import moment from 'moment';
 import { Model, Types } from 'mongoose';
 import { Pagination, PaginationService } from 'src/shared';
 import { MongoDefaultRepository } from '../data';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
-import { CreditCardSummary, Transaction, TransactionDocument, TransactionsPage } from '../models';
+import { BankAccountSummary, CreditCardSummary, Transaction, TransactionDocument, TransactionsPage } from '../models';
 import { EditTransactionArgs } from '../models/args';
 
 @Injectable()
@@ -125,6 +126,81 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
     return result.length === 1 ? result[0].balance : 0;
   }
+  async getBankAccountSummary(bankAccountId: string, args?: { maxDate?: string }): Promise<BankAccountSummary> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          bankAccountId: new Types.ObjectId(bankAccountId),
+        },
+      },
+    ]);
+
+    if (args?.maxDate) {
+      aggregate.match({
+        date: { '$lte': args.maxDate },
+      });
+    }
+
+    aggregate.project({
+      date: 1,
+      value: 1,
+      transactionType: 1,
+    });
+
+    aggregate.addFields({
+      valueThisMonth: {
+        $cond: [
+          {
+            $and: [
+              { $lt: ['$date', moment(args.maxDate).endOf('month').endOf('day').toISOString()] },
+              { $gte: ['$date', moment(args.maxDate).startOf('month').startOf('day').toISOString()] },
+            ],
+          },
+          '$value',
+          0,
+        ],
+      },
+    });
+
+    aggregate.project({
+      balance: '$value',
+      expenses: {
+        $cond: [
+          {
+            $in: ['$transactionType', ['Expense', 'CreditCardBillPayment']],
+          },
+          '$valueThisMonth',
+          0,
+        ],
+      },
+      revenues: {
+        $cond: [
+          {
+            $eq: ['$transactionType', 'Revenue'],
+          },
+          '$valueThisMonth',
+          0,
+        ],
+      },
+    });
+
+    aggregate.project({
+      balance: 1,
+      expenses: { $multiply: ['$expenses', -1] },
+      revenues: 1,
+    });
+
+    aggregate.group({
+      _id: null,
+      balance: { $sum: '$balance' },
+      expenses: { $sum: '$expenses' },
+      revenues: { $sum: '$revenues' },
+    });
+
+    const result = await aggregate.exec();
+
+    return result.length === 1 ? result[0] : null;
+  }
 
   async getCreditCardSummary(creditCardId: string, maxCreditCardBillDate?: string): Promise<CreditCardSummary> {
     const aggregate = this.model.aggregate([
@@ -201,7 +277,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     bankAccountId: string,
     timezone: string,
     args?: { minDate?: string; maxDate?: string },
-  ): Promise<{ _id: { month: number; year: number }; balance: number }[]> {
+  ): Promise<{ _id: { month: number; year: number }; balance: number; expenses: number; revenues: number }[]> {
     const aggregate = this.model.aggregate([
       {
         $match: {
@@ -223,8 +299,41 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     }
 
     aggregate.project({
+      date: 1,
+      value: 1,
+      transactionType: 1,
+    });
+
+    aggregate.addFields({
+      valueThisMonth: {
+        $cond: [
+          {
+            $and: [
+              { $lt: ['$date', moment(args.maxDate).endOf('month').endOf('day').toISOString()] },
+              { $gte: ['$date', moment(args.maxDate).startOf('month').startOf('day').toISOString()] },
+            ],
+          },
+          '$value',
+          0,
+        ],
+      },
+    });
+
+    aggregate.project({
       date: { '$dateFromString': { dateString: '$date' } },
       value: 1,
+      expenses: {
+        $cond: [{ $in: ['$transactionType', ['Expense', 'CreditCardBillPayment']] }, '$valueThisMonth', 0],
+      },
+      revenues: {
+        $cond: [
+          {
+            $eq: ['$transactionType', 'Revenue'],
+          },
+          '$valueThisMonth',
+          0,
+        ],
+      },
     });
 
     aggregate.group({
@@ -233,6 +342,15 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
         year: { $year: { date: '$date', timezone } },
       },
       balance: { $sum: '$value' },
+      expenses: { $sum: '$expenses' },
+      revenues: { $sum: '$revenues' },
+    });
+
+    aggregate.project({
+      _id: '$_id',
+      balance: '$balance',
+      revenues: '$revenues',
+      expenses: { $multiply: ['$expenses', -1] },
     });
 
     return aggregate.exec();

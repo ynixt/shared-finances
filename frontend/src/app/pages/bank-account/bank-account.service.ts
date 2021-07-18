@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
+import { TranslocoService } from '@ngneat/transloco';
 import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { EmptyObject } from 'apollo-angular/types';
 import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
-import { BankAccount, Page, Pagination, Transaction } from 'src/app/@core/models';
+import { BankAccount, BankAccountSummary, Page, Pagination, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
 
 const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
@@ -58,7 +59,7 @@ const TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION = gql`
   providedIn: 'root',
 })
 export class BankAccountService {
-  constructor(private apollo: Apollo) {}
+  constructor(private apollo: Apollo, private translocoService: TranslocoService) {}
 
   getBankAccount(bankAccountId: string): Observable<BankAccount> {
     return this.apollo
@@ -223,12 +224,16 @@ export class BankAccountService {
     });
   }
 
-  getBalance(bankAccountId: string, args?: { maxDate?: Moment }, pagination?: Pagination): Promise<number> {
+  getBankAccountSummary(bankAccountId: string, args?: { maxDate?: Moment }, pagination?: Pagination): Promise<BankAccountSummary> {
     return this.apollo
-      .query<{ bankAccountBalance: number }>({
+      .query<{ bankAccountSummary: BankAccountSummary }>({
         query: gql`
           query($bankAccountId: String!, $maxDate: String) {
-            bankAccountBalance(bankAccountId: $bankAccountId, maxDate: $maxDate)
+            bankAccountSummary(bankAccountId: $bankAccountId, maxDate: $maxDate) {
+              balance
+              expenses
+              revenues
+            }
           }
         `,
         variables: {
@@ -238,7 +243,7 @@ export class BankAccountService {
       })
       .pipe(
         take(1),
-        map(result => result.data.bankAccountBalance),
+        map(result => result.data.bankAccountSummary),
       )
       .toPromise();
   }
@@ -354,7 +359,17 @@ export class BankAccountService {
               }
             }
 
-            return { name: bankAccountNamesById.get(chart.name), series };
+            let newName = chart.name;
+
+            if (newName.includes('-expenses')) {
+              newName = `${bankAccountNamesById.get(newName.replace('-expenses', ''))} (${this.translocoService.translate('expenses')})`;
+            } else if (newName.includes('-revenues')) {
+              newName = `${bankAccountNamesById.get(newName.replace('-revenues', ''))} (${this.translocoService.translate('revenues')})`;
+            } else {
+              newName = `${bankAccountNamesById.get(newName)} (${this.translocoService.translate('balance')})`;
+            }
+
+            return { name: newName, series };
           });
 
           return charts;

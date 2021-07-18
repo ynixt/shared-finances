@@ -9,13 +9,26 @@
             <td-breadcrumb>{{ bankAccount.name }}</td-breadcrumb>
           </td-breadcrumbs>
         </div>
+        <div right>
+          <button mat-icon-button aria-label="Edit" [matMenuTriggerFor]="menu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <a (click)="toggleDisallowFutureOnSameMonth()" mat-menu-item *ngIf="disallowFutureOnSameMonth">
+              <span>{{ t('show-future-transaction') }}</span>
+            </a>
+            <button (click)="toggleDisallowFutureOnSameMonth()" mat-menu-item *ngIf="!disallowFutureOnSameMonth">
+              <span>{{ t('hide-future-transaction') }}</span>
+            </button>
+          </mat-menu>
+        </div>
       </app-title-bar>
 
       <div class="pb-6">
         <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
       </div>
 
-      <div class="cards grid md:grid-cols-3 md:gap-4 pb-4">
+      <div class="cards grid md:grid-cols-3 gap-4 pb-4">
         <ng-template #loadingCard>
           <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
         </ng-template>
@@ -23,7 +36,21 @@
         <mat-card class="card">
           <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
             <span class="text-gray-400 mb-2">{{ t('balance') }}</span>
-            <h3 class="m-0" *ngIf="balance != null; else loadingCard">{{ balance | currency }}</h3>
+            <h3 class="m-0" *ngIf="bankAccountSummary != null; else loadingCard">{{ (bankAccountSummary.balance ?? 0) | currency }}</h3>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="card">
+          <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+            <span class="text-gray-400 mb-2">{{ t('revenues') }}</span>
+            <h3 class="m-0" *ngIf="bankAccountSummary != null; else loadingCard">{{ (bankAccountSummary.revenues ?? 0) | currency }}</h3>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="card">
+          <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+            <span class="text-gray-400 mb-2">{{ t('expenses') }}</span>
+            <h3 class="m-0" *ngIf="bankAccountSummary != null; else loadingCard">{{ (bankAccountSummary.expenses ?? 0) | currency }}</h3>
           </mat-card-content>
         </mat-card>
       </div>
@@ -41,6 +68,36 @@
           [results]="transactionsGroupedYearMonth"
         >
         </ngx-charts-line-chart>
+      </div>
+      <div class="h-3/5 md:h-80 chart grid md:grid-cols-2 justify-center items-center mb-6">
+        <div>
+          <ngx-charts-line-chart
+            *ngIf="transactionsGroupedYearMonthRevenues; else loadingTemplate"
+            [scheme]="colorScheme"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxis]="true"
+            [yAxis]="true"
+            [xAxisLabel]="t('date')"
+            [yAxisLabel]="t('revenues')"
+            [results]="transactionsGroupedYearMonthRevenues"
+          >
+          </ngx-charts-line-chart>
+        </div>
+        <div>
+          <ngx-charts-line-chart
+            *ngIf="transactionsGroupedYearMonthExpenses; else loadingTemplate"
+            [scheme]="colorSchemeExpense"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxis]="true"
+            [yAxis]="true"
+            [xAxisLabel]="t('date')"
+            [yAxisLabel]="t('expenses')"
+            [results]="transactionsGroupedYearMonthExpenses"
+          >
+          </ngx-charts-line-chart>
+        </div>
       </div>
 
       <app-transactions-table

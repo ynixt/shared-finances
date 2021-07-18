@@ -31,13 +31,25 @@ export class TransactionChartService {
       .map(data => new ChartSerie({ name: this.convertMonthYearToName(data._id.month, data._id.year, timezone), value: data.balance }))
       .sort((serieA, serieB) => serieA.name.localeCompare(serieB.name));
 
+    const seriesExpenses = data
+      .map(data => new ChartSerie({ name: this.convertMonthYearToName(data._id.month, data._id.year, timezone), value: data.expenses }))
+      .sort((serieA, serieB) => serieA.name.localeCompare(serieB.name));
+
+    const seriesRevenues = data
+      .map(data => new ChartSerie({ name: this.convertMonthYearToName(data._id.month, data._id.year, timezone), value: data.revenues }))
+      .sort((serieA, serieB) => serieA.name.localeCompare(serieB.name));
+
     series.forEach((serie, index) => {
       if (index > 0) {
         serie.value += series[index - 1].value;
       }
     });
 
-    return [new Chart({ name: bankAccountId, series })];
+    return [
+      new Chart({ name: bankAccountId, series }),
+      new Chart({ name: `${bankAccountId}-expenses`, series: seriesExpenses }),
+      new Chart({ name: `${bankAccountId}-revenues`, series: seriesRevenues }),
+    ];
   }
 
   async getChartByCreditCardId(

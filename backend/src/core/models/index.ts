@@ -8,3 +8,4 @@ export * from './category';
 export * from './transactions-page';
 export * from './charts';
 export * from './credit-card-summary';
+export * from './bank-account-summary';

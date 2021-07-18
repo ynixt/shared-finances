@@ -8,7 +8,7 @@ import { BankAccountService } from '../bank-account';
 import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { GroupService } from '../group';
-import { Transaction, TransactionType, TransactionsPage, CreditCardSummary, CreditCard } from '../models';
+import { Transaction, TransactionType, TransactionsPage, CreditCardSummary, CreditCard, BankAccountSummary } from '../models';
 import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
 
@@ -122,13 +122,13 @@ export class TransactionService {
     }
   }
 
-  async getBalanceByBankAccount(user: FBUser, bankAccountId: string, args: { maxDate?: string } = {}): Promise<number> {
+  async getBankAccountSummary(user: FBUser, bankAccountId: string, args: { maxDate?: string } = {}): Promise<BankAccountSummary> {
     const bankAccount = await this.bankAccountService.findById(user.id, bankAccountId);
 
     args.maxDate ??= moment.utc().toISOString();
 
     if (bankAccount != null) {
-      return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
+      return this.transacationRepository.getBankAccountSummary(bankAccountId, args);
     }
 
     return null;
