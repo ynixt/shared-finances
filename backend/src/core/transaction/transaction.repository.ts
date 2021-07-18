@@ -238,6 +238,60 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     return aggregate.exec();
   }
 
+  getByCreditCardIdGroupedByDate(
+    creditCardId: string,
+    timezone: string,
+    args?: { minCreditCardBillDate?: string; maxCreditCardBillDate?: string },
+  ): Promise<{ _id: { month: number; year: number }; expenses: number }[]> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          creditCardId: new Types.ObjectId(creditCardId),
+        },
+      },
+    ]);
+
+    if (args?.minCreditCardBillDate) {
+      aggregate.match({
+        creditCardBillDate: { '$gte': args.minCreditCardBillDate },
+      });
+    }
+
+    if (args?.maxCreditCardBillDate) {
+      aggregate.match({
+        creditCardBillDate: { '$lte': args.maxCreditCardBillDate },
+      });
+    }
+
+    aggregate.project({
+      expenses: {
+        $cond: [
+          {
+            $eq: ['$transactionType', 'CreditCard'],
+          },
+          '$value',
+          0,
+        ],
+      },
+      creditCardBillDate: { '$dateFromString': { dateString: '$creditCardBillDate' } },
+    });
+
+    aggregate.group({
+      _id: {
+        month: { $month: { date: '$creditCardBillDate', timezone } },
+        year: { $year: { date: '$creditCardBillDate', timezone } },
+      },
+      expenses: { $sum: '$expenses' },
+    });
+
+    aggregate.project({
+      _id: '$_id',
+      expenses: { $multiply: ['$expenses', -1] },
+    });
+
+    return aggregate.exec();
+  }
+
   getCreditCardBillDates(creditCardId: string): Promise<{ _id: { creditCardBillDate: string } }[]> {
     const aggregate = this.model.aggregate([
       {

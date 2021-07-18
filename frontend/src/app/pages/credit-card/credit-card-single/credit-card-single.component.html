@@ -70,6 +70,21 @@
           <button (click)="openPayBillDialog()" mat-flat-button color="primary">{{ t('pay') }}</button>
         </div>
 
+        <div class="h-3/5 md:h-80 chart flex justify-center items-center mb-6">
+          <ngx-charts-line-chart
+            *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
+            [scheme]="colorScheme"
+            [showXAxisLabel]="showXAxisLabel"
+            [showYAxisLabel]="showYAxisLabel"
+            [xAxis]="true"
+            [yAxis]="true"
+            [xAxisLabel]="t('date')"
+            [yAxisLabel]="t('month-expenses')"
+            [results]="transactionsGroupedYearMonth"
+          >
+          </ngx-charts-line-chart>
+        </div>
+
         <app-transactions-table
           [transactionsPage$]="transactionsPage$"
           [pageSize]="pageSize"

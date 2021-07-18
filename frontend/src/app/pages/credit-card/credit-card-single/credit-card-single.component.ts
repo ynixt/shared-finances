@@ -12,6 +12,8 @@ import { TranslocoService } from '@ngneat/transloco';
 import { DOCUMENT } from '@angular/common';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-card-bill-payment';
+import { Chart } from 'src/app/@core/models/chart';
+import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
 
 @UntilDestroy()
 @Component({
@@ -24,6 +26,17 @@ export class CreditCardSingleComponent implements OnInit {
   billDateIndex: number;
   creditCardSummary: CreditCardSummary;
   limitAvailableLoading = false;
+  transactionsGroupedYearMonth: Chart[];
+
+  legend: boolean = true;
+  showLabels: boolean = true;
+  animations: boolean = true;
+  showYAxisLabel: boolean = true;
+  showXAxisLabel: boolean = true;
+
+  colorScheme = {
+    domain: ['#5AA454'],
+  };
 
   pageSize = 20;
   transactionsPage$: Observable<Page<Transaction>>;
@@ -128,13 +141,33 @@ export class CreditCardSingleComponent implements OnInit {
     this.newTransactionDialogService.openDialog(this.document, this.renderer2, false);
   }
 
+  async getChart(): Promise<void> {
+    this.transactionsGroupedYearMonth = undefined;
+
+    if (!this.creditCard.billDates || this.creditCard.billDates.length === 0) {
+      return;
+    }
+
+    const creditCardNamesById = new Map<string, string>();
+    creditCardNamesById.set(this.creditCard.id, this.creditCard.name);
+
+    const charts = await this.creditCardCoreService.getTransactionsChart(creditCardNamesById, this.monthDate, this.creditCard.closingDay, {
+      creditCardId: this.creditCard.id,
+      maxCreditCardBillDate: moment(this.monthDate),
+      minCreditCardBillDate: moment(this.creditCard.billDates[0]),
+    });
+
+    this.transactionsGroupedYearMonth = charts;
+    console.log(charts);
+  }
+
   private getInfoBasedOnCreditCard(): void {
     this.transactionsChange();
   }
 
   private async getInfoBasedOnCreditCardAndDate(): Promise<void> {
     this.getTransactions();
-    await this.getCreditCardSummary();
+    await Promise.all([this.getCreditCardSummary(), this.getChart()]);
   }
 
   private async getCreditCardSummary(): Promise<void> {

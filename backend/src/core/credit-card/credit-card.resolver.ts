@@ -1,12 +1,13 @@
 import { forwardRef, Inject, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Resolver, Query, Subscription, ResolveField, Parent, Float } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
+import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
-import { CreditCard, CreditCardSummary } from '../models';
+import { Chart, CreditCard, CreditCardSummary } from '../models';
 import { EditCreditCardArgs, NewCreditCardArgs } from '../models/args';
-import { TransactionService } from '../transaction';
+import { TransactionChartService, TransactionService } from '../transaction';
 import { CreditCardService } from './credit-card.service';
 
 const pubSub = new PubSub();
@@ -22,6 +23,8 @@ export class CreditCardResolver {
   constructor(
     private creditCardService: CreditCardService,
     @Inject(forwardRef(() => TransactionService)) private transactionService: TransactionService,
+    @Inject(forwardRef(() => TransactionChartService)) private transactionChartService: TransactionChartService,
+    private errorUtilService: ErrorUtilService,
   ) {}
 
   @Mutation(() => CreditCard)
@@ -135,5 +138,19 @@ export class CreditCardResolver {
   @ResolveField()
   async availableLimit(@Parent() creditCard: CreditCard) {
     return this.transactionService.getCreditCardAvaliableLimit({ creditCard });
+  }
+
+  @Query(() => [Chart], { nullable: true })
+  @UseGuards(GqlFirebaseAuthGuard)
+  async transactionsCreditCardChart(
+    @GqlCurrentUser() user: FBUser,
+    @Args({ name: 'timezone' }) timezone: string,
+    @Args({ name: 'creditCardId', nullable: true }) creditCardId?: string,
+    @Args({ name: 'maxCreditCardBillDate', nullable: true }) maxCreditCardBillDate?: string,
+    @Args({ name: 'minCreditCardBillDate', nullable: true }) minCreditCardBillDate?: string,
+  ) {
+    return this.errorUtilService.tryToGetItem(async () =>
+      this.transactionChartService.getChartByCreditCardId(user, creditCardId, timezone, { minCreditCardBillDate, maxCreditCardBillDate }),
+    );
   }
 }

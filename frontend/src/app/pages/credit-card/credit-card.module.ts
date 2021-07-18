@@ -17,6 +17,7 @@ import { EditCreditCardComponent } from './edit-credit-card/edit-credit-card.com
 import { CreditCardSingleComponent } from './credit-card-single/credit-card-single.component';
 import { OptionsBarModule } from 'src/app/components/options-bar';
 import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
+import { NgxChartsModule } from '@swimlane/ngx-charts';
 
 @NgModule({
   declarations: [CreditCardComponent, NewCreditCardComponent, FormCreditCardComponent, EditCreditCardComponent, CreditCardSingleComponent],
@@ -33,6 +34,7 @@ import { TransactionsTableModule } from 'src/app/components/transactions-table/t
     CovalentDialogsModule,
     OptionsBarModule,
     TransactionsTableModule,
+    NgxChartsModule,
   ],
 })
 export class CreditCardModule {}

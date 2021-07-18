@@ -4,8 +4,10 @@ import { EmptyObject } from 'apollo-angular/types';
 import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
+import { CHART_DEFAULT_MINIMUM_MONTHS } from '../constants';
 
 import { CreditCard, CreditCardSummary } from '../models';
+import { Chart } from '../models/chart';
 
 const CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
   subscription creditCardCreated {
@@ -185,6 +187,70 @@ export class CreditCardService {
         },
       })
       .pipe(map(result => result.data.creditCardTransactionDeleted.id));
+  }
+
+  getTransactionsChart(
+    creditCardNamesById: Map<string, string>,
+    initialMonthIfNoChart: Moment | string,
+    creditCardClosingDay: number,
+    args?: { creditCardId: string; maxCreditCardBillDate?: Moment; minCreditCardBillDate?: Moment },
+    minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS,
+  ): Promise<Chart[]> {
+    const transactionsChartQueryRef = this.apollo.query<{ transactionsCreditCardChart: Chart[] }>({
+      query: gql`
+        query($creditCardId: String, $timezone: String!, $maxCreditCardBillDate: String, $minCreditCardBillDate: String) {
+          transactionsCreditCardChart(
+            creditCardId: $creditCardId
+            timezone: $timezone
+            maxCreditCardBillDate: $maxCreditCardBillDate
+            minCreditCardBillDate: $minCreditCardBillDate
+          ) {
+            name
+            series {
+              name
+              value
+            }
+          }
+        }
+      `,
+      variables: {
+        creditCardId: args.creditCardId,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        maxCreditCardBillDate: args?.maxCreditCardBillDate?.toISOString(),
+        minCreditCardBillDate: args?.minCreditCardBillDate?.toISOString(),
+      },
+    });
+
+    return transactionsChartQueryRef
+      .pipe(
+        map(result => {
+          const charts: Chart[] = result.data.transactionsCreditCardChart.map(chart => {
+            const dateFormat = 'MM/YYYY';
+            const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
+            const series = chart.series.map(serie => ({
+              ...serie,
+              name: moment(serie.name).format(dateFormat),
+            }));
+
+            if (series.length < minimumMonths) {
+              const missing = minimumMonths - series.length;
+
+              for (let i = 0; i < missing; i++) {
+                series.splice(i, 0, {
+                  name: this.previousBillDate(firstDate, creditCardClosingDay, i + 1).format(dateFormat),
+                  value: 0,
+                });
+              }
+            }
+
+            return { name: creditCardNamesById.get(chart.name), series };
+          });
+
+          return charts;
+        }),
+        take(1),
+      )
+      .toPromise();
   }
 
   private subscribeToChanges(

@@ -1,0 +1,1 @@
+export const CHART_DEFAULT_MINIMUM_MONTHS = 4;

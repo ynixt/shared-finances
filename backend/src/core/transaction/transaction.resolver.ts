@@ -8,9 +8,8 @@ import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
 import { CategoryService } from '../category';
 import { GroupService } from '../group';
-import { Category, Chart, Transaction, TransactionsPage } from '../models';
+import { Category, Transaction, TransactionsPage } from '../models';
 import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
-import { TransactionChartService } from './transaction-chart.service';
 import { TransactionService } from './transaction.service';
 
 const pubSub = new PubSub();
@@ -31,7 +30,6 @@ export class TransactionResolver {
     private categoryService: CategoryService,
     private groupService: GroupService,
     private errorUtilService: ErrorUtilService,
-    private transactionChartService: TransactionChartService,
   ) {}
 
   @Query(() => TransactionsPage, { nullable: true })
@@ -304,20 +302,6 @@ export class TransactionResolver {
   }
 
   // end credit card subscriptions
-
-  @Query(() => [Chart], { nullable: true })
-  @UseGuards(GqlFirebaseAuthGuard)
-  async transactionsChart(
-    @GqlCurrentUser() user: FBUser,
-    @Args({ name: 'timezone' }) timezone: string,
-    @Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string,
-    @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
-    @Args({ name: 'minDate', nullable: true }) minDate?: string,
-  ) {
-    return this.errorUtilService.tryToGetItem(async () =>
-      this.transactionChartService.getChartByBankAccountId(user, bankAccountId, timezone, { minDate, maxDate }),
-    );
-  }
 
   private async getUsersDestinationForPub(transaction: Transaction): Promise<string[]> {
     return transaction.userId != null
