@@ -6,6 +6,7 @@ import { AuthState } from 'src/app/store/reducers/auth.reducer';
 import { AuthSelectors } from 'src/app/store/services/selectors';
 import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
 import { Location } from '@angular/common';
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
 
 @Component({
   selector: 'app-header',
@@ -15,6 +16,7 @@ import { Location } from '@angular/common';
 export class HeaderComponent implements OnInit, OnDestroy {
   userState$: Observable<AuthState>;
   userOpen: boolean;
+  faGithub = faGithub;
 
   isMobile = false;
 

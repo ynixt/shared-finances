@@ -15,6 +15,7 @@ import { MatListModule } from '@angular/material/list';
 import { MenuModule } from '../menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 @NgModule({
   declarations: [HeaderComponent],
@@ -33,6 +34,7 @@ import { RouterModule } from '@angular/router';
     MenuModule,
     MatTooltipModule,
     RouterModule,
+    FontAwesomeModule,
   ],
   exports: [HeaderComponent],
 })
