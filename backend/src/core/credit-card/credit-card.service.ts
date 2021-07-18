@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { CreditCard } from '../models';
 import { EditCreditCardArgs, NewCreditCardArgs } from '../models/args';
+import { TransactionService } from '../transaction';
 import { CreditCardRepository } from './credit-card.repository';
 
 @Injectable()
 export class CreditCardService {
-  constructor(private creditCardRepository: CreditCardRepository) {}
+  constructor(
+    private creditCardRepository: CreditCardRepository,
+    @Inject(forwardRef(() => TransactionService)) private transactionService: TransactionService,
+  ) {}
 
   create(userId: string, creditCard: NewCreditCardArgs): Promise<CreditCard> {
     return this.creditCardRepository.create({ ...creditCard, userId });
@@ -20,7 +24,13 @@ export class CreditCardService {
   }
 
   delete(userId: string, creditCardId: string): Promise<CreditCard> {
-    return this.creditCardRepository.delete(userId, creditCardId);
+    return this.creditCardRepository.runInsideTransaction<CreditCard>(async opts => {
+      const creditCard = await this.creditCardRepository.delete(userId, creditCardId, opts);
+
+      await this.transactionService.deleteByCreditCardId(userId, creditCardId, opts);
+
+      return creditCard;
+    });
   }
 
   existsWithUserId(userId: string, creditCardId: string): Promise<boolean> {

@@ -51,6 +51,10 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     await this.model.deleteMany({ bankAccountId }, opts);
   }
 
+  async deleteByCreditCardId(creditCardId: string, opts?: MongoRepositoryOptions): Promise<void> {
+    await this.model.deleteMany({ creditCardId }, opts);
+  }
+
   async getByBankAccountId(
     bankAccountId: string,
     args?: { maxDate?: string; minDate?: string },
