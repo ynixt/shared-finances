@@ -87,7 +87,7 @@ export class CreditCardInputComponent extends ControlValueAccessorConnector<Cred
         return [
           {
             person: combined.user,
-            creditCards: combined.creditCards.sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
+            creditCards: [...combined.creditCards].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
           },
           ...combined.creditCardFromOtherUsers,
         ].sort((a, b) => a.person.name.localeCompare(b.person.name));
