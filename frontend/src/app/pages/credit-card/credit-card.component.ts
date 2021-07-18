@@ -8,6 +8,7 @@ import { CreditCard } from 'src/app/@core/models';
 import { ErrorService } from 'src/app/@core/services/error.service';
 import { CreditCardSelectors } from 'src/app/store/services/selectors';
 import { CreditCardService } from './credit-card.service';
+import { CreditCardState } from 'src/app/store/reducers/credit-card.reducer';
 
 @UntilDestroy()
 @Component({
@@ -17,6 +18,7 @@ import { CreditCardService } from './credit-card.service';
 })
 export class CreditCardComponent implements OnInit {
   creditCards: CreditCard[] = [];
+  creditCardsLoading = true;
 
   constructor(
     private creditCardService: CreditCardService,
@@ -28,7 +30,7 @@ export class CreditCardComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.creditCardSelectors.creditCards$.pipe(untilDestroyed(this)).subscribe(creditCard => this.fillCreditCards(creditCard));
+    this.creditCardSelectors.state$.pipe(untilDestroyed(this)).subscribe(creditCardsState => this.fillCreditCards(creditCardsState));
   }
 
   async delete(creditCard: CreditCard): Promise<void> {
@@ -64,7 +66,10 @@ export class CreditCardComponent implements OnInit {
     }
   }
 
-  private fillCreditCards(creditCard: CreditCard[]): void {
-    this.creditCards = [...(creditCard || [])].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name));
+  private fillCreditCards(creditCardState: CreditCardState): void {
+    this.creditCardsLoading = creditCardState.loading;
+    this.creditCards = [...(creditCardState.creditCards || [])].sort((creditCardA, creditCardB) =>
+      creditCardA.name.localeCompare(creditCardB.name),
+    );
   }
 }

@@ -7,10 +7,12 @@ import { CreditCardState } from '../../reducers/credit-card.reducer';
 const creditCardSelector = createFeatureSelector<AuthState>('creditCard');
 
 export const getCreditCards = createSelector(creditCardSelector, (state: CreditCardState) => state.creditCards);
+export const getCreditCardsState = createSelector(creditCardSelector, (state: CreditCardState) => state);
 
 @Injectable()
 export class CreditCardSelectors {
   constructor(private store: Store<EntityState>) {}
 
   creditCards$ = this.store.select(getCreditCards);
+  state$ = this.store.select(getCreditCardsState);
 }

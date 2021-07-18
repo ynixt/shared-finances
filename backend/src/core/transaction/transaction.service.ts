@@ -8,7 +8,7 @@ import { BankAccountService } from '../bank-account';
 import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { GroupService } from '../group';
-import { Transaction, TransactionType, TransactionsPage, CreditCardSummary } from '../models';
+import { Transaction, TransactionType, TransactionsPage, CreditCardSummary, CreditCard } from '../models';
 import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
 
@@ -88,6 +88,14 @@ export class TransactionService {
     return this.transacationRepository.deleteByBankAccountId(bankAccountId, opts);
   }
 
+  async deleteByCreditCardId(userId: string, creditCardId: string, opts?: MongoRepositoryOptions): Promise<void> {
+    if (!(await this.creditCardService.existsWithUserId(userId, creditCardId))) {
+      throw new AuthenticationError('');
+    }
+
+    return this.transacationRepository.deleteByCreditCardId(creditCardId, opts);
+  }
+
   async findAll(
     user: FBUser,
     args: { bankAccountId: string; maxDate?: string; minDate?: string },
@@ -142,10 +150,32 @@ export class TransactionService {
     return this.transacationRepository.getBalanceByBankAccountId(bankAccountId, args);
   }
 
-  async getCreditCardBillDatesWithoutCheckPermission(creditCardId: string): Promise<string[]> {
-    const queryResponse = (await this.transacationRepository.getCreditCardBillDates(creditCardId)) ?? [];
+  async getCreditCardBillDates(obj: { creditCard: CreditCard });
+  async getCreditCardBillDates(obj: { creditCardId: string; user: FBUser });
+
+  async getCreditCardBillDates(obj: { creditCard?: CreditCard; creditCardId?: string; user?: FBUser }): Promise<string[]> {
+    const creditCard = obj.creditCard ?? (await this.creditCardService.getById(obj.user.id, obj.creditCardId));
+    let queryResponse = [];
+
+    if (creditCard != null) {
+      queryResponse = (await this.transacationRepository.getCreditCardBillDates(creditCard.id)) ?? [];
+    }
 
     return queryResponse.map(qr => qr._id.creditCardBillDate).sort((b1, b2) => b1.localeCompare(b2));
+  }
+
+  async getCreditCardAvaliableLimit(obj: { creditCard: CreditCard });
+  async getCreditCardAvaliableLimit(obj: { creditCardId: string; user: FBUser });
+
+  async getCreditCardAvaliableLimit(obj: { creditCard?: CreditCard; creditCardId?: string; user?: FBUser }) {
+    const creditCard = obj.creditCard ?? (await this.creditCardService.getById(obj.user.id, obj.creditCardId));
+
+    if (creditCard != null) {
+      const summary = await this.transacationRepository.getCreditCardSummary(creditCard.id);
+      return creditCard.limit - (summary?.bill ?? 0);
+    }
+
+    return 0;
   }
 
   private async validPermissionsOnExistingTransaction(user: FBUser, transaction: Transaction) {

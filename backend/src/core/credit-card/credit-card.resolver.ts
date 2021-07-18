@@ -1,5 +1,5 @@
 import { forwardRef, Inject, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver, Query, Subscription, ResolveField, Parent } from '@nestjs/graphql';
+import { Args, Mutation, Resolver, Query, Subscription, ResolveField, Parent, Float } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
@@ -70,6 +70,18 @@ export class CreditCardResolver {
     return this.creditCardService.findAllWithUserId(user.id);
   }
 
+  @Query(() => Float)
+  @UseGuards(GqlFirebaseAuthGuard)
+  creditCardAvailableLimit(@GqlCurrentUser() user: FBUser, @Args({ name: 'creditCardId' }) creditCardId: string): Promise<number> {
+    return this.transactionService.getCreditCardAvaliableLimit({ user, creditCardId });
+  }
+
+  @Query(() => [String])
+  @UseGuards(GqlFirebaseAuthGuard)
+  creditCardBillDates(@GqlCurrentUser() user: FBUser, @Args({ name: 'creditCardId' }) creditCardId: string): Promise<number> {
+    return this.transactionService.getCreditCardBillDates({ user, creditCardId });
+  }
+
   @Mutation(() => Boolean)
   @UseGuards(GqlFirebaseAuthGuard)
   async deleteCreditCard(@GqlCurrentUser() user: FBUser, @Args({ name: 'creditCardId' }) creditCardId: string): Promise<boolean> {
@@ -117,6 +129,11 @@ export class CreditCardResolver {
 
   @ResolveField()
   async billDates(@Parent() creditCard: CreditCard) {
-    return this.transactionService.getCreditCardBillDatesWithoutCheckPermission(creditCard.id);
+    return this.transactionService.getCreditCardBillDates({ creditCard: creditCard });
+  }
+
+  @ResolveField()
+  async availableLimit(@Parent() creditCard: CreditCard) {
+    return this.transactionService.getCreditCardAvaliableLimit({ creditCard });
   }
 }

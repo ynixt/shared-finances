@@ -23,6 +23,7 @@ export class CreditCardSingleComponent implements OnInit {
   creditCard: CreditCard;
   billDateIndex: number;
   creditCardSummary: CreditCardSummary;
+  limitAvailableLoading = false;
 
   pageSize = 20;
   transactionsPage$: Observable<Page<Transaction>>;
@@ -30,6 +31,7 @@ export class CreditCardSingleComponent implements OnInit {
   private monthDate: Moment | string;
   private billDateOfCurrentMonth: Moment;
   private transactionsChangeSubscription: Subscription;
+  private creditCardSubscription: Subscription;
 
   get closedBill() {
     return moment(this.monthDate).isSame(this.billDateOfCurrentMonth) === false;
@@ -50,17 +52,23 @@ export class CreditCardSingleComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.activatedRoute.params
+    this.loadCreditCard();
+  }
+
+  loadCreditCard() {
+    this.creditCardSubscription?.unsubscribe();
+
+    this.creditCardSubscription = this.activatedRoute.params
       .pipe(
         untilDestroyed(this),
         switchMap(params => {
           return this.creditCardService.getById(params.creditCardId);
         }),
       )
-      .subscribe(creditCard => this.getCreditCard(creditCard));
+      .subscribe(creditCard => this.getCreditCardInfo(creditCard));
   }
 
-  async getCreditCard(creditCard: CreditCard): Promise<void> {
+  async getCreditCardInfo(creditCard: CreditCard): Promise<void> {
     this.creditCard = creditCard;
 
     this.setBillDateOfCurrentDate();
@@ -116,6 +124,10 @@ export class CreditCardSingleComponent implements OnInit {
     });
   }
 
+  openNewTransactionDialog(): void {
+    this.newTransactionDialogService.openDialog(this.document, this.renderer2, false);
+  }
+
   private getInfoBasedOnCreditCard(): void {
     this.transactionsChange();
   }
@@ -147,7 +159,10 @@ export class CreditCardSingleComponent implements OnInit {
       this.creditCard.closingDay,
     );
 
-    this.billDateIndex = this.creditCard.billDates.indexOf(this.billDateOfCurrentMonth.toISOString());
+    if (this.billDateOfCurrentMonth) {
+      this.billDateIndex = this.creditCard.billDates.indexOf(this.billDateOfCurrentMonth.toISOString());
+    }
+
     this.monthDate = this.billDateOfCurrentMonth;
   }
 
@@ -161,7 +176,20 @@ export class CreditCardSingleComponent implements OnInit {
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {
-        await this.getInfoBasedOnCreditCardAndDate();
+        if (this.creditCard.billDates?.length > 0) {
+          await Promise.all([this.getInfoBasedOnCreditCardAndDate(), this.reloadAvailableLimit()]);
+        } else {
+          await this.loadCreditCard();
+        }
       });
+  }
+
+  private async reloadAvailableLimit(): Promise<void> {
+    this.limitAvailableLoading = true;
+
+    const newAvaiableLimit = await this.creditCardCoreService.getCreditCardSAvailableLimit(this.creditCard.id);
+    this.creditCard.availableLimit = newAvaiableLimit;
+
+    this.limitAvailableLoading = false;
   }
 }

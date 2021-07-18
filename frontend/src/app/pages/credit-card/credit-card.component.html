@@ -34,15 +34,22 @@
               </button>
             </mat-menu>
           </mat-card-header>
-          <mat-card-content>
-            {{ creditCard.limit }}
-          </mat-card-content>
         </mat-card>
       </div>
     </ng-container>
   </div>
 
   <ng-template #noCreditCard>
-    <app-no-item [text]="t('no-credit-cards')" [buttonText]="'new-credit-card' | transloco" buttonRouterLink="new"> </app-no-item>
+    <app-no-item
+      *ngIf="creditCardsLoading == false; else loadingTemplate"
+      [text]="t('no-credit-cards')"
+      [buttonText]="'new-credit-card' | transloco"
+      buttonRouterLink="new"
+    >
+    </app-no-item>
+  </ng-template>
+
+  <ng-template #loadingTemplate>
+    <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
   </ng-template>
 </ng-container>

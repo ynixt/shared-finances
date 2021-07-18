@@ -114,6 +114,46 @@ export class CreditCardService {
       .toPromise();
   }
 
+  getCreditCardSAvailableLimit(creditCardId: string): Promise<number> {
+    const creditCardQueryRef = this.apollo.query<{ creditCardAvailableLimit: number }>({
+      query: gql`
+        query creditCardAvailableLimit($creditCardId: String!) {
+          creditCardAvailableLimit(creditCardId: $creditCardId)
+        }
+      `,
+      variables: {
+        creditCardId,
+      },
+    });
+
+    return creditCardQueryRef
+      .pipe(
+        take(1),
+        map(result => result.data.creditCardAvailableLimit),
+      )
+      .toPromise();
+  }
+
+  getCreditCardBillDates(creditCardId: string): Promise<string[]> {
+    const creditCardQueryRef = this.apollo.query<{ creditCardBillDates: string[] }>({
+      query: gql`
+        query creditCardBillDates($creditCardId: String!) {
+          creditCardBillDates(creditCardId: $creditCardId)
+        }
+      `,
+      variables: {
+        creditCardId,
+      },
+    });
+
+    return creditCardQueryRef
+      .pipe(
+        take(1),
+        map(result => result.data.creditCardBillDates),
+      )
+      .toPromise();
+  }
+
   onTransactionCreated(creditCardId: string): Observable<string> {
     return this.apollo
       .subscribe<{ creditCardTransactionCreated: { id: string } }>({
@@ -218,7 +258,7 @@ export class CreditCardService {
   }
 
   findCreditCardBillDate(date: string | Moment, creditCardBillDateOptions: Array<Moment | string>, closingDay: number): Moment | undefined {
-    let oneMonthSkipped = false;
+    let oneMonthSkipped = creditCardBillDateOptions.length <= 1;
 
     creditCardBillDateOptions = [...creditCardBillDateOptions];
 

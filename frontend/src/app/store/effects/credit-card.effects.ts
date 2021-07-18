@@ -11,7 +11,7 @@ import { CreditCardActions } from '../actions';
 export class CreditCardEffects {
   constructor(private actions$: Actions, private creditCardService: CreditCardService) {}
 
-  getCategories$ = createEffect(() =>
+  getCreditCards$ = createEffect(() =>
     this.actions$.pipe(
       ofType(CreditCardActions.getCreditCards),
       switchMap(() =>

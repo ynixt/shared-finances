@@ -109,6 +109,7 @@ export class CreditCardService {
               closingDay
               paymentDay
               billDates
+              availableLimit
             }
           }
         `,

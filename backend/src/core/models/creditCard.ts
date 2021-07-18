@@ -29,6 +29,9 @@ export class CreditCard {
   @Prop()
   limit: number;
 
+  @Field(() => Float)
+  availableLimit?: number;
+
   @Field(() => [String], { nullable: true })
   billDates?: string[];
 }

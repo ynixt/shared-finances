@@ -38,8 +38,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.userState$ = this.authSelectors.state$;
 
-    console.log(this.location.path());
-
     this.observerSmallSubscription = this.breakpointObserver
       .observe([Breakpoints.Small, Breakpoints.XSmall])
       .subscribe((state: BreakpointState) => {

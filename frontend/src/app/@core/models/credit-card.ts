@@ -5,4 +5,5 @@ export interface CreditCard {
   paymentDay: number;
   limit: number;
   billDates?: string[];
+  availableLimit?: number;
 }

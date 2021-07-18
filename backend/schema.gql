@@ -14,6 +14,7 @@ type CreditCard {
   closingDay: Int!
   paymentDay: Int!
   limit: Float!
+  availableLimit: Float!
   billDates: [String!]
 }
 
@@ -95,6 +96,8 @@ type Query {
   creditCard(creditCardId: String!): CreditCard
   creditCardSummary(maxCreditCardBillDate: String!, creditCardId: String!): CreditCardSummary
   creditCards: [CreditCard!]!
+  creditCardAvailableLimit(creditCardId: String!): Float!
+  creditCardBillDates(creditCardId: String!): [String!]!
 }
 
 type Mutation {

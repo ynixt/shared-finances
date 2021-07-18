@@ -126,19 +126,20 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     return result.length === 1 ? result[0].balance : 0;
   }
 
-  async getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string): Promise<CreditCardSummary> {
+  async getCreditCardSummary(creditCardId: string, maxCreditCardBillDate?: string): Promise<CreditCardSummary> {
     const aggregate = this.model.aggregate([
       {
         $match: {
           creditCardId: new Types.ObjectId(creditCardId),
         },
       },
-      {
-        $match: {
-          creditCardBillDate: { $lte: maxCreditCardBillDate },
-        },
-      },
     ]);
+
+    if (maxCreditCardBillDate != null) {
+      aggregate.match({
+        creditCardBillDate: { $lte: maxCreditCardBillDate },
+      });
+    }
 
     aggregate.project({
       expenses: {
