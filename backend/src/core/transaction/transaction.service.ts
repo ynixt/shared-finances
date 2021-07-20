@@ -203,8 +203,12 @@ export class TransactionService {
       throw new AuthenticationError('');
     }
 
-    // User two (if there is) must be access to group of the logged user
-    if (input.secondUserId != null && !(await this.groupService.userHasAccessToGroup(input.secondUserId, input.groupId))) {
+    // User two (if there is) must be the logged user or an user that can access the group of the logged user
+    if (
+      input.secondUserId !== user.id &&
+      input.secondUserId != null &&
+      !(await this.groupService.userHasAccessToGroup(input.secondUserId, input.groupId))
+    ) {
       throw new AuthenticationError('');
     }
 
