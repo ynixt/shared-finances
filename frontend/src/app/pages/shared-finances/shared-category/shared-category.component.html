@@ -7,8 +7,7 @@
     <div custom-title>
       <td-breadcrumbs *ngIf="!categoriesState.loading && this.group">
         <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
-        <a td-breadcrumb routerLink="/finances/shared">{{ t('shared') }}</a>
-        <a td-breadcrumb routerLink="/finances/shared/groups">{{ t('groups') }}</a>
+        <a td-breadcrumb routerLink="/finances/shared">{{ t('groups') }}</a>
         <a td-breadcrumb routerLink="/finances/shared/{{ group.id }}">{{ t('group-name', { 'name': group.name }) }}</a>
         <td-breadcrumb>{{ t('categories') }}</td-breadcrumb>
       </td-breadcrumbs>

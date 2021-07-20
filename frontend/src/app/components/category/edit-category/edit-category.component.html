@@ -12,8 +12,7 @@
 
           <td-breadcrumbs *ngIf="category.group">
             <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
-            <a td-breadcrumb routerLink="/finances/shared">{{ t('shared') }}</a>
-            <a td-breadcrumb routerLink="/finances/shared/groups">{{ t('groups') }}</a>
+            <a td-breadcrumb routerLink="/finances/shared">{{ t('groups') }}</a>
             <a td-breadcrumb routerLink="/finances/shared/{{ category.group.id }}">{{
               t('group-name', { 'name': category.group.name })
             }}</a>
