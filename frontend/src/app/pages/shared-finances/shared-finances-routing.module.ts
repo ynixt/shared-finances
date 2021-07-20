@@ -1,21 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { TitleGuard } from 'src/app/shared';
-import { SharedFinancesComponent } from '.';
 import { GroupsComponent, GroupSinglePageComponent } from './groups';
 import { InviteComponent } from './invite';
 
 const routes: Routes = [
   {
     path: '',
-    component: SharedFinancesComponent,
-    canActivate: [TitleGuard],
-    data: {
-      title: 'shared',
-    },
-  },
-  {
-    path: 'groups',
     component: GroupsComponent,
     canActivate: [TitleGuard],
     data: {
