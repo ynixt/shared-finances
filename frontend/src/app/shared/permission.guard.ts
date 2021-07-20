@@ -9,9 +9,7 @@ import { AuthSelectors } from '../store/services/selectors';
 export class PermissionGuard implements CanActivate, CanActivateChild {
   private permissionByRoute = new Map<string, string>();
 
-  public constructor(private authSelector: AuthSelectors, private router: Router) {
-    this.permissionByRoute.set('', 'view_dashboard');
-  }
+  public constructor(private authSelector: AuthSelectors, private router: Router) {}
 
   public async canActivate(route: ActivatedRouteSnapshot): Promise<boolean> {
     const user = await this.authSelector.currentUser();
