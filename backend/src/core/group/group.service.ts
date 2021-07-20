@@ -66,7 +66,11 @@ export class GroupService {
     return group.id;
   }
 
-  public userHasAccessToGroup(userId: string, groupId: string): Promise<boolean> {
+  public async userHasAccessToGroup(userId: string, groupId: string): Promise<boolean> {
+    if (userId == null || groupId == null) {
+      return false;
+    }
+
     return this.groupRepository.groupHasUser(userId, { groupId });
   }
 
