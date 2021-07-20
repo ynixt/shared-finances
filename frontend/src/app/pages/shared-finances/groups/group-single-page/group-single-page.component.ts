@@ -94,14 +94,14 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
     const group = await this.groupsService.getGroup(groupId);
 
-    this.titleService.changeTitle('group-name', {
-      name: group.name,
-    });
+    if (group) {
+      this.titleService.changeTitle('group-name', {
+        name: group.name,
+      });
 
-    if (!group) {
+      this.group = group;
+    } else {
       this.router.navigateByUrl('/404');
     }
-
-    this.group = group;
   }
 }
