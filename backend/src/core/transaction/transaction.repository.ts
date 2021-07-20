@@ -167,7 +167,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       expenses: {
         $cond: [
           {
-            $in: ['$transactionType', ['Expense', 'CreditCardBillPayment']],
+            $lt: ['$value', 0],
           },
           '$valueThisMonth',
           0,
@@ -176,7 +176,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       revenues: {
         $cond: [
           {
-            $eq: ['$transactionType', 'Revenue'],
+            $gt: ['$value', 0],
           },
           '$valueThisMonth',
           0,
@@ -308,12 +308,18 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       date: { '$dateFromString': { dateString: '$date' } },
       value: 1,
       expenses: {
-        $cond: [{ $in: ['$transactionType', ['Expense', 'CreditCardBillPayment']] }, '$value', 0],
+        $cond: [
+          {
+            $lt: ['$value', 0],
+          },
+          '$value',
+          0,
+        ],
       },
       revenues: {
         $cond: [
           {
-            $eq: ['$transactionType', 'Revenue'],
+            $gt: ['$value', 0],
           },
           '$value',
           0,
