@@ -149,5 +149,6 @@
   "expenses": "Despesas",
   "revenues": "Receitas",
   "show-future-transaction": "Exibir transações futuras",
-  "hide-future-transaction": "Esconder transações futuras"
+  "hide-future-transaction": "Esconder transações futuras",
+  "value-currency": "Valor ({{currency}})"
 }

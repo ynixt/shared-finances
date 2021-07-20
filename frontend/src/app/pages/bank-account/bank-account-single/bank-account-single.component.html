@@ -55,48 +55,64 @@
         </mat-card>
       </div>
 
-      <div class="h-3/5 md:h-80 chart flex justify-center items-center mb-6">
-        <ngx-charts-line-chart
-          *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
-          [scheme]="colorScheme"
-          [showXAxisLabel]="showXAxisLabel"
-          [showYAxisLabel]="showYAxisLabel"
-          [xAxis]="true"
-          [yAxis]="true"
-          [xAxisLabel]="t('date')"
-          [yAxisLabel]="t('balance')"
-          [results]="transactionsGroupedYearMonth"
-        >
-        </ngx-charts-line-chart>
-      </div>
-      <div class="h-3/5 md:h-80 chart grid md:grid-cols-2 justify-center items-center mb-6">
-        <div>
+      <div class="chart flex flex-col justify-center items-stretch mb-6">
+        <h2 class="title">{{ t('balance') }}</h2>
+        <div class="flex h-3/5 md:h-56 justify-center items-center">
           <ngx-charts-line-chart
-            *ngIf="transactionsGroupedYearMonthRevenues; else loadingTemplate"
+            *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
             [scheme]="colorScheme"
             [showXAxisLabel]="showXAxisLabel"
             [showYAxisLabel]="showYAxisLabel"
             [xAxis]="true"
             [yAxis]="true"
             [xAxisLabel]="t('date')"
-            [yAxisLabel]="t('revenues')"
-            [results]="transactionsGroupedYearMonthRevenues"
+            [yAxisLabel]="t('value-currency', { currency: '' | currencySymbol })"
+            [results]="transactionsGroupedYearMonth"
+            [roundDomains]="true"
+            [autoScale]="true"
           >
           </ngx-charts-line-chart>
         </div>
-        <div>
-          <ngx-charts-line-chart
-            *ngIf="transactionsGroupedYearMonthExpenses; else loadingTemplate"
-            [scheme]="colorSchemeExpense"
-            [showXAxisLabel]="showXAxisLabel"
-            [showYAxisLabel]="showYAxisLabel"
-            [xAxis]="true"
-            [yAxis]="true"
-            [xAxisLabel]="t('date')"
-            [yAxisLabel]="t('expenses')"
-            [results]="transactionsGroupedYearMonthExpenses"
-          >
-          </ngx-charts-line-chart>
+      </div>
+      <div class="h-3/5 md:h-48 chart flex flex-col md:grid md:grid-cols-2 justify-center items-stretch mb-6">
+        <div class="flex flex-col items-stretch">
+          <h2 class="title">{{ t('revenues') }}</h2>
+
+          <div class="flex justify-center items-center">
+            <ngx-charts-line-chart
+              *ngIf="transactionsGroupedYearMonthRevenues; else loadingTemplate"
+              [scheme]="colorScheme"
+              [showXAxisLabel]="showXAxisLabel"
+              [showYAxisLabel]="showYAxisLabel"
+              [xAxis]="true"
+              [yAxis]="true"
+              [xAxisLabel]="t('date')"
+              [yAxisLabel]="t('value-currency', { currency: '' | currencySymbol })"
+              [results]="transactionsGroupedYearMonthRevenues"
+              [roundDomains]="true"
+            >
+            </ngx-charts-line-chart>
+          </div>
+        </div>
+        <div class="flex flex-col items-stretch">
+          <h2 class="title">{{ t('expenses') }}</h2>
+
+          <div class="flex justify-center items-center">
+            <ngx-charts-line-chart
+              *ngIf="transactionsGroupedYearMonthExpenses; else loadingTemplate"
+              [scheme]="colorSchemeExpense"
+              [showXAxisLabel]="showXAxisLabel"
+              [showYAxisLabel]="showYAxisLabel"
+              [xAxis]="true"
+              [yAxis]="true"
+              [xAxisLabel]="t('date')"
+              [yAxisLabel]="t('value-currency', { currency: '' | currencySymbol })"
+              [results]="transactionsGroupedYearMonthExpenses"
+              [roundDomains]="true"
+              [autoScale]="true"
+            >
+            </ngx-charts-line-chart>
+          </div>
         </div>
       </div>
 

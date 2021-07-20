@@ -70,19 +70,22 @@
           <button (click)="openPayBillDialog()" mat-flat-button color="primary">{{ t('pay') }}</button>
         </div>
 
-        <div class="h-3/5 md:h-80 chart flex justify-center items-center mb-6">
-          <ngx-charts-line-chart
-            *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
-            [scheme]="colorScheme"
-            [showXAxisLabel]="showXAxisLabel"
-            [showYAxisLabel]="showYAxisLabel"
-            [xAxis]="true"
-            [yAxis]="true"
-            [xAxisLabel]="t('date')"
-            [yAxisLabel]="t('month-expenses')"
-            [results]="transactionsGroupedYearMonth"
-          >
-          </ngx-charts-line-chart>
+        <div class="chart flex flex-col justify-center items-stretch mb-6">
+          <h2 class="title">{{ t('month-expenses') }}</h2>
+          <div class="flex h-3/5 md:h-56 justify-center items-center">
+            <ngx-charts-line-chart
+              *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
+              [scheme]="colorScheme"
+              [showXAxisLabel]="showXAxisLabel"
+              [showYAxisLabel]="showYAxisLabel"
+              [xAxis]="true"
+              [yAxis]="true"
+              [xAxisLabel]="t('date')"
+              [yAxisLabel]="t('value-currency', { currency: '' | currencySymbol })"
+              [results]="transactionsGroupedYearMonth"
+            >
+            </ngx-charts-line-chart>
+          </div>
         </div>
 
         <app-transactions-table

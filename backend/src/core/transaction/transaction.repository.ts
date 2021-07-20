@@ -304,33 +304,18 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       transactionType: 1,
     });
 
-    aggregate.addFields({
-      valueThisMonth: {
-        $cond: [
-          {
-            $and: [
-              { $lt: ['$date', moment(args.maxDate).endOf('month').endOf('day').toISOString()] },
-              { $gte: ['$date', moment(args.maxDate).startOf('month').startOf('day').toISOString()] },
-            ],
-          },
-          '$value',
-          0,
-        ],
-      },
-    });
-
     aggregate.project({
       date: { '$dateFromString': { dateString: '$date' } },
       value: 1,
       expenses: {
-        $cond: [{ $in: ['$transactionType', ['Expense', 'CreditCardBillPayment']] }, '$valueThisMonth', 0],
+        $cond: [{ $in: ['$transactionType', ['Expense', 'CreditCardBillPayment']] }, '$value', 0],
       },
       revenues: {
         $cond: [
           {
             $eq: ['$transactionType', 'Revenue'],
           },
-          '$valueThisMonth',
+          '$value',
           0,
         ],
       },
