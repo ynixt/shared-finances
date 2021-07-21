@@ -1,15 +1,45 @@
-<ng-container *ngIf="groups$ | async as groups; else loading">
-  <div class="groups">
-    <mat-card class="group-card" *ngFor="let group of groups" [routerLink]="'/finances/shared/' + group.id">
-      <mat-card-header>
-        <mat-card-title>{{ group.name }}</mat-card-title>
-      </mat-card-header>
-      <!-- <mat-card-actions>
-        <button mat-button>LIKE</button>
-        <button mat-button>SHARE</button>
-      </mat-card-actions> -->
-    </mat-card>
+<ng-container *transloco="let t">
+  <div class="content credit-card-page">
+    <ng-container *ngIf="groups$ | async as groups; else loading">
+      <ng-container *ngIf="groups.length > 0; else noGroup">
+        <app-title-bar>
+          <div custom-title>
+            <td-breadcrumbs>
+              <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+              <td-breadcrumb>{{ t('groups') }}</td-breadcrumb>
+            </td-breadcrumbs>
+          </div>
+          <div right>
+            <a routerLink="new" mat-icon-button aria-label="Edit" [matTooltip]="t('new-group')">
+              <mat-icon>add</mat-icon>
+            </a>
+          </div>
+        </app-title-bar>
+
+        <div class="groups grid md:grid-cols-2 md:gap-4">
+          <mat-card class="credit-card cursor-pointer" *ngFor="let group of groups" [routerLink]="group.id">
+            <mat-card-header class="items-center mb-1">
+              <mat-icon mat-card-avatar class="w-auto h-auto">group</mat-icon>
+              <mat-card-title class="mb-0 break-all">{{ group.name }}</mat-card-title>
+              <button class="ml-auto" mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu">
+                <button (click)="delete(group)" mat-menu-item>
+                  <mat-icon>delete</mat-icon>
+                  <span>{{ t('delete') }}</span>
+                </button>
+              </mat-menu>
+            </mat-card-header>
+          </mat-card>
+        </div>
+      </ng-container>
+    </ng-container>
   </div>
+
+  <ng-template #noGroup>
+    <app-no-item [text]="t('no-groups')" [buttonText]="'new-group' | transloco" buttonRouterLink="new"> </app-no-item>
+  </ng-template>
 </ng-container>
 
 <ng-template #loading>

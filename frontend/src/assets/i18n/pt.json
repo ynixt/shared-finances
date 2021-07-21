@@ -150,5 +150,7 @@
   "revenues": "Receitas",
   "show-future-transaction": "Exibir transações futuras",
   "hide-future-transaction": "Esconder transações futuras",
-  "value-currency": "Valor ({{currency}})"
+  "value-currency": "Valor ({{currency}})",
+  "new-group": "Novo grupo",
+  "no-groups": "Infelizmente você ainda não participa de nenhum grupo. Peça um convite para alguém ou crie um novo grupo."
 }

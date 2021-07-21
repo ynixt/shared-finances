@@ -37,6 +37,24 @@ export class GroupsService {
     }
   }
 
+  deleteGroup(groupId: string): Observable<boolean> {
+    return this.apollo
+      .mutate<{ deleteGroup: boolean }>({
+        mutation: gql`
+          mutation($groupId: String!) {
+            deleteGroup(groupId: $groupId)
+          }
+        `,
+        variables: {
+          groupId,
+        },
+      })
+      .pipe(
+        take(1),
+        map(result => result.data.deleteGroup),
+      );
+  }
+
   async getGroupsWithUsers(): Promise<Group[] | null> {
     // TODO: It would be better to just search for the user when selecting the group and then search for bank accounts and credit cards in just one query.
     try {
