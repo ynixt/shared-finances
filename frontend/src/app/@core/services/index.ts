@@ -5,3 +5,4 @@ export * from './credit-card.service';
 export * from './title.service';
 export * from './groups.service';
 export * from './transaction.service';
+export * from './bank-account.service';

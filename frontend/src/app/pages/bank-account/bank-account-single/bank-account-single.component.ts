@@ -10,10 +10,8 @@ import { switchMap, take } from 'rxjs/operators';
 import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
 import { BankAccount, BankAccountSummary, Page, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
-import { ErrorService, TransactionService } from 'src/app/@core/services';
-import { DateUtil } from 'src/app/@core/util';
+import { ErrorService, TransactionService, BankAccountService } from 'src/app/@core/services';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
-import { BankAccountService } from '../bank-account.service';
 
 @UntilDestroy()
 @Component({
@@ -45,7 +43,9 @@ export class BankAccountSingleComponent implements OnInit {
   bankAccount: BankAccount;
   pageSize = 20;
   transactionsPage$: Observable<Page<Transaction>>;
-  bankAccountSummary: BankAccountSummary;
+  bankAccountSummaryState: { isLoading: boolean; summary?: BankAccountSummary } = {
+    isLoading: true,
+  };
 
   private monthDate: Moment;
   private transactionsChangeSubscription: Subscription;
@@ -85,8 +85,12 @@ export class BankAccountSingleComponent implements OnInit {
   public async getBalance(): Promise<void> {
     const maxDate = this.getMaxDate();
 
-    this.bankAccountSummary = undefined;
-    this.bankAccountSummary = await this.bankAccountService.getBankAccountSummary(this.bankAccount.id, { maxDate: maxDate });
+    this.bankAccountSummaryState.isLoading = true;
+    this.bankAccountSummaryState.summary = await this.bankAccountService.getBankAccountSummary({
+      bankAccountId: this.bankAccount.id,
+      maxDate: maxDate,
+    });
+    this.bankAccountSummaryState.isLoading = false;
   }
 
   public async getChart(): Promise<void> {
@@ -171,18 +175,7 @@ export class BankAccountSingleComponent implements OnInit {
       });
   }
 
-  /**
-   *
-   * @param disallowFutureOnSameMonth If true AND 'monthDate' is the same month as the current month, the date that will be returned will be the current date.
-   * @returns
-   */
   private getMaxDate(disallowFutureOnSameMonth = this.disallowFutureOnSameMonth) {
-    let maxDate = moment(this.monthDate).endOf('month');
-
-    if (disallowFutureOnSameMonth && moment(this.monthDate).isSame(moment(), 'month') && DateUtil.dateIsBiggerThanToday(maxDate)) {
-      maxDate = moment();
-    }
-
-    return maxDate;
+    return this.bankAccountService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
   }
 }

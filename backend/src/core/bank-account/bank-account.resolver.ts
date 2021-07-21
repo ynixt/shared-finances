@@ -50,7 +50,7 @@ export class BankAccountResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   async bankAccountSummary(
     @GqlCurrentUser() user: FBUser,
-    @Args({ name: 'bankAccountId' }) bankAccountId: string,
+    @Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string,
     @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
   ) {
     return this.transactionService.getBankAccountSummary(user, bankAccountId, { maxDate });

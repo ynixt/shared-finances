@@ -5,10 +5,9 @@ import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { take } from 'rxjs/operators';
 import { BankAccount } from 'src/app/@core/models';
-import { ErrorService } from 'src/app/@core/services/error.service';
+import { BankAccountService, ErrorService } from 'src/app/@core/services';
 import { BankAccountDispatchers } from 'src/app/store';
 import { BankAccountSelectors } from 'src/app/store/services/selectors';
-import { BankAccountService } from './bank-account.service';
 
 @UntilDestroy()
 @Component({

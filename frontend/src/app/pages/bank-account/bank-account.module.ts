@@ -15,6 +15,7 @@ import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { BankAccountSingleComponent } from './bank-account-single/bank-account-single.component';
 import { MonthBarModule } from 'src/app/components/month-bar';
 import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
+import { BankAccountSummaryDashboardModule } from 'src/app/components/bank-account-summary-dashboard';
 
 @NgModule({
   declarations: [BankAccountComponent, NewBankAccountComponent, BankAccountSingleComponent],
@@ -30,6 +31,7 @@ import { TransactionsTableModule } from 'src/app/components/transactions-table/t
     MonthBarModule,
     TransactionsTableModule,
     NgxChartsModule,
+    BankAccountSummaryDashboardModule,
   ],
 })
 export class BankAccountModule {}

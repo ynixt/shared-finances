@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import moment from 'moment';
-import { Model, Types } from 'mongoose';
+import { Aggregate, Model, Types } from 'mongoose';
 import { Pagination, PaginationService } from 'src/shared';
 import { MongoDefaultRepository } from '../data';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
@@ -126,18 +126,26 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
     return result.length === 1 ? result[0].balance : 0;
   }
-  async getBankAccountSummary(bankAccountId: string, args?: { maxDate?: string }): Promise<BankAccountSummary> {
-    const aggregate = this.model.aggregate([
-      {
-        $match: {
-          bankAccountId: new Types.ObjectId(bankAccountId),
-        },
-      },
-    ]);
 
-    if (args?.maxDate) {
+  async getBankAccountSummary(obj?: { maxDate?: string; bankAccountId: string }): Promise<BankAccountSummary>;
+  async getBankAccountSummary(obj?: { maxDate?: string; userId: string }): Promise<BankAccountSummary>;
+
+  async getBankAccountSummary(obj?: { maxDate?: string; bankAccountId?: string; userId?: string }): Promise<BankAccountSummary> {
+    const aggregate = this.model.aggregate();
+
+    if (obj.bankAccountId != null) {
       aggregate.match({
-        date: { '$lte': args.maxDate },
+        bankAccountId: new Types.ObjectId(obj.bankAccountId),
+      });
+    } else {
+      aggregate.match({
+        $and: [{ userId: new Types.ObjectId(obj.userId) }, { bankAccountId: { $ne: null } }],
+      });
+    }
+
+    if (obj?.maxDate) {
+      aggregate.match({
+        date: { '$lte': obj.maxDate },
       });
     }
 
@@ -152,8 +160,8 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
         $cond: [
           {
             $and: [
-              { $lt: ['$date', moment(args.maxDate).endOf('month').endOf('day').toISOString()] },
-              { $gte: ['$date', moment(args.maxDate).startOf('month').startOf('day').toISOString()] },
+              { $lt: ['$date', moment(obj.maxDate).endOf('month').endOf('day').toISOString()] },
+              { $gte: ['$date', moment(obj.maxDate).startOf('month').startOf('day').toISOString()] },
             ],
           },
           '$value',

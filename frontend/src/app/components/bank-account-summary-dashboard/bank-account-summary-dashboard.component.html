@@ -1,0 +1,26 @@
+<div class="cards grid md:grid-cols-3 gap-4 pb-4" *transloco="let t">
+  <ng-template #loadingCard>
+    <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
+  </ng-template>
+
+  <mat-card class="card">
+    <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+      <span class="text-gray-400 mb-2">{{ t('balance') }}</span>
+      <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">{{ (bankAccountSummary?.balance ?? 0) | currency }}</h3>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card">
+    <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+      <span class="text-gray-400 mb-2">{{ t('revenues') }}</span>
+      <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">{{ (bankAccountSummary?.revenues ?? 0) | currency }}</h3>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card">
+    <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+      <span class="text-gray-400 mb-2">{{ t('expenses') }}</span>
+      <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">{{ (bankAccountSummary?.expenses ?? 0) | currency }}</h3>
+    </mat-card-content>
+  </mat-card>
+</div>

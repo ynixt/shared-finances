@@ -122,13 +122,17 @@ export class TransactionService {
     }
   }
 
-  async getBankAccountSummary(user: FBUser, bankAccountId: string, args: { maxDate?: string } = {}): Promise<BankAccountSummary> {
-    const bankAccount = await this.bankAccountService.findById(user.id, bankAccountId);
+  async getBankAccountSummary(user: FBUser, bankAccountId?: string, obj: { maxDate?: string } = {}): Promise<BankAccountSummary> {
+    obj.maxDate ??= moment.utc().toISOString();
 
-    args.maxDate ??= moment.utc().toISOString();
+    if (bankAccountId != null) {
+      const bankAccount = await this.bankAccountService.findById(user.id, bankAccountId);
 
-    if (bankAccount != null) {
-      return this.transacationRepository.getBankAccountSummary(bankAccountId, args);
+      if (bankAccount != null) {
+        return this.transacationRepository.getBankAccountSummary({ ...obj, bankAccountId });
+      }
+    } else {
+      return this.transacationRepository.getBankAccountSummary({ ...obj, userId: user.id });
     }
 
     return null;

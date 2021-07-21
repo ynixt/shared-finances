@@ -33,7 +33,7 @@ import { ErrorService } from './services/error.service';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS } from '@angular/material/core';
 import { UserCategoryService } from './services/user-category.service';
-import { CreditCardService, GroupsService, TransactionService } from './services';
+import { BankAccountService, CreditCardService, GroupsService, TransactionService } from './services';
 import { TitleService } from './services';
 import moment from 'moment';
 
@@ -91,6 +91,7 @@ moment.locale('pt');
     TitleService,
     GroupsService,
     TransactionService,
+    BankAccountService,
   ],
   exports: [TranslocoRootModule],
 })

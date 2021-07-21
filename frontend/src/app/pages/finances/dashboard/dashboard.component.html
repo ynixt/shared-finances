@@ -1,5 +1,12 @@
-<div *ngIf="user$ | async as user">
-  Teste
-  {{ user.name }}
-  <pre>{{ user | json }}</pre>
-</div>
+<ng-container *transloco="let t">
+  <div class="content credit-card-page">
+    <div class="pb-6">
+      <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
+    </div>
+
+    <app-bank-account-summary-dashboard
+      [bankAccountSummary]="bankAccountSummaryState.summary"
+      [isLoading]="bankAccountSummaryState.isLoading"
+    ></app-bank-account-summary-dashboard>
+  </div>
+</ng-container>

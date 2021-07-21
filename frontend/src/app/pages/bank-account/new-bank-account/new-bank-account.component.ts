@@ -5,9 +5,8 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { take } from 'rxjs/operators';
 import { BankAccount } from 'src/app/@core/models';
-import { ErrorService } from 'src/app/@core/services/error.service';
+import { BankAccountService, ErrorService } from 'src/app/@core/services';
 import { BankAccountDispatchers } from 'src/app/store';
-import { BankAccountService } from '../bank-account.service';
 
 @Component({
   selector: 'app-new-bank-account',
