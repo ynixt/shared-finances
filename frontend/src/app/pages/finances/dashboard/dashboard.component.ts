@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Moment } from 'moment';
-import { Observable } from 'rxjs';
-import { BankAccountSummary, User } from 'src/app/@core/models';
-import { BankAccountService } from 'src/app/@core/services';
-import { AuthSelectors } from 'src/app/store/services/selectors';
+import { merge } from 'rxjs';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
+import { BankAccountSummary } from 'src/app/@core/models';
+import { BankAccountService } from 'src/app/@core/services';
+
+@UntilDestroy()
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -19,7 +21,9 @@ export class DashboardComponent implements OnInit {
 
   constructor(private bankAccountService: BankAccountService) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.transactionsChangeObserver();
+  }
 
   public async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
@@ -32,6 +36,18 @@ export class DashboardComponent implements OnInit {
     this.bankAccountSummaryState.isLoading = true;
     this.bankAccountSummaryState.summary = await this.bankAccountService.getBankAccountSummary({ maxDate: maxDate });
     this.bankAccountSummaryState.isLoading = false;
+  }
+
+  private transactionsChangeObserver(): void {
+    merge(
+      this.bankAccountService.onTransactionCreated(),
+      this.bankAccountService.onTransactionUpdated(),
+      this.bankAccountService.onTransactionDeleted(),
+    )
+      .pipe(untilDestroyed(this))
+      .subscribe(async () => {
+        await Promise.all([this.getBankAccountSummary()]);
+      });
   }
 
   private getMaxDate(disallowFutureOnSameMonth = true) {

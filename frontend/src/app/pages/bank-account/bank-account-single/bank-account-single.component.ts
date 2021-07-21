@@ -82,7 +82,7 @@ export class BankAccountSingleComponent implements OnInit {
     );
   }
 
-  public async getBalance(): Promise<void> {
+  public async getBankAccountSummary(): Promise<void> {
     const maxDate = this.getMaxDate();
 
     this.bankAccountSummaryState.isLoading = true;
@@ -157,11 +157,11 @@ export class BankAccountSingleComponent implements OnInit {
 
   private getInfoBasedOnBankAndDate() {
     this.getTransactions();
-    this.transactionsChange();
-    return Promise.all([this.getBalance(), this.getChart()]);
+    this.transactionsChangeObserver();
+    return Promise.all([this.getBankAccountSummary(), this.getChart()]);
   }
 
-  private transactionsChange(): void {
+  private transactionsChangeObserver(): void {
     this.transactionsChangeSubscription?.unsubscribe();
 
     this.transactionsChangeSubscription = merge(
@@ -171,7 +171,7 @@ export class BankAccountSingleComponent implements OnInit {
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {
-        await Promise.all([this.getBalance(), this.getChart()]);
+        await Promise.all([this.getBankAccountSummary(), this.getChart()]);
       });
   }
 

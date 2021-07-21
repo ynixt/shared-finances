@@ -193,7 +193,7 @@ export class TransactionResolver {
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bankAccountTransactionCreated(@Args({ name: 'bankAccountId' }) bankAccountId?: string) {
+  bankAccountTransactionCreated(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
     return pubSub.asyncIterator(TransactionPubTrigger.bankAccountTransactionCreated);
   }
 
@@ -213,7 +213,7 @@ export class TransactionResolver {
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bankAccountTransactionUpdated(@Args({ name: 'bankAccountId' }) bankAccountId?: string) {
+  bankAccountTransactionUpdated(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
     return pubSub.asyncIterator(TransactionPubTrigger.bankAccountTransactionUpdated);
   }
 
@@ -233,7 +233,7 @@ export class TransactionResolver {
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bankAccountTransactionDeleted(@Args({ name: 'bankAccountId' }) bankAccountId?: string) {
+  bankAccountTransactionDeleted(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
     return pubSub.asyncIterator(TransactionPubTrigger.bankAccountTransactionDeleted);
   }
 
