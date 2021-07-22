@@ -117,24 +117,6 @@ export class GroupsService {
       .toPromise();
   }
 
-  checkIfGroupChanged(groupId: string): Observable<any> {
-    return this.apollo
-      .subscribe<{ groupUpdated: Group }>({
-        query: gql`
-          subscription GetGroup($groupId: String!) {
-            groupUpdated(groupId: $groupId) {
-              id
-              name
-            }
-          }
-        `,
-        variables: {
-          groupId: groupId,
-        },
-      })
-      .pipe(map(result => (result.errors || result.data == null || result.data.groupUpdated == null ? null : result.data.groupUpdated)));
-  }
-
   editGroup(group: Group): Observable<Group | null> {
     return this.apollo
       .mutate<{ group: Group }>({

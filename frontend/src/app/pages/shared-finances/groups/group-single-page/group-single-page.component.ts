@@ -17,7 +17,6 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   private activatedRouteSubscription: Subscription;
   private groupId: string;
-  private updateGroupSubscription: Subscription;
 
   constructor(
     private groupsService: GroupsService,
@@ -35,9 +34,6 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.activatedRouteSubscription) {
       this.activatedRouteSubscription.unsubscribe();
-    }
-    if (this.updateGroupSubscription) {
-      this.updateGroupSubscription.unsubscribe();
     }
   }
 
@@ -61,16 +57,6 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   private async loadGroup(groupId: string): Promise<void> {
     this.groupId = groupId;
-
-    if (this.updateGroupSubscription) {
-      this.updateGroupSubscription.unsubscribe();
-    }
-
-    if (this.groupId) {
-      this.updateGroupSubscription = this.groupsService.checkIfGroupChanged(this.groupId).subscribe(updatedGroup => {
-        this.group = { ...this.group, name: updatedGroup.name };
-      });
-    }
 
     const group = await this.groupsService.getGroup(groupId);
 

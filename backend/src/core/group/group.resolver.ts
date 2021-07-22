@@ -1,6 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Args, Mutation, Parent, Query, ResolveField, Resolver, Subscription } from '@nestjs/graphql';
-import { PubSub } from 'graphql-subscriptions';
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
@@ -9,12 +8,6 @@ import { UpdateGroupArgs } from '../models/args';
 import { Group } from '../models/group';
 import { UserService } from '../user';
 import { GroupService } from './group.service';
-
-const pubSub = new PubSub();
-
-enum GroupPubTrigger {
-  groupUpdated = 'groupUpdated',
-}
 
 @Resolver(() => Group)
 export class GroupResolver {
@@ -54,21 +47,7 @@ export class GroupResolver {
   async updateGroup(@GqlCurrentUser() user: FBUser, @Args() group: UpdateGroupArgs) {
     const groupUpdated = await this.groupService.updateGroup(user.id, group);
 
-    if (groupUpdated) {
-      pubSub.publish(GroupPubTrigger.groupUpdated, { groupUpdated: groupUpdated });
-    }
-
     return groupUpdated;
-  }
-
-  @Subscription(() => Group, {
-    nullable: true,
-    filter: (payload, variables, context) => context.req.user.groupsId.includes(variables.groupId),
-  })
-  @UseGuards(GqlFirebaseAuthGuard)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  groupUpdated(@Args({ name: 'groupId' }) groupId: string) {
-    return pubSub.asyncIterator(GroupPubTrigger.groupUpdated);
   }
 
   @ResolveField()

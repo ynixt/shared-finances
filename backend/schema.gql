@@ -142,7 +142,6 @@ type Subscription {
   groupCategoryCreated: Category
   groupCategoryUpdated: Category
   groupCategoryDeleted: Category
-  groupUpdated(groupId: String!): Group
   creditCardCreated: CreditCard
   creditCardUpdated: CreditCard
   creditCardDeleted: CreditCard
