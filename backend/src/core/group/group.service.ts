@@ -3,9 +3,10 @@ import { AuthenticationError } from 'apollo-server-errors';
 
 import { Group } from '../models/group';
 import { UserService } from '../user/user.service';
-import { UpdateGroupArgs } from '../models/args';
+import { NewGroupArgs, UpdateGroupArgs } from '../models/args';
 import { GroupRepository } from './group.repository';
 import { GroupInviteRepository } from './group-invite.repository';
+import { FBUser } from '../auth/firebase-strategy';
 
 @Injectable()
 export class GroupService {
@@ -25,6 +26,22 @@ export class GroupService {
 
   public getGroupWithoutCheckPermission(groupId: string): Promise<Group> {
     return this.groupRepository.getById(groupId);
+  }
+
+  public async newGroup(user: FBUser, newGroup: NewGroupArgs): Promise<Group | null> {
+    return this.groupRepository.runInsideTransaction(async opts => {
+      const createdGroup = await this.groupRepository.create(
+        {
+          usersId: [user.id],
+          name: newGroup.name,
+        },
+        opts,
+      );
+
+      await this.userService.addGroupToUser(user.id, createdGroup.id);
+
+      return createdGroup;
+    });
   }
 
   public async updateGroup(userId: string, newGroup: UpdateGroupArgs): Promise<Group | null> {

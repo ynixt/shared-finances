@@ -4,7 +4,7 @@ import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
-import { UpdateGroupArgs } from '../models/args';
+import { NewGroupArgs, UpdateGroupArgs } from '../models/args';
 import { Group } from '../models/group';
 import { UserService } from '../user';
 import { GroupService } from './group.service';
@@ -40,6 +40,14 @@ export class GroupResolver {
   @UseGuards(GqlFirebaseAuthGuard)
   async useInvite(@GqlCurrentUser() user: FBUser, @Args({ name: 'invite' }) inviteId: string) {
     return this.groupService.useInvite(user.id, inviteId);
+  }
+
+  @Mutation(() => Group, { nullable: true })
+  @UseGuards(GqlFirebaseAuthGuard)
+  async newGroup(@GqlCurrentUser() user: FBUser, @Args() group: NewGroupArgs) {
+    const groupUpdated = await this.groupService.newGroup(user, group);
+
+    return groupUpdated;
   }
 
   @Mutation(() => Group, { nullable: true })

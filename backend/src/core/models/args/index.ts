@@ -7,3 +7,4 @@ export * from './new-category-args';
 export * from './edit-category-args';
 export * from './edit-transaction-args';
 export * from './bill-payment-credit-card-args';
+export * from './new-group-args';

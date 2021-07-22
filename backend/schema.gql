@@ -123,6 +123,7 @@ type Mutation {
   deleteGroupCategory(categoryId: String!): Boolean!
   createInvite(groupId: String!): String!
   useInvite(invite: String!): String
+  newGroup(name: String!): Group
   updateGroup(id: String!, name: String!): Group
   newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
   editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!

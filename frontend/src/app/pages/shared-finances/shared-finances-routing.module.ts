@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { TitleGuard } from 'src/app/shared';
-import { GroupsComponent, GroupSinglePageComponent, EditGroupComponent } from './groups';
+import { GroupsComponent, GroupSinglePageComponent, EditGroupComponent, NewGroupComponent } from './groups';
 import { InviteComponent } from './invite';
 
 const routes: Routes = [
@@ -11,6 +11,14 @@ const routes: Routes = [
     canActivate: [TitleGuard],
     data: {
       title: 'groups',
+    },
+  },
+  {
+    path: 'new',
+    component: NewGroupComponent,
+    canActivate: [TitleGuard],
+    data: {
+      title: 'new-group',
     },
   },
   {

@@ -1,0 +1,15 @@
+<ng-container *transloco="let t">
+  <div class="content new-group-page">
+    <app-title-bar>
+      <div custom-title>
+        <td-breadcrumbs>
+          <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+          <a td-breadcrumb routerLink="..">{{ t('groups') }}</a>
+          <td-breadcrumb>{{ t('add') }}</td-breadcrumb>
+        </td-breadcrumbs>
+      </div>
+    </app-title-bar>
+
+    <app-form-group (groupSaved)="newGroup($event)"></app-form-group>
+  </div>
+</ng-container>

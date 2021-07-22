@@ -41,7 +41,7 @@ export class GroupsService {
     return this.apollo
       .mutate<{ deleteGroup: boolean }>({
         mutation: gql`
-          mutation ($groupId: String!) {
+          mutation($groupId: String!) {
             deleteGroup(groupId: $groupId)
           }
         `,
@@ -117,11 +117,32 @@ export class GroupsService {
       .toPromise();
   }
 
+  newGroup(group: Partial<Group>): Observable<Group | null> {
+    return this.apollo
+      .mutate<{ newGroup: Group }>({
+        mutation: gql`
+          mutation($name: String!) {
+            newGroup(name: $name) {
+              id
+              name
+            }
+          }
+        `,
+        variables: {
+          name: group.name,
+        },
+      })
+      .pipe(
+        take(1),
+        map(result => result.data.newGroup),
+      );
+  }
+
   editGroup(group: Group): Observable<Group | null> {
     return this.apollo
       .mutate<{ group: Group }>({
         mutation: gql`
-          mutation ($id: String!, $name: String!) {
+          mutation($id: String!, $name: String!) {
             updateGroup(id: $id, name: $name) {
               id
               name
@@ -143,7 +164,7 @@ export class GroupsService {
     const result = await this.apollo
       .mutate<{ createInvite: string }>({
         mutation: gql`
-          mutation ($groupId: String!) {
+          mutation($groupId: String!) {
             createInvite(groupId: $groupId)
           }
         `,
