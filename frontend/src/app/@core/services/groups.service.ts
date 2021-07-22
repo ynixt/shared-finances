@@ -41,7 +41,7 @@ export class GroupsService {
     return this.apollo
       .mutate<{ deleteGroup: boolean }>({
         mutation: gql`
-          mutation($groupId: String!) {
+          mutation ($groupId: String!) {
             deleteGroup(groupId: $groupId)
           }
         `,
@@ -135,11 +135,11 @@ export class GroupsService {
       .pipe(map(result => (result.errors || result.data == null || result.data.groupUpdated == null ? null : result.data.groupUpdated)));
   }
 
-  async editGroup(group: Group): Promise<Group | null> {
-    const result = await this.apollo
+  editGroup(group: Group): Observable<Group | null> {
+    return this.apollo
       .mutate<{ group: Group }>({
         mutation: gql`
-          mutation($id: String!, $name: String!) {
+          mutation ($id: String!, $name: String!) {
             updateGroup(id: $id, name: $name) {
               id
               name
@@ -151,21 +151,17 @@ export class GroupsService {
           name: group.name,
         },
       })
-      .pipe(take(1))
-      .toPromise();
-
-    if (result.errors) {
-      throw result.errors;
-    }
-
-    return result.data.group;
+      .pipe(
+        take(1),
+        map(result => result.data.group),
+      );
   }
 
   async generateShareLink(groupId: string): Promise<string> {
     const result = await this.apollo
       .mutate<{ createInvite: string }>({
         mutation: gql`
-          mutation($groupId: String!) {
+          mutation ($groupId: String!) {
             createInvite(groupId: $groupId)
           }
         `,

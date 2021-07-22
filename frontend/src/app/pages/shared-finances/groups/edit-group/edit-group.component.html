@@ -1,0 +1,25 @@
+<ng-container *transloco="let t">
+  <div class="content edit-card-page">
+    <ng-container *ngIf="group; else loading">
+      <app-title-bar>
+        <div custom-title>
+          <td-breadcrumbs>
+            <a td-breadcrumb routerLink="/finances">{{ t('finances') }}</a>
+            <a td-breadcrumb routerLink="../..">{{ t('groups') }}</a>
+            <a td-breadcrumb routerLink="..">{{ group.name }}</a>
+            <td-breadcrumb>{{ t('edit') }}</td-breadcrumb>
+          </td-breadcrumbs>
+        </div>
+      </app-title-bar>
+
+      <app-form-group
+        [group]="group"
+        (groupSaved)="editGroup($event)"
+      ></app-form-group>
+    </ng-container>
+  </div>
+</ng-container>
+
+<ng-template #loading>
+  <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
+</ng-template>

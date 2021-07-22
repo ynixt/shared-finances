@@ -4,7 +4,6 @@ import { Subscription } from 'rxjs';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { Group } from 'src/app/@core/models/group';
 import { TranslocoService } from '@ngneat/transloco';
-import { take } from 'rxjs/operators';
 import { TitleService, GroupsService } from 'src/app/@core/services';
 
 @Component({
@@ -57,25 +56,6 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
       });
     } finally {
       this.sharedLinkLoading = false;
-    }
-  }
-
-  async editGroup(): Promise<void> {
-    /** TODO: Allow to edit other properties from group and i18n it */
-    const newName = await this.dialogService
-      .openPrompt({
-        title: 'Editar grupo',
-        message: '',
-        value: this.group.name,
-        cancelButton: 'Cancelar',
-        acceptButton: 'Editar',
-      })
-      .afterClosed()
-      .pipe(take(1))
-      .toPromise();
-
-    if (newName !== this.group.name) {
-      await this.groupsService.editGroup({ ...this.group, name: newName });
     }
   }
 

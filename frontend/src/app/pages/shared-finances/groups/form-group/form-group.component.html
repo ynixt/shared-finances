@@ -1,0 +1,20 @@
+<ng-container *transloco="let t">
+  <form [formGroup]="formGroup" (ngSubmit)="save()">
+    <div class="inputs grid md:gap-4">
+      <mat-form-field class="field" appearance="outline">
+        <mat-label>{{ t('name') }}</mat-label>
+        <input formControlName="name" required matInput [placeholder]="t('credit-card-name-placeholder')" />
+      </mat-form-field>
+    </div>
+
+    <button
+      [disabled]="formGroup.invalid"
+      class="add-button w-100 md:w-auto md:ml-auto block"
+      type="submit"
+      mat-raised-button
+      color="primary"
+    >
+      {{ t(isNew ? 'add' : 'edit') }}
+    </button>
+  </form>
+</ng-container>

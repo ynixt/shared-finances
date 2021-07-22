@@ -25,6 +25,10 @@
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #menu="matMenu">
+                <a routerLink="{{ group.id }}/edit" mat-menu-item>
+                  <mat-icon>edit</mat-icon>
+                  <span>{{ t('edit') }}</span>
+                </a>
                 <button (click)="delete(group)" mat-menu-item>
                   <mat-icon>delete</mat-icon>
                   <span>{{ t('delete') }}</span>
