@@ -10,6 +10,10 @@
       </div>
 
       <div right>
+        <a mat-icon-button aria-label="Categories" routerLink="category" [matTooltip]="t('categories')">
+          <mat-icon>local_offer</mat-icon>
+        </a>
+
         <button
           mat-icon-button
           aria-label="Share"
@@ -22,7 +26,6 @@
       </div>
     </app-title-bar>
 
-    <a routerLink="category">Category</a>
   </div>
 </ng-container>
 
