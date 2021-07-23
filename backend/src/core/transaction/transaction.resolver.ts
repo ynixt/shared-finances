@@ -40,6 +40,7 @@ export class TransactionResolver {
     @Args({ name: 'pageSize', type: () => Int, nullable: true, defaultValue: MAX_PAGE_SIZE }) pageSize: number,
     @Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string,
     @Args({ name: 'creditCardId', nullable: true }) creditCardId?: string,
+    @Args({ name: 'groupId', nullable: true }) groupId?: string,
     @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
     @Args({ name: 'minDate', nullable: true }) minDate?: string,
     @Args({ name: 'creditCardBillDate', nullable: true }) creditCardBillDate?: string,
@@ -47,10 +48,28 @@ export class TransactionResolver {
     const pagination = new Pagination({ page, pageSize });
 
     return this.errorUtilService.tryToGetItem(async () => {
+      let idsUsed = 0;
+
+      if (groupId != null) {
+        idsUsed++;
+      }
+      if (bankAccountId != null) {
+        idsUsed++;
+      }
+      if (creditCardId != null) {
+        idsUsed++;
+      }
+
+      if (idsUsed === 3) {
+        throw new UserInputError('choose just one id between: groupId, bankAccountId, creditCardId');
+      }
+
       if (bankAccountId != null) {
         return this.transactionService.findAll(user, { bankAccountId, minDate, maxDate }, pagination);
       } else if (creditCardId != null) {
         return this.transactionService.findAll(user, { creditCardId, minDate, maxDate, creditCardBillDate }, pagination);
+      } else if (groupId != null) {
+        return this.transactionService.findAll(user, { groupId, minDate, maxDate, creditCardBillDate }, pagination);
       }
 
       throw new UserInputError('id is missing');

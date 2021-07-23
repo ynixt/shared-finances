@@ -3,6 +3,8 @@ import { Group } from 'src/app/@core/models/group';
 import { Apollo, gql } from 'apollo-angular';
 import { map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { Moment } from 'moment';
+import { Page, Pagination, Transaction } from '../models';
 
 @Injectable({
   providedIn: 'root',
@@ -180,5 +182,52 @@ export class GroupsService {
     }
 
     return result.data.createInvite;
+  }
+
+  getTransactions(groupId: string, args?: { maxDate?: Moment; minDate?: Moment }, pagination?: Pagination): Observable<Page<Transaction>> {
+    const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
+      query: gql`
+        query($groupId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String) {
+          transactions(groupId: $groupId, page: $page, pageSize: $pageSize, maxDate: $maxDate, minDate: $minDate) {
+            items {
+              id
+              transactionType
+              group {
+                id
+                name
+              }
+              date
+              value
+              description
+              category {
+                id
+                name
+                color
+              }
+              bankAccountId
+              creditCardId
+              user {
+                id
+                name
+              }
+            }
+            total
+            page
+            pageSize
+          }
+        }
+      `,
+      variables: {
+        groupId,
+        page: pagination?.page,
+        pageSize: pagination?.pageSize,
+        maxDate: args?.maxDate?.toISOString(),
+        minDate: args?.minDate?.toISOString(),
+      },
+    });
+
+    // this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId);
+
+    return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
   }
 }

@@ -21,14 +21,20 @@ export class User {
   })
   uid: string;
 
-  @Field({ nullable: true })
-  public email?: string;
+  @Field()
+  @Prop({
+    index: true,
+    unique: true,
+  })
+  email: string;
+
+  @Field()
+  @Prop()
+  name: string;
 
   @Field({ nullable: true })
-  public name?: string;
-
-  @Field({ nullable: true })
-  public photoURL?: string;
+  @Prop()
+  photoURL?: string;
 
   @Prop([{ type: MongooseSchema.Types.ObjectId, index: true }])
   @Field(() => [String])

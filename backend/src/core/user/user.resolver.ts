@@ -19,7 +19,7 @@ export class UserResolver {
   @Query(() => User, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
   async user(@GqlCurrentUser() user: FBUser) {
-    return this.userService.getUserById(user.id, true);
+    return this.userService.getUserById(user.id);
   }
 
   @ResolveField()

@@ -110,7 +110,20 @@ export class TransactionService {
 
   async findAll(
     user: FBUser,
-    args: { bankAccountId?: string; creditCardId?: string; maxDate?: string; minDate?: string; creditCardBillDate?: string },
+    args: { groupId: string; maxDate?: string; minDate?: string; creditCardBillDate?: string },
+    pagination: Pagination,
+  ): Promise<TransactionsPage>;
+
+  async findAll(
+    user: FBUser,
+    args: {
+      bankAccountId?: string;
+      creditCardId?: string;
+      maxDate?: string;
+      minDate?: string;
+      creditCardBillDate?: string;
+      groupId?: string;
+    },
     pagination?: Pagination,
   ): Promise<TransactionsPage> {
     if (args.bankAccountId != null) {
@@ -119,6 +132,14 @@ export class TransactionService {
 
     if (args.creditCardId != null) {
       return this.transacationRepository.getByCreditCardId(args.creditCardId, args, pagination);
+    }
+
+    if (args.groupId != null) {
+      if (user.groupsId.includes(args.groupId) === false) {
+        throw new AuthenticationError('');
+      }
+
+      return this.transacationRepository.getByGroupId(args.groupId, args, pagination);
     }
   }
 

@@ -26,6 +26,18 @@
       </div>
     </app-title-bar>
 
+    <div class="pb-6">
+      <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
+    </div>
+
+    <app-transactions-table
+      [transactionsPage$]="transactionsPage$"
+      [pageSize]="pageSize"
+      (getTransactionsRequested)="getTransactions($event.page)"
+      (editTransactionRequested)="editTransaction($event)"
+      (deleteTransactionRequested)="deleteTransaction($event)"
+    >
+    </app-transactions-table>
   </div>
 </ng-container>
 

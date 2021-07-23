@@ -21,14 +21,37 @@
         >
           {{ getIconForTransaction(transaction) }}
         </mat-icon>
-        <h3 matLine class="transaction-value">{{ transaction.value | currency | spaceOnSignal }}</h3>
-        <h3 matLine *ngIf="transaction.description != null">{{ transaction.description }}</h3>
+        <h3 matLine class="transaction-value" class="flex items-center">
+          <mat-icon class="info-icon mr-2">attach_money</mat-icon>
+          <span> {{ transaction.value | currency | spaceOnSignal }}</span>
+        </h3>
+
+        <h3 matLine *ngIf="transaction.description != null" class="flex items-center">
+          <mat-icon class="info-icon mr-2">title</mat-icon>
+          <span>{{ transaction.description }}</span>
+        </h3>
+
         <h3 matLine *ngIf="transaction.category != null" class="flex items-center">
           <span class="cat-dot mr-2" [style.background-color]="transaction.category.color"></span>
           {{ transaction.category.name }}
         </h3>
-        <p matLine>{{ transaction.date | date }}</p>
-        <p matLine *ngIf="transaction.group != null">{{ t('group-name', { name: transaction.group.name }) }}</p>
+
+        <div matLine class="grid md:grid-cols-4 extras-info md:gap-4">
+          <div *ngIf="transaction.group != null" class="flex items-center extra-info">
+            <mat-icon class="info-icon mr-2">calendar_today</mat-icon>
+            <span>{{ transaction.date | date }}</span>
+          </div>
+
+          <div *ngIf="transaction.group != null" class="flex items-center extra-info">
+            <mat-icon class="info-icon mr-2">group</mat-icon>
+            <span>{{ t('group-name', { name: transaction.group.name }) }}</span>
+          </div>
+
+          <div *ngIf="transaction.user != null" class="flex items-center extra-info">
+            <mat-icon class="info-icon mr-2">person</mat-icon>
+            <span>{{ transaction.user.name }}</span>
+          </div>
+        </div>
 
         <mat-icon
           class="cursor-help"

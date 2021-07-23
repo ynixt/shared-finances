@@ -102,6 +102,33 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     return new TransactionsPage(await this.paginationService.convertQueryToPage(query, pagination));
   }
 
+  async getByGroupId(
+    groupId: string,
+    args?: { maxDate?: string; minDate?: string; creditCardBillDate?: string },
+    pagination = new Pagination(),
+    opts?: MongoRepositoryOptions,
+  ): Promise<TransactionsPage> {
+    const query = this.model.find({ groupId }, opts);
+
+    if (args?.minDate) {
+      query.and([{ date: { '$gte': args.minDate } }]);
+    }
+
+    if (args?.maxDate) {
+      query.and([{ date: { '$lte': args.maxDate } }]);
+    }
+
+    if (args?.creditCardBillDate) {
+      query.and([{ creditCardBillDate: args.creditCardBillDate }]);
+    }
+
+    query.sort({ date: -1 });
+
+    query.populate('user');
+
+    return new TransactionsPage(await this.paginationService.convertQueryToPage(query, pagination));
+  }
+
   async getBalanceByBankAccountId(bankAccountId: string, args?: { maxDate?: string }): Promise<number> {
     const aggregate = this.model.aggregate([
       {

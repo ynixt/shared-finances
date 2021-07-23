@@ -8,24 +8,18 @@ import { UserRepository } from './user.repository';
 export class UserService {
   constructor(private userRepository: UserRepository, @Inject(FIREBASE_ADMIN_INJECT) private firebaseAdmin: FirebaseAdminSDK) {}
 
-  public async getOrCreateUser(uid: string): Promise<User> {
+  public async getOrCreateUser(uid): Promise<User> {
     let user = await this.getUserByUid(uid);
 
     if (user == null) {
-      user = await this.userRepository.create({ uid });
+      user = await this.createUser(uid);
     }
 
     return user;
   }
 
-  public async getUserById(id: string, loadProfile = false): Promise<User> {
-    const user = await this.userRepository.getById(id);
-
-    if (user != null && loadProfile) {
-      await this.loadProfile(user);
-    }
-
-    return user;
+  public async getUserById(id: string): Promise<User> {
+    return this.userRepository.getById(id);
   }
 
   public async getUserByUid(uid: string): Promise<User> {
@@ -38,20 +32,18 @@ export class UserService {
     return this.userRepository.addGroupToUser(userId, groupId, opts);
   }
 
-  public async getByGroupWithoutCheckPermission(groupId: string): Promise<User[]> {
-    const users = await this.userRepository.getByGroup(groupId);
-
-    // TODO: store user profile in database to avoid this
-    return await Promise.all(users.map(user => this.loadProfile(user)));
+  public getByGroupWithoutCheckPermission(groupId: string): Promise<User[]> {
+    return this.userRepository.getByGroup(groupId);
   }
 
-  private async loadProfile(user: User): Promise<User> {
-    const firebaseUserRecord = await this.firebaseAdmin.auth().getUser(user.uid);
+  private async createUser(uid: string): Promise<User> {
+    const firebaseUserRecord = await this.firebaseAdmin.auth().getUser(uid);
 
-    user.email = firebaseUserRecord.email;
-    user.name = firebaseUserRecord.displayName;
-    user.photoURL = firebaseUserRecord.photoURL;
-
-    return user;
+    return this.userRepository.create({
+      uid,
+      name: firebaseUserRecord.displayName,
+      email: firebaseUserRecord.email,
+      photoURL: firebaseUserRecord.photoURL,
+    });
   }
 }

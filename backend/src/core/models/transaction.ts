@@ -3,6 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import { Category } from './category';
 import { Group } from './group';
+import { User } from './user';
 
 export type TransactionDocument = Transaction & Document;
 
@@ -48,8 +49,12 @@ export class Transaction {
   @Prop({ type: MongooseSchema.Types.ObjectId, index: true })
   groupId?: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, index: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, index: true, ref: 'User' })
   userId?: string;
+
+  @Field({ nullable: true })
+  // @Prop({ virtual: true, localField: 'userId', ref: 'User', foreignField: '_id', justOne: true })
+  user?: User;
 
   @Field(() => Group, { nullable: true })
   group?: Group;
@@ -84,3 +89,10 @@ export class Transaction {
 }
 
 export const TransacationSchema = SchemaFactory.createForClass(Transaction);
+
+TransacationSchema.virtual('user', {
+  ref: 'User',
+  localField: 'userId',
+  foreignField: '_id',
+  justOne: true,
+});

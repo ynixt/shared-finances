@@ -12,6 +12,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { EditGroupComponent } from './edit-group/edit-group.component';
+import { MonthBarModule } from 'src/app/components/month-bar';
+import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
 
 @NgModule({
   declarations: [GroupsComponent, GroupSinglePageComponent, NewGroupComponent, FormGroupComponent, EditGroupComponent],
@@ -24,6 +26,8 @@ import { EditGroupComponent } from './edit-group/edit-group.component';
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
+    MonthBarModule,
+    TransactionsTableModule,
   ],
   exports: [GroupsComponent, GroupSinglePageComponent],
 })

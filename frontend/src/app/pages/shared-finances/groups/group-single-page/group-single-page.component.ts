@@ -1,10 +1,16 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { Group } from 'src/app/@core/models/group';
 import { TranslocoService } from '@ngneat/transloco';
-import { TitleService, GroupsService } from 'src/app/@core/services';
+import { TitleService, GroupsService, ErrorService, TransactionService } from 'src/app/@core/services';
+import moment, { Moment } from 'moment';
+import { Page, Transaction } from 'src/app/@core/models';
+import { DOCUMENT } from '@angular/common';
+import { HotToastService } from '@ngneat/hot-toast';
+import { take } from 'rxjs/operators';
+import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 
 @Component({
   selector: 'app-group-single-page',
@@ -14,9 +20,12 @@ import { TitleService, GroupsService } from 'src/app/@core/services';
 export class GroupSinglePageComponent implements OnInit, OnDestroy {
   public group: Group;
   public sharedLinkLoading = false;
+  public transactionsPage$: Observable<Page<Transaction>>;
+  public pageSize = 20;
 
   private activatedRouteSubscription: Subscription;
   private groupId: string;
+  private monthDate: Moment;
 
   constructor(
     private groupsService: GroupsService,
@@ -25,6 +34,12 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     private translocoService: TranslocoService,
     private router: Router,
     private titleService: TitleService,
+    private transactionService: TransactionService,
+    private toast: HotToastService,
+    private errorService: ErrorService,
+    private newTransactionDialogService: NewTransactionDialogService,
+    @Inject(DOCUMENT) private document: any,
+    private renderer2: Renderer2,
   ) {}
 
   ngOnInit(): void {
@@ -55,6 +70,40 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     }
   }
 
+  async dateChanged(newDate: Moment): Promise<void> {
+    this.monthDate = newDate;
+    await this.getInfoBasedOnGroupAndDate();
+  }
+
+  getTransactions(page = 1): void {
+    this.transactionsPage$ = this.groupsService.getTransactions(
+      this.group.id,
+      { maxDate: moment(this.monthDate).endOf('month'), minDate: moment(this.monthDate).startOf('month') },
+      { page, pageSize: this.pageSize },
+    );
+  }
+
+  public async editTransaction(transaction: Transaction) {
+    this.newTransactionDialogService.openDialog(this.document, this.renderer2, transaction.group != null, transaction);
+  }
+
+  public async deleteTransaction(transaction: Transaction) {
+    await this.transactionService
+      .deleteTransaction(transaction.id)
+      .pipe(
+        take(1),
+        this.toast.observe({
+          loading: this.translocoService.translate('deleting'),
+          success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
+          error: error =>
+            this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
+              name: transaction.description,
+            }),
+        }),
+      )
+      .toPromise();
+  }
+
   private async loadGroup(groupId: string): Promise<void> {
     this.groupId = groupId;
 
@@ -69,5 +118,11 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     } else {
       this.router.navigateByUrl('/404');
     }
+  }
+
+  private async getInfoBasedOnGroupAndDate() {
+    this.getTransactions();
+    // this.transactionsChangeObserver();
+    // return Promise.all([this.getBankAccountSummary(), this.getChart()]);
   }
 }
