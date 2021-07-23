@@ -16,39 +16,41 @@
       >
         <mat-icon
           [matTooltip]="t(getTransactionTranslateKey(transaction))"
-          class="transaction-type cursor-default {{ getTransactionCssColor(transaction) }}"
+          class="transaction-type cursor-help {{ getTransactionCssColor(transaction) }}"
           matListIcon
         >
           {{ getIconForTransaction(transaction) }}
         </mat-icon>
         <h3 matLine class="transaction-value" class="flex items-center">
-          <mat-icon [matTooltip]="t('value')" class="info-icon mr-2">attach_money</mat-icon>
+          <mat-icon [matTooltip]="t('value')" class="info-icon mr-2 cursor-help">attach_money</mat-icon>
           <span> {{ transaction.value | currency | spaceOnSignal }}</span>
         </h3>
 
         <h3 matLine *ngIf="transaction.description != null" class="flex items-center">
-          <mat-icon [matTooltip]="t('description')" class="info-icon mr-2">title</mat-icon>
+          <mat-icon [matTooltip]="t('description')" class="info-icon mr-2 cursor-help">title</mat-icon>
           <span>{{ transaction.description }}</span>
         </h3>
 
         <div matLine class="grid md:grid-cols-4 extras-info md:gap-4">
           <div *ngIf="transaction.date != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('date')" class="info-icon mr-2">calendar_today</mat-icon>
+            <mat-icon [matTooltip]="t('date')" class="info-icon mr-2 cursor-help">calendar_today</mat-icon>
             <span>{{ transaction.date | date }}</span>
           </div>
 
           <div *ngIf="transaction.category != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('category')" class="info-icon mr-2" [style.color]="transaction.category.color">local_offer</mat-icon>
+            <mat-icon [matTooltip]="t('category')" class="info-icon mr-2 cursor-help" [style.color]="transaction.category.color"
+              >local_offer</mat-icon
+            >
             <span>{{ transaction.category.name }}</span>
           </div>
 
           <div *ngIf="transaction.group != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('group')" class="info-icon mr-2">group</mat-icon>
+            <mat-icon [matTooltip]="t('group')" class="info-icon mr-2 cursor-help">group</mat-icon>
             <span>{{ transaction.group.name }}</span>
           </div>
 
           <div *ngIf="transaction.user != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('paid-by')" class="info-icon mr-2">person</mat-icon>
+            <mat-icon [matTooltip]="t('paid-by')" class="info-icon mr-2 cursor-help">person</mat-icon>
             <span>{{ transaction.user.name }}</span>
           </div>
         </div>
