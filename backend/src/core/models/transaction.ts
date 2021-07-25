@@ -50,7 +50,7 @@ export class Transaction {
   groupId?: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, index: true, ref: 'User' })
-  userId?: string;
+  userId: string;
 
   @Field({ nullable: true })
   // @Prop({ virtual: true, localField: 'userId', ref: 'User', foreignField: '_id', justOne: true })
