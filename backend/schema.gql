@@ -58,6 +58,9 @@ type Transaction {
   description: String
   categoryId: String
   category: Category
+  installmentId: String
+  installment: Int
+  totalInstallments: Int
 }
 
 type TransactionsPage {
@@ -126,10 +129,10 @@ type Mutation {
   newBankAccount(name: String!): BankAccount!
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
-  newTransaction(transactionType: String!, date: String!, creditCardBillDate: String, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
+  newTransaction(transactionType: String!, date: String!, creditCardBillDate: String, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String, totalInstallments: Int): Transaction!
   payCreditCardBill(date: String!, creditCardBillDate: String!, bankAccountId: String!, creditCardId: String!, value: Float!, description: String, groupId: String): Transaction!
   editTransaction(transactionId: String!, transactionType: String!, date: String!, creditCardBillDate: String, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String): Transaction!
-  deleteTransaction(transactionId: String!): Boolean!
+  deleteTransaction(deleteNextInstallments: Boolean = false, deleteAllInstallments: Boolean = false, transactionId: String!): Boolean!
   newCategory(name: String!, color: String!): Category!
   newGroupCategory(name: String!, color: String!, groupId: String!): Category!
   editCategory(id: String!, name: String!, color: String!): Category!

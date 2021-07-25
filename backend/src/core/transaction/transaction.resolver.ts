@@ -172,8 +172,21 @@ export class TransactionResolver {
 
   @Mutation(() => Boolean)
   @UseGuards(GqlFirebaseAuthGuard)
-  async deleteTransaction(@GqlCurrentUser() user: FBUser, @Args('transactionId') transactionId: string): Promise<boolean> {
-    const transactionDeleted = await this.transactionService.deleteById(user, transactionId);
+  async deleteTransaction(
+    @GqlCurrentUser() user: FBUser,
+    @Args('transactionId') transactionId: string,
+    @Args('deleteAllInstallments', { defaultValue: false }) deleteAllInstallments: boolean,
+    @Args('deleteNextInstallments', { defaultValue: false }) deleteNextInstallments: boolean,
+  ): Promise<boolean> {
+    let transactionDeleted: Transaction;
+
+    if (deleteNextInstallments) {
+      transactionDeleted = await this.transactionService.deleteNextInstallments(user, transactionId);
+    } else if (deleteAllInstallments) {
+      transactionDeleted = await this.transactionService.deleteAllInstallments(user, transactionId);
+    } else {
+      transactionDeleted = await this.transactionService.deleteById(user, transactionId);
+    }
 
     if (transactionDeleted) {
       const usersDestination = await this.getUsersDestinationForPub(transactionDeleted);

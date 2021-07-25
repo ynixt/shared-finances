@@ -6,6 +6,7 @@ import { CovalentDialogsModule } from '@covalent/core/dialogs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { NewTransactionComponent } from './new-transaction.component';
 import { SharedModule } from 'src/app/shared';
@@ -31,6 +32,7 @@ import { BankAccountInputModule, CreditCardInputModule } from '../input';
     MatAutocompleteModule,
     CreditCardInputModule,
     BankAccountInputModule,
+    MatSlideToggleModule,
   ],
   providers: [NewTransactionDialogService],
 })

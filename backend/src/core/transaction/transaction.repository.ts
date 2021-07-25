@@ -48,6 +48,26 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     return result.n > 0;
   }
 
+  async deleteNextInstallments(installmentId: string, minimumInstallment: number, opts?: MongoRepositoryOptions): Promise<boolean> {
+    if (installmentId == null || minimumInstallment == null) {
+      return false;
+    }
+
+    const result = await this.model.deleteMany({ $and: [{ installmentId, installment: { $gte: minimumInstallment } }] }, opts);
+
+    return result.n > 0;
+  }
+
+  async deleteAllInstallments(installmentId: string, opts?: MongoRepositoryOptions): Promise<boolean> {
+    if (installmentId == null) {
+      return false;
+    }
+
+    const result = await this.model.deleteMany({ installmentId }, opts);
+
+    return result.n > 0;
+  }
+
   async deleteByBankAccountId(bankAccountId: string, opts?: MongoRepositoryOptions): Promise<void> {
     await this.model.deleteMany({ bankAccountId }, opts);
   }

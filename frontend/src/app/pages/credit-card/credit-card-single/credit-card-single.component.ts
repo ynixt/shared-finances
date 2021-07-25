@@ -2,13 +2,11 @@ import { Component, Inject, OnInit, Renderer2 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
-import { switchMap, take } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { CreditCard, CreditCardSummary, Page, Transaction } from 'src/app/@core/models';
 import { CreditCardService } from '../credit-card.service';
-import { CreditCardService as CreditCardCoreService, ErrorService, TransactionService } from 'src/app/@core/services'; // TODO change name of this service or join them
+import { CreditCardService as CreditCardCoreService } from 'src/app/@core/services'; // TODO change name of this service or join them
 import { merge, Observable, Subscription } from 'rxjs';
-import { HotToastService } from '@ngneat/hot-toast';
-import { TranslocoService } from '@ngneat/transloco';
 import { DOCUMENT } from '@angular/common';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-card-bill-payment';
@@ -53,10 +51,6 @@ export class CreditCardSingleComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private creditCardService: CreditCardService,
     private creditCardCoreService: CreditCardCoreService,
-    private transactionService: TransactionService,
-    private translocoService: TranslocoService,
-    private toast: HotToastService,
-    private errorService: ErrorService,
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
@@ -109,23 +103,6 @@ export class CreditCardSingleComponent implements OnInit {
 
   public async editTransaction(transaction: Transaction) {
     this.newTransactionDialogService.openDialog(this.document, this.renderer2, transaction.group != null, transaction);
-  }
-
-  public async deleteTransaction(transaction: Transaction) {
-    await this.transactionService
-      .deleteTransaction(transaction.id)
-      .pipe(
-        take(1),
-        this.toast.observe({
-          loading: this.translocoService.translate('deleting'),
-          success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
-          error: error =>
-            this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
-              name: transaction.description,
-            }),
-        }),
-      )
-      .toPromise();
   }
 
   openPayBillDialog(): void {

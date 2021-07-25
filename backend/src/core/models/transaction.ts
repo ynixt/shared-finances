@@ -1,4 +1,4 @@
-import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
+import { Field, Float, ID, Int, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
 import { Category } from './category';
@@ -86,6 +86,26 @@ export class Transaction {
 
   @Field(() => Category, { nullable: true })
   category?: Category;
+
+  @Field({ nullable: true })
+  @Prop({ index: true })
+  installmentId?: string;
+
+  @Field(() => Int, { nullable: true })
+  @Prop({
+    required: function () {
+      return this.installmentId != null;
+    },
+  })
+  installment?: number;
+
+  @Field(() => Int, { nullable: true })
+  @Prop({
+    required: function () {
+      return this.installmentId != null;
+    },
+  })
+  totalInstallments?: number;
 }
 
 export const TransacationSchema = SchemaFactory.createForClass(Transaction);

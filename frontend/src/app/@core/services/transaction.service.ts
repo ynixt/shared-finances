@@ -34,6 +34,8 @@ export const TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION = gql`
       }
       bankAccountId
       creditCardId
+      installment
+      totalInstallments
     }
   }
 `;
@@ -65,6 +67,8 @@ export const TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION = gql`
       }
       bankAccountId
       creditCardId
+      installment
+      totalInstallments
     }
   }
 `;
@@ -100,6 +104,7 @@ export class TransactionService {
             $firstUserId: String!
             $secondUserId: String
             $creditCardBillDate: String
+            $totalInstallments: Int
           ) {
             newTransaction(
               transactionType: $transactionType
@@ -114,17 +119,9 @@ export class TransactionService {
               firstUserId: $firstUserId
               secondUserId: $secondUserId
               creditCardBillDate: $creditCardBillDate
+              totalInstallments: $totalInstallments
             ) {
               id
-              transactionType
-              date
-              value
-              description
-              category {
-                id
-                name
-                color
-              }
             }
           }
         `,
@@ -141,6 +138,7 @@ export class TransactionService {
           firstUserId: transaction.user?.id,
           secondUserId: transaction.user2?.id,
           creditCardBillDate: transaction.creditCardBillDate,
+          totalInstallments: transaction.totalInstallments,
         },
       })
       .pipe(
@@ -170,15 +168,6 @@ export class TransactionService {
               creditCardBillDate: $creditCardBillDate
             ) {
               id
-              transactionType
-              date
-              value
-              description
-              category {
-                id
-                name
-                color
-              }
             }
           }
         `,
@@ -232,15 +221,6 @@ export class TransactionService {
               creditCardBillDate: $creditCardBillDate
             ) {
               id
-              transactionType
-              date
-              value
-              description
-              category {
-                id
-                name
-                color
-              }
             }
           }
         `,
@@ -266,16 +246,25 @@ export class TransactionService {
       );
   }
 
-  deleteTransaction(transactionId: string): Observable<boolean> {
+  deleteTransaction(
+    transactionId: string,
+    obj?: { deleteAllInstallments?: boolean; deleteNextInstallments?: boolean },
+  ): Observable<boolean> {
     return this.apollo
       .mutate<{ deleteTransaction: boolean }>({
         mutation: gql`
-          mutation($transactionId: String!) {
-            deleteTransaction(transactionId: $transactionId)
+          mutation($transactionId: String!, $deleteAllInstallments: Boolean, $deleteNextInstallments: Boolean) {
+            deleteTransaction(
+              transactionId: $transactionId
+              deleteAllInstallments: $deleteAllInstallments
+              deleteNextInstallments: $deleteNextInstallments
+            )
           }
         `,
         variables: {
           transactionId,
+          deleteAllInstallments: obj?.deleteAllInstallments,
+          deleteNextInstallments: obj?.deleteNextInstallments,
         },
       })
       .pipe(

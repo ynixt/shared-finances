@@ -14,7 +14,7 @@ export class CreditCard {
   userId: string;
 
   @Field()
-  @Prop({ unique: true })
+  @Prop()
   name: string;
 
   @Field(() => Int)

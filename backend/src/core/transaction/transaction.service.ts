@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
 import { UserInputError } from 'apollo-server-express';
-import * as moment from 'moment';
+import moment, { Moment } from 'moment';
 import { Types } from 'mongoose';
 import { Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
@@ -12,6 +12,7 @@ import { GroupService } from '../group';
 import { Transaction, TransactionType, TransactionsPage, CreditCardSummary, CreditCard, BankAccountSummary, GroupSummary } from '../models';
 import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class TransactionService {
@@ -38,6 +39,31 @@ export class TransactionService {
           opts,
         );
         return this.transacationRepository.create({ ...input, userId: input.firstUserId }, opts);
+      });
+    } else if (input.totalInstallments != null) {
+      return this.transacationRepository.runInsideTransaction(async opts => {
+        const installmentId = uuidv4();
+        const transactions: Transaction[] = [];
+        const creditCard = await this.creditCardService.getById(input.firstUserId, input.creditCardId);
+
+        for (let i = 0; i < input.totalInstallments; i++) {
+          let creditCardBillDate: Moment = moment(input.creditCardBillDate);
+
+          if (i > 0) {
+            creditCardBillDate = this.creditCardService.nextBillDate(creditCardBillDate, creditCard.closingDay, i);
+          }
+
+          const transaction: Partial<Transaction> = {
+            ...input,
+            userId: input.firstUserId,
+            installmentId,
+            installment: i + 1,
+            creditCardBillDate: creditCardBillDate.toISOString(),
+          };
+          transactions.push(await this.transacationRepository.create(transaction, opts));
+        }
+
+        return transactions[0];
       });
     } else {
       return this.transacationRepository.create({ ...input, userId: input.firstUserId });
@@ -74,6 +100,30 @@ export class TransactionService {
 
     if (transaction && (await this.validPermissionsOnExistingTransaction(user, transaction))) {
       const deleted = await this.transacationRepository.deleteById(transactionId, opts);
+
+      return deleted ? transaction : null;
+    }
+
+    throw new AuthenticationError('');
+  }
+
+  async deleteAllInstallments(user: FBUser, transactionId: string, opts?: MongoRepositoryOptions): Promise<Transaction> {
+    const transaction = await this.getById(transactionId);
+
+    if (transaction && (await this.validPermissionsOnExistingTransaction(user, transaction))) {
+      const deleted = await this.transacationRepository.deleteAllInstallments(transaction.installmentId, opts);
+
+      return deleted ? transaction : null;
+    }
+
+    throw new AuthenticationError('');
+  }
+
+  async deleteNextInstallments(user: FBUser, transactionId: string, opts?: MongoRepositoryOptions): Promise<Transaction> {
+    const transaction = await this.getById(transactionId);
+
+    if (transaction && (await this.validPermissionsOnExistingTransaction(user, transaction))) {
+      const deleted = await this.transacationRepository.deleteNextInstallments(transaction.installmentId, transaction.installment, opts);
 
       return deleted ? transaction : null;
     }
@@ -226,7 +276,7 @@ export class TransactionService {
     return false;
   }
 
-  private async validPermissions(user: FBUser, input: NewTransactionArgs) {
+  private async validPermissions(user: FBUser, input: NewTransactionArgs | EditTransactionArgs) {
     // Must be a group of the logged user
     if (input.groupId != null) {
       if (user.groupsId.includes(input.groupId) === false) {

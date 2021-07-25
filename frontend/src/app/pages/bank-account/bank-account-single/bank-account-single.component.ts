@@ -1,16 +1,15 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, Inject, OnInit, Renderer2, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
 import { merge, Observable, Subscription } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
 import { BankAccount, BankAccountSummary, Page, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
-import { ErrorService, TransactionService, BankAccountService } from 'src/app/@core/services';
+import { TransactionService, BankAccountService } from 'src/app/@core/services';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 
 @UntilDestroy()
@@ -56,8 +55,6 @@ export class BankAccountSingleComponent implements OnInit {
     private router: Router,
     private transactionService: TransactionService,
     private translocoService: TranslocoService,
-    private toast: HotToastService,
-    private errorService: ErrorService,
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
@@ -122,23 +119,6 @@ export class BankAccountSingleComponent implements OnInit {
 
   public async editTransaction(transaction: Transaction) {
     this.newTransactionDialogService.openDialog(this.document, this.renderer2, transaction.group != null, transaction);
-  }
-
-  public async deleteTransaction(transaction: Transaction) {
-    await this.transactionService
-      .deleteTransaction(transaction.id)
-      .pipe(
-        take(1),
-        this.toast.observe({
-          loading: this.translocoService.translate('deleting'),
-          success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
-          error: error =>
-            this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
-              name: transaction.description,
-            }),
-        }),
-      )
-      .toPromise();
   }
 
   public async dateChanged(newDate: Moment): Promise<void> {

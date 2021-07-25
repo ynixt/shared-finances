@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import moment, { Moment } from 'moment';
 import { CreditCard } from '../models';
 import { EditCreditCardArgs, NewCreditCardArgs } from '../models/args';
 import { TransactionService } from '../transaction';
@@ -39,5 +40,17 @@ export class CreditCardService {
 
   findAllWithUserId(userId: string): Promise<CreditCard[]> {
     return this.creditCardRepository.findAllWithUserId(userId);
+  }
+
+  nextBillDate(date: string | Moment, closingDay: number, amountAhead = 1): Moment {
+    const dateForThisOption = moment(date).date(closingDay);
+
+    if (dateForThisOption.isSame(date, 'month') === false) {
+      // month with less days, like february
+
+      dateForThisOption.subtract(1, 'day');
+    }
+
+    return dateForThisOption.add(amountAhead, 'month');
   }
 }

@@ -1,4 +1,4 @@
-import { ArgsType, Field, Float } from '@nestjs/graphql';
+import { ArgsType, Field, Float, Int } from '@nestjs/graphql';
 import { TransactionType } from '../transaction';
 
 @ArgsType()
@@ -38,4 +38,7 @@ export class NewTransactionArgs {
 
   @Field({ nullable: true })
   secondUserId: string;
+
+  @Field(() => Int, { nullable: true })
+  totalInstallments: number;
 }

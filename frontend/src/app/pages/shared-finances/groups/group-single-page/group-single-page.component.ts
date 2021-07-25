@@ -4,12 +4,10 @@ import { merge, Observable, Subscription } from 'rxjs';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { Group } from 'src/app/@core/models/group';
 import { TranslocoService } from '@ngneat/transloco';
-import { TitleService, GroupsService, ErrorService, TransactionService } from 'src/app/@core/services';
+import { TitleService, GroupsService, TransactionService } from 'src/app/@core/services';
 import moment, { Moment } from 'moment';
 import { GroupSummary, Page, Transaction } from 'src/app/@core/models';
 import { DOCUMENT } from '@angular/common';
-import { HotToastService } from '@ngneat/hot-toast';
-import { take } from 'rxjs/operators';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Chart } from 'src/app/@core/models/chart';
@@ -57,8 +55,6 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     private router: Router,
     private titleService: TitleService,
     private transactionService: TransactionService,
-    private toast: HotToastService,
-    private errorService: ErrorService,
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
@@ -107,23 +103,6 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   public async editTransaction(transaction: Transaction) {
     this.newTransactionDialogService.openDialog(this.document, this.renderer2, transaction.group != null, transaction);
-  }
-
-  public async deleteTransaction(transaction: Transaction) {
-    await this.transactionService
-      .deleteTransaction(transaction.id)
-      .pipe(
-        take(1),
-        this.toast.observe({
-          loading: this.translocoService.translate('deleting'),
-          success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
-          error: error =>
-            this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
-              name: transaction.description,
-            }),
-        }),
-      )
-      .toPromise();
   }
 
   public async getChart(): Promise<void> {

@@ -19,4 +19,8 @@ export interface Transaction {
   groupId?: string;
   user: Partial<User>;
   user2?: Partial<User>;
+
+  installmentId?: string;
+  installment?: number;
+  totalInstallments?: number;
 }

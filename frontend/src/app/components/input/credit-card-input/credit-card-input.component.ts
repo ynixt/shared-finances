@@ -36,6 +36,7 @@ export class CreditCardInputComponent
   private creditCardsWithPersonsSubject: BehaviorSubject<CreditCardWithPerson[]>;
   private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
   private _creditCards: CreditCard[];
+  private creditCardFromOtherUsersSubject: BehaviorSubject<CreditCardWithPerson[]>;
 
   @Output() creditCardsChange = new BehaviorSubject<CreditCard[]>([]);
 
@@ -47,6 +48,7 @@ export class CreditCardInputComponent
     super(controlContainer);
 
     this.creditCardsWithPersonsSubject = new BehaviorSubject([]);
+    this.creditCardFromOtherUsersSubject = new BehaviorSubject([]);
     this.creditCardsWithPersons$ = this.creditCardsWithPersonsSubject.asObservable();
   }
 
@@ -82,7 +84,7 @@ export class CreditCardInputComponent
   }
 
   private mountCreditCardsFromCurrentUser(): void {
-    combineLatest([this.creditCardSelectors.creditCards$, this.authSelectors.user$, this.creditCardFromOtherUsers.asObservable()])
+    combineLatest([this.creditCardSelectors.creditCards$, this.authSelectors.user$, this.creditCardFromOtherUsersSubject])
       .pipe(
         untilDestroyed(this),
         map(combined => ({ creditCards: combined[0], user: combined[1], creditCardFromOtherUsers: combined[2] })),
@@ -107,9 +109,9 @@ export class CreditCardInputComponent
   private async mountCreditCardFromOtherUsers(group?: Group): Promise<void> {
     const user = await this.authSelectors.currentUser();
 
-    const creditCardFromOtherUsers: CreditCardWithPerson[] = [];
-
     if (group != null) {
+      const creditCardFromOtherUsers: CreditCardWithPerson[] = [];
+
       group.users.forEach(userFromGroup => {
         if (userFromGroup.id !== user.id) {
           if (userFromGroup.creditCards?.length > 0) {
@@ -117,6 +119,10 @@ export class CreditCardInputComponent
           }
         }
       });
+
+      this.creditCardFromOtherUsersSubject.next(creditCardFromOtherUsers);
+    } else {
+      this.creditCardFromOtherUsersSubject.next([]);
     }
   }
 }

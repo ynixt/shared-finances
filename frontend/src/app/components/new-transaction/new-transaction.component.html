@@ -36,8 +36,17 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-slide-toggle *ngIf="transactionType === transactionTypeEnum.CreditCard" formControlName="useInstallment" class="my-6">{{
+        t('installment-payment')
+      }}</mat-slide-toggle>
+
+      <mat-form-field *ngIf="transactionType === transactionTypeEnum.CreditCard && useInstallment" class="field" appearance="outline">
+        <mat-label>{{ t('total-installments') }}</mat-label>
+        <input type="number" formControlName="totalInstallments" required matInput [placeholder]="t('transaction-value-placeholder')" />
+      </mat-form-field>
+
       <mat-form-field class="field" appearance="outline">
-        <mat-label>{{ t('value') }}</mat-label>
+        <mat-label>{{ t(useInstallment ? 'installment-value' : 'value') }}</mat-label>
         <input currencyMask formControlName="value" required matInput [placeholder]="t('transaction-value-placeholder')" />
       </mat-form-field>
 

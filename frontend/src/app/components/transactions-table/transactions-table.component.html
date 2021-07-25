@@ -28,10 +28,15 @@
           <span>{{ transaction.description }}</span>
         </h3>
 
-        <div matLine class="grid md:grid-cols-4 extras-info md:gap-4">
+        <div matLine class="grid md:grid-cols-5 extras-info md:gap-4">
           <div *ngIf="transaction.date != null" class="flex items-center extra-info">
             <mat-icon [matTooltip]="t('date')" class="info-icon mr-2 cursor-help">calendar_today</mat-icon>
             <span>{{ transaction.date | date }}</span>
+          </div>
+
+          <div *ngIf="transaction.installment != null && transaction.totalInstallments != null" class="flex items-center extra-info">
+            <mat-icon [matTooltip]="t('installment')" class="info-icon mr-2 cursor-help">hourglass_empty</mat-icon>
+            <span>{{ t('value-one-of-value-two', { value1: transaction.installment, value2: transaction.totalInstallments }) }}</span>
           </div>
 
           <div *ngIf="transaction.category != null" class="flex items-center extra-info">
@@ -77,6 +82,14 @@
               <button mat-menu-item (click)="deleteTransaction(transaction)">
                 <mat-icon>delete</mat-icon>
                 <span>{{ t('delete') }}</span>
+              </button>
+              <button *ngIf="transactionIsInstallment(transaction)" mat-menu-item (click)="deleteTransactionAllInstallments(transaction)">
+                <mat-icon>delete_sweep</mat-icon>
+                <span>{{ t('delete-all-installments') }}</span>
+              </button>
+              <button *ngIf="transactionIsInstallment(transaction)" mat-menu-item (click)="deleteTransactionNextInstallments(transaction)">
+                <mat-icon>delete_sweep</mat-icon>
+                <span>{{ t('delete-next-installments') }}</span>
               </button>
             </div>
           </div>

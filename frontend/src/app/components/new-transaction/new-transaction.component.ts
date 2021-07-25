@@ -139,6 +139,14 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     return this.creditCardBillDateFormControl.value;
   }
 
+  get useInstallmentFormControl() {
+    return this.formGroup.get('useInstallment');
+  }
+
+  get useInstallment() {
+    return this.useInstallmentFormControl.value;
+  }
+
   async ngOnInit(): Promise<void> {
     this.loading = true;
 
@@ -302,6 +310,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         user,
         user2,
         creditCardBillDate: this.creditCardBillDate,
+        totalInstallments: this.formGroup.value.totalInstallments,
       })
       .pipe(
         take(1),
@@ -379,6 +388,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       category: new FormControl(this.editingTransaction?.category),
       creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
       group: new FormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
+      useInstallment: new FormControl(this.editingTransaction?.installment != null),
+      totalInstallments: new FormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)]),
     });
   }
 

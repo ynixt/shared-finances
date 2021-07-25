@@ -85,6 +85,7 @@ export class GroupsService {
                   creditCards {
                     id
                     name
+                    closingDay
                   }
                 }
               }
@@ -244,6 +245,8 @@ export class GroupsService {
                 id
                 name
               }
+              installment
+              totalInstallments
             }
             total
             page

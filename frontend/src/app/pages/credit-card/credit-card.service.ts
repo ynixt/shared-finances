@@ -196,6 +196,8 @@ export class CreditCardService {
                 color
               }
               creditCardId
+              installment
+              totalInstallments
             }
             total
             page
