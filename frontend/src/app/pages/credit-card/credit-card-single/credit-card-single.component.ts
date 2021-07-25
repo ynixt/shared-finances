@@ -158,7 +158,6 @@ export class CreditCardSingleComponent implements OnInit {
     });
 
     this.transactionsGroupedYearMonth = charts;
-    console.log(charts);
   }
 
   private getInfoBasedOnCreditCard(): void {
