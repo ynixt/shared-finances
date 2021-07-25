@@ -21,9 +21,9 @@
         >
           {{ getIconForTransaction(transaction) }}
         </mat-icon>
-        <h3 matLine class="transaction-value" class="flex items-center">
+        <h3 matLine class="flex items-center">
           <mat-icon [matTooltip]="t('value')" class="info-icon mr-2 cursor-help">attach_money</mat-icon>
-          <span> {{ transaction.value | currency | spaceOnSignal }}</span>
+          <span class="transaction-value"> {{ transaction.value | currency | spaceOnSignal }}</span>
         </h3>
 
         <h3 matLine *ngIf="transaction.description != null" class="flex items-center">
