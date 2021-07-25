@@ -18,6 +18,28 @@ const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
   }
 `;
 
+const TRANSACTION_OF_BANK_ACCOUNT_CREATED_WITH_DATA_SUBSCRIPTION = gql`
+  subscription bankAccountTransactionCreated($bankAccountId: String!) {
+    bankAccountTransactionCreated(bankAccountId: $bankAccountId) {
+      id
+      transactionType
+      group {
+        id
+        name
+      }
+      date
+      value
+      description
+      category {
+        id
+        name
+        color
+      }
+      bankAccountId
+    }
+  }
+`;
+
 const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE = gql`
   subscription bankAccountTransactionUpdated($bankAccountId: String!) {
     bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
@@ -115,7 +137,7 @@ export class BankAccountService {
 
   getTransactions(
     bankAccountId: string,
-    args?: { maxDate?: Moment; minDate?: Moment },
+    args: { maxDate: Moment; minDate: Moment },
     pagination?: Pagination,
   ): Observable<Page<Transaction>> {
     const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
@@ -154,7 +176,7 @@ export class BankAccountService {
       },
     });
 
-    this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId);
+    this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId, args.minDate, args.maxDate);
 
     return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
   }
@@ -167,7 +189,47 @@ export class BankAccountService {
       EmptyObject
     >,
     bankAccountId: string,
+    minDate: string | Moment,
+    maxDate: string | Moment,
   ) {
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_OF_BANK_ACCOUNT_CREATED_WITH_DATA_SUBSCRIPTION,
+      variables: {
+        bankAccountId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        const newTransaction: Transaction = subscriptionData.data.bankAccountTransactionCreated;
+
+        if (moment(newTransaction.date).isSameOrAfter(minDate) && moment(newTransaction.date).isBefore(maxDate)) {
+          if (prev.transactions != null) {
+            const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+            transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
+
+            prev = {
+              transactions: transactionsPage,
+            };
+            return {
+              ...prev,
+            };
+          } else {
+            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: 20 };
+
+            transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+
+            prev = {
+              transactions: transactionsPage,
+            };
+            return {
+              ...prev,
+            };
+          }
+        }
+
+        return prev;
+      },
+    });
+
     transactionsQueryRef.subscribeToMore({
       document: TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION,
       variables: {

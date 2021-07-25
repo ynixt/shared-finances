@@ -1,10 +1,32 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { EmptyObject } from 'apollo-angular/types';
-import { Moment } from 'moment';
+import moment, { Moment } from 'moment';
 import { from, Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { CreditCard, Page, Pagination, Transaction } from 'src/app/@core/models';
+
+const TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
+  subscription creditCardTransactionCreated($creditCardId: String!) {
+    creditCardTransactionCreated(creditCardId: $creditCardId) {
+      id
+      transactionType
+      group {
+        id
+        name
+      }
+      date
+      value
+      description
+      category {
+        id
+        name
+        color
+      }
+      creditCardId
+    }
+  }
+`;
 
 const TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION = gql`
   subscription creditCardTransactionUpdated($creditCardId: String!) {
@@ -144,7 +166,7 @@ export class CreditCardService {
 
   getTransactions(
     creditCardId: string,
-    args?: { maxDate?: Moment; minDate?: Moment; creditCardBillDate?: Moment },
+    args?: { maxDate?: Moment; minDate?: Moment; creditCardBillDate: Moment },
     pagination?: Pagination,
   ): Observable<Page<Transaction>> {
     const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
@@ -191,7 +213,7 @@ export class CreditCardService {
       },
     });
 
-    this.subscribeToTransactionChanges(transactionsQueryRef, creditCardId);
+    this.subscribeToTransactionChanges(transactionsQueryRef, creditCardId, args.creditCardBillDate);
 
     return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
   }
@@ -204,7 +226,46 @@ export class CreditCardService {
       EmptyObject
     >,
     creditCardId: string,
+    creditCardBillDate: string | Moment,
   ) {
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION,
+      variables: {
+        creditCardId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        const newTransaction: Transaction = subscriptionData.data.creditCardTransactionCreated;
+
+        if (moment(newTransaction.creditCardBillDate).isSame(creditCardBillDate)) {
+          if (prev.transactions != null) {
+            const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+            transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
+
+            prev = {
+              transactions: transactionsPage,
+            };
+            return {
+              ...prev,
+            };
+          } else {
+            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: 20 };
+
+            transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+
+            prev = {
+              transactions: transactionsPage,
+            };
+            return {
+              ...prev,
+            };
+          }
+        }
+
+        return prev;
+      },
+    });
+
     transactionsQueryRef.subscribeToMore({
       document: TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION,
       variables: {
