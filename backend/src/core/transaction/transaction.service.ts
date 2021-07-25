@@ -72,7 +72,7 @@ export class TransactionService {
   async deleteById(user: FBUser, transactionId: string, opts?: MongoRepositoryOptions): Promise<Transaction> {
     const transaction = await this.getById(transactionId);
 
-    if (await this.validPermissionsOnExistingTransaction(user, transaction)) {
+    if (transaction && (await this.validPermissionsOnExistingTransaction(user, transaction))) {
       const deleted = await this.transacationRepository.deleteById(transactionId, opts);
 
       return deleted ? transaction : null;

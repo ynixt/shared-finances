@@ -3,10 +3,14 @@ import { Group } from 'src/app/@core/models/group';
 import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { Moment } from 'moment';
+import moment, { Moment } from 'moment';
 import { GroupSummary, Page, Pagination, Transaction } from '../models';
 import { EmptyObject } from 'apollo-angular/types';
-import { TRANSACTION_DELETED_SUBSCRIPTION, TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION } from './transaction.service';
+import {
+  TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION,
+  TRANSACTION_DELETED_SUBSCRIPTION,
+  TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
+} from './transaction.service';
 
 @Injectable({
   providedIn: 'root',
@@ -212,7 +216,7 @@ export class GroupsService {
     return result.data.createInvite;
   }
 
-  getTransactions(groupId: string, args?: { maxDate?: Moment; minDate?: Moment }, pagination?: Pagination): Observable<Page<Transaction>> {
+  getTransactions(groupId: string, args?: { maxDate: Moment; minDate: Moment }, pagination?: Pagination): Observable<Page<Transaction>> {
     const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
       query: gql`
         query($groupId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String) {
@@ -254,7 +258,7 @@ export class GroupsService {
       },
     });
 
-    this.subscribeToTransactionChanges(transactionsQueryRef, groupId);
+    this.subscribeToTransactionChanges(transactionsQueryRef, groupId, args.minDate, args.maxDate);
 
     return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
   }
@@ -296,7 +300,47 @@ export class GroupsService {
       EmptyObject
     >,
     groupId: string,
+    minDate: Moment,
+    maxDate: Moment,
   ) {
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION,
+      variables: {
+        groupId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        const newTransaction: Transaction = subscriptionData.data.transactionCreated;
+
+        if (moment(newTransaction.date).isSameOrAfter(minDate) && moment(newTransaction.date).isBefore(maxDate)) {
+          if (prev.transactions != null) {
+            const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+            transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
+
+            prev = {
+              transactions: transactionsPage,
+            };
+            return {
+              ...prev,
+            };
+          } else {
+            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: 20 };
+
+            transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+
+            prev = {
+              transactions: transactionsPage,
+            };
+            return {
+              ...prev,
+            };
+          }
+        }
+
+        return prev;
+      },
+    });
+
     transactionsQueryRef.subscribeToMore({
       document: TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
       variables: {
@@ -335,9 +379,7 @@ export class GroupsService {
         if (prev.transactions != null) {
           const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
 
-          transactionsPage.items = transactionsPage.items.filter(
-            item => item.id !== subscriptionData.data.bankAccountTransactionDeleted.id,
-          );
+          transactionsPage.items = transactionsPage.items.filter(item => item.id !== subscriptionData.data.transactionDeleted.id);
 
           prev = {
             transactions: transactionsPage,

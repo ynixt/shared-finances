@@ -102,6 +102,11 @@ export class TransactionResolver {
           usersDestination,
         });
       }
+
+      pubSub.publish(TransactionPubTrigger.transactionCreated, {
+        transactionCreated: transactionCreated,
+        usersDestination,
+      });
     }
 
     return transactionCreated;
@@ -122,6 +127,11 @@ export class TransactionResolver {
 
       pubSub.publish(TransactionPubTrigger.creditCardTransactionCreated, {
         creditCardTransactionCreated: transactionCreated,
+        usersDestination,
+      });
+
+      pubSub.publish(TransactionPubTrigger.transactionCreated, {
+        transactionCreated: transactionCreated,
         usersDestination,
       });
     }
@@ -181,6 +191,11 @@ export class TransactionResolver {
           usersDestination,
         });
       }
+
+      pubSub.publish(TransactionPubTrigger.transactionDeleted, {
+        transactionDeleted: transactionDeleted,
+        usersDestination,
+      });
     }
 
     return transactionDeleted != null;

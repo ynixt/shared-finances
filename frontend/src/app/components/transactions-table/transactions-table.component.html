@@ -1,9 +1,6 @@
 <div class="transactions-table" *transloco="let t">
   <div class="transactions-title flex items-center">
     <h2 class="m-0">{{ t('transactions') }}</h2>
-    <button mat-icon-button class="ml-auto" (click)="getTransactions()">
-      <mat-icon>refresh</mat-icon>
-    </button>
   </div>
 
   <ng-container *ngIf="transactionsPage$ | async as transactionsPage; else loadingTemplate">

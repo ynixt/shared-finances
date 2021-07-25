@@ -13,6 +13,29 @@ export const TRANSACTION_CREATED_SUBSCRIPTION = gql`
   }
 `;
 
+export const TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION = gql`
+  subscription transactionCreated($groupId: String) {
+    transactionCreated(groupId: $groupId) {
+      id
+      transactionType
+      group {
+        id
+        name
+      }
+      date
+      value
+      description
+      category {
+        id
+        name
+        color
+      }
+      bankAccountId
+      creditCardId
+    }
+  }
+`;
+
 export const TRANSACTION_UPDATED_SUBSCRIPTION = gql`
   subscription transactionUpdated($groupId: String) {
     transactionUpdated(groupId: $groupId) {
