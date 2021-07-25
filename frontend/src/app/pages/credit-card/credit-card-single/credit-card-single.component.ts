@@ -13,7 +13,6 @@ import { DOCUMENT } from '@angular/common';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-card-bill-payment';
 import { Chart } from 'src/app/@core/models/chart';
-import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
 
 @UntilDestroy()
 @Component({
