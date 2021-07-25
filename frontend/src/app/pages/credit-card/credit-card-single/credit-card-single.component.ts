@@ -43,8 +43,12 @@ export class CreditCardSingleComponent implements OnInit {
   private transactionsChangeSubscription: Subscription;
   private creditCardSubscription: Subscription;
 
+  get isBillDateOfCurrentMonth() {
+    return moment(this.monthDate).isSame(this.billDateOfCurrentMonth);
+  }
+
   get closedBill() {
-    return moment(this.monthDate).isSame(this.billDateOfCurrentMonth) === false;
+    return moment(this.monthDate).isBefore(this.billDateOfCurrentMonth);
   }
 
   constructor(
@@ -151,15 +155,8 @@ export class CreditCardSingleComponent implements OnInit {
   }
 
   private setBillDateOfCurrentDate() {
-    if (
-      this.creditCard.billDates?.length > 0 &&
-      moment(this.creditCard.billDates[this.creditCard.billDates.length - 1]).isSame(moment(), 'month')
-    ) {
-      this.creditCard.billDates = [
-        ...this.creditCard.billDates,
-        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay).toISOString(),
-      ];
-    }
+    this.insertCurrentMonthOnBillDatesIfMissing();
+    this.insertNextMonthOnBillDatesIfLastIsCurrent();
 
     this.billDateOfCurrentMonth = this.creditCardCoreService.findCreditCardBillDate(
       moment(),
@@ -172,6 +169,27 @@ export class CreditCardSingleComponent implements OnInit {
     }
 
     this.monthDate = this.billDateOfCurrentMonth;
+  }
+
+  private insertCurrentMonthOnBillDatesIfMissing() {
+    if (this.creditCard.billDates?.length > 0 && this.creditCard.billDates.filter(billDate => moment(billDate).isSame(moment(), 'month'))) {
+      this.creditCard.billDates = [
+        ...this.creditCard.billDates,
+        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay, 0).toISOString(),
+      ].sort((billDateA, billDateB) => moment(billDateA).format('X').localeCompare(moment(billDateB).format('X')));
+    }
+  }
+
+  private insertNextMonthOnBillDatesIfLastIsCurrent() {
+    if (
+      this.creditCard.billDates?.length > 0 &&
+      moment(this.creditCard.billDates[this.creditCard.billDates.length - 1]).isSame(moment(), 'month')
+    ) {
+      this.creditCard.billDates = [
+        ...this.creditCard.billDates,
+        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay).toISOString(),
+      ];
+    }
   }
 
   private transactionsChange(): void {

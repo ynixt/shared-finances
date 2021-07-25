@@ -308,7 +308,7 @@ export class CreditCardService {
   nextBillDate(date: string | Moment, closingDay: number, amountAhead = 1): Moment {
     const dateForThisOption = moment(date).date(closingDay);
 
-    if (dateForThisOption.isSame(date, 'month') === false) {
+    if (dateForThisOption.isSame(date, 'month') === false && amountAhead != 0) {
       // month with less days, like february
 
       dateForThisOption.subtract(1, 'day');
