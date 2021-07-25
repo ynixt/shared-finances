@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { APOLLO_OPTIONS } from 'apollo-angular';
 import { ApolloClientOptions, InMemoryCache, split } from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
-import { ServerError } from '@apollo/client/link/utils';
 import { HttpLink } from 'apollo-angular/http';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';

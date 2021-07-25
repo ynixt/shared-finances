@@ -1,0 +1,8 @@
+@import '~@angular/material/theming';
+@import '~@covalent/core/theming/all-theme';
+@import 'variables';
+
+@include mat-core($typography); // $typography is an **optional** argument for the mat-core
+
+@include angular-material-theme($theme);
+@include covalent-theme($theme, $typography); // $typography is an **optional** argument for the covalent-theme
