@@ -153,11 +153,12 @@ export class BankAccountSingleComponent implements OnInit {
     }
 
     this.bankAccount = bankAccount;
+
+    this.transactionsChangeObserver();
   }
 
   private getInfoBasedOnBankAndDate() {
     this.getTransactions();
-    this.transactionsChangeObserver();
     return Promise.all([this.getBankAccountSummary(), this.getChart()]);
   }
 
