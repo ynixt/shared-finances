@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { AuthenticationError } from 'apollo-server-errors';
 import { UserInputError } from 'apollo-server-express';
 import * as moment from 'moment';
+import { Types } from 'mongoose';
 import { Pagination } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { BankAccountService } from '../bank-account';
@@ -205,7 +206,7 @@ export class TransactionService {
 
   private async validPermissionsOnExistingTransaction(user: FBUser, transaction: Transaction) {
     if (
-      (transaction.groupId != null && user.groupsId.includes(transaction.groupId)) ||
+      (transaction.groupId != null && user.groupsId.includes((transaction.groupId as unknown as Types.ObjectId).toHexString())) ||
       (transaction.bankAccountId != null && (await this.bankAccountService.existsWithUserId(user.id, transaction.bankAccountId))) ||
       (transaction.creditCardId != null && (await this.creditCardService.existsWithUserId(user.id, transaction.creditCardId)))
     ) {
