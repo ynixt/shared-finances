@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Group } from 'src/app/@core/models/group';
-import { Apollo, gql } from 'apollo-angular';
+import { Apollo, gql, QueryRef } from 'apollo-angular';
 import { map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { Moment } from 'moment';
 import { GroupSummary, Page, Pagination, Transaction } from '../models';
+import { EmptyObject } from 'apollo-angular/types';
+import { TRANSACTION_DELETED_SUBSCRIPTION, TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION } from './transaction.service';
 
 @Injectable({
   providedIn: 'root',
@@ -98,6 +100,32 @@ export class GroupsService {
   }
 
   getGroup(groupId: string): Promise<Group | null> {
+    return this.apollo
+      .query<{ group: Group }>({
+        query: gql`
+          query GetGroup($groupId: String!) {
+            group(groupId: $groupId) {
+              id
+              name
+              users {
+                id
+                name
+              }
+            }
+          }
+        `,
+        variables: {
+          groupId,
+        },
+      })
+      .pipe(
+        map(result => (result.errors || result.data == null || result.data.group == null ? null : result.data.group)),
+        take(1),
+      )
+      .toPromise();
+  }
+
+  getGroupForEdit(groupId: string): Promise<Group | null> {
     return this.apollo
       .query<{ group: Group }>({
         query: gql`
@@ -226,13 +254,13 @@ export class GroupsService {
       },
     });
 
-    // this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId);
+    this.subscribeToTransactionChanges(transactionsQueryRef, groupId);
 
     return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
   }
 
   async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment): Promise<GroupSummary> {
-    const summaryQueryRef = this.apollo.watchQuery<{ groupSummary: GroupSummary }>({
+    const summaryQueryRef = this.apollo.query<{ groupSummary: GroupSummary }>({
       query: gql`
         query($groupId: String!, $maxDate: String!, $minDate: String!) {
           groupSummary(groupId: $groupId, maxDate: $maxDate, minDate: $minDate) {
@@ -240,10 +268,7 @@ export class GroupsService {
             expenses {
               expense
               percentageOfExpenses
-              user {
-                id
-                name
-              }
+              userId
             }
           }
         }
@@ -255,11 +280,75 @@ export class GroupsService {
       },
     });
 
-    return summaryQueryRef.valueChanges
+    return summaryQueryRef
       .pipe(
         map(result => result.data.groupSummary),
         take(1),
       )
       .toPromise();
+  }
+
+  private subscribeToTransactionChanges(
+    transactionsQueryRef: QueryRef<
+      {
+        transactions: Page<Transaction>;
+      },
+      EmptyObject
+    >,
+    groupId: string,
+  ) {
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
+      variables: {
+        groupId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (prev.transactions != null) {
+          const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+          transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+
+          const transactionUpdatedIndex = transactionsPage.items.findIndex(item => item.id === subscriptionData.data.transactionUpdated.id);
+
+          if (transactionUpdatedIndex != -1) {
+            transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.transactionUpdated;
+          }
+
+          prev = {
+            transactions: transactionsPage,
+          };
+          return {
+            ...prev,
+          };
+        }
+
+        return prev;
+      },
+    });
+
+    transactionsQueryRef.subscribeToMore({
+      document: TRANSACTION_DELETED_SUBSCRIPTION,
+      variables: {
+        groupId,
+      },
+      updateQuery: (prev, { subscriptionData }) => {
+        if (prev.transactions != null) {
+          const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+
+          transactionsPage.items = transactionsPage.items.filter(
+            item => item.id !== subscriptionData.data.bankAccountTransactionDeleted.id,
+          );
+
+          prev = {
+            transactions: transactionsPage,
+          };
+          return {
+            ...prev,
+          };
+        }
+
+        return prev;
+      },
+    });
   }
 }

@@ -11,7 +11,7 @@ import { Chart } from 'src/app/@core/models/chart';
 import { DateUtil } from '../util';
 
 const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
-  subscription bankAccountTransactionCreated($bankAccountId: String) {
+  subscription bankAccountTransactionCreated($bankAccountId: String!) {
     bankAccountTransactionCreated(bankAccountId: $bankAccountId) {
       id
     }
@@ -19,7 +19,7 @@ const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
 `;
 
 const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE = gql`
-  subscription bankAccountTransactionUpdated($bankAccountId: String) {
+  subscription bankAccountTransactionUpdated($bankAccountId: String!) {
     bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
       id
     }
@@ -27,7 +27,7 @@ const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE = gql`
 `;
 
 const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION = gql`
-  subscription bankAccountTransactionUpdated($bankAccountId: String) {
+  subscription bankAccountTransactionUpdated($bankAccountId: String!) {
     bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
       id
       transactionType
@@ -49,7 +49,7 @@ const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION = gql`
 `;
 
 const TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION = gql`
-  subscription bankAccountTransactionDeleted($bankAccountId: String) {
+  subscription bankAccountTransactionDeleted($bankAccountId: String!) {
     bankAccountTransactionDeleted(bankAccountId: $bankAccountId) {
       id
     }

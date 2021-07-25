@@ -26,6 +26,12 @@
       </div>
     </app-title-bar>
 
+    <!-- TODO REMOVER -->
+    <ul>
+      <li>Gráfico de gastos</li>
+      <li>Gráfico com valor gasto por cada um do grupo</li>
+    </ul>
+
     <div class="pb-6">
       <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
     </div>
@@ -33,6 +39,7 @@
     <app-group-summary-dashboard
       [groupSummary]="groupSummaryState.summary"
       [isLoading]="groupSummaryState.isLoading"
+      [users]="group.users"
     ></app-group-summary-dashboard>
 
     <app-transactions-table

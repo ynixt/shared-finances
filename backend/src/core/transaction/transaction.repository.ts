@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import moment from 'moment';
-import { Aggregate, Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Pagination, PaginationService } from 'src/shared';
 import { MongoDefaultRepository } from '../data';
 import { MongoRepositoryOptions } from '../data/mongo-repository';

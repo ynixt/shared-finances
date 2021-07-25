@@ -48,7 +48,7 @@ export class EditGroupComponent implements OnInit {
 
   private async getGroup(groupId: string): Promise<void> {
     try {
-      const group = await this.groupsService.getGroup(groupId);
+      const group = await this.groupsService.getGroupForEdit(groupId);
 
       if (!group) {
         this.router.navigateByUrl('/404');

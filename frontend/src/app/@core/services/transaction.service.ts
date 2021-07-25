@@ -5,6 +5,53 @@ import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
 import { TransactionType } from '../enums';
 
+export const TRANSACTION_CREATED_SUBSCRIPTION = gql`
+  subscription transactionCreated($groupId: String) {
+    transactionCreated(groupId: $groupId) {
+      id
+    }
+  }
+`;
+
+export const TRANSACTION_UPDATED_SUBSCRIPTION = gql`
+  subscription transactionUpdated($groupId: String) {
+    transactionUpdated(groupId: $groupId) {
+      id
+    }
+  }
+`;
+
+export const TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION = gql`
+  subscription transactionUpdated($groupId: String) {
+    transactionUpdated(groupId: $groupId) {
+      id
+      transactionType
+      group {
+        id
+        name
+      }
+      date
+      value
+      description
+      category {
+        id
+        name
+        color
+      }
+      bankAccountId
+      creditCardId
+    }
+  }
+`;
+
+export const TRANSACTION_DELETED_SUBSCRIPTION = gql`
+  subscription transactionDeleted($groupId: String) {
+    transactionDeleted(groupId: $groupId) {
+      id
+    }
+  }
+`;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -224,5 +271,38 @@ export class TransactionService {
     }
 
     return value;
+  }
+
+  onTransactionCreated(groupId?: string): Observable<string> {
+    return this.apollo
+      .subscribe<{ transactionCreated: { id: string } }>({
+        query: TRANSACTION_CREATED_SUBSCRIPTION,
+        variables: {
+          groupId,
+        },
+      })
+      .pipe(map(result => result.data.transactionCreated.id));
+  }
+
+  onTransactionUpdated(groupId?: string): Observable<string> {
+    return this.apollo
+      .subscribe<{ transactionUpdated: { id: string } }>({
+        query: TRANSACTION_UPDATED_SUBSCRIPTION,
+        variables: {
+          groupId,
+        },
+      })
+      .pipe(map(result => result.data.transactionUpdated.id));
+  }
+
+  onTransactionDeleted(groupId?: string): Observable<string> {
+    return this.apollo
+      .subscribe<{ transactionDeleted: { id: string } }>({
+        query: TRANSACTION_DELETED_SUBSCRIPTION,
+        variables: {
+          groupId,
+        },
+      })
+      .pipe(map(result => result.data.transactionDeleted.id));
   }
 }

@@ -10,14 +10,14 @@
     </mat-card-content>
   </mat-card>
 
-  <ng-container *ngIf="isLoading == false">
-    <mat-card class="card" *ngFor="let expenseUser of groupSummary.expenses">
-      <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
-        <span class="text-gray-400 mb-2">{{ t('expenses-of-name', { name: expenseUser.user.name.split(' ')[0] }) }}</span>
-        <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">
+  <mat-card class="card" *ngFor="let user of users">
+    <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+      <span class="text-gray-400 mb-2">{{ t('expenses-of-name', { name: user.name.split(' ')[0] }) }}</span>
+      <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">
+        <ng-container *ngIf="getExpenseFromUser(user) as expenseUser">
           {{ expenseUser.expense | currency }} <span class="text-xs text-gray-400">({{ expenseUser.percentageOfExpenses | number }}%)</span>
-        </h3>
-      </mat-card-content>
-    </mat-card>
-  </ng-container>
+        </ng-container>
+      </h3>
+    </mat-card-content>
+  </mat-card>
 </div>

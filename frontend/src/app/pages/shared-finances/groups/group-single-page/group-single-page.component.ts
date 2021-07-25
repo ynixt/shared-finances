@@ -1,6 +1,6 @@
 import { Component, Inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
+import { merge, Observable, Subscription } from 'rxjs';
 import { TdDialogService } from '@covalent/core/dialogs';
 import { Group } from 'src/app/@core/models/group';
 import { TranslocoService } from '@ngneat/transloco';
@@ -11,7 +11,9 @@ import { DOCUMENT } from '@angular/common';
 import { HotToastService } from '@ngneat/hot-toast';
 import { take } from 'rxjs/operators';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
+@UntilDestroy()
 @Component({
   selector: 'app-group-single-page',
   templateUrl: './group-single-page.component.html',
@@ -30,6 +32,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   private activatedRouteSubscription: Subscription;
   private groupId: string;
   private monthDate: Moment;
+  private transactionsChangeSubscription: Subscription;
 
   constructor(
     private groupsService: GroupsService,
@@ -119,6 +122,8 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
       });
 
       this.group = group;
+
+      this.transactionsChangeObserver();
     } else {
       this.router.navigateByUrl('/404');
     }
@@ -126,26 +131,36 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   private async getInfoBasedOnGroupAndDate() {
     this.getTransactions();
-    // this.transactionsChangeObserver();
     return Promise.all([this.getGroupSummary()]);
     // return Promise.all([this.getGroupSummary(), this.getChart()]);
   }
 
   private async getGroupSummary() {
-    this.groupSummaryState.isLoading = true;
-
-    this.groupSummaryState.summary = {
-      ...(await this.groupsService.getGroupSummary(
-        this.group.id,
-        moment(this.monthDate).startOf('month'),
-        moment(this.monthDate).endOf('month'),
-      )),
+    this.groupSummaryState = {
+      isLoading: true,
     };
 
-    this.groupSummaryState.summary.expenses = [...this.groupSummaryState.summary.expenses].sort((expenseA, expenseB) =>
-      expenseA.user.name.localeCompare(expenseB.user.name),
+    const summary = await this.groupsService.getGroupSummary(
+      this.group.id,
+      moment(this.monthDate).startOf('month'),
+      moment(this.monthDate).endOf('month'),
     );
 
-    this.groupSummaryState.isLoading = false;
+    this.groupSummaryState = {
+      isLoading: false,
+      summary,
+    };
+  }
+
+  private transactionsChangeObserver(): void {
+    this.transactionsChangeSubscription?.unsubscribe();
+
+    this.transactionsChangeSubscription = merge(
+      this.transactionService.onTransactionCreated(this.group.id),
+      this.transactionService.onTransactionUpdated(this.group.id),
+      this.transactionService.onTransactionDeleted(this.group.id),
+    )
+      .pipe(untilDestroyed(this))
+      .subscribe(() => Promise.all([this.getGroupSummary()]));
   }
 }
