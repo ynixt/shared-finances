@@ -16,7 +16,7 @@ import { TransactionService } from './transaction.service';
     forwardRef(() => BankAccountModule),
     forwardRef(() => CategoryModule),
     forwardRef(() => CreditCardModule),
-    GroupModule,
+    forwardRef(() => GroupModule),
   ],
   providers: [TransactionRepository, TransactionResolver, TransactionService, TransactionResolver, TransactionChartService],
   exports: [TransactionService, TransactionChartService],

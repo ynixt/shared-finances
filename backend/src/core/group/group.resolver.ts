@@ -1,17 +1,24 @@
-import { UseGuards } from '@nestjs/common';
+import { forwardRef, Inject, UseGuards } from '@nestjs/common';
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
+import { GroupSummary } from '../models';
 import { NewGroupArgs, UpdateGroupArgs } from '../models/args';
 import { Group } from '../models/group';
+import { TransactionService } from '../transaction';
 import { UserService } from '../user';
 import { GroupService } from './group.service';
 
 @Resolver(() => Group)
 export class GroupResolver {
-  constructor(private groupService: GroupService, private errorUtilService: ErrorUtilService, private userService: UserService) {}
+  constructor(
+    private groupService: GroupService,
+    private errorUtilService: ErrorUtilService,
+    private userService: UserService,
+    @Inject(forwardRef(() => TransactionService)) private transactionService: TransactionService,
+  ) {}
 
   @Query(() => [Group], { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
@@ -22,12 +29,7 @@ export class GroupResolver {
   @Query(() => Group, { nullable: true })
   @UseGuards(GqlFirebaseAuthGuard)
   async group(@GqlCurrentUser() user: FBUser, @Args({ name: 'groupId' }) groupId: string) {
-    return this.errorUtilService.tryToGetItem(
-      async () => {
-        return await this.groupService.getGroup(user.id, groupId);
-      },
-      () => null,
-    );
+    return this.errorUtilService.tryToGetItem(async () => this.groupService.getGroup(user.id, groupId));
   }
 
   @Mutation(() => String)
@@ -56,6 +58,17 @@ export class GroupResolver {
     const groupUpdated = await this.groupService.updateGroup(user.id, group);
 
     return groupUpdated;
+  }
+
+  @Query(() => GroupSummary)
+  @UseGuards(GqlFirebaseAuthGuard)
+  async groupSummary(
+    @GqlCurrentUser() user: FBUser,
+    @Args({ name: 'groupId' }) groupId: string,
+    @Args({ name: 'minDate' }) minDate: string,
+    @Args({ name: 'maxDate' }) maxDate: string,
+  ) {
+    return this.errorUtilService.tryToGetItem(async () => this.transactionService.getGroupSummary(user, groupId, minDate, maxDate));
   }
 
   @ResolveField()

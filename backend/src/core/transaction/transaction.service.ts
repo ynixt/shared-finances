@@ -9,7 +9,7 @@ import { BankAccountService } from '../bank-account';
 import { CreditCardService } from '../credit-card';
 import { MongoRepositoryOptions } from '../data/mongo-repository';
 import { GroupService } from '../group';
-import { Transaction, TransactionType, TransactionsPage, CreditCardSummary, CreditCard, BankAccountSummary } from '../models';
+import { Transaction, TransactionType, TransactionsPage, CreditCardSummary, CreditCard, BankAccountSummary, GroupSummary } from '../models';
 import { BillPaymentCreditCardArgs, EditTransactionArgs, NewTransactionArgs } from '../models/args';
 import { TransactionRepository } from './transaction.repository';
 
@@ -202,6 +202,16 @@ export class TransactionService {
     }
 
     return 0;
+  }
+
+  async getGroupSummary(user: FBUser, groupId: string, minDate: string, maxDate: string): Promise<GroupSummary> {
+    if (user.groupsId.includes(groupId) === false) {
+      throw new AuthenticationError('');
+    }
+
+    const expenses = await this.transacationRepository.getExpensesOfGroup(groupId, minDate, maxDate);
+
+    return new GroupSummary(expenses.map(expense => ({ userId: expense._id.userId, value: expense.expenses })));
   }
 
   private async validPermissionsOnExistingTransaction(user: FBUser, transaction: Transaction) {

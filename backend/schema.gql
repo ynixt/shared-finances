@@ -90,6 +90,18 @@ type BankAccountSummary {
   revenues: Float
 }
 
+type GroupSummary {
+  expenses: [GroupSummaryExpense!]!
+  totalExpenses: Float!
+}
+
+type GroupSummaryExpense {
+  expense: Float!
+  userId: String!
+  user: User!
+  percentageOfExpenses: Float!
+}
+
 type Query {
   user: User
   bankAccount(bankAccountId: String!): BankAccount
@@ -100,6 +112,7 @@ type Query {
   category(groupId: String, categoryId: String!): Category
   groups: [Group!]
   group(groupId: String!): Group
+  groupSummary(maxDate: String!, minDate: String!, groupId: String!): GroupSummary!
   creditCard(creditCardId: String!): CreditCard
   creditCardSummary(maxCreditCardBillDate: String!, creditCardId: String!): CreditCardSummary
   creditCards: [CreditCard!]!

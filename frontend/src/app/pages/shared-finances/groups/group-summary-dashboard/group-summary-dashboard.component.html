@@ -1,0 +1,23 @@
+<div class="cards grid md:grid-cols-3 gap-4 pb-4" *transloco="let t">
+  <ng-template #loadingCard>
+    <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
+  </ng-template>
+
+  <mat-card class="card">
+    <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+      <span class="text-gray-400 mb-2">{{ t('total-expenses') }}</span>
+      <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">{{ (groupSummary?.totalExpenses ?? 0) | currency }}</h3>
+    </mat-card-content>
+  </mat-card>
+
+  <ng-container *ngIf="isLoading == false">
+    <mat-card class="card" *ngFor="let expenseUser of groupSummary.expenses">
+      <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
+        <span class="text-gray-400 mb-2">{{ t('expenses-of-name', { name: expenseUser.user.name.split(' ')[0] }) }}</span>
+        <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">
+          {{ expenseUser.expense | currency }} <span class="text-xs text-gray-400">({{ expenseUser.percentageOfExpenses | number }}%)</span>
+        </h3>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+</div>

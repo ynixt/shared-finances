@@ -6,7 +6,7 @@ import { Group } from 'src/app/@core/models/group';
 import { TranslocoService } from '@ngneat/transloco';
 import { TitleService, GroupsService, ErrorService, TransactionService } from 'src/app/@core/services';
 import moment, { Moment } from 'moment';
-import { Page, Transaction } from 'src/app/@core/models';
+import { GroupSummary, Page, Transaction } from 'src/app/@core/models';
 import { DOCUMENT } from '@angular/common';
 import { HotToastService } from '@ngneat/hot-toast';
 import { take } from 'rxjs/operators';
@@ -22,6 +22,10 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   public sharedLinkLoading = false;
   public transactionsPage$: Observable<Page<Transaction>>;
   public pageSize = 20;
+
+  groupSummaryState: { isLoading: boolean; summary?: GroupSummary } = {
+    isLoading: true,
+  };
 
   private activatedRouteSubscription: Subscription;
   private groupId: string;
@@ -123,6 +127,25 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   private async getInfoBasedOnGroupAndDate() {
     this.getTransactions();
     // this.transactionsChangeObserver();
-    // return Promise.all([this.getBankAccountSummary(), this.getChart()]);
+    return Promise.all([this.getGroupSummary()]);
+    // return Promise.all([this.getGroupSummary(), this.getChart()]);
+  }
+
+  private async getGroupSummary() {
+    this.groupSummaryState.isLoading = true;
+
+    this.groupSummaryState.summary = {
+      ...(await this.groupsService.getGroupSummary(
+        this.group.id,
+        moment(this.monthDate).startOf('month'),
+        moment(this.monthDate).endOf('month'),
+      )),
+    };
+
+    this.groupSummaryState.summary.expenses = [...this.groupSummaryState.summary.expenses].sort((expenseA, expenseB) =>
+      expenseA.user.name.localeCompare(expenseB.user.name),
+    );
+
+    this.groupSummaryState.isLoading = false;
   }
 }

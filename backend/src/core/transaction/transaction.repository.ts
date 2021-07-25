@@ -452,4 +452,31 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
 
     return aggregate.exec();
   }
+
+  async getExpensesOfGroup(groupId: string, minDate: string, maxDate: string): Promise<{ _id: { userId: string }; expenses: number }[]> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          $and: [{ groupId: new Types.ObjectId(groupId) }, { date: { $gte: minDate } }, { date: { $lt: maxDate } }, { value: { $lt: 0 } }],
+          // $and: [{ date: { $lt: minDate } }, { date: { $gte: maxDate } }, { value: { $lt: 0 } }],
+        },
+      },
+    ]);
+
+    aggregate.project({
+      userId: 1,
+      expenses: { $multiply: ['$value', -1] },
+    });
+
+    aggregate.group({
+      _id: {
+        userId: '$userId',
+      },
+      expenses: { $sum: '$expenses' },
+    });
+
+    const result = await aggregate.exec();
+
+    return result ?? [];
+  }
 }

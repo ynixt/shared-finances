@@ -4,7 +4,7 @@ import { Apollo, gql } from 'apollo-angular';
 import { map, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { Moment } from 'moment';
-import { Page, Pagination, Transaction } from '../models';
+import { GroupSummary, Page, Pagination, Transaction } from '../models';
 
 @Injectable({
   providedIn: 'root',
@@ -229,5 +229,37 @@ export class GroupsService {
     // this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId);
 
     return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
+  }
+
+  async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment): Promise<GroupSummary> {
+    const summaryQueryRef = this.apollo.watchQuery<{ groupSummary: GroupSummary }>({
+      query: gql`
+        query($groupId: String!, $maxDate: String!, $minDate: String!) {
+          groupSummary(groupId: $groupId, maxDate: $maxDate, minDate: $minDate) {
+            totalExpenses
+            expenses {
+              expense
+              percentageOfExpenses
+              user {
+                id
+                name
+              }
+            }
+          }
+        }
+      `,
+      variables: {
+        groupId,
+        maxDate: maxDate?.toISOString(),
+        minDate: minDate?.toISOString(),
+      },
+    });
+
+    return summaryQueryRef.valueChanges
+      .pipe(
+        map(result => result.data.groupSummary),
+        take(1),
+      )
+      .toPromise();
   }
 }

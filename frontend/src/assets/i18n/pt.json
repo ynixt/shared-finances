@@ -153,5 +153,7 @@
   "value-currency": "Valor ({{currency}})",
   "new-group": "Novo grupo",
   "no-groups": "Infelizmente você ainda não participa de nenhum grupo. Peça um convite para alguém ou crie um novo grupo.",
-  "paid-by": "Pago por"
+  "paid-by": "Pago por",
+  "total-expenses": "Despesas totais",
+  "expenses-of-name": "Despesas {{name}}"
 }

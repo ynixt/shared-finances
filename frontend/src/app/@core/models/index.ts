@@ -7,3 +7,4 @@ export * from './category';
 export * from './page';
 export * from './credit-card-summary';
 export * from './bank-account-summary';
+export * from './group-summary';

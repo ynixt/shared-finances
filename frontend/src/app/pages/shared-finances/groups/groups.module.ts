@@ -14,9 +14,17 @@ import { MatInputModule } from '@angular/material/input';
 import { EditGroupComponent } from './edit-group/edit-group.component';
 import { MonthBarModule } from 'src/app/components/month-bar';
 import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
+import { GroupSummaryDashboardComponent } from './group-summary-dashboard/group-summary-dashboard.component';
 
 @NgModule({
-  declarations: [GroupsComponent, GroupSinglePageComponent, NewGroupComponent, FormGroupComponent, EditGroupComponent],
+  declarations: [
+    GroupsComponent,
+    GroupSinglePageComponent,
+    NewGroupComponent,
+    FormGroupComponent,
+    EditGroupComponent,
+    GroupSummaryDashboardComponent,
+  ],
   imports: [
     CommonModule,
     RouterModule,

@@ -30,6 +30,11 @@
       <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
     </div>
 
+    <app-group-summary-dashboard
+      [groupSummary]="groupSummaryState.summary"
+      [isLoading]="groupSummaryState.isLoading"
+    ></app-group-summary-dashboard>
+
     <app-transactions-table
       [transactionsPage$]="transactionsPage$"
       [pageSize]="pageSize"
