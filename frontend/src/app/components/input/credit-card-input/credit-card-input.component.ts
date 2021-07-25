@@ -1,7 +1,9 @@
-import { Component, forwardRef, Input, OnInit, Output } from '@angular/core';
-import { ControlContainer, ControlValueAccessor, FormControl, NgControl, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ControlContainer, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BehaviorSubject, combineLatest, Observable, Subject } from 'rxjs';
 import { map, take } from 'rxjs/operators';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
+
 import { ControlValueAccessorConnector } from 'src/app/@core/control-value-accessor-connector';
 import { CreditCard, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
@@ -17,18 +19,21 @@ export interface CreditCardWithPerson {
   creditCards: CreditCard[];
 }
 
+@UntilDestroy()
 @Component({
   selector: 'app-credit-card-input',
   templateUrl: './credit-card-input.component.html',
   styleUrls: ['./credit-card-input.component.scss'],
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CreditCardInputComponent), multi: true }],
 })
-export class CreditCardInputComponent extends ControlValueAccessorConnector<CreditCardInputValue> implements OnInit, ControlValueAccessor {
+export class CreditCardInputComponent
+  extends ControlValueAccessorConnector<CreditCardInputValue>
+  implements OnInit, ControlValueAccessor, OnDestroy {
   creditCardsWithPersons$: Observable<CreditCardWithPerson[]>;
 
   @Input() autoMount = true;
 
-  private initialSubject: Subject<CreditCardWithPerson[]>;
+  private creditCardsWithPersonsSubject: BehaviorSubject<CreditCardWithPerson[]>;
   private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);
   private _creditCards: CreditCard[];
 
@@ -41,15 +46,18 @@ export class CreditCardInputComponent extends ControlValueAccessorConnector<Cred
   constructor(private creditCardSelectors: CreditCardSelectors, private authSelectors: AuthSelectors, controlContainer: ControlContainer) {
     super(controlContainer);
 
-    this.initialSubject = new Subject();
-    this.initialSubject.complete();
-    this.creditCardsWithPersons$ = this.initialSubject.asObservable();
+    this.creditCardsWithPersonsSubject = new BehaviorSubject([]);
+    this.creditCardsWithPersons$ = this.creditCardsWithPersonsSubject.asObservable();
   }
 
   ngOnInit(): void {
     if (this.autoMount) {
       this.mountCreditCards();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.creditCardsWithPersonsSubject.complete();
   }
 
   creditCardInputValueCompare(obj1: any, obj2: any): boolean {
@@ -74,25 +82,26 @@ export class CreditCardInputComponent extends ControlValueAccessorConnector<Cred
   }
 
   private mountCreditCardsFromCurrentUser(): void {
-    this.creditCardsWithPersons$ = combineLatest([
-      this.creditCardSelectors.creditCards$,
-      this.authSelectors.user$,
-      this.creditCardFromOtherUsers.asObservable(),
-    ]).pipe(
-      map(combined => ({ creditCards: combined[0], user: combined[1], creditCardFromOtherUsers: combined[2] })),
-      map(combined => {
-        this._creditCards = combined.creditCards;
-        this.creditCardsChange.next(this.creditCards);
+    combineLatest([this.creditCardSelectors.creditCards$, this.authSelectors.user$, this.creditCardFromOtherUsers.asObservable()])
+      .pipe(
+        untilDestroyed(this),
+        map(combined => ({ creditCards: combined[0], user: combined[1], creditCardFromOtherUsers: combined[2] })),
+        map(combined => {
+          this._creditCards = combined.creditCards;
+          this.creditCardsChange.next(this.creditCards);
 
-        return [
-          {
-            person: combined.user,
-            creditCards: [...combined.creditCards].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
-          },
-          ...combined.creditCardFromOtherUsers,
-        ].sort((a, b) => a.person.name.localeCompare(b.person.name));
-      }),
-    );
+          return [
+            {
+              person: combined.user,
+              creditCards: [...combined.creditCards].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
+            },
+            ...combined.creditCardFromOtherUsers,
+          ].sort((a, b) => a.person.name.localeCompare(b.person.name));
+        }),
+      )
+      .subscribe(creditCard => {
+        this.creditCardsWithPersonsSubject.next(creditCard);
+      });
   }
 
   private async mountCreditCardFromOtherUsers(group?: Group): Promise<void> {
