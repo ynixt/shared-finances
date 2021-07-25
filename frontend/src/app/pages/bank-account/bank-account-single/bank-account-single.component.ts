@@ -85,12 +85,17 @@ export class BankAccountSingleComponent implements OnInit {
   public async getBankAccountSummary(): Promise<void> {
     const maxDate = this.getMaxDate();
 
-    this.bankAccountSummaryState.isLoading = true;
-    this.bankAccountSummaryState.summary = await this.bankAccountService.getBankAccountSummary({
-      bankAccountId: this.bankAccount.id,
-      maxDate: maxDate,
-    });
-    this.bankAccountSummaryState.isLoading = false;
+    this.bankAccountSummaryState = {
+      isLoading: true,
+    };
+
+    this.bankAccountSummaryState = {
+      summary: await this.bankAccountService.getBankAccountSummary({
+        bankAccountId: this.bankAccount.id,
+        maxDate: maxDate,
+      }),
+      isLoading: false,
+    };
   }
 
   public async getChart(): Promise<void> {
