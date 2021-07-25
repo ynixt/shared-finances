@@ -8,7 +8,6 @@ import { map, take } from 'rxjs/operators';
 import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
 import { BankAccount, BankAccountSummary, Page, Pagination, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
-import { DateUtil } from '../util';
 
 const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
   subscription bankAccountTransactionCreated($bankAccountId: String) {
@@ -440,20 +439,5 @@ export class BankAccountService {
         take(1),
       )
       .toPromise();
-  }
-
-  /**
-   *
-   * @param disallowFutureOnSameMonth If true AND 'monthDate' is the same month as the current month, the date that will be returned will be the current date.
-   * @returns
-   */
-  getMaxDate(monthDate: Moment | string, disallowFutureOnSameMonth: boolean): Moment {
-    let maxDate = moment(monthDate).endOf('month');
-
-    if (disallowFutureOnSameMonth && moment(monthDate).isSame(moment(), 'month') && DateUtil.dateIsBiggerThanToday(maxDate)) {
-      maxDate = moment();
-    }
-
-    return maxDate;
   }
 }

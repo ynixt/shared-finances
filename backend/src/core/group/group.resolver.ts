@@ -4,10 +4,10 @@ import { ErrorUtilService } from 'src/shared';
 import { FBUser } from '../auth/firebase-strategy';
 import { GqlCurrentUser } from '../auth/gql-current-user';
 import { GqlFirebaseAuthGuard } from '../auth/gql-firebase-auth-guard';
-import { GroupSummary } from '../models';
+import { Chart, GroupSummary } from '../models';
 import { NewGroupArgs, UpdateGroupArgs } from '../models/args';
 import { Group } from '../models/group';
-import { TransactionService } from '../transaction';
+import { TransactionChartService, TransactionService } from '../transaction';
 import { UserService } from '../user';
 import { GroupService } from './group.service';
 
@@ -18,6 +18,7 @@ export class GroupResolver {
     private errorUtilService: ErrorUtilService,
     private userService: UserService,
     @Inject(forwardRef(() => TransactionService)) private transactionService: TransactionService,
+    @Inject(forwardRef(() => TransactionChartService)) private transactionChartService: TransactionChartService,
   ) {}
 
   @Query(() => [Group], { nullable: true })
@@ -69,6 +70,20 @@ export class GroupResolver {
     @Args({ name: 'maxDate' }) maxDate: string,
   ) {
     return this.errorUtilService.tryToGetItem(async () => this.transactionService.getGroupSummary(user, groupId, minDate, maxDate));
+  }
+
+  @Query(() => [Chart], { nullable: true })
+  @UseGuards(GqlFirebaseAuthGuard)
+  async transactionsGroupChart(
+    @GqlCurrentUser() user: FBUser,
+    @Args({ name: 'timezone' }) timezone: string,
+    @Args({ name: 'groupId', nullable: true }) groupId?: string,
+    @Args({ name: 'maxDate', nullable: true }) maxDate?: string,
+    @Args({ name: 'minDate', nullable: true }) minDate?: string,
+  ) {
+    return this.errorUtilService.tryToGetItem(async () =>
+      this.transactionChartService.getChartByGroupIdId(user, groupId, timezone, { minDate, maxDate }),
+    );
   }
 
   @ResolveField()

@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { Apollo, gql } from 'apollo-angular';
+import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
 import { TransactionType } from '../enums';
+import { DateUtil } from '../util';
 
 export const TRANSACTION_CREATED_SUBSCRIPTION = gql`
   subscription transactionCreated($groupId: String) {
@@ -327,5 +329,20 @@ export class TransactionService {
         },
       })
       .pipe(map(result => result.data.transactionDeleted.id));
+  }
+
+  /**
+   *
+   * @param disallowFutureOnSameMonth If true AND 'monthDate' is the same month as the current month, the date that will be returned will be the current date.
+   * @returns
+   */
+  getMaxDate(monthDate: Moment | string, disallowFutureOnSameMonth: boolean): Moment {
+    let maxDate = moment(monthDate).endOf('month');
+
+    if (disallowFutureOnSameMonth && moment(monthDate).isSame(moment(), 'month') && DateUtil.dateIsBiggerThanToday(maxDate)) {
+      maxDate = moment();
+    }
+
+    return maxDate;
   }
 }

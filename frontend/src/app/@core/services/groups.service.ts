@@ -11,6 +11,8 @@ import {
   TRANSACTION_DELETED_SUBSCRIPTION,
   TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
 } from './transaction.service';
+import { CHART_DEFAULT_MINIMUM_MONTHS } from '../constants';
+import { Chart } from '../models/chart';
 
 @Injectable({
   providedIn: 'root',
@@ -392,5 +394,65 @@ export class GroupsService {
         return prev;
       },
     });
+  }
+
+  getTransactionsChart(
+    groupNamesById: Map<string, string>,
+    initialMonthIfNoChart: Moment | string,
+    args: { groupId: string; maxDate?: Moment; minDate?: Moment },
+    minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS,
+  ): Promise<Chart[]> {
+    const transactionsChartQueryRef = this.apollo.query<{ transactionsGroupChart: Chart[] }>({
+      query: gql`
+        query($groupId: String, $timezone: String!, $maxDate: String, $minDate: String) {
+          transactionsGroupChart(groupId: $groupId, timezone: $timezone, maxDate: $maxDate, minDate: $minDate) {
+            name
+            series {
+              name
+              value
+            }
+          }
+        }
+      `,
+      variables: {
+        groupId: args.groupId,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        maxDate: args.maxDate?.toISOString(),
+        minDate: args.minDate?.toISOString(),
+      },
+    });
+
+    return transactionsChartQueryRef
+      .pipe(
+        map(result => {
+          const charts: Chart[] = result.data.transactionsGroupChart.map(chart => {
+            const dateFormat = 'MM/YYYY';
+            const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
+            const series = chart.series.map(serie => ({
+              ...serie,
+              name: moment(serie.name).format(dateFormat),
+            }));
+
+            if (series.length < minimumMonths) {
+              const missing = minimumMonths - series.length;
+
+              for (let i = 0; i < missing; i++) {
+                series.splice(i, 0, {
+                  name: moment(firstDate)
+                    .subtract(missing - i, 'month')
+                    .format(dateFormat),
+                  value: 0,
+                });
+              }
+            }
+
+            return { name: groupNamesById.get(chart.name), series };
+          });
+
+          return charts;
+        }),
+        take(1),
+      )
+      .toPromise();
   }
 }

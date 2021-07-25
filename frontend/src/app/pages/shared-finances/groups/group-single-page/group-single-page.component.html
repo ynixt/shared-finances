@@ -23,14 +23,20 @@
         >
           <mat-icon>share</mat-icon>
         </button>
+
+        <button mat-icon-button aria-label="Edit" [matMenuTriggerFor]="menu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #menu="matMenu">
+          <a (click)="toggleDisallowFutureOnSameMonth()" mat-menu-item *ngIf="disallowFutureOnSameMonth">
+            <span>{{ t('show-future-transaction') }}</span>
+          </a>
+          <button (click)="toggleDisallowFutureOnSameMonth()" mat-menu-item *ngIf="!disallowFutureOnSameMonth">
+            <span>{{ t('hide-future-transaction') }}</span>
+          </button>
+        </mat-menu>
       </div>
     </app-title-bar>
-
-    <!-- TODO REMOVER -->
-    <ul>
-      <li>Gráfico de gastos</li>
-      <li>Gráfico com valor gasto por cada um do grupo</li>
-    </ul>
 
     <div class="pb-6">
       <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
@@ -41,6 +47,26 @@
       [isLoading]="groupSummaryState.isLoading"
       [users]="group.users"
     ></app-group-summary-dashboard>
+
+    <div class="chart flex flex-col justify-center items-stretch mb-6">
+      <h2 class="title">{{ t('expenses') }}</h2>
+      <div class="flex h-3/5 md:h-56 justify-center items-center">
+        <ngx-charts-line-chart
+          *ngIf="transactionsGroupedYearMonth; else loadingTemplate"
+          [scheme]="colorScheme"
+          [showXAxisLabel]="showXAxisLabel"
+          [showYAxisLabel]="showYAxisLabel"
+          [xAxis]="true"
+          [yAxis]="true"
+          [xAxisLabel]="t('date')"
+          [yAxisLabel]="t('value-currency', { currency: '' | currencySymbol })"
+          [results]="transactionsGroupedYearMonth"
+          [roundDomains]="true"
+          [autoScale]="true"
+        >
+        </ngx-charts-line-chart>
+      </div>
+    </div>
 
     <app-transactions-table
       [transactionsPage$]="transactionsPage$"

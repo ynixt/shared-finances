@@ -15,6 +15,7 @@ import { EditGroupComponent } from './edit-group/edit-group.component';
 import { MonthBarModule } from 'src/app/components/month-bar';
 import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
 import { GroupSummaryDashboardComponent } from './group-summary-dashboard/group-summary-dashboard.component';
+import { NgxChartsModule } from '@swimlane/ngx-charts';
 
 @NgModule({
   declarations: [
@@ -36,6 +37,7 @@ import { GroupSummaryDashboardComponent } from './group-summary-dashboard/group-
     MatInputModule,
     MonthBarModule,
     TransactionsTableModule,
+    NgxChartsModule,
   ],
   exports: [GroupsComponent, GroupSinglePageComponent],
 })

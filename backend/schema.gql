@@ -113,6 +113,7 @@ type Query {
   groups: [Group!]
   group(groupId: String!): Group
   groupSummary(maxDate: String!, minDate: String!, groupId: String!): GroupSummary!
+  transactionsGroupChart(minDate: String, maxDate: String, groupId: String, timezone: String!): [Chart!]
   creditCard(creditCardId: String!): CreditCard
   creditCardSummary(maxCreditCardBillDate: String!, creditCardId: String!): CreditCardSummary
   creditCards: [CreditCard!]!

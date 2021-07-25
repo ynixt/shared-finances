@@ -12,6 +12,8 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { take } from 'rxjs/operators';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
+import { Chart } from 'src/app/@core/models/chart';
+import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
 
 @UntilDestroy()
 @Component({
@@ -20,13 +22,26 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
   styleUrls: ['./group-single-page.component.scss'],
 })
 export class GroupSinglePageComponent implements OnInit, OnDestroy {
-  public group: Group;
-  public sharedLinkLoading = false;
-  public transactionsPage$: Observable<Page<Transaction>>;
-  public pageSize = 20;
+  group: Group;
+  sharedLinkLoading = false;
+  transactionsPage$: Observable<Page<Transaction>>;
+  pageSize = 20;
+  transactionsGroupedYearMonth: Chart[];
 
   groupSummaryState: { isLoading: boolean; summary?: GroupSummary } = {
     isLoading: true,
+  };
+
+  disallowFutureOnSameMonth = true;
+
+  legend: boolean = true;
+  showLabels: boolean = true;
+  animations: boolean = true;
+  showYAxisLabel: boolean = true;
+  showXAxisLabel: boolean = true;
+
+  colorScheme = {
+    domain: ['#5AA454'],
   };
 
   private activatedRouteSubscription: Subscription;
@@ -111,6 +126,26 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
       .toPromise();
   }
 
+  public async getChart(): Promise<void> {
+    this.transactionsGroupedYearMonth = undefined;
+
+    const groupNamesById = new Map<string, string>();
+    groupNamesById.set(this.group.id, this.group.name);
+
+    const charts = await this.groupsService.getTransactionsChart(groupNamesById, this.getMaxDate().add(1), {
+      groupId: this.group.id,
+      maxDate: this.getMaxDate(),
+      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, 'month'),
+    });
+
+    this.transactionsGroupedYearMonth = charts;
+  }
+
+  public async toggleDisallowFutureOnSameMonth(): Promise<void> {
+    this.disallowFutureOnSameMonth = !this.disallowFutureOnSameMonth;
+    await this.getInfoBasedOnGroupAndDate();
+  }
+
   private async loadGroup(groupId: string): Promise<void> {
     this.groupId = groupId;
 
@@ -131,8 +166,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   private async getInfoBasedOnGroupAndDate() {
     this.getTransactions();
-    return Promise.all([this.getGroupSummary()]);
-    // return Promise.all([this.getGroupSummary(), this.getChart()]);
+    return Promise.all([this.getGroupSummary(), this.getChart()]);
   }
 
   private async getGroupSummary() {
@@ -161,6 +195,10 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
       this.transactionService.onTransactionDeleted(this.group.id),
     )
       .pipe(untilDestroyed(this))
-      .subscribe(() => Promise.all([this.getGroupSummary()]));
+      .subscribe(() => Promise.all([this.getGroupSummary(), this.getChart()]));
+  }
+
+  private getMaxDate(disallowFutureOnSameMonth = this.disallowFutureOnSameMonth) {
+    return this.transactionService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
   }
 }

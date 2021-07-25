@@ -193,7 +193,7 @@ export class CreditCardService {
     creditCardNamesById: Map<string, string>,
     initialMonthIfNoChart: Moment | string,
     creditCardClosingDay: number,
-    args?: { creditCardId: string; maxCreditCardBillDate?: Moment; minCreditCardBillDate?: Moment },
+    args: { creditCardId: string; maxCreditCardBillDate?: Moment; minCreditCardBillDate?: Moment },
     minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS,
   ): Promise<Chart[]> {
     const transactionsChartQueryRef = this.apollo.query<{ transactionsCreditCardChart: Chart[] }>({

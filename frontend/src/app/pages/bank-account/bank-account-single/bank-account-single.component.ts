@@ -182,6 +182,6 @@ export class BankAccountSingleComponent implements OnInit {
   }
 
   private getMaxDate(disallowFutureOnSameMonth = this.disallowFutureOnSameMonth) {
-    return this.bankAccountService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
+    return this.transactionService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
   }
 }

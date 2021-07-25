@@ -458,7 +458,6 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       {
         $match: {
           $and: [{ groupId: new Types.ObjectId(groupId) }, { date: { $gte: minDate } }, { date: { $lt: maxDate } }, { value: { $lt: 0 } }],
-          // $and: [{ date: { $lt: minDate } }, { date: { $gte: maxDate } }, { value: { $lt: 0 } }],
         },
       },
     ]);
@@ -478,5 +477,51 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     const result = await aggregate.exec();
 
     return result ?? [];
+  }
+
+  getByGroupIdGroupedByDate(
+    groupId: string,
+    timezone: string,
+    args?: { minDate?: string; maxDate?: string },
+  ): Promise<{ _id: { month: number; year: number }; expenses: number }[]> {
+    const aggregate = this.model.aggregate([
+      {
+        $match: {
+          $and: [{ groupId: new Types.ObjectId(groupId) }, { value: { $lt: 0 } }],
+        },
+      },
+    ]);
+
+    if (args?.minDate) {
+      aggregate.match({
+        date: { '$gte': args.minDate },
+      });
+    }
+
+    if (args?.maxDate) {
+      aggregate.match({
+        date: { '$lte': args.maxDate },
+      });
+    }
+
+    aggregate.project({
+      date: { '$dateFromString': { dateString: '$date' } },
+      value: 1,
+    });
+
+    aggregate.group({
+      _id: {
+        month: { $month: { date: '$date', timezone } },
+        year: { $year: { date: '$date', timezone } },
+      },
+      expenses: { $sum: '$value' },
+    });
+
+    aggregate.project({
+      _id: '$_id',
+      expenses: { $multiply: ['$expenses', -1] },
+    });
+
+    return aggregate.exec();
   }
 }

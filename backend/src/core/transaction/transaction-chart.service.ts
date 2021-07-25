@@ -4,6 +4,7 @@ import moment from 'moment-timezone';
 import { FBUser } from '../auth/firebase-strategy';
 import { BankAccountService } from '../bank-account';
 import { CreditCardService } from '../credit-card';
+import { GroupService } from '../group';
 import { Chart, ChartSerie } from '../models';
 import { TransactionRepository } from './transaction.repository';
 
@@ -13,6 +14,7 @@ export class TransactionChartService {
     private transacationRepository: TransactionRepository,
     @Inject(forwardRef(() => BankAccountService)) private bankAccountService: BankAccountService,
     @Inject(forwardRef(() => CreditCardService)) private creditCardService: CreditCardService,
+    @Inject(forwardRef(() => GroupService)) private groupService: GroupService,
   ) {}
 
   async getChartByBankAccountId(
@@ -69,6 +71,25 @@ export class TransactionChartService {
       .sort((serieA, serieB) => serieA.name.localeCompare(serieB.name));
 
     return [new Chart({ name: bankAccountId, series })];
+  }
+
+  async getChartByGroupIdId(
+    user: FBUser,
+    groupId: string,
+    timezone: string,
+    args?: { minDate?: string; maxDate?: string },
+  ): Promise<Chart[]> {
+    if (user.groupsId.includes(groupId) === false) {
+      throw new AuthenticationError('');
+    }
+
+    const data = (await this.transacationRepository.getByGroupIdGroupedByDate(groupId, timezone, args)) ?? [];
+
+    const series = data
+      .map(data => new ChartSerie({ name: this.convertMonthYearToName(data._id.month, data._id.year, timezone), value: data.expenses }))
+      .sort((serieA, serieB) => serieA.name.localeCompare(serieB.name));
+
+    return [new Chart({ name: groupId, series })];
   }
 
   private convertMonthYearToName(month: number, year: number, timeZone: string) {

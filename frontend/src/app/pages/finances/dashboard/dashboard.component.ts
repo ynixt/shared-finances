@@ -4,7 +4,7 @@ import { merge } from 'rxjs';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
 import { BankAccountSummary } from 'src/app/@core/models';
-import { BankAccountService } from 'src/app/@core/services';
+import { BankAccountService, TransactionService } from 'src/app/@core/services';
 
 @UntilDestroy()
 @Component({
@@ -19,7 +19,7 @@ export class DashboardComponent implements OnInit {
 
   private monthDate: Moment;
 
-  constructor(private bankAccountService: BankAccountService) {}
+  constructor(private bankAccountService: BankAccountService, private transactionService: TransactionService) {}
 
   ngOnInit(): void {
     this.transactionsChangeObserver();
@@ -51,7 +51,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private getMaxDate(disallowFutureOnSameMonth = true) {
-    return this.bankAccountService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
+    return this.transactionService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
   }
 
   private getInfoBasedOnDate(): Promise<any> {
