@@ -226,16 +226,20 @@ export class TransactionResolver {
     filter: async (payload, variables, context): Promise<boolean> => {
       const isToThisUser = payload?.usersDestination?.includes(context.req.user.id);
 
-      if (isToThisUser && payload?.bankAccountTransactionCreated?.bankAccountId != null) {
-        return isToThisUser && variables.bankAccountId === payload.bankAccountTransactionCreated.bankAccountId.toHexString();
+      if (isToThisUser && variables.bankAccountId != null) {
+        if (payload?.bankAccountTransactionCreated?.bankAccountId != null) {
+          return isToThisUser && variables.bankAccountId === payload.bankAccountTransactionCreated.bankAccountId.toHexString();
+        }
+
+        return false;
       }
 
-      return false;
+      return isToThisUser;
     },
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bankAccountTransactionCreated(@Args({ name: 'bankAccountId' }) bankAccountId: string) {
+  bankAccountTransactionCreated(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId?: string) {
     return pubSub.asyncIterator(TransactionPubTrigger.bankAccountTransactionCreated);
   }
 
@@ -244,8 +248,12 @@ export class TransactionResolver {
     filter: async (payload, variables, context): Promise<boolean> => {
       const isToThisUser = payload?.usersDestination?.includes(context.req.user.id);
 
-      if (isToThisUser && payload?.bankAccountTransactionUpdated?.bankAccountId != null) {
-        return isToThisUser && variables.bankAccountId === payload.bankAccountTransactionUpdated.bankAccountId.toHexString();
+      if (isToThisUser && variables.bankAccountId != null) {
+        if (payload?.bankAccountTransactionUpdated?.bankAccountId != null) {
+          return isToThisUser && variables.bankAccountId === payload.bankAccountTransactionUpdated.bankAccountId.toHexString();
+        }
+
+        return false;
       }
 
       return false;
@@ -253,7 +261,7 @@ export class TransactionResolver {
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bankAccountTransactionUpdated(@Args({ name: 'bankAccountId' }) bankAccountId: string) {
+  bankAccountTransactionUpdated(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId: string) {
     return pubSub.asyncIterator(TransactionPubTrigger.bankAccountTransactionUpdated);
   }
 
@@ -262,8 +270,12 @@ export class TransactionResolver {
     filter: async (payload, variables, context): Promise<boolean> => {
       const isToThisUser = payload?.usersDestination?.includes(context.req.user.id);
 
-      if (isToThisUser && payload?.bankAccountTransactionDeleted?.bankAccountId != null) {
-        return isToThisUser && variables.bankAccountId === payload.bankAccountTransactionDeleted.bankAccountId.toHexString();
+      if (isToThisUser && variables.bankAccountId != null) {
+        if (payload?.bankAccountTransactionDeleted?.bankAccountId != null) {
+          return isToThisUser && variables.bankAccountId === payload.bankAccountTransactionDeleted.bankAccountId.toHexString();
+        }
+
+        return false;
       }
 
       return false;
@@ -271,7 +283,7 @@ export class TransactionResolver {
   })
   @UseGuards(GqlFirebaseAuthGuard)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bankAccountTransactionDeleted(@Args({ name: 'bankAccountId' }) bankAccountId: string) {
+  bankAccountTransactionDeleted(@Args({ name: 'bankAccountId', nullable: true }) bankAccountId: string) {
     return pubSub.asyncIterator(TransactionPubTrigger.bankAccountTransactionDeleted);
   }
 
