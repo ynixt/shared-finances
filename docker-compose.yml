@@ -49,28 +49,12 @@ services:
       - api
     ports:
       - 80:80
-  # nginx:
-  #   container_name: shared_finances-nginx
-  #   image: nginx:alpine
-  #   volumes:
-  #     - ./nginx/config/nginx.conf:/etc/nginx/nginx.conf
-  #     - ./nginx/config/mime.types:/etc/nginx/mime.types
-  #     - shared:/var/www/shared_finances
-  #   ports:
-  #     - 80:80
-  #   environment:
-  #     NGINX_PORT: 80
-  #   networks:
-  #     - api
-  #     - front
-  #   depends_on:
-  #     - angular
-  #     - api
 
 networks:
   api:
+    internal: true
   database:
-    # internal: true
+    internal: true
   front:
 
 volumes:
