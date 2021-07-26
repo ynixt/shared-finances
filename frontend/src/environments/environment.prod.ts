@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  graphqlWebsocketUrl: 'ws://localhost/graphql'
+  graphqlWebsocketUrl: 'ws://financas.unkapps.com//graphql'
 };
