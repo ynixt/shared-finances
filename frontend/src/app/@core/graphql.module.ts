@@ -10,6 +10,7 @@ import { take } from 'rxjs/operators';
 import { MessageTypes, SubscriptionClient } from 'subscriptions-transport-ws';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
+import { environment } from 'src/environments/environment';
 
 const uri = '/api/graphql';
 export function createApollo(
@@ -39,7 +40,7 @@ export function createApollo(
 
   let alreadyConfigured = false;
 
-  const subscriptionClient = new SubscriptionClient(`ws://localhost:3000/graphql`, {
+  const subscriptionClient = new SubscriptionClient(environment.graphqlWebsocketUrl, {
     reconnect: true,
     reconnectionAttempts: 5,
     connectionParams: async () => {
