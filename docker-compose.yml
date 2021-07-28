@@ -5,7 +5,6 @@ services:
     image: mongo:4.0.26-xenial
     container_name: shared_finances-mongo
     restart: always
-    command: "--bind_ip_all --replSet rs0"
     volumes:
       - mongodb_data_container:/data/db
     ports:
