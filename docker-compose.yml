@@ -37,8 +37,8 @@ services:
       - db
     environment:
       - DB_URL=mongodb://shared_finances-mongo
-  angular:
-    container_name: shared_finances-angular
+  nginx:
+    container_name: shared_finances-nginx
     build:
       context: ./frontend
       dockerfile: ./Dockerfile
