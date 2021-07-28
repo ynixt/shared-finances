@@ -63,7 +63,7 @@ services:
 
 networks:
   api:
-    # internal: true
+    internal: true
   database:
     internal: true
   front:
