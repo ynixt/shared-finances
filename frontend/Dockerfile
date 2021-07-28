@@ -10,8 +10,6 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=builder /usr/src/shared_finances/frontend/dist/shared-finances /var/www/shared_finances
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ./nginx/unkapps.pem /etc/ssl/unkapps.pem
-COPY ./nginx/private_unkapps.pem /etc/ssl/private_unkapps.pem
 
 EXPOSE 80
 EXPOSE 443
