@@ -6,8 +6,10 @@
   }
 }
 
-.demo-image {
-  height: 500px;
+@include layout-bp(gt-sm) {
+  .demo-image {
+    height: 500px;
+  }
 }
 
 .scroll-down-button {
