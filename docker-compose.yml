@@ -35,6 +35,7 @@ services:
       - database
     depends_on:
       - db
+      - db_replica_configure
     environment:
       - DB_URL=mongodb://shared_finances-mongo
   nginx:
