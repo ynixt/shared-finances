@@ -62,21 +62,7 @@
         <input formControlName="description" matInput [placeholder]="t('transaction-description-placeholder')" />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>{{ t('category') }}</mat-label>
-        <input
-          type="text"
-          [placeholder]="t('transaction-category-placeholder')"
-          matInput
-          formControlName="category"
-          [matAutocomplete]="auto"
-        />
-        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [displayWith]="formatCategory">
-          <mat-option *ngFor="let category of filteredCategories$ | async" [value]="category">
-            {{ category.name }}
-          </mat-option>
-        </mat-autocomplete>
-      </mat-form-field>
+      <app-category-input [formControlName]="'category'" [isShared]="shared" [group]="group"></app-category-input>
 
       <app-bank-account-input
         [formControlName]="'bankAccount'"

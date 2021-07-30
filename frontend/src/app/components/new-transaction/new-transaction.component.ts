@@ -15,14 +15,13 @@ import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
-import { combineLatest, Observable } from 'rxjs';
-import { map, startWith, take } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
+import { startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
 import { Category, Transaction, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
 import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
-import { UserCategorySelectors } from 'src/app/store/services/selectors';
 import { BankAccountInputComponent, CreditCardInputComponent, CreditCardWithPerson } from '../input';
 import { NewTransactionComponentArgs } from './new-transaction-component-args';
 
@@ -87,7 +86,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   formGroup: FormGroup;
   transactionTypeEnum = TransactionType;
-  filteredCategories$: Observable<Category[]>;
+
   shared: boolean;
   groups: Group[];
   editingTransaction: Transaction;
@@ -104,7 +103,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     private translocoService: TranslocoService,
     private toast: HotToastService,
     private errorService: ErrorService,
-    private userCategorySelectors: UserCategorySelectors,
     private cdRef: ChangeDetectorRef,
     private titleService: TitleService,
     private groupsService: GroupsService,
@@ -189,10 +187,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     }
   }
 
-  formatCategory(category: Category): string {
-    return category?.name;
-  }
-
   creditCardBillDateInputValueCompare(obj1: any, obj2: any) {
     return (
       obj1 === obj2 ||
@@ -209,8 +203,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     if (this.transactionType === TransactionType.CreditCard) {
       this.mountCreditCardBillDateOptions();
     }
-
-    this.mountFilteredCategories();
 
     if (this.shared) {
       await this.initializeComponentGroupTransaction();
@@ -332,26 +324,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     if (this.editingTransaction?.bankAccountId != null) {
       this.bankAccountInput.selectBankAccount(this.editingTransaction.bankAccountId);
     }
-  }
-
-  private mountFilteredCategories(): void {
-    this.filteredCategories$ = combineLatest([
-      this.formGroup.get('category').valueChanges.pipe(startWith('')),
-      this.userCategorySelectors.categories$,
-    ]).pipe(
-      map(combined => ({ categories: combined[1], query: combined[0] })),
-      map(combined => {
-        return combined.categories != null
-          ? combined.categories
-              .filter(category => {
-                const query = typeof combined.query === 'string' ? combined.query : combined.query.name;
-
-                return category.name.toLowerCase().includes(query.toLowerCase());
-              })
-              .sort((categoryA, categoryB) => categoryA.name.localeCompare(categoryB.name))
-          : [];
-      }),
-    );
   }
 
   private selectCurrentCreditCard(): void {

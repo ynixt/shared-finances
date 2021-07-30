@@ -15,6 +15,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { CurrencyMaskModule } from 'ng2-currency-mask';
 import { MatSelectModule } from '@angular/material/select';
 import { BankAccountInputModule, CreditCardInputModule } from '../input';
+import { CategoryInputModule } from '../input/category-input';
 
 @NgModule({
   declarations: [NewTransactionComponent],
@@ -33,6 +34,7 @@ import { BankAccountInputModule, CreditCardInputModule } from '../input';
     CreditCardInputModule,
     BankAccountInputModule,
     MatSlideToggleModule,
+    CategoryInputModule,
   ],
   providers: [NewTransactionDialogService],
 })

@@ -1,0 +1,9 @@
+<mat-form-field *transloco="let t" appearance="outline" class="w-full">
+  <mat-label>{{ t('category') }}</mat-label>
+  <input type="text" [placeholder]="t('transaction-category-placeholder')" matInput [formControl]="control" [matAutocomplete]="auto" />
+  <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [displayWith]="formatCategory">
+    <mat-option *ngFor="let category of filteredCategories$ | async" [value]="category">
+      {{ category.name }}
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>
