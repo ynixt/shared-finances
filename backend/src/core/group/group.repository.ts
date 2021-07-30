@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import * as mongoose from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Group, GroupDocument } from '../models';
 import { UpdateGroupArgs } from '../models/args';
 import { MongoDefaultRepository } from '../data';
@@ -69,7 +68,7 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
   async getUsersIdFromGroup(groupId: string, opts?: MongoRepositoryOptions): Promise<string[]> {
     const group = await this.model.findById(groupId, undefined, opts).select('usersId').exec();
 
-    return group ? group.usersId.map(userObjectId => (userObjectId as unknown as mongoose.Types.ObjectId).toHexString()) : [];
+    return group ? group.usersId.map(userObjectId => (userObjectId as unknown as Types.ObjectId).toHexString()) : [];
   }
 
   public groupHasUser(userId: string, options: { groupId: string }): Promise<boolean>;
@@ -81,7 +80,11 @@ export class GroupRepository extends MongoDefaultRepository<Group, GroupDocument
     }
 
     if (options.group != null) {
-      return options.group.users.filter(user => new mongoose.Types.ObjectId(user.id).toHexString() === userId).length > 0;
+      if (options.group.users != null) {
+        return options.group.users.find(user => new Types.ObjectId(userId).toHexString() === user.id) != null;
+      }
+
+      return options.group.usersId.find(userGroupId => new Types.ObjectId(userId).toHexString() === userGroupId) != null;
     }
 
     return null;

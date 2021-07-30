@@ -70,7 +70,7 @@ export class GroupService {
 
     const { group } = invite;
 
-    if ((await this.groupRepository.groupHasUser(userId, { group })) == false) {
+    if ((await this.groupRepository.groupHasUser(userId, { group })) == true) {
       return null;
     }
 
