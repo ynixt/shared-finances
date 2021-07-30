@@ -68,19 +68,22 @@ export class GroupService {
   public async useInvite(userId: string, inviteId: string): Promise<string | null> {
     const invite = await this.groupInviteRepository.getInviteWithGroup(inviteId);
 
-    const { group } = invite;
+    if (invite != null) {
+      const { group } = invite;
 
-    if ((await this.groupRepository.groupHasUser(userId, { group })) == true) {
-      return null;
+      if ((await this.groupRepository.groupHasUser(userId, { group })) == true) {
+        return null;
+      }
+
+      await this.groupRepository.runInsideTransaction(async opts => {
+        await this.userService.addGroupToUser(userId, group.id, opts);
+        await this.groupRepository.addUserToGroup(group.id, userId, opts);
+        await this.groupInviteRepository.deleteById(inviteId, opts);
+      });
+      return group.id;
     }
 
-    await this.groupRepository.runInsideTransaction(async opts => {
-      await this.userService.addGroupToUser(userId, group.id, opts);
-      await this.groupRepository.addUserToGroup(group.id, userId, opts);
-      await this.groupInviteRepository.deleteById(inviteId, opts);
-    });
-
-    return group.id;
+    return null;
   }
 
   public async userHasAccessToGroup(userId: string, groupId: string): Promise<boolean> {
