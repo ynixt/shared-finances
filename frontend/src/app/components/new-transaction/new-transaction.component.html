@@ -65,6 +65,7 @@
       <app-category-input [formControlName]="'category'" [isShared]="shared" [group]="group"></app-category-input>
 
       <app-bank-account-input
+        #bankAccount
         [formControlName]="'bankAccount'"
         [title]="t('bank-account')"
         *ngIf="transactionType !== transactionTypeEnum.CreditCard"
@@ -72,6 +73,7 @@
       ></app-bank-account-input>
 
       <app-bank-account-input
+        #bankAccountTwo
         [formControlName]="'bankAccount2'"
         [title]="t('bank-account-destiny')"
         *ngIf="transactionType === transactionTypeEnum.Transfer"

@@ -18,7 +18,7 @@ import moment, { Moment } from 'moment';
 import { combineLatest } from 'rxjs';
 import { startWith, take } from 'rxjs/operators';
 import { TransactionType } from 'src/app/@core/enums';
-import { Category, Transaction, User } from 'src/app/@core/models';
+import { Transaction, User } from 'src/app/@core/models';
 import { Group } from 'src/app/@core/models/group';
 import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
 import { ErrorService } from 'src/app/@core/services/error.service';
@@ -94,7 +94,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   loading = false;
 
   @ViewChild(CreditCardInputComponent) creditCardInput: CreditCardInputComponent;
-  @ViewChild(BankAccountInputComponent) bankAccountInput: BankAccountInputComponent;
+  @ViewChild('bankAccount') bankAccountInput: BankAccountInputComponent;
+  @ViewChild('bankAccountTwo') bankAccountTwoInput: BankAccountInputComponent;
 
   private previousTitle: string;
 
@@ -232,6 +233,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
           .subscribe(group => {
             Promise.all([
               this.bankAccountInput?.mountAccounts(group).then(() => this.selectCurrentBankAccount()),
+              this.bankAccountTwoInput?.mountAccounts(group).then(() => this.selectCurrentBankAccountTwo()),
               this.creditCardInput?.mountCreditCards(group).then(() => this.selectCurrentCreditCard()),
             ])
               .then(() => resolve())
@@ -323,6 +325,11 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   private async selectCurrentBankAccount() {
     if (this.editingTransaction?.bankAccountId != null) {
       this.bankAccountInput.selectBankAccount(this.editingTransaction.bankAccountId);
+    }
+  }
+  private async selectCurrentBankAccountTwo() {
+    if (this.editingTransaction?.bankAccount2Id != null) {
+      this.bankAccountTwoInput.selectBankAccount(this.editingTransaction.bankAccount2Id);
     }
   }
 
