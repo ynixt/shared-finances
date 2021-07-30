@@ -3,6 +3,9 @@ version: "3.8"
 services:
   db:
     image: mongo:4.0.26-xenial
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${db_user}
+      - MONGO_INITDB_ROOT_PASSWORD=${db_password}
     container_name: shared_finances-mongo
     restart: always
     command: "--bind_ip_all --replSet rs0"
@@ -23,6 +26,8 @@ services:
       - database
     depends_on:
       - db
+    environment:
+      - DB_URL=mongodb://${db_user}:${db_password}@shared_finances-mongo
   api:
     container_name: shared_finances-api
     build:
@@ -35,9 +40,8 @@ services:
       - database
     depends_on:
       - db
-      - db_replica_configure
     environment:
-      - DB_URL=mongodb://shared_finances-mongo
+      - DB_URL=mongodb://${db_user}:${db_password}@shared_finances-mongo
   nginx:
     container_name: shared_finances-nginx
     build:
@@ -66,7 +70,6 @@ networks:
   api:
     internal: true
   database:
-    internal: true
   front:
 
 volumes:

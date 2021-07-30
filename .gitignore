@@ -46,3 +46,4 @@ testem.log
 Thumbs.db
 
 unk-shared-finances-firebase-adminsdk.json
+.env

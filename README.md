@@ -23,10 +23,15 @@ Controle suas finanças familiares ou individuais.
 1. Insira uma chave de admin firebase em `backend/unk-shared-finances-firebase-adminsdk.json`;
 2. Altere o arquivo `init-letsencrypt.sh` substituindo o domínio `financas.gabrielsilva.dev` pelo seu domínio e o email `admin@unkapps.com` pelo seu email;
 3. Altere o arquivo `frontend/environments/environment.prod.ts` para que graphqlWebsocketUrl aponte para a url de websocket correta;
-4. Execute o comando `chmod +x .init-letsencrypt.sh/`;
-5. Execute o comando `chmod +x mongodb/initiate_replica.sh`;
-6. Execute o comando  `docker-compose build`;
-7. Execute o comando `sudo ./init-letsencrypt.sh`.
+4. Crie o arquivo `.env` com o seguinte conteúdo:
+````
+db_user=USUARIO
+db_password=SENHA
+````
+5. Execute o comando `chmod +x .init-letsencrypt.sh/`;
+6. Execute o comando `chmod +x mongodb/initiate_replica.sh`;
+7. Execute o comando  `docker-compose build`;
+8. Execute o comando `sudo ./init-letsencrypt.sh`.
 
 ### Local
 
