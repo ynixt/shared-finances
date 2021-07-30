@@ -9,12 +9,11 @@ echo "Connection finished"
 echo "Creating replica set"
 mongo --host $DB_URL <<EOF
 rs.initiate({
-      _id: "rs0",
-      version: 1,
-      members: [
-         { _id: 0, host : "db:27017" }
-      ]
-   }
-)
+    _id: "rs0",
+    version: 1,
+    members: [
+        { _id: 0, host : "db:27017" }
+    ]
+})
 EOF
 echo "replica set created"
