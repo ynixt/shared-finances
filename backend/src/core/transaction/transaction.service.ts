@@ -59,6 +59,7 @@ export class TransactionService {
             installmentId,
             installment: i + 1,
             creditCardBillDate: creditCardBillDate.toISOString(),
+            date: moment(input.date).add(i, 'month').toISOString(),
           };
           transactions.push(await this.transacationRepository.create(transaction, opts));
         }
