@@ -6,7 +6,7 @@ import { Group } from './group';
 export type CategoryDocument = Category & Document;
 
 @ObjectType()
-@Schema()
+@Schema({ autoCreate: true })
 export class Category {
   @Field(() => ID)
   id: string;

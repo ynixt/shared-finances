@@ -6,7 +6,7 @@ import { Group } from './group';
 export type GroupInviteDocument = GroupInvite & Document;
 
 @ObjectType()
-@Schema()
+@Schema({ autoCreate: true })
 export class GroupInvite {
   @Field(() => ID)
   id: string;

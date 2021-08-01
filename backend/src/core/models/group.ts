@@ -7,7 +7,7 @@ import { User } from './user';
 export type GroupDocument = Group & Document;
 
 @ObjectType()
-@Schema()
+@Schema({ autoCreate: true })
 export class Group {
   @Field(() => ID)
   id: string;

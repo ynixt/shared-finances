@@ -5,7 +5,7 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 export type BankAccountDocument = BankAccount & Document;
 
 @ObjectType()
-@Schema()
+@Schema({ autoCreate: true })
 export class BankAccount {
   @Field(() => ID)
   id: string;

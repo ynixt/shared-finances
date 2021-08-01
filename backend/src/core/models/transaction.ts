@@ -16,7 +16,7 @@ export enum TransactionType {
 }
 
 @ObjectType()
-@Schema()
+@Schema({ autoCreate: true })
 export class Transaction {
   @Field(() => ID)
   id: string;
