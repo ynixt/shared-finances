@@ -15,7 +15,7 @@
         </div>
       </app-title-bar>
 
-      <div class="credit-cards grid md:grid-cols-2 md:gap-4">
+      <div class="credit-cards grid md:grid-cols-2 gap-4">
         <mat-card class="credit-card cursor-pointer" *ngFor="let creditCard of creditCards" [routerLink]="creditCard.id">
           <mat-card-header class="items-center mb-1">
             <mat-icon mat-card-avatar class="w-auto h-auto">credit_card</mat-icon>
