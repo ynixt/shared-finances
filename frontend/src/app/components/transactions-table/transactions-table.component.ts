@@ -39,12 +39,17 @@ export class TransactionsTableComponent implements OnInit {
   @Input() set transactionsPage$(transactionsPage$: Promise<TransactionsPage> | Observable<TransactionsPage>) {
     this.transactionsPageSubscription?.unsubscribe();
 
-    this.transactionsPageSubscription = from(transactionsPage$)
-      .pipe(untilDestroyed(this))
-      .subscribe(transactionsPage => {
-        this.transactionsPage = transactionsPage;
-        this.transactionsOfPageByDate = this.mountTransactionsOfPageByDate(transactionsPage);
-      });
+    if (transactionsPage$) {
+      this.transactionsPageSubscription = from(transactionsPage$)
+        .pipe(untilDestroyed(this))
+        .subscribe(transactionsPage => {
+          this.transactionsPage = transactionsPage;
+          this.transactionsOfPageByDate = this.mountTransactionsOfPageByDate(transactionsPage);
+        });
+    } else {
+      this.transactionsPage = null;
+      this.transactionsOfPageByDate = null;
+    }
   }
 
   @Input() pageSize = DEFAULT_PAGE_SIZE;
