@@ -98,7 +98,7 @@ export class CreditCardService {
           creditCardSummary(creditCardId: $creditCardId, maxCreditCardBillDate: $maxCreditCardBillDate) {
             bill
             expensesOfThisBill
-            payments
+            paymentsOfThisBill
           }
         }
       `,

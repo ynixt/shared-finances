@@ -304,12 +304,22 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
           0,
         ],
       },
+      paymentsOfThisBill: {
+        $cond: [
+          {
+            $eq: ['$creditCardBillDate', maxCreditCardBillDate],
+          },
+          '$payments',
+          0,
+        ],
+      },
     });
 
     aggregate.group({
       _id: null,
       expenses: { $sum: '$expenses' },
       payments: { $sum: '$payments' },
+      paymentsOfThisBill: { $sum: '$paymentsOfThisBill' },
       expensesOfThisBill: { $sum: '$expensesOfThisBill' },
     });
 

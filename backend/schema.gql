@@ -84,6 +84,7 @@ type CreditCardSummary {
   bill: Float!
   expenses: Float!
   payments: Float!
+  paymentsOfThisBill: Float!
   expensesOfThisBill: Float!
 }
 

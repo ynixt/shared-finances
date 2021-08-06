@@ -50,9 +50,11 @@
 
               <ng-container *ngIf="creditCardSummary?.bill != null; else loadingCard">
                 <ng-container *ngIf="closedBill || isBillDateOfCurrentMonth; else futureBillInfo">
-                  <h3 class="m-0" *ngIf="creditCardSummary.bill > 0 && creditCardSummary.payments > 0">{{ t('partial-paid') }}</h3>
+                  <h3 class="m-0" *ngIf="creditCardSummary.bill > 0 && creditCardSummary.paymentsOfThisBill > 0">
+                    {{ t('partial-paid') }}
+                  </h3>
                   <h3 class="m-0" *ngIf="creditCardSummary.bill == 0">{{ t('paid') }}</h3>
-                  <h3 class="m-0" *ngIf="creditCardSummary.bill > 0 && creditCardSummary.payments == 0">{{ t('not-paid') }}</h3>
+                  <h3 class="m-0" *ngIf="creditCardSummary.bill > 0 && creditCardSummary.paymentsOfThisBill == 0">{{ t('not-paid') }}</h3>
                 </ng-container>
 
                 <ng-template #futureBillInfo>
