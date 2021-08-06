@@ -172,7 +172,10 @@ export class CreditCardSingleComponent implements OnInit {
   }
 
   private insertCurrentMonthOnBillDatesIfMissing() {
-    if (this.creditCard.billDates?.length > 0 && this.creditCard.billDates.filter(billDate => moment(billDate).isSame(moment(), 'month'))) {
+    if (
+      this.creditCard.billDates?.length > 0 &&
+      this.creditCard.billDates.find(billDate => moment(billDate).isSame(moment(), 'month')) == null
+    ) {
       this.creditCard.billDates = [
         ...this.creditCard.billDates,
         this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay, 0).toISOString(),
