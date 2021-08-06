@@ -1,3 +1,5 @@
+import { DEFAULT_PAGE_SIZE } from '../constants';
+
 export interface Page<T> {
   items: T[];
   total: number;
@@ -7,5 +9,5 @@ export interface Page<T> {
 
 export class Pagination {
   page = 1;
-  pageSize = 20;
+  pageSize = DEFAULT_PAGE_SIZE;
 }

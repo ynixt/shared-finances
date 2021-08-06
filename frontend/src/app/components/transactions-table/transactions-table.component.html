@@ -3,99 +3,108 @@
     <h2 class="m-0">{{ t('transactions') }}</h2>
   </div>
 
-  <ng-container *ngIf="transactionsPage$ | async as transactionsPage; else loadingTemplate">
-    <mat-list class="transactions space-y-6">
-      <mat-list-item
-        class="transaction"
-        [class.transaction-future]="dateIsBiggerThanToday(transaction.date)"
-        [class.negative]="transaction.value < 0"
-        *ngFor="let transaction of transactionsPage.items"
-      >
-        <mat-icon
-          [matTooltip]="t(getTransactionTranslateKey(transaction))"
-          class="transaction-type cursor-help {{ getTransactionCssColor(transaction) }}"
-          matListIcon
+  <div *ngIf="transactionsOfPageByDate; else loadingTemplate" class="space-y-6">
+    <ng-container *ngFor="let transactionDate of transactionsOfPageByDate; let index = index">
+      <mat-list class="transactions gap-4">
+        <h4 class="font-medium">
+          {{ (transactionDate.date.toDate() | date: 'd MMM' | titlecase).replace('\.', '') }}
+        </h4>
+
+        <mat-list-item
+          class="transaction"
+          [class.transaction-future]="dateIsBiggerThanToday(transaction.date)"
+          [class.negative]="transaction.value < 0"
+          *ngFor="let transaction of transactionDate.transactions"
         >
-          {{ getIconForTransaction(transaction) }}
-        </mat-icon>
-        <h3 matLine class="flex items-center">
-          <mat-icon [matTooltip]="t('value')" class="info-icon mr-2 cursor-help">attach_money</mat-icon>
-          <span class="transaction-value"> {{ transaction.value | currency | spaceOnSignal }}</span>
-        </h3>
+          <mat-icon
+            [matTooltip]="t(getTransactionTranslateKey(transaction))"
+            class="transaction-type p-0	cursor-help {{ getTransactionCssColor(transaction) }}"
+            matListIcon
+          >
+            {{ getIconForTransaction(transaction) }}
+          </mat-icon>
 
-        <h3 matLine *ngIf="transaction.description != null" class="flex items-center">
-          <mat-icon [matTooltip]="t('description')" class="info-icon mr-2 cursor-help">title</mat-icon>
-          <span>{{ transaction.description }}</span>
-        </h3>
+          <h3 matLine class="flex items-center">
+            <mat-icon [matTooltip]="t('value')" class="info-icon mr-2 cursor-help">attach_money</mat-icon>
+            <span class="transaction-value"> {{ transaction.value | currency | spaceOnSignal }}</span>
+          </h3>
 
-        <div matLine class="grid md:grid-cols-5 extras-info md:gap-4">
-          <div *ngIf="transaction.date != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('date')" class="info-icon mr-2 cursor-help">calendar_today</mat-icon>
-            <span>{{ transaction.date | date }}</span>
-          </div>
+          <h3 matLine *ngIf="transaction.description != null" class="flex items-center">
+            <mat-icon [matTooltip]="t('description')" class="info-icon mr-2 cursor-help">title</mat-icon>
+            <span>{{ transaction.description }}</span>
+          </h3>
 
-          <div *ngIf="transaction.installment != null && transaction.totalInstallments != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('installment')" class="info-icon mr-2 cursor-help">hourglass_empty</mat-icon>
-            <span>{{ t('value-one-of-value-two', { value1: transaction.installment, value2: transaction.totalInstallments }) }}</span>
-          </div>
+          <div matLine class="grid md:grid-cols-5 extras-info md:gap-4">
+            <div *ngIf="transaction.group != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('group')" class="info-icon mr-2 cursor-help">group</mat-icon>
+              <span>{{ transaction.group.name }}</span>
+            </div>
 
-          <div *ngIf="transaction.category != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('category')" class="info-icon mr-2 cursor-help" [style.color]="transaction.category.color"
-              >local_offer</mat-icon
-            >
-            <span>{{ transaction.category.name }}</span>
-          </div>
+            <div *ngIf="transaction.installment != null && transaction.totalInstallments != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('installment')" class="info-icon mr-2 cursor-help">hourglass_empty</mat-icon>
+              <span>{{ t('value-one-of-value-two', { value1: transaction.installment, value2: transaction.totalInstallments }) }}</span>
+            </div>
 
-          <div *ngIf="transaction.group != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('group')" class="info-icon mr-2 cursor-help">group</mat-icon>
-            <span>{{ transaction.group.name }}</span>
-          </div>
-
-          <div *ngIf="transaction.user != null" class="flex items-center extra-info">
-            <mat-icon [matTooltip]="t('paid-by')" class="info-icon mr-2 cursor-help">person</mat-icon>
-            <span>{{ transaction.user.name }}</span>
-          </div>
-        </div>
-
-        <mat-icon
-          class="cursor-help"
-          [matTooltip]="t('transaction-future-warning')"
-          matTooltipClass="transaction-future-tooltip"
-          *ngIf="dateIsBiggerThanToday(transaction.date)"
-          >warning</mat-icon
-        >
-        <button mat-icon-button [matMenuTriggerFor]="transactionMoreMenu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-
-        <mat-menu #transactionMoreMenu="matMenu">
-          <div class="new-transaction-menu">
-            <div class="actions">
-              <button
-                [disabled]="transaction.transactionType === 'Transfer' || transaction.transactionType === 'CreditCardBillPayment'"
-                mat-menu-item
-                (click)="editTransaction(transaction)"
+            <div *ngIf="transaction.category != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('category')" class="info-icon mr-2 cursor-help" [style.color]="transaction.category.color"
+                >local_offer</mat-icon
               >
-                <mat-icon>edit</mat-icon>
-                <span>{{ t('edit') }}</span>
-              </button>
-              <button mat-menu-item (click)="deleteTransaction(transaction)">
-                <mat-icon>delete</mat-icon>
-                <span>{{ t('delete') }}</span>
-              </button>
-              <button *ngIf="transactionIsInstallment(transaction)" mat-menu-item (click)="deleteTransactionAllInstallments(transaction)">
-                <mat-icon>delete_sweep</mat-icon>
-                <span>{{ t('delete-all-installments') }}</span>
-              </button>
-              <button *ngIf="transactionIsInstallment(transaction)" mat-menu-item (click)="deleteTransactionNextInstallments(transaction)">
-                <mat-icon>delete_sweep</mat-icon>
-                <span>{{ t('delete-next-installments') }}</span>
-              </button>
+              <span>{{ transaction.category.name }}</span>
+            </div>
+
+            <div *ngIf="transaction.user != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('paid-by')" class="info-icon mr-2 cursor-help">person</mat-icon>
+              <span>{{ transaction.user.name }}</span>
             </div>
           </div>
-        </mat-menu>
-      </mat-list-item>
-    </mat-list>
+
+          <mat-icon
+            class="cursor-help"
+            [matTooltip]="t('transaction-future-warning')"
+            matTooltipClass="transaction-future-tooltip"
+            *ngIf="dateIsBiggerThanToday(transaction.date)"
+            >warning
+          </mat-icon>
+          <button mat-icon-button [matMenuTriggerFor]="transactionMoreMenu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+
+          <mat-menu #transactionMoreMenu="matMenu">
+            <div class="new-transaction-menu">
+              <div class="actions">
+                <button
+                  [disabled]="transaction.transactionType === 'Transfer' || transaction.transactionType === 'CreditCardBillPayment'"
+                  mat-menu-item
+                  (click)="editTransaction(transaction)"
+                >
+                  <mat-icon>edit</mat-icon>
+                  <span>{{ t('edit') }}</span>
+                </button>
+                <button mat-menu-item (click)="deleteTransaction(transaction)">
+                  <mat-icon>delete</mat-icon>
+                  <span>{{ t('delete') }}</span>
+                </button>
+                <button *ngIf="transactionIsInstallment(transaction)" mat-menu-item (click)="deleteTransactionAllInstallments(transaction)">
+                  <mat-icon>delete_sweep</mat-icon>
+                  <span>{{ t('delete-all-installments') }}</span>
+                </button>
+                <button
+                  *ngIf="transactionIsInstallment(transaction)"
+                  mat-menu-item
+                  (click)="deleteTransactionNextInstallments(transaction)"
+                >
+                  <mat-icon>delete_sweep</mat-icon>
+                  <span>{{ t('delete-next-installments') }}</span>
+                </button>
+              </div>
+            </div>
+          </mat-menu>
+        </mat-list-item>
+      </mat-list>
+
+      <mat-divider *ngIf="index + 1 < transactionsOfPageByDate.length"></mat-divider>
+    </ng-container>
+
     <td-paging-bar
       #pagingBar
       [initialPage]="transactionsPage.page"
@@ -106,7 +115,7 @@
     >
       {{ t('page-of', { n1: pagingBar.page, n2: pagingBar.maxPage, range: pagingBar.range }) }}
     </td-paging-bar>
-  </ng-container>
+  </div>
 </div>
 
 <ng-template #loadingTemplate>

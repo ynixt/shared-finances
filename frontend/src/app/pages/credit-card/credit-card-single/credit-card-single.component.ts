@@ -11,6 +11,7 @@ import { DOCUMENT } from '@angular/common';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-card-bill-payment';
 import { Chart } from 'src/app/@core/models/chart';
+import { DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 
 @UntilDestroy()
 @Component({
@@ -35,7 +36,7 @@ export class CreditCardSingleComponent implements OnInit {
     domain: ['#5AA454'],
   };
 
-  pageSize = 20;
+  pageSize = DEFAULT_PAGE_SIZE;
   transactionsPage$: Observable<Page<Transaction>>;
 
   private monthDate: Moment | string;

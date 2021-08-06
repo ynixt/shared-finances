@@ -6,7 +6,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
 import { merge, Observable, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
+import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 import { BankAccount, BankAccountSummary, Page, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
 import { TransactionService, BankAccountService } from 'src/app/@core/services';
@@ -40,7 +40,7 @@ export class BankAccountSingleComponent implements OnInit {
   };
 
   bankAccount: BankAccount;
-  pageSize = 20;
+  pageSize = DEFAULT_PAGE_SIZE;
   transactionsPage$: Observable<Page<Transaction>>;
   bankAccountSummaryState: { isLoading: boolean; summary?: BankAccountSummary } = {
     isLoading: true,

@@ -5,7 +5,7 @@ import { EmptyObject } from 'apollo-angular/types';
 import moment, { Moment } from 'moment';
 import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
+import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 import { BankAccount, BankAccountSummary, Page, Pagination, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
 
@@ -212,7 +212,7 @@ export class BankAccountService {
               ...prev,
             };
           } else {
-            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: 20 };
+            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
 
             transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
 

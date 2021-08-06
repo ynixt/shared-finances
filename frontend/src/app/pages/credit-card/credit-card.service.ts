@@ -4,6 +4,7 @@ import { EmptyObject } from 'apollo-angular/types';
 import moment, { Moment } from 'moment';
 import { from, Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
+import { DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 import { CreditCard, Page, Pagination, Transaction } from 'src/app/@core/models';
 
 const TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
@@ -251,7 +252,7 @@ export class CreditCardService {
               ...prev,
             };
           } else {
-            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: 20 };
+            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
 
             transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
 

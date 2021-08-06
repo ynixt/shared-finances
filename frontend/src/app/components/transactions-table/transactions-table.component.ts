@@ -2,9 +2,11 @@ import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } fro
 import { TdDialogService } from '@covalent/core/dialogs';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
-import { Moment } from 'moment';
-import { Observable } from 'rxjs';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
+import moment, { Moment } from 'moment';
+import { from, Observable, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
+import { DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 import { TransactionType } from 'src/app/@core/enums';
 import { Page, Transaction } from 'src/app/@core/models';
 import { ErrorService, TransactionService } from 'src/app/@core/services';
@@ -14,6 +16,14 @@ export interface TransactionsRequested {
   page: number;
 }
 
+export interface TransactionsDate {
+  date: Moment;
+  transactions: Transaction[];
+}
+
+export type TransactionsPage = Page<Transaction>;
+
+@UntilDestroy()
 @Component({
   selector: 'app-transactions-table',
   templateUrl: './transactions-table.component.html',
@@ -21,8 +31,23 @@ export interface TransactionsRequested {
   encapsulation: ViewEncapsulation.None,
 })
 export class TransactionsTableComponent implements OnInit {
-  @Input() transactionsPage$: Promise<Page<Transaction>> | Observable<Page<Transaction>>;
-  @Input() pageSize = 20;
+  transactionsPage: TransactionsPage;
+  transactionsOfPageByDate: TransactionsDate[];
+
+  private transactionsPageSubscription: Subscription;
+
+  @Input() set transactionsPage$(transactionsPage$: Promise<TransactionsPage> | Observable<TransactionsPage>) {
+    this.transactionsPageSubscription?.unsubscribe();
+
+    this.transactionsPageSubscription = from(transactionsPage$)
+      .pipe(untilDestroyed(this))
+      .subscribe(transactionsPage => {
+        this.transactionsPage = transactionsPage;
+        this.transactionsOfPageByDate = this.mountTransactionsOfPageByDate(transactionsPage);
+      });
+  }
+
+  @Input() pageSize = DEFAULT_PAGE_SIZE;
 
   @Output() getTransactionsRequested = new EventEmitter<TransactionsRequested>();
   @Output() editTransactionRequested = new EventEmitter<Transaction>();
@@ -216,5 +241,24 @@ export class TransactionsTableComponent implements OnInit {
       .afterClosed()
       .pipe(take(1))
       .toPromise();
+  }
+
+  private mountTransactionsOfPageByDate(transactionsPage: TransactionsPage): TransactionsDate[] {
+    const map = new Map<string, Transaction[]>();
+
+    transactionsPage.items.forEach(transaction => {
+      const date = moment(transaction.date).startOf('day').toISOString();
+
+      if (map.has(date)) {
+        map.get(date).push(transaction);
+      } else {
+        map.set(date, [transaction]);
+      }
+    });
+
+    return Array.from(map).map(([date, transactions]) => ({
+      transactions,
+      date: moment(date),
+    }));
   }
 }

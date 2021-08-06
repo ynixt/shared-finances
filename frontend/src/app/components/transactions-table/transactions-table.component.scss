@@ -6,15 +6,21 @@
   opacity: 0.5;
 }
 
-.transactions .transaction {
-  height: auto !important;
-
-  &.negative .transaction-value {
-    color: $expense-color;
+.transactions {
+  .mat-list-item ~ .mat-list-item {
+    margin-top: 2rem;
   }
 
-  .mat-list-item-content {
-    padding: 0 !important;
+  .transaction {
+    height: auto !important;
+
+    &.negative .transaction-value {
+      color: $expense-color;
+    }
+
+    .mat-list-item-content {
+      padding: 0 !important;
+    }
   }
 }
 

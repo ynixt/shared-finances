@@ -11,7 +11,7 @@ import { DOCUMENT } from '@angular/common';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { Chart } from 'src/app/@core/models/chart';
-import { CHART_DEFAULT_MINIMUM_MONTHS } from 'src/app/@core/constants';
+import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 
 @UntilDestroy()
 @Component({
@@ -23,7 +23,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   group: Group;
   sharedLinkLoading = false;
   transactionsPage$: Observable<Page<Transaction>>;
-  pageSize = 20;
+  pageSize = DEFAULT_PAGE_SIZE;
   transactionsGroupedYearMonth: Chart[];
 
   groupSummaryState: { isLoading: boolean; summary?: GroupSummary } = {

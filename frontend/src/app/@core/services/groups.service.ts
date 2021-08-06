@@ -11,7 +11,7 @@ import {
   TRANSACTION_DELETED_SUBSCRIPTION,
   TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
 } from './transaction.service';
-import { CHART_DEFAULT_MINIMUM_MONTHS } from '../constants';
+import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from '../constants';
 import { Chart } from '../models/chart';
 
 @Injectable({
@@ -329,7 +329,7 @@ export class GroupsService {
               ...prev,
             };
           } else {
-            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: 20 };
+            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
 
             transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
 
