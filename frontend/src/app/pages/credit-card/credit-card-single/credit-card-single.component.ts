@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit, Renderer2 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
 import { switchMap } from 'rxjs/operators';
@@ -60,6 +60,7 @@ export class CreditCardSingleComponent implements OnInit {
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
     private creditCardBillPaymentDialogService: CreditCardBillPaymentDialogService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -82,9 +83,13 @@ export class CreditCardSingleComponent implements OnInit {
   async getCreditCardInfo(creditCard: CreditCard): Promise<void> {
     this.creditCard = creditCard;
 
-    this.setBillDateOfCurrentDate();
-    this.getInfoBasedOnCreditCard();
-    await this.getInfoBasedOnCreditCardAndDate();
+    if (this.creditCard == null) {
+      this.router.navigateByUrl('/404');
+    } else {
+      this.setBillDateOfCurrentDate();
+      this.getInfoBasedOnCreditCard();
+      await this.getInfoBasedOnCreditCardAndDate();
+    }
   }
 
   formatValue(date: string): string {
