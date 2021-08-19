@@ -111,7 +111,7 @@ type Query {
   bankAccount(bankAccountId: String!): BankAccount
   bankAccountSummary(maxDate: String, bankAccountId: String): BankAccountSummary
   transactionsBankAccountChart(minDate: String, maxDate: String, bankAccountId: String, timezone: String!): [Chart!]
-  transactions(creditCardBillDate: String, minDate: String, maxDate: String, groupId: String, creditCardId: String, bankAccountId: String, pageSize: Int = 20, page: Int = 1): TransactionsPage
+  transactions(creditCardBillDate: String, minDate: String, maxDate: String, groupId: String, creditCardId: String, bankAccountId: String, pageSize: Int = 40, page: Int = 1): TransactionsPage
   categories(groupId: String): [Category!]!
   category(groupId: String, categoryId: String!): Category
   groups: [Group!]

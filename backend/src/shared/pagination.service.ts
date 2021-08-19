@@ -6,7 +6,7 @@ export interface IPagination {
   pageSize: number;
 }
 
-export const MAX_PAGE_SIZE = 20;
+export const MAX_PAGE_SIZE = 40;
 export const INITIAL_PAGE = 1;
 
 export class Pagination implements IPagination {
