@@ -34,6 +34,14 @@ export class CreditCard {
 
   @Field(() => [String], { nullable: true })
   billDates?: string[];
+
+  @Field(() => Boolean)
+  @Prop({ required: true, index: true })
+  enabled: boolean;
+
+  @Field(() => Boolean)
+  @Prop({ required: true, index: true })
+  displayOnGroup: boolean;
 }
 
 export const CreditCardSchema = SchemaFactory.createForClass(CreditCard);

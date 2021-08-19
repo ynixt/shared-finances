@@ -86,6 +86,8 @@ export class GroupsService {
                     id
                     name
                     closingDay
+                    enabled
+                    displayOnGroup
                   }
                 }
               }

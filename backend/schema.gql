@@ -16,6 +16,8 @@ type CreditCard {
   limit: Float!
   availableLimit: Float!
   billDates: [String!]
+  enabled: Boolean!
+  displayOnGroup: Boolean!
 }
 
 type Group {
@@ -144,8 +146,8 @@ type Mutation {
   useInvite(invite: String!): String
   newGroup(name: String!): Group
   updateGroup(id: String!, name: String!): Group
-  newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
-  editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!): CreditCard!
+  newCreditCard(closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!, enabled: Boolean!, displayOnGroup: Boolean!): CreditCard!
+  editCreditCard(id: String!, closingDay: Int!, paymentDay: Int!, name: String!, limit: Float!, enabled: Boolean!, displayOnGroup: Boolean!): CreditCard!
   deleteCreditCard(creditCardId: String!): Boolean!
 }
 

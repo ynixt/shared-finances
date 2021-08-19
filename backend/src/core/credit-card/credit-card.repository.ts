@@ -26,6 +26,8 @@ export class CreditCardRepository extends MongoDefaultRepository<CreditCard, Cre
             'paymentDay': domain.paymentDay,
             'name': domain.name,
             'limit': domain.limit,
+            'enabled': domain.enabled,
+            'displayOnGroup': domain.displayOnGroup,
           },
         },
         { new: true },

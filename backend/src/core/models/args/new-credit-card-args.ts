@@ -15,4 +15,10 @@ export class NewCreditCardArgs {
 
   @Field(() => Float)
   limit: number;
+
+  @Field(() => Boolean)
+  enabled: boolean;
+
+  @Field(() => Boolean)
+  displayOnGroup: boolean;
 }

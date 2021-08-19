@@ -16,7 +16,12 @@
       </app-title-bar>
 
       <div class="credit-cards grid md:grid-cols-2 gap-4">
-        <mat-card class="credit-card cursor-pointer" *ngFor="let creditCard of creditCards" [routerLink]="creditCard.id">
+        <mat-card
+          class="credit-card cursor-pointer"
+          *ngFor="let creditCard of creditCards"
+          [routerLink]="creditCard.id"
+          [class.credit-card-disabled]="!creditCard.enabled"
+        >
           <mat-card-header class="items-center mb-1">
             <mat-icon mat-card-avatar class="w-auto h-auto">credit_card</mat-icon>
             <mat-card-title class="mb-0 break-all">{{ creditCard.name }}</mat-card-title>

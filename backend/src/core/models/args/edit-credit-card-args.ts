@@ -16,4 +16,10 @@ export class EditCreditCardArgs {
 
   @Field(() => Float)
   limit: number;
+
+  @Field(() => Boolean)
+  enabled: boolean;
+
+  @Field(() => Boolean)
+  displayOnGroup: boolean;
 }

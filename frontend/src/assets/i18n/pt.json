@@ -170,5 +170,7 @@
   "installment": "Parcela",
   "value-one-of-value-two": "{{value1}} de {{value2}}",
   "delete-all-installments": "Excluir todas parcelas",
-  "delete-next-installments": "Excluir parcelas daqui para frente"
+  "delete-next-installments": "Excluir parcelas daqui para frente",
+  "enabled": "Ativo",
+  "displayOnGroup": "Exibir no grupo"
 }

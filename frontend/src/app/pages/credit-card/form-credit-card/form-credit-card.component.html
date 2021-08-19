@@ -24,6 +24,11 @@
           <mat-option *ngFor="let value of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }} </mat-option>
         </mat-select>
       </mat-form-field>
+
+      <div class="flex gap-4">
+        <mat-checkbox formControlName="enabled">{{ t('enabled') }}</mat-checkbox>
+        <mat-checkbox formControlName="displayOnGroup">{{ t('displayOnGroup') }}</mat-checkbox>
+      </div>
     </div>
 
     <button

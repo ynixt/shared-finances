@@ -69,13 +69,22 @@ export class CreditCardService {
     return this.apollo
       .mutate<{ newCreditCard: CreditCard }>({
         mutation: gql`
-          mutation($name: String!, $limit: Float!, $closingDay: Int!, $paymentDay: Int!) {
-            newCreditCard(name: $name, limit: $limit, closingDay: $closingDay, paymentDay: $paymentDay) {
+          mutation($name: String!, $limit: Float!, $closingDay: Int!, $paymentDay: Int!, $enabled: Boolean!, $displayOnGroup: Boolean!) {
+            newCreditCard(
+              name: $name
+              limit: $limit
+              closingDay: $closingDay
+              paymentDay: $paymentDay
+              enabled: $enabled
+              displayOnGroup: $displayOnGroup
+            ) {
               id
               name
               limit
               closingDay
               paymentDay
+              enabled
+              displayOnGroup
             }
           }
         `,
@@ -84,6 +93,8 @@ export class CreditCardService {
           limit: creditCard.limit,
           closingDay: creditCard.closingDay,
           paymentDay: creditCard.paymentDay,
+          enabled: creditCard.enabled,
+          displayOnGroup: creditCard.displayOnGroup,
         },
       })
       .pipe(
@@ -96,13 +107,31 @@ export class CreditCardService {
     return this.apollo
       .mutate<{ editCreditCard: CreditCard }>({
         mutation: gql`
-          mutation($id: String!, $name: String!, $limit: Float!, $closingDay: Int!, $paymentDay: Int!) {
-            editCreditCard(id: $id, name: $name, limit: $limit, closingDay: $closingDay, paymentDay: $paymentDay) {
+          mutation(
+            $id: String!
+            $name: String!
+            $limit: Float!
+            $closingDay: Int!
+            $paymentDay: Int!
+            $enabled: Boolean!
+            $displayOnGroup: Boolean!
+          ) {
+            editCreditCard(
+              id: $id
+              name: $name
+              limit: $limit
+              closingDay: $closingDay
+              paymentDay: $paymentDay
+              enabled: $enabled
+              displayOnGroup: $displayOnGroup
+            ) {
               id
               name
               limit
               closingDay
               paymentDay
+              enabled
+              displayOnGroup
             }
           }
         `,
@@ -112,6 +141,8 @@ export class CreditCardService {
           limit: creditCard.limit,
           closingDay: creditCard.closingDay,
           paymentDay: creditCard.paymentDay,
+          enabled: creditCard.enabled,
+          displayOnGroup: creditCard.displayOnGroup,
         },
       })
       .pipe(
@@ -133,6 +164,8 @@ export class CreditCardService {
               paymentDay
               billDates
               availableLimit
+              enabled
+              displayOnGroup
             }
           }
         `,

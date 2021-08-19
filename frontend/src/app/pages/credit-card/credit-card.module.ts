@@ -5,6 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CurrencyMaskModule } from 'ng2-currency-mask';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { CreditCardRoutingModule } from './credit-card-routing.module';
 import { CreditCardComponent } from './credit-card.component';
@@ -35,6 +36,7 @@ import { NgxChartsModule } from '@swimlane/ngx-charts';
     OptionsBarModule,
     TransactionsTableModule,
     NgxChartsModule,
+    MatCheckboxModule,
   ],
 })
 export class CreditCardModule {}

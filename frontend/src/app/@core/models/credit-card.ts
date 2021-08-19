@@ -6,4 +6,6 @@ export interface CreditCard {
   limit: number;
   billDates?: string[];
   availableLimit?: number;
+  enabled: boolean;
+  displayOnGroup: boolean;
 }

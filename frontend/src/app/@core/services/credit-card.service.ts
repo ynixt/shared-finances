@@ -17,6 +17,8 @@ const CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
       closingDay
       paymentDay
       limit
+      enabled
+      displayOnGroup
     }
   }
 `;
@@ -29,6 +31,8 @@ const CREDIT_CARD_UPDATED_SUBSCRIPTION = gql`
       closingDay
       paymentDay
       limit
+      enabled
+      displayOnGroup
     }
   }
 `;
@@ -81,6 +85,8 @@ export class CreditCardService {
             closingDay
             paymentDay
             limit
+            enabled
+            displayOnGroup
           }
         }
       `,

@@ -79,11 +79,11 @@ export class CreditCardInputComponent
   }
 
   async mountCreditCards(group?: Group): Promise<void> {
-    this.mountCreditCardsFromCurrentUser();
+    this.mountCreditCardsFromCurrentUser(group != null);
     await this.mountCreditCardFromOtherUsers(group);
   }
 
-  private mountCreditCardsFromCurrentUser(): void {
+  private mountCreditCardsFromCurrentUser(isShared: boolean): void {
     combineLatest([this.creditCardSelectors.creditCards$, this.authSelectors.user$, this.creditCardFromOtherUsersSubject])
       .pipe(
         untilDestroyed(this),
@@ -95,7 +95,9 @@ export class CreditCardInputComponent
           return [
             {
               person: combined.user,
-              creditCards: [...combined.creditCards].sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
+              creditCards: [...combined.creditCards]
+                .filter(creditCard => this.shouldShowCreditCard(creditCard, isShared))
+                .sort((creditCardA, creditCardB) => creditCardA.name.localeCompare(creditCardB.name)),
             },
             ...combined.creditCardFromOtherUsers,
           ].sort((a, b) => a.person.name.localeCompare(b.person.name));
@@ -115,7 +117,10 @@ export class CreditCardInputComponent
       group.users.forEach(userFromGroup => {
         if (userFromGroup.id !== user.id) {
           if (userFromGroup.creditCards?.length > 0) {
-            creditCardFromOtherUsers.push({ person: userFromGroup, creditCards: userFromGroup.creditCards });
+            creditCardFromOtherUsers.push({
+              person: userFromGroup,
+              creditCards: userFromGroup.creditCards.filter(creditCard => this.shouldShowCreditCard(creditCard, true)),
+            });
           }
         }
       });
@@ -124,5 +129,9 @@ export class CreditCardInputComponent
     } else {
       this.creditCardFromOtherUsersSubject.next([]);
     }
+  }
+
+  private shouldShowCreditCard(creditCard: CreditCard, isShared: boolean): boolean {
+    return creditCard.enabled && (!isShared || (isShared && creditCard.displayOnGroup));
   }
 }
