@@ -6,4 +6,10 @@ export class NewBankAccountArgs {
 
   @Field()
   name: string;
+
+  @Field(() => Boolean)
+  enabled: boolean;
+
+  @Field(() => Boolean)
+  displayOnGroup: boolean;
 }

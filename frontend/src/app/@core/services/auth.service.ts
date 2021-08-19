@@ -27,6 +27,8 @@ export class AuthService {
               bankAccounts {
                 id
                 name
+                enabled
+                displayOnGroup
               }
             }
           }

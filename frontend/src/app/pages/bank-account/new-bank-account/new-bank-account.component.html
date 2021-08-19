@@ -16,6 +16,11 @@
           <mat-label>{{ t('name') }}</mat-label>
           <input formControlName="name" required matInput [placeholder]="t('bank-account-name-placeholder')" />
         </mat-form-field>
+
+        <div class="flex gap-4">
+          <mat-checkbox formControlName="enabled">{{ t('enabled') }}</mat-checkbox>
+          <mat-checkbox formControlName="displayOnGroup">{{ t('displayOnGroup') }}</mat-checkbox>
+        </div>
       </div>
 
       <button [disabled]="formGroup.invalid" class="add-button md:w-auto md:ml-auto block" type="submit" mat-raised-button color="primary">

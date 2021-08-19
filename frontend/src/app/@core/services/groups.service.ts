@@ -81,6 +81,8 @@ export class GroupsService {
                   bankAccounts {
                     id
                     name
+                    enabled
+                    displayOnGroup
                   }
                   creditCards {
                     id

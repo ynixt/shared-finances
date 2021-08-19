@@ -28,6 +28,8 @@ export class NewBankAccountComponent implements OnInit {
   ngOnInit(): void {
     this.formGroup = new FormGroup({
       name: new FormControl('', [Validators.required, Validators.maxLength(30)]),
+      enabled: new FormControl(true, [Validators.required]),
+      displayOnGroup: new FormControl(true, [Validators.required]),
     });
   }
 
@@ -35,6 +37,8 @@ export class NewBankAccountComponent implements OnInit {
     if (this.formGroup.valid) {
       this.newBankAccount({
         name: this.formGroup.value.name,
+        enabled: !!this.formGroup.value.enabled,
+        displayOnGroup: !!this.formGroup.value.displayOnGroup,
       });
     }
   }

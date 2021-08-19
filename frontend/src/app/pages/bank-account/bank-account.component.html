@@ -16,7 +16,12 @@
       </app-title-bar>
 
       <div class="bank-accounts grid md:grid-cols-2 gap-4">
-        <mat-card [routerLink]="bankAccount.id" class="bank-account cursor-pointer" *ngFor="let bankAccount of bankAccounts">
+        <mat-card
+          [routerLink]="bankAccount.id"
+          class="bank-account cursor-pointer"
+          *ngFor="let bankAccount of bankAccounts"
+          [class.bank-disabled]="!bankAccount.enabled"
+        >
           <mat-card-header class="items-center mb-1">
             <mat-icon mat-card-avatar class="w-auto h-auto">account_balance</mat-icon>
             <mat-card-title class="mb-0 break-all">{{ bankAccount.name }}</mat-card-title>

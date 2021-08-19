@@ -19,6 +19,14 @@ export class BankAccount {
 
   @Field(() => Float, { nullable: true })
   balance?: string;
+
+  @Field(() => Boolean)
+  @Prop({ required: true })
+  enabled: boolean;
+
+  @Field(() => Boolean)
+  @Prop({ required: true })
+  displayOnGroup: boolean;
 }
 
 export const BankAccountSchema = SchemaFactory.createForClass(BankAccount);

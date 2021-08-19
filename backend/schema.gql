@@ -6,6 +6,8 @@ type BankAccount {
   id: ID!
   name: String!
   balance: Float
+  enabled: Boolean!
+  displayOnGroup: Boolean!
 }
 
 type CreditCard {
@@ -129,7 +131,7 @@ type Query {
 }
 
 type Mutation {
-  newBankAccount(name: String!): BankAccount!
+  newBankAccount(name: String!, enabled: Boolean!, displayOnGroup: Boolean!): BankAccount!
   changeBankAccountName(name: String!, bankAccountId: String!): BankAccount!
   deleteBankAccount(bankAccountId: String!): Boolean!
   newTransaction(transactionType: String!, date: String!, creditCardBillDate: String, value: Float!, description: String, bankAccountId: String, bankAccount2Id: String, creditCardId: String, categoryId: String, groupId: String, firstUserId: String!, secondUserId: String, totalInstallments: Int): Transaction!

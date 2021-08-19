@@ -43,7 +43,7 @@ export class BankAccountInputComponent extends ControlValueAccessorConnector<Acc
 
   selectBankAccount(bankAccountId: string): void {
     const bankAccountWithPerson = this.accountsWithPersons.find(
-      creditCardsWithPerson => creditCardsWithPerson.accounts.find(account => account.id === bankAccountId) != null,
+      bankAccountsWithPerson => bankAccountsWithPerson.accounts.find(account => account.id === bankAccountId) != null,
     );
 
     if (bankAccountWithPerson) {
@@ -56,18 +56,30 @@ export class BankAccountInputComponent extends ControlValueAccessorConnector<Acc
 
     const user = await this.authSelectors.currentUser();
 
-    this.accountsWithPersons.push({ person: user, accounts: await this.bankAccountSelectors.currentBankAccounts() });
+    this.accountsWithPersons.push({
+      person: user,
+      accounts: (await this.bankAccountSelectors.currentBankAccounts()).filter(bankAccount =>
+        this.shouldShowBankAccount(bankAccount, group != null),
+      ),
+    });
 
     if (group != null) {
       group?.users.forEach(userFromGroup => {
         if (userFromGroup.id !== user.id) {
           if (userFromGroup.bankAccounts?.length > 0) {
-            this.accountsWithPersons.push({ person: userFromGroup, accounts: userFromGroup.bankAccounts });
+            this.accountsWithPersons.push({
+              person: userFromGroup,
+              accounts: userFromGroup.bankAccounts.filter(bankAccount => this.shouldShowBankAccount(bankAccount, true)),
+            });
           }
         }
       });
     }
 
     this.accountsWithPersons = this.accountsWithPersons.sort((a, b) => a.person.name.localeCompare(b.person.name));
+  }
+
+  private shouldShowBankAccount(bankAccount: BankAccount, isShared: boolean): boolean {
+    return bankAccount.enabled && (!isShared || (isShared && bankAccount.displayOnGroup));
   }
 }

@@ -314,16 +314,20 @@ export class BankAccountService {
     return this.apollo
       .mutate<{ newBankAccount: BankAccount }>({
         mutation: gql`
-          mutation($name: String!) {
-            newBankAccount(name: $name) {
+          mutation($name: String!, $enabled: Boolean!, $displayOnGroup: Boolean!) {
+            newBankAccount(name: $name, enabled: $enabled, displayOnGroup: $displayOnGroup) {
               id
               name
               balance
+              enabled
+              displayOnGroup
             }
           }
         `,
         variables: {
           name: bankAccount.name,
+          enabled: bankAccount.enabled,
+          displayOnGroup: bankAccount.displayOnGroup,
         },
       })
       .pipe(
