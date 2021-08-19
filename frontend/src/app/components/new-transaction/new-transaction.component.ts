@@ -379,6 +379,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       .subscribe(transactionType => {
         const value = this.formGroup.value.value || initialValue;
 
+        this.formGroup.get('group').setValue(undefined);
         this.formGroup.get('value').setValue(this.transactionService.ifNecessaryMakeValueNegative(value, transactionType));
 
         if (transactionType !== TransactionType.Transfer) {
@@ -395,6 +396,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
           this.creditCardBillDateFormControl.setValue(undefined);
         }
 
+        this.formGroup.get('group').updateValueAndValidity();
         this.formGroup.get('bankAccount').updateValueAndValidity();
         this.formGroup.get('creditCard').updateValueAndValidity();
         this.creditCardBillDateFormControl.updateValueAndValidity();
