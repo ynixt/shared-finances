@@ -25,8 +25,8 @@ export class FormCreditCardComponent implements OnInit {
       limit: new FormControl(this.creditCard?.limit, [Validators.required, Validators.min(0), Validators.max(1000000)]),
       closingDay: new FormControl(this.creditCard ? this.creditCard.closingDay : 1, [Validators.required]),
       paymentDay: new FormControl(this.creditCard ? this.creditCard.paymentDay : 1, [Validators.required]),
-      enabled: new FormControl(this.creditCard?.enabled),
-      displayOnGroup: new FormControl(this.creditCard?.displayOnGroup),
+      enabled: new FormControl(this.creditCard?.enabled ?? true),
+      displayOnGroup: new FormControl(this.creditCard?.displayOnGroup ?? true),
     });
   }
 
