@@ -349,7 +349,10 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
 
   private createFormGroup(): void {
     this.formGroup = new FormGroup({
-      transactionType: new FormControl(this.editingTransaction?.transactionType ?? TransactionType.Revenue, [Validators.required]),
+      transactionType: new FormControl(
+        this.editingTransaction?.transactionType ?? (this.shared ? TransactionType.Expense : TransactionType.Revenue),
+        [Validators.required],
+      ),
       date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
         Validators.required,
       ]),
