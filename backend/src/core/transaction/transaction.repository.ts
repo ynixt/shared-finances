@@ -197,7 +197,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     }
 
     aggregate.project({
-      date: 1,
+      date: { '$dateFromString': { dateString: '$date' } },
       value: 1,
       transactionType: 1,
     });
@@ -207,8 +207,8 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
         $cond: [
           {
             $and: [
-              { $lt: ['$date', moment(obj.maxDate).endOf('month').endOf('day').toISOString()] },
-              { $gte: ['$date', moment(obj.maxDate).startOf('month').startOf('day').toISOString()] },
+              { $lt: ['$date', moment(obj.maxDate).endOf('month').endOf('day').toDate()] }, //
+              { $gte: ['$date', moment(obj.maxDate).startOf('month').startOf('day').toDate()] },
             ],
           },
           '$value',
@@ -222,7 +222,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       expenses: {
         $cond: [
           {
-            $lt: ['$value', 0],
+            $and: [{ $lt: ['$value', 0] }, { $ne: ['$transactionType', 'Transfer'] }],
           },
           '$valueThisMonth',
           0,
@@ -231,7 +231,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       revenues: {
         $cond: [
           {
-            $gt: ['$value', 0],
+            $and: [{ $gt: ['$value', 0] }, { $ne: ['$transactionType', 'Transfer'] }],
           },
           '$valueThisMonth',
           0,
