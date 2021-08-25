@@ -190,16 +190,14 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
       });
     }
 
-    if (obj?.maxDate) {
-      aggregate.match({
-        date: { '$lte': obj.maxDate },
-      });
-    }
-
     aggregate.project({
       date: { '$dateFromString': { dateString: '$date' } },
       value: 1,
       transactionType: 1,
+    });
+
+    aggregate.match({
+      date: { '$lte': moment(obj.maxDate).utc().toDate() },
     });
 
     aggregate.addFields({

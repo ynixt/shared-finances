@@ -300,7 +300,7 @@ export class BankAccountService {
         `,
         variables: {
           bankAccountId: obj?.bankAccountId,
-          maxDate: obj?.maxDate?.toISOString(),
+          maxDate: obj?.maxDate.toISOString(true),
         },
       })
       .pipe(
