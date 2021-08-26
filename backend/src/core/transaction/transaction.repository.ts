@@ -197,7 +197,7 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
     });
 
     aggregate.match({
-      date: { '$lte': moment(obj.maxDate).utc().toDate() },
+      date: { '$lte': moment(obj.maxDate).toDate() },
     });
 
     aggregate.addFields({
@@ -205,8 +205,8 @@ export class TransactionRepository extends MongoDefaultRepository<Transaction, T
         $cond: [
           {
             $and: [
-              { $lt: ['$date', moment(obj.maxDate).endOf('month').endOf('day').toDate()] }, //
-              { $gte: ['$date', moment(obj.maxDate).startOf('month').startOf('day').toDate()] },
+              { $lt: ['$date', moment.parseZone(obj.maxDate).endOf('month').endOf('day').toDate()] },
+              { $gte: ['$date', moment.parseZone(obj.maxDate).startOf('month').startOf('day').toDate()] },
             ],
           },
           '$value',
