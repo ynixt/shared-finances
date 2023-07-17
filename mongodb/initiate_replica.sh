@@ -12,7 +12,7 @@ rs.initiate({
     _id: "rs0",
     version: 1,
     members: [
-        { _id: 0, host : "db:27017" }
+        { _id: 0, host : "$RS1_HOST:27017" }
     ]
 })
 EOF

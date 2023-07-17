@@ -9,9 +9,15 @@ import { CreditCardModule } from './credit-card/credit-card.module';
 import { BankAccountModule } from './bank-account/bank-account.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { CategoryModule } from './category/category.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      envFilePath: '.dev.env',
+      isGlobal: true,
+    }),
     DatabaseModule,
     AuthModule,
     UserModule,

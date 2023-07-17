@@ -1,15 +1,14 @@
-import { DEFAULT_CURRENCY_CODE, LOCALE_ID, NgModule } from '@angular/core';
-import { CommonModule, getCurrencySymbol, getLocaleCurrencyCode } from '@angular/common';
-import { AngularFireModule } from '@angular/fire';
-import { AngularFireAuthModule } from '@angular/fire/auth';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { CurrencyMaskConfig, CURRENCY_MASK_CONFIG } from 'ng2-currency-mask';
+import {DEFAULT_CURRENCY_CODE, LOCALE_ID, NgModule} from '@angular/core';
+import {CommonModule, getCurrencySymbol, getLocaleCurrencyCode} from '@angular/common';
+import {getAuth, provideAuth} from '@angular/fire/auth';
+import {HTTP_INTERCEPTORS} from '@angular/common/http';
+import {CurrencyMaskConfig, CURRENCY_MASK_CONFIG} from 'ng2-currency-mask';
 import localePt from '@angular/common/locales/pt';
 
-import { TokenInterceptor } from './interceptors/token.interceptor';
-import { AppStoreModule } from '../store/app-store.module';
-import { TranslocoRootModule } from './i18n';
-import { GraphQLModule } from './graphql.module';
+import {TokenInterceptor} from './interceptors/token.interceptor';
+import {AppStoreModule} from '../store/app-store.module';
+import {TranslocoRootModule} from './i18n';
+import {GraphQLModule} from './graphql.module';
 
 export function createCurrencyMaskConfig(): CurrencyMaskConfig {
   const currencySymbol = getCurrencySymbol(getLocaleCurrencyCode('pt'), 'narrow');
@@ -28,14 +27,15 @@ export function createCurrencyMaskConfig(): CurrencyMaskConfig {
   };
 }
 
-import { registerLocaleData } from '@angular/common';
-import { ErrorService } from './services/error.service';
-import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
-import { MAT_DATE_FORMATS } from '@angular/material/core';
-import { UserCategoryService } from './services/user-category.service';
-import { BankAccountService, CreditCardService, GroupsService, TransactionService } from './services';
-import { TitleService } from './services';
+import {registerLocaleData} from '@angular/common';
+import {ErrorService} from './services/error.service';
+import {MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS} from '@angular/material-moment-adapter';
+import {MAT_DATE_FORMATS} from '@angular/material/core';
+import {UserCategoryService} from './services/user-category.service';
+import {BankAccountService, CreditCardService, GroupsService, TransactionService} from './services';
+import {TitleService} from './services';
 import moment from 'moment';
+import {initializeApp, provideFirebaseApp} from "@angular/fire/app";
 
 registerLocaleData(localePt, 'pt');
 moment.locale('pt');
@@ -44,7 +44,7 @@ moment.locale('pt');
   imports: [
     CommonModule,
     TranslocoRootModule,
-    AngularFireModule.initializeApp({
+    provideFirebaseApp(() => initializeApp({
       apiKey: 'AIzaSyAU6zY3ftSLQ_cAfSxqWppzBbnAFFjCfSs',
       authDomain: 'unk-shared-finances.firebaseapp.com',
       projectId: 'unk-shared-finances',
@@ -52,8 +52,8 @@ moment.locale('pt');
       messagingSenderId: '6480837718',
       appId: '1:6480837718:web:37e872781c65d2342e4ff7',
       measurementId: 'G-F9RVQCE689',
-    }),
-    AngularFireAuthModule,
+    })),
+    provideAuth(() => getAuth()),
     AppStoreModule,
     GraphQLModule,
     MatMomentDateModule,
@@ -64,13 +64,13 @@ moment.locale('pt');
       useClass: TokenInterceptor,
       multi: true,
     },
-    { provide: LOCALE_ID, useValue: 'pt' },
+    {provide: LOCALE_ID, useValue: 'pt'},
     {
       provide: DEFAULT_CURRENCY_CODE,
       useValue: 'BRL',
     },
-    { provide: CURRENCY_MASK_CONFIG, useFactory: createCurrencyMaskConfig },
-    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true } },
+    {provide: CURRENCY_MASK_CONFIG, useFactory: createCurrencyMaskConfig},
+    {provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: {strict: true}},
     {
       provide: MAT_DATE_FORMATS,
       useValue: {
@@ -95,4 +95,5 @@ moment.locale('pt');
   ],
   exports: [TranslocoRootModule],
 })
-export class CoreModule {}
+export class CoreModule {
+}

@@ -11,6 +11,8 @@ services:
     command: "--bind_ip_all --replSet rs0"
     volumes:
       - mongodb_data_container:/data/db
+    expose:
+      - 27017
     ports:
       - 27017:27017
     networks:
@@ -21,7 +23,7 @@ services:
       - /mongodb/initiate_replica.sh
     volumes:
       - mongodb_data_container:/data/db
-      - ./mongodb:/mongodb
+      - ./mongodb/initiate_replica.sh:/mongodb/initiate_replica.sh
     networks:
       - database
     depends_on:

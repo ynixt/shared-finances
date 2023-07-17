@@ -19,7 +19,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prettier": "npx prettier --write ."
+    "prettier": "npx prettier --write .",
+    "generate-openssl-mongo": "openssl rand -base64 756 > ../.docker/mongo/replica.key"
   },
   "dependencies": {
     "@nestjs/common": "^7.6.15",
@@ -27,7 +28,9 @@
     "@nestjs/graphql": "^7.10.6",
     "@nestjs/mongoose": "^7.2.4",
     "@nestjs/passport": "^7.1.5",
+    "@nestjs/config": "^2.3.4",
     "@nestjs/platform-express": "^7.6.15",
+    "@apollo/gateway": "0.26.3",
     "@tfarras/nestjs-firebase-admin": "^2.0.1",
     "@tfarras/nestjs-firebase-auth": "^2.0.0",
     "apollo-server-express": "^2.25.0",

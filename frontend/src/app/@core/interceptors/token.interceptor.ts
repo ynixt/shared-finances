@@ -1,6 +1,6 @@
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { AngularFireAuth } from '@angular/fire/auth';
+import { Auth } from '@angular/fire/auth';
 import { from, Observable, of } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 
@@ -8,7 +8,7 @@ import { catchError, map, switchMap, take } from 'rxjs/operators';
   providedIn: 'root',
 })
 export class TokenInterceptor implements HttpInterceptor {
-  constructor(private auth: AngularFireAuth) {}
+  constructor(private auth: Auth) {}
 
   public intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return from(this.getToken()).pipe(
@@ -32,7 +32,7 @@ export class TokenInterceptor implements HttpInterceptor {
   }
 
   private async getToken(): Promise<string> {
-    const user = await this.auth.user.pipe(take(1)).toPromise();
+    const user = await this.auth.currentUser;
 
     return user?.getIdToken();
   }

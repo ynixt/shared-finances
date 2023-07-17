@@ -5,7 +5,7 @@ import { onError } from '@apollo/client/link/error';
 import { HttpLink } from 'apollo-angular/http';
 import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
-import { AngularFireAuth } from '@angular/fire/auth';
+import { Auth, onAuthStateChanged } from '@angular/fire/auth';
 import { take } from 'rxjs/operators';
 import { MessageTypes, SubscriptionClient } from 'subscriptions-transport-ws';
 import { HotToastService } from '@ngneat/hot-toast';
@@ -15,7 +15,7 @@ import { environment } from 'src/environments/environment';
 const uri = '/api/graphql';
 export function createApollo(
   httpLink: HttpLink,
-  angularFireAuth: AngularFireAuth,
+  angularFireAuth: Auth,
   hotToastService: HotToastService,
   translocoService: TranslocoService,
 ): ApolloClientOptions<any> {
@@ -44,7 +44,7 @@ export function createApollo(
     reconnect: true,
     reconnectionAttempts: 5,
     connectionParams: async () => {
-      const user = await angularFireAuth.user.pipe(take(1)).toPromise();
+      const user = await angularFireAuth.currentUser
       const token = await user?.getIdToken();
 
       alreadyConfigured = true;
@@ -55,7 +55,7 @@ export function createApollo(
     },
   });
 
-  angularFireAuth.user.subscribe(() => {
+  onAuthStateChanged(angularFireAuth, (user) => {
     if (alreadyConfigured) {
       subscriptionClient.close();
 
@@ -106,7 +106,7 @@ export function createApollo(
     {
       provide: APOLLO_OPTIONS,
       useFactory: createApollo,
-      deps: [HttpLink, AngularFireAuth, HotToastService, TranslocoService],
+      deps: [HttpLink, Auth, HotToastService, TranslocoService],
     },
   ],
 })

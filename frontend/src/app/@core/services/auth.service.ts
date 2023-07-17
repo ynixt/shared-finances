@@ -1,18 +1,18 @@
-import { Injectable } from '@angular/core';
-import { AngularFireAuth } from '@angular/fire/auth';
-import firebase from 'firebase/app';
+import {Injectable} from '@angular/core';
+import {Auth, signInWithPopup, getAuth, UserCredential, GoogleAuthProvider} from '@angular/fire/auth';
 
-import { AuthType, User } from '../models';
-import { AuthDispatchers } from 'src/app/store';
-import { Apollo, gql } from 'apollo-angular';
-import { catchError, map } from 'rxjs/operators';
-import { from, Observable, of } from 'rxjs';
+import {AuthType, User} from '../models';
+import {AuthDispatchers} from 'src/app/store';
+import {Apollo, gql} from 'apollo-angular';
+import {catchError, map} from 'rxjs/operators';
+import {from, Observable, of} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  constructor(private auth: AngularFireAuth, private authDispatchers: AuthDispatchers, private apollo: Apollo) {}
+  constructor(private auth: Auth, private authDispatchers: AuthDispatchers, private apollo: Apollo) {
+  }
 
   public getCurrentUser(): Observable<User | null> {
     return this.apollo
@@ -47,7 +47,7 @@ export class AuthService {
   }
 
   private async _login(type: AuthType): Promise<void> {
-    let userCredentials: firebase.auth.UserCredential;
+    let userCredentials: UserCredential;
 
     switch (type) {
       case AuthType.Google:
@@ -56,7 +56,7 @@ export class AuthService {
     }
   }
 
-  private async loginByGoogle(): Promise<firebase.auth.UserCredential> {
-    return this.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  private async loginByGoogle(): Promise<UserCredential> {
+    return signInWithPopup(getAuth(), new GoogleAuthProvider());
   }
 }
