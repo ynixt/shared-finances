@@ -2,72 +2,55 @@ version: "3.8"
 
 services:
   db:
-    image: mongo:4.0.26-xenial
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${db_user}
-      - MONGO_INITDB_ROOT_PASSWORD=${db_password}
-    container_name: shared_finances-mongo
-    restart: always
-    command: "--bind_ip_all --replSet rs0"
+    image: postgres:15.3-bookworm
+    env_file:
+      - backend/.dev.env
+    container_name: shared_finances-postgres
+    restart: unless-stopped
     volumes:
-      - mongodb_data_container:/data/db
-    expose:
-      - 27017
+      - postgresdb_data_container:/data/db
     ports:
-      - 27017:27017
+      - 5432:5432
     networks:
       - database
-  db_replica_configure:
-    image: mongo:4.0.26-xenial
-    entrypoint:
-      - /mongodb/initiate_replica.sh
-    volumes:
-      - mongodb_data_container:/data/db
-      - ./mongodb/initiate_replica.sh:/mongodb/initiate_replica.sh
-    networks:
-      - database
-    depends_on:
-      - db
-    environment:
-      - DB_URL=mongodb://${db_user}:${db_password}@shared_finances-mongo
-  api:
-    container_name: shared_finances-api
-    build:
-      context: ./backend
-      dockerfile: ./Dockerfile
-    ports:
-      - 3000:3000
-    networks:
-      - api
-      - database
-    depends_on:
-      - db
-      - db_replica_configure
-    environment:
-      - DB_URL=mongodb://${db_user}:${db_password}@shared_finances-mongo
-  nginx:
-    container_name: shared_finances-nginx
-    build:
-      context: ./frontend
-      dockerfile: ./Dockerfile
-    networks:
-      - api
-      - front
-    depends_on:
-      - api
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-  certbot:
-    image: certbot/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+#  api:
+#    container_name: shared_finances-api
+#    build:
+#      context: ./backend
+#      dockerfile: ./Dockerfile
+#    ports:
+#      - 3000:3000
+#    networks:
+#      - api
+#      - database
+#    depends_on:
+#      - db
+#      - db_replica_configure
+#    environment:
+#      - DB_URL=mongodb://${db_user}:${db_password}@shared_finances-mongo
+#  nginx:
+#    container_name: shared_finances-nginx
+#    build:
+#      context: ./frontend
+#      dockerfile: ./Dockerfile
+#    networks:
+#      - api
+#      - front
+#    depends_on:
+#      - api
+#    ports:
+#      - 80:80
+#      - 443:443
+#    volumes:
+#      - ./data/certbot/conf:/etc/letsencrypt
+#      - ./data/certbot/www:/var/www/certbot
+#    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+#  certbot:
+#    image: certbot/certbot
+#    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+#    volumes:
+#      - ./data/certbot/conf:/etc/letsencrypt
+#      - ./data/certbot/www:/var/www/certbot
 
 networks:
   api:
@@ -76,5 +59,5 @@ networks:
   front:
 
 volumes:
-  mongodb_data_container:
+  postgresdb_data_container:
   credentials:
