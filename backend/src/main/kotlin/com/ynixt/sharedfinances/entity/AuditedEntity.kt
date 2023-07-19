@@ -8,9 +8,9 @@ import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.ZonedDateTime
 
-@MappedSuperclass()
+@MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
-abstract class DatabaseEntity {
+abstract class AuditedEntity {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: ZonedDateTime? = null

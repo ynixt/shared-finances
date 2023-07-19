@@ -1,10 +1,11 @@
 package com.ynixt.sharedfinances.entity
 
-import com.ynixt.sharedfinances.dto.UserDto
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.ManyToMany
+import jakarta.persistence.OneToMany
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
@@ -16,7 +17,13 @@ class User(
     val email: String,
     val name: String,
     val photoUrl: String?,
-) : DatabaseEntity(), UserDetails {
+) : AuditedEntity(), UserDetails {
+    @OneToMany(mappedBy = "user")
+    var creditCards: MutableList<CreditCard>? = null
+
+    @ManyToMany(mappedBy = "users")
+    var groups: MutableList<Group>? = null
+
     override fun getAuthorities(): List<GrantedAuthority> {
         return listOf()
     }
@@ -43,14 +50,5 @@ class User(
 
     override fun isEnabled(): Boolean {
         return true
-    }
-
-    fun toUserDto(): UserDto {
-        return UserDto(
-            id = id,
-            email = email,
-            name = name,
-            photoUrl = photoUrl
-        )
     }
 }
