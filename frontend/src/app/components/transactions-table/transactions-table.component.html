@@ -105,16 +105,15 @@
       <mat-divider *ngIf="index + 1 < transactionsOfPageByDate.length"></mat-divider>
     </ng-container>
 
-    <td-paging-bar
-      #pagingBar
-      [initialPage]="transactionsPage.page"
-      [firstLast]="true"
-      [pageSize]="pageSize"
-      [total]="transactionsPage.total"
-      (change)="getTransactions($event.page)"
-    >
-      {{ t('page-of', { n1: pagingBar.page, n2: pagingBar.maxPage, range: pagingBar.range }) }}
-    </td-paging-bar>
+<!--    <mat-paginator>-->
+<!--      #pagingBar-->
+<!--      [pageIndex]="transactionsPage.page"-->
+<!--      [pageSize]="pageSize"-->
+<!--      [length]="transactionsPage.total"-->
+<!--      (page)="getTransactions($event.pageIndex)"-->
+<!--    >-->
+<!--      {{ t('page-of', { n1: pagingBar.page, n2: pagingBar.maxPage, range: pagingBar.range }) }}-->
+<!--    </mat-paginator>-->
   </div>
 </div>
 

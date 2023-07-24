@@ -1,17 +1,18 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { Observable, Subscription } from 'rxjs';
-import { AuthDispatchers } from 'src/app/store';
-import { AuthState } from 'src/app/store/reducers/auth.reducer';
-import { AuthSelectors } from 'src/app/store/services/selectors';
-import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
-import { Location } from '@angular/common';
-import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import { Component, OnDestroy, OnInit, ViewEncapsulation } from "@angular/core";
+import { Router } from "@angular/router";
+import { Observable, Subscription } from "rxjs";
+import { AuthDispatchers } from "src/app/store";
+import { AuthState } from "src/app/store/reducers/auth.reducer";
+import { AuthSelectors } from "src/app/store/services/selectors";
+import { BreakpointObserver, Breakpoints, BreakpointState } from "@angular/cdk/layout";
+import { Location } from "@angular/common";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   userState$: Observable<AuthState>;

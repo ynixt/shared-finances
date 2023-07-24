@@ -28,14 +28,14 @@
             <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
           </ng-template>
 
-          <mat-card class="card">
+          <mat-card appearance="outlined" class="card">
             <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
               <span class="text-gray-400 mb-2">{{ t('bill-value') }}</span>
               <h3 class="m-0" *ngIf="creditCardSummary?.bill != null; else loadingCard">{{ creditCardSummary.bill | currency }}</h3>
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="card">
+          <mat-card appearance="outlined" class="card">
             <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
               <span class="text-gray-400 mb-2">{{ t('month-expenses') }}</span>
               <h3 class="m-0" *ngIf="creditCardSummary?.bill != null; else loadingCard">
@@ -44,7 +44,7 @@
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="card" [class.bg-red-200]="closedBill && creditCardSummary?.bill > 0">
+          <mat-card appearance="outlined" class="card" [class.bg-red-200]="closedBill && creditCardSummary?.bill > 0">
             <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
               <span class="text-gray-400 mb-2">{{ closedBill ? t('bill-closed') : t('bill-open') }}</span>
 
@@ -64,7 +64,7 @@
             </mat-card-content>
           </mat-card>
 
-          <mat-card class="card">
+          <mat-card appearance="outlined" class="card">
             <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
               <span class="text-gray-400 mb-2">{{ t('available-limit') }}</span>
               <h3 class="m-0" *ngIf="limitAvailableLoading == false; else loadingCard">

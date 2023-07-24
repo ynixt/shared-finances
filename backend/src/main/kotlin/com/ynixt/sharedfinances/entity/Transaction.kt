@@ -7,37 +7,47 @@ import java.time.ZonedDateTime
 
 @Entity
 class Transaction(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
 
-    @Enumerated(EnumType.STRING)
-    val type: TransactionType,
+    @Enumerated(EnumType.STRING) val type: TransactionType,
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    val category: TransactionCategory?,
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "category_id")
+    var category: TransactionCategory? = null,
 
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    val group: Group?,
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "group_id")
+    var group: Group? = null,
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    val user: User,
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id")
+    var user: User? = null,
 
-    @ManyToOne
-    @JoinColumn(name = "bank_account_id")
-    val bankAccount: BankAccount?,
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "bank_account_id")
+    var bankAccount: BankAccount? = null,
 
-    @ManyToOne
-    @JoinColumn(name = "credit_card_id")
-    val creditCard: CreditCard?,
-    val creditCardBillDate: String?,
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "credit_card_id")
+    var creditCard: CreditCard? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "credit_card_bill_date_id")
+    var creditCardBillDate: CreditCardBillDate? = null,
 
     val date: ZonedDateTime,
 
-    val value: BigDecimal,
-    val description: String?,
-    val installment: Int?,
-    val totalInstallments: Int?
-) : AuditedEntity()
+    val value: BigDecimal, val description: String?, val installment: Int?, val totalInstallments: Int?
+) : AuditedEntity() {
+    @Column(name = "category_id", updatable = false, insertable = false)
+    var categoryId: Long? = null
+
+    @Column(name = "group_id", updatable = false, insertable = false)
+    var groupId: Long? = null
+
+    @Column(name = "user_id", updatable = false, insertable = false)
+    var userId: Long? = null
+
+    @Column(name = "bank_account_id", updatable = false, insertable = false)
+    var bankAccountId: Long? = null
+
+    @Column(name = "credit_card_id", updatable = false, insertable = false)
+    var creditCardId: Long? = null
+
+    @Column(name = "credit_card_bill_date_id", updatable = false, insertable = false)
+    var creditCardBillDateId: Long? = null
+}

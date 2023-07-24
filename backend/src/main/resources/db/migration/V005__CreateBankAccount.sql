@@ -10,7 +10,7 @@ create table "bank_account"
     display_on_group boolean                                             not null,
     CONSTRAINT fk_bank_account_user_id
         FOREIGN KEY (user_id)
-            REFERENCES "user" (id)
+            REFERENCES "user" (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_bank_account_user_id on "bank_account" (user_id);

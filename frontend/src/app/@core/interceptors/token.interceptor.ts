@@ -1,14 +1,18 @@
-import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
-import { from, Observable, of } from 'rxjs';
-import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from "@angular/common/http";
+import { Injectable } from "@angular/core";
+import { Auth, user, User as FirebaseUser } from "@angular/fire/auth";
+import { from, lastValueFrom, Observable } from "rxjs";
+import { switchMap, take } from "rxjs/operators";
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root"
 })
 export class TokenInterceptor implements HttpInterceptor {
-  constructor(private auth: Auth) {}
+  private user$: Observable<FirebaseUser>;
+
+  constructor(private auth: Auth) {
+    this.user$ = user(auth);
+  }
 
   public intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return from(this.getToken()).pipe(
@@ -17,22 +21,18 @@ export class TokenInterceptor implements HttpInterceptor {
           token == null
             ? request
             : request.clone({
-                setHeaders: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
+              setHeaders: {
+                Authorization: `Bearer ${token}`
+              }
+            });
 
         return next.handle(requestClone);
-      }),
-      catchError(err => {
-        console.error(err);
-        return next.handle(request);
       }),
     );
   }
 
   private async getToken(): Promise<string> {
-    const user = await this.auth.currentUser;
+    const user = await lastValueFrom(this.user$.pipe(take(1)).pipe(take(1)))
 
     return user?.getIdToken();
   }

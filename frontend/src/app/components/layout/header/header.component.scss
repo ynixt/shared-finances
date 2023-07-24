@@ -7,19 +7,29 @@
   align-items: center;
   align-content: center;
   width: 100%;
-}
+  height: 100%;
 
-.user-photo {
-  img {
-    width: 100%;
+  .buttons {
     height: 100%;
-    border-radius: 50%;
-    display: block;
+
+    .user-photo {
+      height: 40px;
+      cursor: pointer;
+      img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: block;
+      }
+    }
   }
 }
 
-.github-button {
-  font-size: 40px;
+
+
+.fa-mat-icon svg {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .user-menu {

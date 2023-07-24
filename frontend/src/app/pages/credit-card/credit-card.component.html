@@ -17,6 +17,7 @@
 
       <div class="credit-cards grid md:grid-cols-2 gap-4">
         <mat-card
+          appearance="outlined"
           class="credit-card cursor-pointer"
           *ngFor="let creditCard of creditCards"
           [routerLink]="creditCard.id"

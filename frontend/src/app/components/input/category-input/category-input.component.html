@@ -1,4 +1,4 @@
-<mat-form-field *transloco="let t" appearance="outline" class="w-full">
+<mat-form-field *transloco="let t" class="w-full">
   <mat-label>{{ t('category') }}</mat-label>
   <input type="text" [placeholder]="t('transaction-category-placeholder')" matInput [formControl]="control" [matAutocomplete]="auto" />
   <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" [displayWith]="formatCategory">

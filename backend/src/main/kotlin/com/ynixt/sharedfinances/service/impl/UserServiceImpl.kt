@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service
 
 @Service
 class UserServiceImpl(private val userRepository: UserRepository) : UserService {
+    override fun getForCurrentUser(id: Long): User? {
+        return userRepository.findCurrentUserOneById(id)
+    }
+
     @Transactional
     override fun createUserIfNotExists(firebaseToken: FirebaseToken): User {
         return userRepository.findByUid(firebaseToken.uid) ?: userRepository.save(

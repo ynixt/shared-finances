@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Inject, OnInit, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
@@ -21,7 +21,7 @@ const initialValue = -0.01;
 export class CreditCardBillPaymentComponent implements OnInit {
   @Output() closed: EventEmitter<void> = new EventEmitter();
 
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
   editingTransaction: Transaction;
   creditCard: CreditCard;
   creditCardBillDate: Moment;
@@ -44,13 +44,13 @@ export class CreditCardBillPaymentComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.formGroup = new FormGroup({
-      value: new FormControl(this.editingTransaction?.value ?? this.billValue, [Validators.required]),
-      bankAccount: new FormControl(undefined, [Validators.required]),
-      date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
+    this.formGroup = new UntypedFormGroup({
+      value: new UntypedFormControl(this.editingTransaction?.value ?? this.billValue, [Validators.required]),
+      bankAccount: new UntypedFormControl(undefined, [Validators.required]),
+      date: new UntypedFormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
         Validators.required,
       ]),
-      creditCardBillDate: new FormControl(
+      creditCardBillDate: new UntypedFormControl(
         {
           value: this.editingTransaction?.creditCardBillDate
             ? moment(this.editingTransaction?.creditCardBillDate)
@@ -59,7 +59,7 @@ export class CreditCardBillPaymentComponent implements OnInit {
         },
         [Validators.required],
       ),
-      description: new FormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
+      description: new UntypedFormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
     });
   }
 

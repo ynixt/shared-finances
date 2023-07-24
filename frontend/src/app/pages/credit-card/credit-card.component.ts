@@ -47,8 +47,6 @@ export class CreditCardComponent implements OnInit {
       .toPromise();
 
     if (confirm) {
-      this.toast.observe;
-
       await this.creditCardService
         .deleteCreditCard(creditCard.id)
         .pipe(

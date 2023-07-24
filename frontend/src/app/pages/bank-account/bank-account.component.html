@@ -17,6 +17,7 @@
 
       <div class="bank-accounts grid md:grid-cols-2 gap-4">
         <mat-card
+          appearance="outlined"
           [routerLink]="bankAccount.id"
           class="bank-account cursor-pointer"
           *ngFor="let bankAccount of bankAccounts"

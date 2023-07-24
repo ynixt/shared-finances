@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { Category } from 'src/app/@core/models';
 
 @Component({
@@ -15,14 +15,14 @@ export class FormCategoryComponent implements OnInit {
     return this.category == null;
   }
 
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
 
   constructor() {}
 
   ngOnInit(): void {
-    this.formGroup = new FormGroup({
-      name: new FormControl(this.category?.name, [Validators.required, Validators.maxLength(30)]),
-      color: new FormControl(this.category?.color ?? this.randomColor(), [
+    this.formGroup = new UntypedFormGroup({
+      name: new UntypedFormControl(this.category?.name, [Validators.required, Validators.maxLength(30)]),
+      color: new UntypedFormControl(this.category?.color ?? this.randomColor(), [
         Validators.required,
         Validators.maxLength(7),
         Validators.maxLength(7),

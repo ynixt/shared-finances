@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
@@ -14,7 +14,7 @@ import { BankAccountDispatchers } from 'src/app/store';
   styleUrls: ['./new-bank-account.component.scss'],
 })
 export class NewBankAccountComponent implements OnInit {
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
 
   constructor(
     private bankAccountService: BankAccountService,
@@ -26,10 +26,10 @@ export class NewBankAccountComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.formGroup = new FormGroup({
-      name: new FormControl('', [Validators.required, Validators.maxLength(30)]),
-      enabled: new FormControl(true, [Validators.required]),
-      displayOnGroup: new FormControl(true, [Validators.required]),
+    this.formGroup = new UntypedFormGroup({
+      name: new UntypedFormControl('', [Validators.required, Validators.maxLength(30)]),
+      enabled: new UntypedFormControl(true, [Validators.required]),
+      displayOnGroup: new UntypedFormControl(true, [Validators.required]),
     });
   }
 
@@ -60,6 +60,6 @@ export class NewBankAccountComponent implements OnInit {
       .toPromise();
 
     this.bankAccountDispatchers.bankAccountAdded(bankAccountSaved);
-    this.router.navigateByUrl('/finances/bank');
+    await this.router.navigateByUrl('/finances/bank');
   }
 }

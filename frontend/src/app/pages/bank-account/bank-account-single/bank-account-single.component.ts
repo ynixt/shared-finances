@@ -32,12 +32,8 @@ export class BankAccountSingleComponent implements OnInit {
 
   disallowFutureOnSameMonth = true;
 
-  colorScheme = {
-    domain: ['#5AA454'],
-  };
-  colorSchemeExpense = {
-    domain: ['#E44D25'],
-  };
+  colorScheme = '#5AA454'
+  colorSchemeExpense = '#E44D25'
 
   bankAccount: BankAccount;
   pageSize = DEFAULT_PAGE_SIZE;

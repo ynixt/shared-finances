@@ -1,24 +1,24 @@
 <ng-container *transloco="let t">
   <form [formGroup]="formGroup" (ngSubmit)="save()">
     <div class="inputs grid md:grid-cols-2 md:gap-4">
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('name') }}</mat-label>
         <input formControlName="name" required matInput [placeholder]="t('credit-card-name-placeholder')" />
       </mat-form-field>
 
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('limit') }}</mat-label>
         <input currencyMask formControlName="limit" required matInput [placeholder]="t('credit-card-limit-placeholder')" />
       </mat-form-field>
 
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('closing-day') }}</mat-label>
         <mat-select formControlName="closingDay">
           <mat-option *ngFor="let value of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }} </mat-option>
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('payment-day') }}</mat-label>
         <mat-select formControlName="paymentDay">
           <mat-option *ngFor="let value of [].constructor(31); let i = index" [value]="i + 1">{{ i + 1 }} </mat-option>

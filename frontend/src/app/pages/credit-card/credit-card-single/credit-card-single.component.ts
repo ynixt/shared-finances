@@ -32,9 +32,7 @@ export class CreditCardSingleComponent implements OnInit {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
-  colorScheme = {
-    domain: ['#5AA454'],
-  };
+  colorScheme = '#5AA454'
 
   pageSize = DEFAULT_PAGE_SIZE;
   transactionsPage$: Observable<Page<Transaction>>;

@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.dto.user
+package com.ynixt.sharedfinances.model.dto.user
 
 data class UserDto(
     val id: Long? = null,

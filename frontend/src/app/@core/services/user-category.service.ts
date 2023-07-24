@@ -5,7 +5,8 @@ import { Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { GenericCategoryService, GroupWithIdName } from 'src/app/components/category';
 
-import { Category } from '../models';
+import { Category, CreditCard } from "../models";
+import { StompService } from "./stomp.service";
 
 const USER_CATEGORY_CREATED_SUBSCRIPTION = gql`
   subscription userCategoryCreated {
@@ -46,26 +47,18 @@ export class UserCategoryService extends GenericCategoryService {
     EmptyObject
   >;
 
-  constructor(private apollo: Apollo) {
+  constructor(private apollo: Apollo, private stompService: StompService) {
     super();
   }
 
   watchCategories(): Observable<Category[]> {
-    this.categoriesQueryRef = this.apollo.watchQuery<{ categories: Category[] }>({
-      query: gql`
-        query categories {
-          categories {
-            id
-            name
-            color
-          }
-        }
-      `,
+    const w = this.stompService.watch({
+      destination: "/user/queue/transaction-category"
     });
 
-    this.subscribeToMoreCategories();
+    this.stompService.publish({ destination: "/app/transaction-category" });
 
-    return this.categoriesQueryRef.valueChanges.pipe(map(result => result.data.categories));
+    return w.pipe(map(message => JSON.parse(message.body) as Category[]));
   }
 
   newCategory(category: Partial<Category>): Observable<Category> {
@@ -161,47 +154,47 @@ export class UserCategoryService extends GenericCategoryService {
   }
 
   private subscribeToMoreCategories() {
-    this.categoriesQueryRef.subscribeToMore({
-      document: USER_CATEGORY_CREATED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        const categories = prev.categories ?? [];
-
-        prev = {
-          categories: [...categories, subscriptionData.data.userCategoryCreated],
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
-
-    this.categoriesQueryRef.subscribeToMore({
-      document: USER_CATEGORY_UPDATED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        const editedCategory = subscriptionData.data.userCategoryUpdated;
-
-        prev = {
-          categories: [...prev.categories.filter(category => category.id !== editedCategory.id), editedCategory],
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
-
-    this.categoriesQueryRef.subscribeToMore({
-      document: USER_CATEGORY_DELETED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        prev = {
-          categories: prev.categories.filter(category => category.id !== subscriptionData.data.userCategoryDeleted.id),
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
+    // this.categoriesQueryRef.subscribeToMore({
+    //   document: USER_CATEGORY_CREATED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const categories = prev.categories ?? [];
+    //
+    //     prev = {
+    //       categories: [...categories, subscriptionData.data.userCategoryCreated],
+    //     };
+    //
+    //     return {
+    //       ...prev,
+    //     };
+    //   },
+    // });
+    //
+    // this.categoriesQueryRef.subscribeToMore({
+    //   document: USER_CATEGORY_UPDATED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const editedCategory = subscriptionData.data.userCategoryUpdated;
+    //
+    //     prev = {
+    //       categories: [...prev.categories.filter(category => category.id !== editedCategory.id), editedCategory],
+    //     };
+    //
+    //     return {
+    //       ...prev,
+    //     };
+    //   },
+    // });
+    //
+    // this.categoriesQueryRef.subscribeToMore({
+    //   document: USER_CATEGORY_DELETED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     prev = {
+    //       categories: prev.categories.filter(category => category.id !== subscriptionData.data.userCategoryDeleted.id),
+    //     };
+    //
+    //     return {
+    //       ...prev,
+    //     };
+    //   },
+    // });
   }
 }

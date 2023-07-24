@@ -7,13 +7,14 @@ import java.math.BigDecimal
 class BankAccount(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    val user: User,
-
-    val name: String,
-    val balance: BigDecimal,
+    var user: User? = null,
+    var name: String,
+    val balance: BigDecimal = BigDecimal.ZERO,
     val enabled: Boolean,
     val displayOnGroup: Boolean
-): AuditedEntity()
+) : AuditedEntity() {
+    @Column(name = "user_id", updatable = false, insertable = false)
+    var userId: Long? = null
+}

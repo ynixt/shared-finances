@@ -38,9 +38,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
-  colorScheme = {
-    domain: ['#5AA454'],
-  };
+  colorScheme = '#5AA454'
 
   private activatedRouteSubscription: Subscription;
   private groupId: string;

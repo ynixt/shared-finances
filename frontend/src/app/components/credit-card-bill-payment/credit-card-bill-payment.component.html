@@ -10,24 +10,24 @@
     </td-message>
 
     <form class="grid" [formGroup]="formGroup" (ngSubmit)="save()">
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('value') }}</mat-label>
         <input currencyMask formControlName="value" required matInput [placeholder]="t('credit-card-bill-value-placeholder')" />
       </mat-form-field>
 
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('description') }}</mat-label>
         <input formControlName="description" matInput [placeholder]="t('credit-card-bill-description-placeholder')" />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>{{ t('date') }}</mat-label>
         <input formControlName="date" matInput [matDatepicker]="picker" [placeholder]="t('credit-card-bill-date-placeholder')" required />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>{{ t('credit-card-bill-date') }}</mat-label>
         <input formControlName="creditCardBillDate" matInput [matDatepicker]="pickerBillDate" required readonly />
         <mat-datepicker-toggle matSuffix [for]="pickerBillDate"></mat-datepicker-toggle>

@@ -3,14 +3,14 @@
     <mat-progress-spinner mode="indeterminate" diameter="28"> </mat-progress-spinner>
   </ng-template>
 
-  <mat-card class="card">
+  <mat-card appearance="outlined" class="card">
     <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
       <span class="text-gray-400 mb-2">{{ t('total-expenses') }}</span>
       <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">{{ (groupSummary?.totalExpenses ?? 0) | currency }}</h3>
     </mat-card-content>
   </mat-card>
 
-  <mat-card class="card" *ngFor="let user of users">
+  <mat-card appearance="outlined" class="card" *ngFor="let user of users">
     <mat-card-content class="card-content flex justify-center items-center flex-col mb-0 break-all">
       <span class="text-gray-400 mb-2">{{ t('expenses-of-name', { name: user.name.split(' ')[0] }) }}</span>
       <h3 class="m-0" *ngIf="isLoading == false; else loadingCard">

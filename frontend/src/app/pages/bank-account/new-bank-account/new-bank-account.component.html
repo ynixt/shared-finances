@@ -12,7 +12,7 @@
 
     <form [formGroup]="formGroup" (ngSubmit)="save()">
       <div class="inputs grid">
-        <mat-form-field class="field" appearance="outline">
+        <mat-form-field class="field">
           <mat-label>{{ t('name') }}</mat-label>
           <input formControlName="name" required matInput [placeholder]="t('bank-account-name-placeholder')" />
         </mat-form-field>

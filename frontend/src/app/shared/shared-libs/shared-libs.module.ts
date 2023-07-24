@@ -1,10 +1,9 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { ScrollingModule } from '@angular/cdk/scrolling';
+
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -12,10 +11,14 @@ import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { CovalentLayoutModule } from '@covalent/core/layout';
-import { CovalentStepsModule } from '@covalent/core/steps';
 import { CovalentBreadcrumbsModule } from '@covalent/core/breadcrumbs';
+// import { CovalentStepsModule } from '@covalent/core/steps';
 import { TranslocoModule } from '@ngneat/transloco';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ScrollingModule } from "@angular/cdk/scrolling";
+import { MatPaginatorModule } from "@angular/material/paginator";
+import { ApolloModule } from "apollo-angular";
+import { MatButtonModule } from "@angular/material/button";
 
 const layoutModules = [
   ScrollingModule,
@@ -28,10 +31,12 @@ const layoutModules = [
   MatListModule,
   MatProgressSpinnerModule,
   MatTooltipModule,
+  MatPaginatorModule,
+  ApolloModule,
 
   CovalentBreadcrumbsModule,
   CovalentLayoutModule,
-  CovalentStepsModule,
+  // CovalentStepsModule,
 
   TranslocoModule,
 ];

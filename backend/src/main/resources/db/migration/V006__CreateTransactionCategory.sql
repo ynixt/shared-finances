@@ -9,7 +9,7 @@ create table "transaction_category"
     color      text                                                not null,
     CONSTRAINT fk_transaction_category_user_id
         FOREIGN KEY (user_id)
-            REFERENCES "user" (id)
+            REFERENCES "user" (id) ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX idx_transaction_category_user_id on "transaction_category" (user_id);

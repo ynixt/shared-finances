@@ -57,7 +57,7 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
-        freeCompilerArgs += "-Xjsr305=strict"
+        freeCompilerArgs += listOf("-Xjsr305=strict", "-Xjvm-default=all")
         jvmTarget = "20"
     }
 }
@@ -68,6 +68,6 @@ tasks.withType<Test> {
 
 kapt {
     arguments {
-         arg("mapstruct.defaultComponentModel", "spring")
+        arg("mapstruct.defaultComponentModel", "spring")
     }
 }

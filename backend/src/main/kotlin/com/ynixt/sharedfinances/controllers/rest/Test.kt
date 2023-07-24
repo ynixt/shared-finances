@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.controllers
+package com.ynixt.sharedfinances.controllers.rest
 
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping

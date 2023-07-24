@@ -45,6 +45,7 @@
             ],
             "styles": [
               "src/scss/theme.scss",
+              "node_modules/@ngneat/hot-toast/src/styles/styles.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -116,6 +117,7 @@
             ],
             "styles": [
               "src/scss/theme.scss",
+              "node_modules/@ngneat/hot-toast/src/styles/styles.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -127,6 +129,5 @@
         }
       }
     }
-  },
-  "defaultProject": "shared-finances"
+  }
 }

@@ -4,18 +4,17 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslocoModule } from '@ngneat/transloco';
 
 import { HeaderComponent } from './header.component';
-import { CovalentStepsModule } from '@covalent/core/steps';
 import { CovalentLayoutModule } from '@covalent/core/layout';
 import { MatListModule } from '@angular/material/list';
 import { MenuModule } from '../menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { MatMenuModule } from "@angular/material/menu";
 
 @NgModule({
   declarations: [HeaderComponent],
@@ -29,7 +28,6 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
     MatProgressSpinnerModule,
     TranslocoModule,
     CovalentLayoutModule,
-    CovalentStepsModule,
     MatListModule,
     MenuModule,
     MatTooltipModule,

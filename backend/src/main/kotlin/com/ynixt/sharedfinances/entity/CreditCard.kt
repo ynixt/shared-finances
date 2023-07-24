@@ -1,31 +1,26 @@
 package com.ynixt.sharedfinances.entity
 
-import com.ynixt.sharedfinances.config.hibernatetypes.StringArrayType
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import org.hibernate.annotations.Type
+import jakarta.persistence.*
 import java.math.BigDecimal
 
 @Entity
 class CreditCard(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    val user: User,
+    var user: User? = null,
+    var name: String,
+    var closingDay: Int,
+    var paymentDay: Int,
+    var limit: BigDecimal,
+    var availableLimit: BigDecimal?,
+    var enabled: Boolean,
+    var displayOnGroup: Boolean,
+) : AuditedEntity() {
+    @OneToMany(mappedBy = "creditCard")
+    var billDates: MutableList<CreditCardBillDate>? = null
 
-    val name: String,
-    val closingDay: Int,
-    val paymentDay: Int,
-    val limit: BigDecimal,
-    @Type(StringArrayType::class)
-    val billDates: List<String>?,
-    val availableLimit: BigDecimal?,
-    val enabled: Boolean,
-    val displayOnGroup: Boolean,
-) : AuditedEntity()
+    @Column(name = "user_id", updatable = false, insertable = false)
+    var userId: Long? = null
+}

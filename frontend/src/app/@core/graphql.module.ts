@@ -3,7 +3,6 @@ import { APOLLO_OPTIONS } from 'apollo-angular';
 import { ApolloClientOptions, InMemoryCache, split } from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
 import { HttpLink } from 'apollo-angular/http';
-import { WebSocketLink } from '@apollo/client/link/ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { Auth, onAuthStateChanged } from '@angular/fire/auth';
 import { take } from 'rxjs/operators';
@@ -38,39 +37,6 @@ export function createApollo(
     uri,
   });
 
-  let alreadyConfigured = false;
-
-  const subscriptionClient = new SubscriptionClient(environment.graphqlWebsocketUrl, {
-    reconnect: true,
-    reconnectionAttempts: 5,
-    connectionParams: async () => {
-      const user = await angularFireAuth.currentUser
-      const token = await user?.getIdToken();
-
-      alreadyConfigured = true;
-
-      return {
-        Authorization: `Bearer ${token}`,
-      };
-    },
-  });
-
-  onAuthStateChanged(angularFireAuth, (user) => {
-    if (alreadyConfigured) {
-      subscriptionClient.close();
-
-      // Reconnect to the server.
-      subscriptionClient['connect']();
-
-      // Reregister all subscriptions.
-      Object.keys(subscriptionClient.operations).forEach(id => {
-        subscriptionClient['sendMessage'](id, MessageTypes.GQL_START, subscriptionClient.operations[id].options);
-      });
-    }
-  });
-
-  const ws = new WebSocketLink(subscriptionClient);
-
   const link = split(
     // split based on operation type
     ({ query }) => {
@@ -80,7 +46,7 @@ export function createApollo(
 
       return kind === 'OperationDefinition' && operation === 'subscription';
     },
-    ws,
+    // ws,
     http,
   );
 
@@ -102,12 +68,12 @@ export function createApollo(
 }
 
 @NgModule({
-  providers: [
-    {
-      provide: APOLLO_OPTIONS,
-      useFactory: createApollo,
-      deps: [HttpLink, Auth, HotToastService, TranslocoService],
-    },
-  ],
+  // providers: [
+  //   {
+  //     provide: APOLLO_OPTIONS,
+  //     useFactory: createApollo,
+  //     deps: [HttpLink, Auth, HotToastService, TranslocoService],
+  //   },
+  // ],
 })
 export class GraphQLModule {}

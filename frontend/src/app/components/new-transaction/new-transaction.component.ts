@@ -9,7 +9,7 @@ import {
   Inject,
   ViewChild,
 } from '@angular/core';
-import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { HotToastService } from '@ngneat/hot-toast';
 import { TranslocoService } from '@ngneat/transloco';
@@ -84,7 +84,7 @@ const initialValue = 0.01;
 export class NewTransactionComponent implements OnInit, AfterContentChecked, OnDestroy {
   @Output() closed: EventEmitter<void> = new EventEmitter();
 
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
   transactionTypeEnum = TransactionType;
 
   shared: boolean;
@@ -348,30 +348,30 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   private createFormGroup(): void {
-    this.formGroup = new FormGroup({
-      transactionType: new FormControl(
+    this.formGroup = new UntypedFormGroup({
+      transactionType: new UntypedFormControl(
         this.editingTransaction?.transactionType ?? (this.shared ? TransactionType.Expense : TransactionType.Revenue),
         [Validators.required],
       ),
-      date: new FormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
+      date: new UntypedFormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
         Validators.required,
       ]),
-      creditCardBillDate: new FormControl(
+      creditCardBillDate: new UntypedFormControl(
         {
           value: this.editingTransaction?.creditCardBillDate ? moment(this.editingTransaction?.creditCardBillDate) : '',
           disabled: true,
         },
         [requiredWhenTransactionTypeIsCredit],
       ),
-      value: new FormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
-      description: new FormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
-      bankAccount: new FormControl(undefined, requiredWhenTransactionTypeIsNotCredit),
-      bankAccount2: new FormControl(undefined, requiredWhenTransactionTypeIsTransfer),
-      category: new FormControl(this.editingTransaction?.category),
-      creditCard: new FormControl(undefined, requiredWhenTransactionTypeIsCredit),
-      group: new FormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
-      useInstallment: new FormControl(this.editingTransaction?.installment != null),
-      totalInstallments: new FormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)]),
+      value: new UntypedFormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
+      description: new UntypedFormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
+      bankAccount: new UntypedFormControl(undefined, requiredWhenTransactionTypeIsNotCredit),
+      bankAccount2: new UntypedFormControl(undefined, requiredWhenTransactionTypeIsTransfer),
+      category: new UntypedFormControl(this.editingTransaction?.category),
+      creditCard: new UntypedFormControl(undefined, requiredWhenTransactionTypeIsCredit),
+      group: new UntypedFormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
+      useInstallment: new UntypedFormControl(this.editingTransaction?.installment != null),
+      totalInstallments: new UntypedFormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)]),
     });
   }
 

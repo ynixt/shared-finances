@@ -1,7 +1,7 @@
 <ng-container *transloco="let t">
   <form [formGroup]="formGroup" (ngSubmit)="save()">
     <div class="inputs grid md:gap-4">
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('name') }}</mat-label>
         <input formControlName="name" required matInput [placeholder]="t('credit-card-name-placeholder')" />
       </mat-form-field>

@@ -6,7 +6,7 @@ $transaction-type-bg-transparentize: 0.7;
   $color: $revenue-color;
   background: transparentize($color, $transaction-type-bg-transparentize);
   color: #fff !important;
-
+  /* TODO(mdc-migration): The following rule targets internal classes of button that may no longer apply for the MDC version. */
   &.mat-button-toggle-checked {
     background: $color;
   }
@@ -17,7 +17,7 @@ $transaction-type-bg-transparentize: 0.7;
 
   background: transparentize($color, $transaction-type-bg-transparentize);
   color: #fff !important;
-
+  /* TODO(mdc-migration): The following rule targets internal classes of button that may no longer apply for the MDC version. */
   &.mat-button-toggle-checked {
     background: $color;
   }
@@ -28,7 +28,7 @@ $transaction-type-bg-transparentize: 0.7;
 
   background: transparentize($color, $transaction-type-bg-transparentize);
   color: #fff !important;
-
+  /* TODO(mdc-migration): The following rule targets internal classes of button that may no longer apply for the MDC version. */
   &.mat-button-toggle-checked {
     background: $color;
   }
@@ -39,13 +39,14 @@ $transaction-type-bg-transparentize: 0.7;
 
   background: transparentize($color, $transaction-type-bg-transparentize);
   color: #fff !important;
-
+  /* TODO(mdc-migration): The following rule targets internal classes of button that may no longer apply for the MDC version. */
   &.mat-button-toggle-checked {
     background: $color;
   }
 }
 
 .transaction-type {
+  /* TODO(mdc-migration): The following rule targets internal classes of button that may no longer apply for the MDC version. */
   &.mat-button-toggle-checked {
     font-weight: 500 !important;
 

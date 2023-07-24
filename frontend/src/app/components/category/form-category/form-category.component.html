@@ -1,11 +1,11 @@
 <ng-container *transloco="let t">
   <form [formGroup]="formGroup" (ngSubmit)="save()">
     <div class="inputs grid md:grid-cols-2 md:gap-4">
-      <mat-form-field class="field" appearance="outline">
+      <mat-form-field class="field">
         <mat-label>{{ t('name') }}</mat-label>
         <input formControlName="name" required matInput [placeholder]="t('category-name-placeholder')" />
       </mat-form-field>
-      <mat-form-field class="field color" appearance="outline">
+      <mat-form-field class="field color">
         <mat-label>{{ t('color') }}</mat-label>
         <input formControlName="color" type="color" required matInput [placeholder]="t('category-color-placeholder')" />
       </mat-form-field>

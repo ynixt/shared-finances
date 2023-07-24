@@ -5,8 +5,8 @@ create table "group_has_users"
     user_id  bigint                                              not null,
     CONSTRAINT fk_group_has_users_group_id
         FOREIGN KEY (group_id)
-            REFERENCES "group" (id),
+            REFERENCES "group" (id) ON DELETE CASCADE,
     CONSTRAINT fk_group_has_users_user_id
         FOREIGN KEY (user_id)
-            REFERENCES "user" (id)
+            REFERENCES "user" (id) ON DELETE CASCADE
 );

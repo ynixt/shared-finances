@@ -312,95 +312,95 @@ export class GroupsService {
     minDate: Moment,
     maxDate: Moment,
   ) {
-    transactionsQueryRef.subscribeToMore({
-      document: TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION,
-      variables: {
-        groupId,
-      },
-      updateQuery: (prev, { subscriptionData }) => {
-        const newTransaction: Transaction = subscriptionData.data.transactionCreated;
-
-        if (moment(newTransaction.date).isSameOrAfter(minDate) && moment(newTransaction.date).isBefore(maxDate)) {
-          if (prev.transactions != null) {
-            const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-
-            transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
-
-            prev = {
-              transactions: transactionsPage,
-            };
-            return {
-              ...prev,
-            };
-          } else {
-            const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
-
-            transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
-
-            prev = {
-              transactions: transactionsPage,
-            };
-            return {
-              ...prev,
-            };
-          }
-        }
-
-        return prev;
-      },
-    });
-
-    transactionsQueryRef.subscribeToMore({
-      document: TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
-      variables: {
-        groupId,
-      },
-      updateQuery: (prev, { subscriptionData }) => {
-        if (prev.transactions != null) {
-          const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-
-          transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
-
-          const transactionUpdatedIndex = transactionsPage.items.findIndex(item => item.id === subscriptionData.data.transactionUpdated.id);
-
-          if (transactionUpdatedIndex != -1) {
-            transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.transactionUpdated;
-          }
-
-          prev = {
-            transactions: transactionsPage,
-          };
-          return {
-            ...prev,
-          };
-        }
-
-        return prev;
-      },
-    });
-
-    transactionsQueryRef.subscribeToMore({
-      document: TRANSACTION_DELETED_SUBSCRIPTION,
-      variables: {
-        groupId,
-      },
-      updateQuery: (prev, { subscriptionData }) => {
-        if (prev.transactions != null) {
-          const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-
-          transactionsPage.items = transactionsPage.items.filter(item => item.id !== subscriptionData.data.transactionDeleted.id);
-
-          prev = {
-            transactions: transactionsPage,
-          };
-          return {
-            ...prev,
-          };
-        }
-
-        return prev;
-      },
-    });
+    // transactionsQueryRef.subscribeToMore({
+    //   document: TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION,
+    //   variables: {
+    //     groupId,
+    //   },
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const newTransaction: Transaction = subscriptionData.data.transactionCreated;
+    //
+    //     if (moment(newTransaction.date).isSameOrAfter(minDate) && moment(newTransaction.date).isBefore(maxDate)) {
+    //       if (prev.transactions != null) {
+    //         const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+    //
+    //         transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
+    //
+    //         prev = {
+    //           transactions: transactionsPage,
+    //         };
+    //         return {
+    //           ...prev,
+    //         };
+    //       } else {
+    //         const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
+    //
+    //         transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+    //
+    //         prev = {
+    //           transactions: transactionsPage,
+    //         };
+    //         return {
+    //           ...prev,
+    //         };
+    //       }
+    //     }
+    //
+    //     return prev;
+    //   },
+    // });
+    //
+    // transactionsQueryRef.subscribeToMore({
+    //   document: TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
+    //   variables: {
+    //     groupId,
+    //   },
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     if (prev.transactions != null) {
+    //       const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+    //
+    //       transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
+    //
+    //       const transactionUpdatedIndex = transactionsPage.items.findIndex(item => item.id === subscriptionData.data.transactionUpdated.id);
+    //
+    //       if (transactionUpdatedIndex != -1) {
+    //         transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.transactionUpdated;
+    //       }
+    //
+    //       prev = {
+    //         transactions: transactionsPage,
+    //       };
+    //       return {
+    //         ...prev,
+    //       };
+    //     }
+    //
+    //     return prev;
+    //   },
+    // });
+    //
+    // transactionsQueryRef.subscribeToMore({
+    //   document: TRANSACTION_DELETED_SUBSCRIPTION,
+    //   variables: {
+    //     groupId,
+    //   },
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     if (prev.transactions != null) {
+    //       const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
+    //
+    //       transactionsPage.items = transactionsPage.items.filter(item => item.id !== subscriptionData.data.transactionDeleted.id);
+    //
+    //       prev = {
+    //         transactions: transactionsPage,
+    //       };
+    //       return {
+    //         ...prev,
+    //       };
+    //     }
+    //
+    //     return prev;
+    //   },
+    // });
   }
 
   getTransactionsChart(

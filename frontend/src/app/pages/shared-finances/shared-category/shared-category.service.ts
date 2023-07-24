@@ -187,47 +187,47 @@ export class SharedCategoryService extends GenericCategoryService {
   }
 
   private subscribeToMoreCategories() {
-    this.categoriesQueryRef.subscribeToMore({
-      document: GROUP_CATEGORY_CREATED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        const categories = prev.categories ?? [];
-
-        prev = {
-          categories: [...categories, subscriptionData.data.groupCategoryCreated],
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
-
-    this.categoriesQueryRef.subscribeToMore({
-      document: GROUP_CATEGORY_UPDATED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        const editedCategory = subscriptionData.data.groupCategoryUpdated;
-
-        prev = {
-          categories: [...prev.categories.filter(category => category.id !== editedCategory.id), editedCategory],
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
-
-    this.categoriesQueryRef.subscribeToMore({
-      document: GROUP_CATEGORY_DELETED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        prev = {
-          categories: prev.categories.filter(category => category.id !== subscriptionData.data.groupCategoryDeleted.id),
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
+    // this.categoriesQueryRef.subscribeToMore({
+    //   document: GROUP_CATEGORY_CREATED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const categories = prev.categories ?? [];
+    //
+    //     prev = {
+    //       categories: [...categories, subscriptionData.data.groupCategoryCreated],
+    //     };
+    //
+    //     return {
+    //       ...prev,
+    //     };
+    //   },
+    // });
+    //
+    // this.categoriesQueryRef.subscribeToMore({
+    //   document: GROUP_CATEGORY_UPDATED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const editedCategory = subscriptionData.data.groupCategoryUpdated;
+    //
+    //     prev = {
+    //       categories: [...prev.categories.filter(category => category.id !== editedCategory.id), editedCategory],
+    //     };
+    //
+    //     return {
+    //       ...prev,
+    //     };
+    //   },
+    // });
+    //
+    // this.categoriesQueryRef.subscribeToMore({
+    //   document: GROUP_CATEGORY_DELETED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     prev = {
+    //       categories: prev.categories.filter(category => category.id !== subscriptionData.data.groupCategoryDeleted.id),
+    //     };
+    //
+    //     return {
+    //       ...prev,
+    //     };
+    //   },
+    // });
   }
 }

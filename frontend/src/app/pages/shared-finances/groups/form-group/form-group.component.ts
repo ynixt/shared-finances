@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { Group } from 'src/app/@core/models/group';
 
 @Component({
@@ -8,7 +8,7 @@ import { Group } from 'src/app/@core/models/group';
   styleUrls: ['./form-group.component.scss'],
 })
 export class FormGroupComponent implements OnInit {
-  formGroup: FormGroup;
+  formGroup: UntypedFormGroup;
 
   @Input() group: Group;
 
@@ -21,7 +21,7 @@ export class FormGroupComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.formGroup = new FormGroup({ name: new FormControl(this.group?.name, [Validators.required, Validators.maxLength(30)]) });
+    this.formGroup = new UntypedFormGroup({ name: new UntypedFormControl(this.group?.name, [Validators.required, Validators.maxLength(30)]) });
   }
 
   save(): void {

@@ -34,18 +34,9 @@
           <mat-progress-spinner *ngIf="userState.loading" mode="indeterminate" diameter="40"> </mat-progress-spinner>
 
           <div class="buttons flex items-center justify-end gap-5" *ngIf="userState.done && userState.user != null">
-            <a
-              href="https://github.com/ynixt/shared-finances"
-              mat-icon-button
-              class="hidden sm:flex text-white github-button"
-              matTooltip="GitHub"
-            >
-              <fa-icon class="flex" [icon]="faGithub"></fa-icon>
-            </a>
-
-            <button mat-icon-button class="user-photo" [matMenuTriggerFor]="userMenu">
-              <img [src]="userState.user.photoURL" />
-            </button>
+            <mat-icon-button class="user-photo" [matMenuTriggerFor]="userMenu">
+              <img [src]="userState.user.photoUrl" />
+            </mat-icon-button>
 
             <mat-menu #userMenu="matMenu">
               <div class="user-menu">
@@ -55,6 +46,10 @@
                 </div>
                 <mat-divider></mat-divider>
                 <div class="actions">
+                  <a mat-menu-item href="https://github.com/ynixt/shared-finances">
+                    <fa-icon class="mat-icon fa-mat-icon" [icon]="faGithub"></fa-icon>
+                    <span>Github</span>
+                  </a>
                   <button mat-menu-item (click)="logout()">
                     <mat-icon>logout</mat-icon>
                     <span>{{ t('logout') }}</span>

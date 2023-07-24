@@ -6,7 +6,7 @@ export interface User {
   uid: string;
   email: string;
   name: string;
-  photoURL: string;
+  photoUrl: string;
   permissions?: any[];
   creditCards?: CreditCard[];
   bankAccounts?: BankAccount[];

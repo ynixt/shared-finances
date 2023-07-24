@@ -1,6 +1,5 @@
 package com.ynixt.sharedfinances.config.security
 
-import com.ynixt.sharedfinances.service.JwtRequestFilter
 import com.ynixt.sharedfinances.service.UserService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -25,14 +24,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 class WebSecurityConfiguration(private val jwtRequestFilter: JwtRequestFilter, private val userService: UserService) {
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http.exceptionHandling(Customizer.withDefaults())
+
         http.csrf { obj: CsrfConfigurer<HttpSecurity> -> obj.disable() }
             .authorizeHttpRequests { request ->
-                request.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().anyRequest().authenticated()
+                request.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                request.requestMatchers("/socket", "/404").permitAll()
+                request.requestMatchers("/error").anonymous()
+                request.anyRequest().authenticated()
             }
 
         http.sessionManagement { manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
 
-        http.authenticationProvider(authenticationProvider())
+        http
+            .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()

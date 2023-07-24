@@ -1,13 +1,9 @@
 package com.ynixt.sharedfinances.entity
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.ManyToMany
-import jakarta.persistence.OneToMany
+import jakarta.persistence.*
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
+import java.security.Principal
 
 @Entity
 class User(
@@ -23,6 +19,9 @@ class User(
 
     @ManyToMany(mappedBy = "users")
     var groups: MutableList<Group>? = null
+
+    @OneToMany(mappedBy = "user")
+    var bankAccounts: MutableList<BankAccount>? = null
 
     override fun getAuthorities(): List<GrantedAuthority> {
         return listOf()
@@ -50,5 +49,11 @@ class User(
 
     override fun isEnabled(): Boolean {
         return true
+    }
+}
+
+class UserPrincipal(val user: User) : Principal {
+    override fun getName(): String {
+        return user.email
     }
 }

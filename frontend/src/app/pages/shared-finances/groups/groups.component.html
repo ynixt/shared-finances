@@ -17,7 +17,7 @@
         </app-title-bar>
 
         <div class="groups grid md:grid-cols-2 md:gap-4">
-          <mat-card class="credit-card cursor-pointer" *ngFor="let group of groups" [routerLink]="group.id">
+          <mat-card appearance="outlined" class="credit-card cursor-pointer" *ngFor="let group of groups" [routerLink]="group.id">
             <mat-card-header class="items-center mb-1">
               <mat-icon mat-card-avatar class="w-auto h-auto">group</mat-icon>
               <mat-card-title class="mb-0 break-all">{{ group.name }}</mat-card-title>

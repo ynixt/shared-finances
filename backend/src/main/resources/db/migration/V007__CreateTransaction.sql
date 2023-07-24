@@ -16,16 +16,16 @@ create table "transaction"
     totalInstallments     int,
     CONSTRAINT fk_transaction_user_id
         FOREIGN KEY (user_id)
-            REFERENCES "user" (id),
+            REFERENCES "user" (id) ON DELETE CASCADE,
     CONSTRAINT fk_transaction_category_id
         FOREIGN KEY (category_id)
-            REFERENCES "transaction_category" (id),
+            REFERENCES "transaction_category" (id) ON DELETE CASCADE,
     CONSTRAINT fk_transaction_bank_account_id
         FOREIGN KEY (bank_account_id)
-            REFERENCES "bank_account" (id),
+            REFERENCES "bank_account" (id) ON DELETE CASCADE,
     CONSTRAINT fk_transaction_credit_card_id
         FOREIGN KEY (credit_card_id)
-            REFERENCES "credit_card" (id)
+            REFERENCES "credit_card" (id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_transaction_user_id on "transaction" (user_id);

@@ -1,13 +1,15 @@
-import { Injectable } from '@angular/core';
-import { Apollo, gql, QueryRef } from 'apollo-angular';
-import { EmptyObject } from 'apollo-angular/types';
-import moment, { Moment } from 'moment';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
-import { CHART_DEFAULT_MINIMUM_MONTHS } from '../constants';
+import { Injectable } from "@angular/core";
+import { Apollo, gql, QueryRef } from "apollo-angular";
+import { EmptyObject } from "apollo-angular/types";
+import moment, { Moment } from "moment";
+import { lastValueFrom, Observable } from "rxjs";
+import { map, take } from "rxjs/operators";
+import { CHART_DEFAULT_MINIMUM_MONTHS } from "../constants";
 
-import { CreditCard, CreditCardSummary } from '../models';
-import { Chart } from '../models/chart';
+import { CreditCard, CreditCardSummary } from "../models";
+import { Chart } from "../models/chart";
+import { HttpClient } from "@angular/common/http";
+import { StompService } from "./stomp.service";
 
 const CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
   subscription creditCardCreated {
@@ -70,56 +72,27 @@ const TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION = gql`
 `;
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root"
 })
 export class CreditCardService {
-  constructor(private apollo: Apollo) {}
+  constructor(private apollo: Apollo, private httpClient: HttpClient, private stompService: StompService) {
+  }
 
   watchCreditCards(): Observable<CreditCard[]> {
-    const creditCardQueryRef = this.apollo.watchQuery<{ creditCards: CreditCard[] }>({
-      query: gql`
-        query creditCards {
-          creditCards {
-            id
-            name
-            closingDay
-            paymentDay
-            limit
-            enabled
-            displayOnGroup
-          }
-        }
-      `,
+    const w = this.stompService.watch({
+      destination: "/user/queue/credit-card"
     });
 
-    this.subscribeToChanges(creditCardQueryRef);
+    this.stompService.publish({ destination: "/app/credit-card" });
 
-    return creditCardQueryRef.valueChanges.pipe(map(result => result.data.creditCards));
+    return w.pipe(map(message => JSON.parse(message.body) as CreditCard[]));
   }
 
   getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string | Moment): Promise<CreditCardSummary> {
-    const creditCardQueryRef = this.apollo.query<{ creditCardSummary: CreditCardSummary }>({
-      query: gql`
-        query creditCardSummary($creditCardId: String!, $maxCreditCardBillDate: String!) {
-          creditCardSummary(creditCardId: $creditCardId, maxCreditCardBillDate: $maxCreditCardBillDate) {
-            bill
-            expensesOfThisBill
-            paymentsOfThisBill
-          }
-        }
-      `,
-      variables: {
-        creditCardId,
-        maxCreditCardBillDate: moment(maxCreditCardBillDate).utc().toISOString(),
-      },
-    });
-
-    return creditCardQueryRef
-      .pipe(
-        take(1),
-        map(result => result.data.creditCardSummary),
-      )
-      .toPromise();
+    const maxCreditCardBillDateFormatted = moment(maxCreditCardBillDate).utc().toISOString();
+    return lastValueFrom(this.httpClient.get<CreditCardSummary>(
+      `/api/credit-card/summary/${creditCardId}/${maxCreditCardBillDateFormatted}`
+    ).pipe(take(1)));
   }
 
   getCreditCardSAvailableLimit(creditCardId: string): Promise<number> {
@@ -130,14 +103,14 @@ export class CreditCardService {
         }
       `,
       variables: {
-        creditCardId,
-      },
+        creditCardId
+      }
     });
 
     return creditCardQueryRef
       .pipe(
         take(1),
-        map(result => result.data.creditCardAvailableLimit),
+        map(result => result.data.creditCardAvailableLimit)
       )
       .toPromise();
   }
@@ -150,14 +123,14 @@ export class CreditCardService {
         }
       `,
       variables: {
-        creditCardId,
-      },
+        creditCardId
+      }
     });
 
     return creditCardQueryRef
       .pipe(
         take(1),
-        map(result => result.data.creditCardBillDates),
+        map(result => result.data.creditCardBillDates)
       )
       .toPromise();
   }
@@ -167,8 +140,8 @@ export class CreditCardService {
       .subscribe<{ creditCardTransactionCreated: { id: string } }>({
         query: TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION,
         variables: {
-          creditCardId,
-        },
+          creditCardId
+        }
       })
       .pipe(map(result => result.data.creditCardTransactionCreated.id));
   }
@@ -178,8 +151,8 @@ export class CreditCardService {
       .subscribe<{ creditCardTransactionUpdated: { id: string } }>({
         query: TRANSACTION_OF_CREDIT_CARD_UPDATED_SUBSCRIPTION,
         variables: {
-          creditCardId,
-        },
+          creditCardId
+        }
       })
       .pipe(map(result => result.data.creditCardTransactionUpdated.id));
   }
@@ -189,8 +162,8 @@ export class CreditCardService {
       .subscribe<{ creditCardTransactionDeleted: { id: string } }>({
         query: TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION,
         variables: {
-          creditCardId,
-        },
+          creditCardId
+        }
       })
       .pipe(map(result => result.data.creditCardTransactionDeleted.id));
   }
@@ -200,7 +173,7 @@ export class CreditCardService {
     initialMonthIfNoChart: Moment | string,
     creditCardClosingDay: number,
     args: { creditCardId: string; maxCreditCardBillDate?: Moment; minCreditCardBillDate?: Moment },
-    minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS,
+    minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS
   ): Promise<Chart[]> {
     const transactionsChartQueryRef = this.apollo.query<{ transactionsCreditCardChart: Chart[] }>({
       query: gql`
@@ -223,19 +196,19 @@ export class CreditCardService {
         creditCardId: args.creditCardId,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         maxCreditCardBillDate: args?.maxCreditCardBillDate?.toISOString(),
-        minCreditCardBillDate: args?.minCreditCardBillDate?.toISOString(),
-      },
+        minCreditCardBillDate: args?.minCreditCardBillDate?.toISOString()
+      }
     });
 
     return transactionsChartQueryRef
       .pipe(
         map(result => {
           const charts: Chart[] = result.data.transactionsCreditCardChart.map(chart => {
-            const dateFormat = 'MM/YYYY';
+            const dateFormat = "MM/YYYY";
             const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
             const series = chart.series.map(serie => ({
               ...serie,
-              name: moment(serie.name).format(dateFormat),
+              name: moment(serie.name).format(dateFormat)
             }));
 
             if (series.length < minimumMonths) {
@@ -244,7 +217,7 @@ export class CreditCardService {
               for (let i = 0; i < missing; i++) {
                 series.splice(i, 0, {
                   name: this.previousBillDate(firstDate, creditCardClosingDay, i + 1).format(dateFormat),
-                  value: 0,
+                  value: 0
                 });
               }
             }
@@ -254,7 +227,7 @@ export class CreditCardService {
 
           return charts;
         }),
-        take(1),
+        take(1)
       )
       .toPromise();
   }
@@ -265,68 +238,68 @@ export class CreditCardService {
         creditCards: CreditCard[];
       },
       EmptyObject
-    >,
+    >
   ) {
-    creditCardQueryRef.subscribeToMore({
-      document: CREDIT_CARD_CREATED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        const creditCards = prev.creditCards ?? [];
-
-        prev = {
-          creditCards: [...creditCards, subscriptionData.data.creditCardCreated],
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
-
-    creditCardQueryRef.subscribeToMore({
-      document: CREDIT_CARD_UPDATED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        const editedCreditCard = subscriptionData.data.creditCardUpdated;
-
-        prev = {
-          creditCards: [...prev.creditCards.filter(creditCard => creditCard.id !== editedCreditCard.id), editedCreditCard],
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
-
-    creditCardQueryRef.subscribeToMore({
-      document: CREDIT_CARD_DELETED_SUBSCRIPTION,
-      updateQuery: (prev, { subscriptionData }) => {
-        prev = {
-          creditCards: prev.creditCards.filter(creditCard => creditCard.id !== subscriptionData.data.creditCardDeleted.id),
-        };
-
-        return {
-          ...prev,
-        };
-      },
-    });
+    // creditCardQueryRef.subscribeToMore({
+    //   document: CREDIT_CARD_CREATED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const creditCards = prev.creditCards ?? [];
+    //
+    //     prev = {
+    //       creditCards: [...creditCards, subscriptionData.data.creditCardCreated]
+    //     };
+    //
+    //     return {
+    //       ...prev
+    //     };
+    //   }
+    // });
+    //
+    // creditCardQueryRef.subscribeToMore({
+    //   document: CREDIT_CARD_UPDATED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     const editedCreditCard = subscriptionData.data.creditCardUpdated;
+    //
+    //     prev = {
+    //       creditCards: [...prev.creditCards.filter(creditCard => creditCard.id !== editedCreditCard.id), editedCreditCard]
+    //     };
+    //
+    //     return {
+    //       ...prev
+    //     };
+    //   }
+    // });
+    //
+    // creditCardQueryRef.subscribeToMore({
+    //   document: CREDIT_CARD_DELETED_SUBSCRIPTION,
+    //   updateQuery: (prev, { subscriptionData }) => {
+    //     prev = {
+    //       creditCards: prev.creditCards.filter(creditCard => creditCard.id !== subscriptionData.data.creditCardDeleted.id)
+    //     };
+    //
+    //     return {
+    //       ...prev
+    //     };
+    //   }
+    // });
   }
 
   nextBillDate(date: string | Moment, closingDay: number, amountAhead = 1): Moment {
     const dateForThisOption = moment(date).date(closingDay);
 
-    if (dateForThisOption.isSame(date, 'month') === false && amountAhead != 0) {
+    if (dateForThisOption.isSame(date, "month") === false && amountAhead != 0) {
       // month with less days, like february
 
-      dateForThisOption.subtract(1, 'day');
+      dateForThisOption.subtract(1, "day");
     }
 
-    return dateForThisOption.add(amountAhead, 'month');
+    return dateForThisOption.add(amountAhead, "month");
   }
 
   previousBillDate(date: string | Moment, closingDay: number, amountAhead = 1): Moment {
     const dateForThisOption = moment(date).date(closingDay);
 
-    return dateForThisOption.subtract(amountAhead, 'month');
+    return dateForThisOption.subtract(amountAhead, "month");
   }
 
   findCreditCardBillDate(date: string | Moment, creditCardBillDateOptions: Array<Moment | string>, closingDay: number): Moment | undefined {
@@ -336,14 +309,14 @@ export class CreditCardService {
 
     return creditCardBillDateOptions
       .sort((b1, b2) => {
-        const b1Str = typeof b1 === 'string' ? b1 : b1.toISOString();
-        const b2Str = typeof b2 === 'string' ? b2 : b2.toISOString();
+        const b1Str = typeof b1 === "string" ? b1 : b1.toISOString();
+        const b2Str = typeof b2 === "string" ? b2 : b2.toISOString();
 
         return b1Str.localeCompare(b2Str);
       })
       .map(option => moment(option))
       .find(option => {
-        const isSameMonth = moment(date).isSame(option, 'month');
+        const isSameMonth = moment(date).isSame(option, "month");
         const isSameOrAfterClosingDay = moment(date).date() >= closingDay;
 
         if (isSameMonth || oneMonthSkipped) {
