@@ -9,11 +9,6 @@ import jakarta.persistence.*
 )
 abstract class TransactionCategory(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
-    val name: String,
-    val color: String,
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id") var user: User? = null,
-
-    ) : AuditedEntity() {
-    @Column(name = "user_id", updatable = false, insertable = false)
-    var userId: Long? = null
-}
+    var name: String,
+    var color: String,
+) : AuditedEntity()

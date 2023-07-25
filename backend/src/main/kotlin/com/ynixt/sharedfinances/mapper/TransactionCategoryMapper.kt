@@ -3,18 +3,14 @@ package com.ynixt.sharedfinances.mapper
 import com.ynixt.sharedfinances.entity.GroupTransactionCategory
 import com.ynixt.sharedfinances.entity.TransactionCategory
 import com.ynixt.sharedfinances.entity.UserTransactionCategory
-import com.ynixt.sharedfinances.model.dto.transactioncategory.GroupTransactionCategoryDto
-import com.ynixt.sharedfinances.model.dto.transactioncategory.TransactionCategoryDto
-import com.ynixt.sharedfinances.model.dto.transactioncategory.UserTransactionCategoryDto
-import org.mapstruct.Mapper
-import org.mapstruct.Named
-import org.mapstruct.ObjectFactory
+import com.ynixt.sharedfinances.model.dto.transactioncategory.*
+import org.mapstruct.*
 
-@Mapper
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
 interface TransactionCategoryMapper {
     @ObjectFactory
-    fun createTransactionCategoryDto(entity: TransactionCategory): TransactionCategoryDto {
-        return when (entity) {
+    fun createTransactionCategoryDto(entity: TransactionCategory?): TransactionCategoryDto? {
+        return if (entity == null) return null else when (entity) {
             is UserTransactionCategory -> toDtoUser(entity)
             is GroupTransactionCategory -> toDtoGroup(entity)
             else -> TODO()
@@ -22,12 +18,24 @@ interface TransactionCategoryMapper {
     }
 
 
-    fun toDto(entity: TransactionCategory): TransactionCategoryDto
-    fun toDtoList(entity: List<TransactionCategory>): List<TransactionCategoryDto>
+    fun toDto(entity: TransactionCategory?): TransactionCategoryDto?
+    fun toDtoList(entity: List<TransactionCategory>?): List<TransactionCategoryDto>?
 
     @Named("toDtoUserTransactionCategory")
-    fun toDtoUser(entity: UserTransactionCategory): UserTransactionCategoryDto
+    fun toDtoUser(entity: UserTransactionCategory?): UserTransactionCategoryDto?
+
+    fun toDtoUserList(entity: List<UserTransactionCategory>?): List<UserTransactionCategoryDto>?
+
+    fun updateUser(
+        @MappingTarget transactionCategory: UserTransactionCategory?, updateDto: UpdateUserTransactionCategoryDto?
+    )
 
     @Named("toDtoGroupTransactionCategory")
-    fun toDtoGroup(entity: GroupTransactionCategory): GroupTransactionCategoryDto
+    fun toDtoGroup(entity: GroupTransactionCategory?): GroupTransactionCategoryDto?
+
+    fun toDtoGroupList(entity: List<GroupTransactionCategory>?): List<GroupTransactionCategoryDto>?
+
+    fun updateGroup(
+        @MappingTarget transactionCategory: GroupTransactionCategory?, updateDto: UpdateGroupTransactionCategoryDto?
+    )
 }

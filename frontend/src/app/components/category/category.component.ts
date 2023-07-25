@@ -49,7 +49,6 @@ export class CategoryComponent implements OnInit {
       .pipe(take(1))
       .toPromise();
     if (confirm) {
-      this.toast.observe;
       await this.categoryService
         .deleteCategory(category.id)
         .pipe(

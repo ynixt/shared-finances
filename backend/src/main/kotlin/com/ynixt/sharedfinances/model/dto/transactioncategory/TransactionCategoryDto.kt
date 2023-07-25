@@ -26,6 +26,5 @@ data class GroupTransactionCategoryDto(
     val id: Long? = null,
     val name: String,
     val color: String,
-    val userId: Long,
     val groupId: Long,
 ) : TransactionCategoryDto

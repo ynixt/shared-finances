@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.model.dto.creditcard.NewCreditCardDto
 import com.ynixt.sharedfinances.model.dto.creditcard.UpdateCreditCardDto
 import com.ynixt.sharedfinances.service.CreditCardService
 import com.ynixt.sharedfinances.service.SecurityService
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import java.time.ZonedDateTime
@@ -29,10 +30,10 @@ class CreditCardController(
     }
 
     @GetMapping("{id}")
-    fun getOne(authentication: Authentication, @PathVariable id: Long): CreditCardDto {
+    fun getOne(authentication: Authentication, @PathVariable id: Long): ResponseEntity<CreditCardDto> {
         val user = securityService.authenticationToUser(authentication)!!
-
-        return creditCardMapper.toDto(creditCardService.getOne(user, id))!!
+        
+        return ResponseEntity.ofNullable(creditCardMapper.toDto(creditCardService.getOne(user, id)))
     }
 
     @PutMapping("{id}")

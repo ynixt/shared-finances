@@ -11,6 +11,6 @@ export abstract class GenericCategoryService {
   abstract newCategory(category: Partial<Category>, groupId?: string): Observable<Category>;
   abstract editCategory(category: Category): Observable<Category>;
   abstract getById(categoryId: string, groupId?: string): Promise<Category>;
-  abstract deleteCategory(categoryId: string): Observable<boolean>;
+  abstract deleteCategory(categoryId: string): Observable<void>;
   abstract getGroup(groupId: string): Promise<GroupWithIdName | null>;
 }

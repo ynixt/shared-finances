@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
-import { Apollo, gql, QueryRef } from 'apollo-angular';
-import { EmptyObject } from 'apollo-angular/types';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
-import { Category } from 'src/app/@core/models';
-import { GenericCategoryService, GroupWithIdName } from 'src/app/components/category';
+import { Injectable } from "@angular/core";
+import { Apollo, gql, QueryRef } from "apollo-angular";
+import { EmptyObject } from "apollo-angular/types";
+import { lastValueFrom, Observable } from "rxjs";
+import { map, take } from "rxjs/operators";
+import { Category } from "src/app/@core/models";
+import { GenericCategoryService, GroupWithIdName } from "src/app/components/category";
+import { StompService } from "../../../@core/services/stomp.service";
+import { HttpClient } from "@angular/common/http";
 
 const GROUP_CATEGORY_CREATED_SUBSCRIPTION = gql`
   subscription groupCategoryCreated {
@@ -35,7 +37,7 @@ const GROUP_CATEGORY_DELETED_SUBSCRIPTION = gql`
 `;
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root"
 })
 export class SharedCategoryService extends GenericCategoryService {
   private categoriesQueryRef: QueryRef<
@@ -45,123 +47,44 @@ export class SharedCategoryService extends GenericCategoryService {
     EmptyObject
   >;
 
-  constructor(private apollo: Apollo) {
+  constructor(private apollo: Apollo, private stompService: StompService, private httpClient: HttpClient) {
     super();
   }
 
   watchCategories(groupId: string): Observable<Category[]> {
-    this.categoriesQueryRef = this.apollo.watchQuery<{ categories: Category[] }>({
-      query: gql`
-        query categories($groupId: String!) {
-          categories(groupId: $groupId) {
-            id
-            name
-            color
-          }
-        }
-      `,
-      variables: {
-        groupId,
-      },
+    const w = this.stompService.watch({
+      destination: "/topic/group-transaction-category" + groupId
     });
 
-    this.subscribeToMoreCategories();
+    this.stompService.publish({ destination: "/app/group-transaction-category" + groupId });
 
-    return this.categoriesQueryRef.valueChanges.pipe(map(result => result.data.categories));
+    return w.pipe(map(message => JSON.parse(message.body) as Category[]));
   }
 
   newCategory(category: Partial<Category>, groupId: string): Observable<Category> {
-    return this.apollo
-      .mutate<{ newGroupCategory: Category }>({
-        mutation: gql`
-          mutation($name: String!, $color: String!, $groupId: String!) {
-            newGroupCategory(name: $name, color: $color, groupId: $groupId) {
-              id
-              name
-              color
-            }
-          }
-        `,
-        variables: {
-          name: category.name,
-          color: category.color,
-          groupId,
-        },
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.newGroupCategory),
-      );
+    return this.httpClient.post<Category>("/api/group-transaction-category", {
+      name: category.name,
+      color: category.color,
+      groupId
+    });
   }
 
   editCategory(category: Category): Observable<Category> {
-    return this.apollo
-      .mutate<{ editGroupCategory: Category }>({
-        mutation: gql`
-          mutation($id: String!, $name: String!, $color: String!) {
-            editGroupCategory(id: $id, name: $name, color: $color) {
-              id
-              name
-              color
-            }
-          }
-        `,
-        variables: {
-          id: category.id,
-          name: category.name,
-          color: category.color,
-        },
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.editGroupCategory),
-      );
+    return this.httpClient.put<Category>(`/api/group-transaction-category/${category.id}`, {
+      name: category.name,
+      color: category.color,
+    });
   }
 
-  getById(categoryId: string, groupId: string): Promise<Category> {
-    return this.apollo
-      .query<{ category: Category }>({
-        query: gql`
-          query category($categoryId: String!, $groupId: String!) {
-            category(categoryId: $categoryId, groupId: $groupId) {
-              id
-              name
-              color
-              group {
-                id
-                name
-              }
-            }
-          }
-        `,
-        variables: {
-          categoryId,
-          groupId,
-        },
-      })
-      .pipe(
-        map(result => result.data.category),
-        take(1),
-      )
-      .toPromise();
+  getById(categoryId: string): Promise<Category> {
+    return lastValueFrom(this.httpClient.get<Category>(
+      `/api/group-transaction-category/${categoryId}`).pipe(take(1))
+    );
   }
 
-  deleteCategory(categoryId: string): Observable<boolean> {
-    return this.apollo
-      .mutate<{ deleteGroupCategory: boolean }>({
-        mutation: gql`
-          mutation($categoryId: String!) {
-            deleteGroupCategory(categoryId: $categoryId)
-          }
-        `,
-        variables: {
-          categoryId,
-        },
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.deleteGroupCategory),
-      );
+  deleteCategory(categoryId: string): Observable<void> {
+    return this.httpClient.delete<void>(
+      `/api/group-transaction-category/${categoryId}`);
   }
 
   getGroup(groupId: string): Promise<GroupWithIdName | null> {
@@ -176,12 +99,12 @@ export class SharedCategoryService extends GenericCategoryService {
           }
         `,
         variables: {
-          groupId,
-        },
+          groupId
+        }
       })
       .pipe(
         map(result => (result.errors || result.data == null || result.data.group == null ? null : result.data.group)),
-        take(1),
+        take(1)
       )
       .toPromise();
   }
