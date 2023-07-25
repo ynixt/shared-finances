@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.controllers.rest
 
 import com.ynixt.sharedfinances.mapper.GroupMapper
 import com.ynixt.sharedfinances.model.dto.group.GroupDto
+import com.ynixt.sharedfinances.model.dto.group.GroupSummaryDto
 import com.ynixt.sharedfinances.model.dto.group.NewGroupDto
 import com.ynixt.sharedfinances.model.dto.group.UpdateGroupDto
 import com.ynixt.sharedfinances.service.GroupService
@@ -9,6 +10,7 @@ import com.ynixt.sharedfinances.service.SecurityService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
+import java.time.ZonedDateTime
 
 @RestController
 @RequestMapping("/group")
@@ -17,6 +19,18 @@ class GroupController(
     private val securityService: SecurityService,
     private val groupMapper: GroupMapper
 ) {
+    @GetMapping("summary/{groupId}")
+    fun getGroupSummary(
+        authentication: Authentication,
+        @PathVariable("groupId") groupId: Long,
+        @RequestParam("minDate", required = false) minDate: ZonedDateTime?,
+        @RequestParam("maxDate", required = false) maxDate: ZonedDateTime?,
+    ): GroupSummaryDto {
+        val user = securityService.authenticationToUser(authentication)!!
+        return groupService.getGroupSummary(user, groupId, minDate = minDate, maxDate = maxDate)
+    }
+
+
     @GetMapping("{id}")
     fun getOne(authentication: Authentication, @PathVariable id: Long): ResponseEntity<GroupDto> {
         val user = securityService.authenticationToUser(authentication)!!
@@ -36,7 +50,7 @@ class GroupController(
     }
 
     @PostMapping
-    fun newCreditCard(authentication: Authentication, @RequestBody newDto: NewGroupDto): GroupDto {
+    fun newGroup(authentication: Authentication, @RequestBody newDto: NewGroupDto): GroupDto {
         val user = securityService.authenticationToUser(authentication)!!
 
         return groupMapper.toDto(groupService.newGroup(user, newDto))!!

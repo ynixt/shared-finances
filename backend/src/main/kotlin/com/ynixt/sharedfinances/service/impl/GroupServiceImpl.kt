@@ -3,22 +3,22 @@ package com.ynixt.sharedfinances.service.impl
 import com.ynixt.sharedfinances.entity.Group
 import com.ynixt.sharedfinances.entity.User
 import com.ynixt.sharedfinances.mapper.GroupMapper
-import com.ynixt.sharedfinances.model.dto.group.GroupDto
-import com.ynixt.sharedfinances.model.dto.group.GroupViewDto
-import com.ynixt.sharedfinances.model.dto.group.NewGroupDto
-import com.ynixt.sharedfinances.model.dto.group.UpdateGroupDto
+import com.ynixt.sharedfinances.model.dto.group.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
 import com.ynixt.sharedfinances.repository.GroupRepository
+import com.ynixt.sharedfinances.repository.TransactionRepository
 import com.ynixt.sharedfinances.service.GroupService
 import jakarta.transaction.Transactional
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import java.time.ZonedDateTime
 
 @Service
 class GroupServiceImpl(
     private val groupRepository: GroupRepository,
     private val simpMessagingTemplate: SimpMessagingTemplate,
     private val groupMapper: GroupMapper,
+    private val transactionRepository: TransactionRepository
 ) : GroupService {
     override fun listGroup(user: User): List<Group> {
         return groupRepository.getAllByUserId(user.id!!)
@@ -92,5 +92,21 @@ class GroupServiceImpl(
         } else {
             // TODO: send that group was deleted!
         }
+    }
+
+    override fun getGroupSummary(
+        user: User,
+        groupId: Long,
+        minDate: ZonedDateTime?,
+        maxDate: ZonedDateTime?
+    ): GroupSummaryDto {
+        if (!groupRepository.existsOneByIdAndUserId(userId = user.id!!, id = groupId)) {
+            return GroupSummaryDto(listOf())
+        }
+
+        val expensesOfUsers =
+            transactionRepository.getGroupSummaryByUser(groupId = groupId, maxDate = maxDate, minDate = minDate)
+
+        return GroupSummaryDto(expensesOfUsers)
     }
 }

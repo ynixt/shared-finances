@@ -25,6 +25,16 @@ interface GroupRepository : CrudRepository<Group, Long> {
 
     @Query(
         """
+        select case when count(1) > 0 then true else false end
+        from Group g
+        join g.users u
+        where g.id = :id and u.id = :userId
+    """
+    )
+    fun existsOneByIdAndUserId(id: Long, userId: Long): Boolean
+
+    @Query(
+        """
         from Group g
         join fetch g.users u
         where g.id = :id and u.id = :userId

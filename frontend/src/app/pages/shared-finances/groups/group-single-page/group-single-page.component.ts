@@ -139,7 +139,7 @@ export class GroupSinglePageComponent implements OnInit {
   }
 
   private async getInfoBasedOnGroupAndDate() {
-    this.getTransactions();
+    // this.getTransactions();
     return Promise.all([this.getGroupSummary(), this.getChart()]);
   }
 

@@ -13,14 +13,15 @@ import {
 } from "./transaction.service";
 import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "../constants";
 import { Chart } from "../models/chart";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 import { StompService } from "./stomp.service";
 
 @Injectable({
   providedIn: "root"
 })
 export class GroupsService {
-  constructor(private apollo: Apollo, private stompService: StompService, private httpClient: HttpClient) {
+  private apollo: Apollo
+  constructor(private stompService: StompService, private httpClient: HttpClient) {
   }
 
   getGroups(): Observable<Group[]> {
@@ -97,7 +98,7 @@ export class GroupsService {
   }
 
   newGroup(group: Partial<Group>): Observable<Group | null> {
-    return this.httpClient.post<Group>('/api/group', {
+    return this.httpClient.post<Group>("/api/group", {
       name: group.name
     });
   }
@@ -183,32 +184,16 @@ export class GroupsService {
   }
 
   async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment): Promise<GroupSummary> {
-    const summaryQueryRef = this.apollo.query<{ groupSummary: GroupSummary }>({
-      query: gql`
-        query($groupId: String!, $maxDate: String!, $minDate: String!) {
-          groupSummary(groupId: $groupId, maxDate: $maxDate, minDate: $minDate) {
-            totalExpenses
-            expenses {
-              expense
-              percentageOfExpenses
-              userId
-            }
-          }
-        }
-      `,
-      variables: {
-        groupId,
+    const httpParams = new HttpParams({
+      fromObject: {
         maxDate: maxDate?.toISOString(),
         minDate: minDate?.toISOString()
       }
     });
 
-    return summaryQueryRef
-      .pipe(
-        map(result => result.data.groupSummary),
-        take(1)
-      )
-      .toPromise();
+    return lastValueFrom(this.httpClient.get<GroupSummary>(
+      `/api/group/summary/${groupId}?${httpParams.toString()}`).pipe(take(1))
+    );
   }
 
   private subscribeToTransactionChanges(

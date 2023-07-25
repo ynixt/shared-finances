@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.repository.impl
 
 import com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto
 import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto
+import com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto
 import com.ynixt.sharedfinances.repository.CustomTransactionRepository
 import jakarta.persistence.EntityManager
 import jakarta.persistence.NoResultException
@@ -18,7 +19,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         userId: Long, bankAccountId: Long?, maxDate: ZonedDateTime?
     ): BankAccountSummaryDto {
         var hql = """
-            select new com.ynixt.sharedfinances.dto.bankAccount.BankAccountSummaryDto(
+            select new com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto(
                 sum(t.value),
                 sum(t.value) FILTER (WHERE t.type <> "Transfer" AND t.value < 0),
                 sum(t.value) FILTER (WHERE t.type <> "Transfer" AND t.value > 0)
@@ -62,7 +63,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         userId: Long, creditCardId: Long?, maxCreditCardBillDate: ZonedDateTime?
     ): CreditCardSummaryDto {
         var hql = """
-                    select new com.ynixt.sharedfinances.dto.creditcard.CreditCardSummaryDto(
+                    select new com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto(
                         sum(t.value),
                         sum(t.value) FILTER (WHERE t.type = "CreditCard"),
                         sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment"),
@@ -109,4 +110,41 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         }
     }
 
+    override fun getGroupSummaryByUser(
+        groupId: Long, minDate: ZonedDateTime?, maxDate: ZonedDateTime?
+    ): List<GroupSummaryByUserDto> {
+        var hql = """
+            select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
+                (sum(t.value) * -1),
+                t.userId
+            )
+            from Transaction t
+            join t.group g
+            where g.id = :groupId
+        """.trimIndent()
+
+        if (minDate != null) {
+            hql += " and t.date >= :minDate"
+        }
+
+        if (maxDate != null) {
+            hql += " and t.date <= :maxDate"
+        }
+
+        hql += """
+            group by t.user.id
+        """
+
+        val query = entityManager.createQuery(hql)
+
+        query.setParameter("groupId", groupId)
+        if (minDate != null) {
+            query.setParameter("minDate", minDate)
+        }
+        if (maxDate != null) {
+            query.setParameter("maxDate", maxDate)
+        }
+
+        return query.resultList as List<GroupSummaryByUserDto>
+    }
 }
