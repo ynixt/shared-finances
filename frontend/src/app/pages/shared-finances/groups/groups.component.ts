@@ -7,6 +7,7 @@ import { take } from 'rxjs/operators';
 import { Group } from 'src/app/@core/models/group';
 import { ErrorService } from 'src/app/@core/services';
 import { GroupsService } from 'src/app/@core/services/groups.service';
+import { Observable } from "rxjs";
 
 @Component({
   selector: 'app-groups',
@@ -14,7 +15,7 @@ import { GroupsService } from 'src/app/@core/services/groups.service';
   styleUrls: ['./groups.component.scss'],
 })
 export class GroupsComponent implements OnInit {
-  groups$: Promise<Group[]>;
+  groups$: Observable<Group[]>;
 
   constructor(
     private groupsService: GroupsService,
@@ -41,7 +42,6 @@ export class GroupsComponent implements OnInit {
       .pipe(take(1))
       .toPromise();
     if (confirm) {
-      this.toast.observe;
       await this.groupsService
         .deleteGroup(group.id)
         .pipe(

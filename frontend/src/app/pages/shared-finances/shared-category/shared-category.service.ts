@@ -7,6 +7,7 @@ import { Category } from "src/app/@core/models";
 import { GenericCategoryService, GroupWithIdName } from "src/app/components/category";
 import { StompService } from "../../../@core/services/stomp.service";
 import { HttpClient } from "@angular/common/http";
+import { GroupsService } from "../../../@core/services";
 
 const GROUP_CATEGORY_CREATED_SUBSCRIPTION = gql`
   subscription groupCategoryCreated {
@@ -47,16 +48,16 @@ export class SharedCategoryService extends GenericCategoryService {
     EmptyObject
   >;
 
-  constructor(private apollo: Apollo, private stompService: StompService, private httpClient: HttpClient) {
+  constructor(private stompService: StompService, private httpClient: HttpClient, private groupService: GroupsService) {
     super();
   }
 
   watchCategories(groupId: string): Observable<Category[]> {
     const w = this.stompService.watch({
-      destination: "/topic/group-transaction-category" + groupId
+      destination: "/topic/group-transaction-category/" + groupId
     });
 
-    this.stompService.publish({ destination: "/app/group-transaction-category" + groupId });
+    this.stompService.publish({ destination: "/app/group-transaction-category/" + groupId });
 
     return w.pipe(map(message => JSON.parse(message.body) as Category[]));
   }
@@ -88,25 +89,7 @@ export class SharedCategoryService extends GenericCategoryService {
   }
 
   getGroup(groupId: string): Promise<GroupWithIdName | null> {
-    return this.apollo
-      .query<{ group: GroupWithIdName }>({
-        query: gql`
-          query GetGroup($groupId: String!) {
-            group(groupId: $groupId) {
-              id
-              name
-            }
-          }
-        `,
-        variables: {
-          groupId
-        }
-      })
-      .pipe(
-        map(result => (result.errors || result.data == null || result.data.group == null ? null : result.data.group)),
-        take(1)
-      )
-      .toPromise();
+    return this.groupService.getGroupForEdit(groupId)
   }
 
   private subscribeToMoreCategories() {

@@ -95,7 +95,9 @@ class TransactionCategoryServiceImpl(
             group = entityManager.getReference(Group::class.java, newDto.groupId),
             name = newDto.name,
             color = newDto.color,
-        )
+        ).apply {
+            groupId = newDto.groupId
+        }
 
         category = groupTransactionCategoryRepository.save(category)
 

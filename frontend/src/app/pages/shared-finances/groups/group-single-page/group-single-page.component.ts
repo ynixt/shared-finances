@@ -19,7 +19,7 @@ import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/c
   templateUrl: './group-single-page.component.html',
   styleUrls: ['./group-single-page.component.scss'],
 })
-export class GroupSinglePageComponent implements OnInit, OnDestroy {
+export class GroupSinglePageComponent implements OnInit {
   group: Group;
   sharedLinkLoading = false;
   transactionsPage$: Observable<Page<Transaction>>;
@@ -40,7 +40,7 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
 
   colorScheme = '#5AA454'
 
-  private activatedRouteSubscription: Subscription;
+  private groupSubscription: Subscription;
   private groupId: string;
   private monthDate: Moment;
   private transactionsChangeSubscription: Subscription;
@@ -59,13 +59,9 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.activatedRouteSubscription = this.activatedRoute.params.subscribe(params => this.loadGroup(params.id));
-  }
-
-  ngOnDestroy(): void {
-    if (this.activatedRouteSubscription) {
-      this.activatedRouteSubscription.unsubscribe();
-    }
+    this.activatedRoute.params.pipe(untilDestroyed(this)).subscribe(
+      params => this.loadGroup(params.id)
+    );
   }
 
   async createInvite(): Promise<void> {
@@ -123,22 +119,23 @@ export class GroupSinglePageComponent implements OnInit, OnDestroy {
     await this.getInfoBasedOnGroupAndDate();
   }
 
-  private async loadGroup(groupId: string): Promise<void> {
+  private loadGroup(groupId: string) {
     this.groupId = groupId;
 
-    const group = await this.groupsService.getGroup(groupId);
+    this.groupSubscription?.unsubscribe();
+    this.groupSubscription = this.groupsService.getGroup(groupId).pipe(untilDestroyed(this)).subscribe(group => {
+      if (group) {
+        this.titleService.changeTitle('group-name', {
+          name: group.name,
+        });
 
-    if (group) {
-      this.titleService.changeTitle('group-name', {
-        name: group.name,
-      });
+        this.group = group;
 
-      this.group = group;
-
-      this.transactionsChangeObserver();
-    } else {
-      this.router.navigateByUrl('/404');
-    }
+        this.transactionsChangeObserver();
+      } else {
+        this.router.navigateByUrl('/404');
+      }
+    })
   }
 
   private async getInfoBasedOnGroupAndDate() {

@@ -5,4 +5,5 @@ export interface Category {
   name: string;
   color: string;
   group?: Group;
+  groupId?: number;
 }

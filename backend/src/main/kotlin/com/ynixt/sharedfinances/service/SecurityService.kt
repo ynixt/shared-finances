@@ -37,7 +37,7 @@ class SecurityService(private val firebaseAuth: FirebaseAuth, private val userSe
         val securityContext = SecurityContextHolder.getContext()
         val principal = securityContext.authentication.principal
         if (principal is User) {
-            userPrincipal = principal as User
+            userPrincipal = principal
         }
         return userPrincipal
     }
