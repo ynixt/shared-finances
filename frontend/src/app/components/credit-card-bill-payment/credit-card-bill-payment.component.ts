@@ -52,8 +52,8 @@ export class CreditCardBillPaymentComponent implements OnInit {
       ]),
       creditCardBillDate: new UntypedFormControl(
         {
-          value: this.editingTransaction?.creditCardBillDate
-            ? moment(this.editingTransaction?.creditCardBillDate)
+          value: this.editingTransaction?.creditCardBillDateValue
+            ? moment(this.editingTransaction?.creditCardBillDateValue)
             : this.creditCardBillDate,
           disabled: true,
         },
@@ -71,7 +71,7 @@ export class CreditCardBillPaymentComponent implements OnInit {
           bankAccountId: this.formGroup.value.bankAccount.accountId,
           creditCardId: this.creditCard.id,
           description: this.formGroup.value.description,
-          creditCardBillDate: this.creditCardBillDate.toISOString(),
+          creditCardBillDateValue: this.creditCardBillDate.toISOString(),
           date: this.formGroup.value.date,
         })
         .pipe(

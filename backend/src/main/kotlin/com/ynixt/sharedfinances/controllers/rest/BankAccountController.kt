@@ -8,7 +8,7 @@ import com.ynixt.sharedfinances.service.BankAccountService
 import com.ynixt.sharedfinances.service.SecurityService
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/bank-account")
@@ -44,7 +44,7 @@ class BankAccountController(
     fun getBankAccountSummary(
         authentication: Authentication,
         @RequestParam("bankAccountId", required = false) bankAccountId: Long?,
-        @RequestParam("maxDate", required = false) maxDate: ZonedDateTime?
+        @RequestParam("maxDate", required = false) maxDate: LocalDate?
     ): BankAccountSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
         return bankAccountService.getSummary(user)

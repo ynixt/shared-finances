@@ -5,9 +5,9 @@ import { User } from './user';
 
 export interface Transaction {
   id: string;
-  transactionType: TransactionType;
+  type: TransactionType;
   date: string;
-  creditCardBillDate?: string;
+  creditCardBillDateValue?: string;
   value: number;
   description?: string;
   bankAccountId?: string;

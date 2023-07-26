@@ -20,6 +20,7 @@ export class StompService extends RxStomp implements OnDestroy {
     this.configure({
       brokerURL: "ws://localhost:8080/api/socket",
       connectHeaders: { "Authorization": `Bearer ${token}` }
+
     });
     this.activate();
   }

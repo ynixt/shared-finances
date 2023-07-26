@@ -186,7 +186,7 @@ export class TransactionsTableComponent implements OnInit {
   }
 
   public getIconForTransaction(transaction: Transaction): string {
-    switch (transaction.transactionType) {
+    switch (transaction.type) {
       case TransactionType.CreditCard:
         return 'credit_card';
       case TransactionType.Expense:
@@ -201,7 +201,7 @@ export class TransactionsTableComponent implements OnInit {
   }
 
   public getTransactionTranslateKey(transaction: Transaction): string {
-    switch (transaction.transactionType) {
+    switch (transaction.type) {
       case TransactionType.CreditCard:
         return 'credit-card';
       case TransactionType.Expense:
@@ -216,7 +216,7 @@ export class TransactionsTableComponent implements OnInit {
   }
 
   public getTransactionCssColor(transaction: Transaction): string {
-    switch (transaction.transactionType) {
+    switch (transaction.type) {
       case TransactionType.CreditCard:
         return 'credit-card-color';
       case TransactionType.Expense:

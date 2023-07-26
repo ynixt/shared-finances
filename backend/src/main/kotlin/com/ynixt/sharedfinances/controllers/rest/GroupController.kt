@@ -10,7 +10,7 @@ import com.ynixt.sharedfinances.service.SecurityService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/group")
@@ -23,8 +23,8 @@ class GroupController(
     fun getGroupSummary(
         authentication: Authentication,
         @PathVariable("groupId") groupId: Long,
-        @RequestParam("minDate", required = false) minDate: ZonedDateTime?,
-        @RequestParam("maxDate", required = false) maxDate: ZonedDateTime?,
+        @RequestParam("minDate", required = false) minDate: LocalDate?,
+        @RequestParam("maxDate", required = false) maxDate: LocalDate?,
     ): GroupSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
         return groupService.getGroupSummary(user, groupId, minDate = minDate, maxDate = maxDate)

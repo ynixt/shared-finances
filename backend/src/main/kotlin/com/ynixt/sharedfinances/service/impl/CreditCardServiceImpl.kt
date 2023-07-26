@@ -14,7 +14,7 @@ import com.ynixt.sharedfinances.service.CreditCardService
 import jakarta.transaction.Transactional
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @Service
 class CreditCardServiceImpl(
@@ -24,7 +24,7 @@ class CreditCardServiceImpl(
     private val creditCardMapper: CreditCardMapper
 ) : CreditCardService {
     override fun getSummary(
-        user: User, creditCardId: Long, maxCreditCardBillDate: ZonedDateTime
+        user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate
     ): CreditCardSummaryDto {
         return transactionRepository.getCreditCardSummary(
             userId = user.id!!, creditCardId = creditCardId, maxCreditCardBillDate = maxCreditCardBillDate

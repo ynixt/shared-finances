@@ -66,11 +66,11 @@ moment.locale("pt");
       useClass: TokenInterceptor,
       multi: true
     },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: CamelCaseResponseInterceptor,
-      multi: true
-    },
+    // {
+    //   provide: HTTP_INTERCEPTORS,
+    //   useClass: CamelCaseResponseInterceptor,
+    //   multi: true
+    // },
     { provide: LOCALE_ID, useValue: "pt" },
     {
       provide: DEFAULT_CURRENCY_CODE,

@@ -254,7 +254,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     await this.transactionService
       .editTransaction({
         id: this.editingTransaction.id,
-        transactionType: this.formGroup.value.transactionType,
+        type: this.formGroup.value.transactionType,
         date: this.formGroup.value.date,
         value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
         description: this.formGroup.value.description,
@@ -265,7 +265,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         groupId: this.group?.id,
         user,
         user2,
-        creditCardBillDate: this.creditCardBillDate,
+        creditCardBillDateValue: this.creditCardBillDate,
       })
       .pipe(
         take(1),
@@ -292,8 +292,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   ): Promise<void> {
     await this.transactionService
       .newTransaction({
-        transactionType: this.formGroup.value.transactionType,
-        date: this.formGroup.value.date,
+        type: this.formGroup.value.transactionType,
+        date: moment(this.formGroup.value.date).toISOString(),
         value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
         description: this.formGroup.value.description,
         bankAccountId: bankAccount?.accountId,
@@ -303,7 +303,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         groupId: this.group?.id,
         user,
         user2,
-        creditCardBillDate: this.creditCardBillDate,
+        creditCardBillDateValue: this.creditCardBillDate,
         totalInstallments: this.formGroup.value.totalInstallments,
       })
       .pipe(
@@ -350,7 +350,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   private createFormGroup(): void {
     this.formGroup = new UntypedFormGroup({
       transactionType: new UntypedFormControl(
-        this.editingTransaction?.transactionType ?? (this.shared ? TransactionType.Expense : TransactionType.Revenue),
+        this.editingTransaction?.type ?? (this.shared ? TransactionType.Expense : TransactionType.Revenue),
         [Validators.required],
       ),
       date: new UntypedFormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
@@ -358,7 +358,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       ]),
       creditCardBillDate: new UntypedFormControl(
         {
-          value: this.editingTransaction?.creditCardBillDate ? moment(this.editingTransaction?.creditCardBillDate) : '',
+          value: this.editingTransaction?.creditCardBillDateValue ? moment(this.editingTransaction?.creditCardBillDateValue) : '',
           disabled: true,
         },
         [requiredWhenTransactionTypeIsCredit],

@@ -10,7 +10,7 @@ import com.ynixt.sharedfinances.service.SecurityService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/credit-card")
@@ -23,7 +23,7 @@ class CreditCardController(
     fun summary(
         authentication: Authentication,
         @PathVariable creditCardId: Long,
-        @PathVariable maxCreditCardBillDate: ZonedDateTime
+        @PathVariable maxCreditCardBillDate: LocalDate
     ): CreditCardSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
         return this.creditCardService.getSummary(user, creditCardId, maxCreditCardBillDate)
@@ -32,7 +32,7 @@ class CreditCardController(
     @GetMapping("{id}")
     fun getOne(authentication: Authentication, @PathVariable id: Long): ResponseEntity<CreditCardDto> {
         val user = securityService.authenticationToUser(authentication)!!
-        
+
         return ResponseEntity.ofNullable(creditCardMapper.toDto(creditCardService.getOne(user, id)))
     }
 

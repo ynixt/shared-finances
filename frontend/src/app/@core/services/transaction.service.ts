@@ -6,6 +6,7 @@ import { map, take } from 'rxjs/operators';
 import { Transaction } from 'src/app/@core/models';
 import { TransactionType } from '../enums';
 import { DateUtil } from '../util';
+import { HttpClient } from "@angular/common/http";
 
 export const TRANSACTION_CREATED_SUBSCRIPTION = gql`
   subscription transactionCreated($groupId: String) {
@@ -85,66 +86,25 @@ export const TRANSACTION_DELETED_SUBSCRIPTION = gql`
   providedIn: 'root',
 })
 export class TransactionService {
-  constructor(private apollo: Apollo) {}
+  private apollo: Apollo
+  constructor(private httpClient: HttpClient) {}
 
   newTransaction(transaction: Partial<Transaction>): Observable<Transaction> {
-    return this.apollo
-      .mutate<{ newTransaction: Transaction }>({
-        mutation: gql`
-          mutation(
-            $transactionType: String!
-            $date: String!
-            $value: Float!
-            $description: String
-            $bankAccountId: String
-            $bankAccount2Id: String
-            $categoryId: String
-            $creditCardId: String
-            $groupId: String
-            $firstUserId: String!
-            $secondUserId: String
-            $creditCardBillDate: String
-            $totalInstallments: Int
-          ) {
-            newTransaction(
-              transactionType: $transactionType
-              date: $date
-              value: $value
-              description: $description
-              bankAccountId: $bankAccountId
-              bankAccount2Id: $bankAccount2Id
-              categoryId: $categoryId
-              creditCardId: $creditCardId
-              groupId: $groupId
-              firstUserId: $firstUserId
-              secondUserId: $secondUserId
-              creditCardBillDate: $creditCardBillDate
-              totalInstallments: $totalInstallments
-            ) {
-              id
-            }
-          }
-        `,
-        variables: {
-          transactionType: transaction.transactionType,
-          date: transaction.date,
-          value: transaction.value,
-          description: transaction.description,
-          bankAccountId: transaction.bankAccountId,
-          bankAccount2Id: transaction.bankAccount2Id,
-          categoryId: transaction.categoryId,
-          creditCardId: transaction.creditCardId,
-          groupId: transaction.groupId,
-          firstUserId: transaction.user?.id,
-          secondUserId: transaction.user2?.id,
-          creditCardBillDate: transaction.creditCardBillDate,
-          totalInstallments: transaction.totalInstallments,
-        },
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.newTransaction),
-      );
+    return this.httpClient.post<Transaction>('/api/transaction', {
+      type: transaction.type,
+      date: transaction.date,
+      value: transaction.value,
+      description: transaction.description,
+      bankAccountId: transaction.bankAccountId,
+      bankAccount2Id: transaction.bankAccount2Id,
+      categoryId: transaction.categoryId,
+      creditCardId: transaction.creditCardId,
+      groupId: transaction.groupId,
+      firstUserId: transaction.user?.id,
+      secondUserId: transaction.user2?.id,
+      creditCardBillDateValue: transaction.creditCardBillDateValue,
+      totalInstallments: transaction.totalInstallments,
+    })
   }
 
   payCreditCardBill(transaction: Partial<Transaction>): Observable<Transaction> {
@@ -177,7 +137,7 @@ export class TransactionService {
           description: transaction.description,
           bankAccountId: transaction.bankAccountId,
           creditCardId: transaction.creditCardId,
-          creditCardBillDate: transaction.creditCardBillDate,
+          creditCardBillDate: transaction.creditCardBillDateValue,
         },
       })
       .pipe(
@@ -226,7 +186,7 @@ export class TransactionService {
         `,
         variables: {
           transactionId: transaction.id,
-          transactionType: transaction.transactionType,
+          transactionType: transaction.type,
           date: transaction.date,
           value: transaction.value,
           description: transaction.description,
@@ -237,7 +197,7 @@ export class TransactionService {
           groupId: transaction.groupId,
           firstUserId: transaction.user?.id,
           secondUserId: transaction.user2?.id,
-          creditCardBillDate: transaction.creditCardBillDate,
+          creditCardBillDate: transaction.creditCardBillDateValue,
         },
       })
       .pipe(

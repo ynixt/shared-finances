@@ -10,7 +10,7 @@ import com.ynixt.sharedfinances.repository.TransactionRepository
 import com.ynixt.sharedfinances.service.BankAccountService
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @Service
 class BankAccountServiceImpl(
@@ -36,7 +36,7 @@ class BankAccountServiceImpl(
     }
 
 
-    override fun getSummary(user: User, bankAccountId: Long?, maxDate: ZonedDateTime?): BankAccountSummaryDto {
+    override fun getSummary(user: User, bankAccountId: Long?, maxDate: LocalDate?): BankAccountSummaryDto {
         return transactionRepository.getBankAccountSummary(user.id!!, bankAccountId, maxDate)
     }
 

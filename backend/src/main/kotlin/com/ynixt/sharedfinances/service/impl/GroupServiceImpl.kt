@@ -11,7 +11,7 @@ import com.ynixt.sharedfinances.service.GroupService
 import jakarta.transaction.Transactional
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 @Service
 class GroupServiceImpl(
@@ -97,8 +97,8 @@ class GroupServiceImpl(
     override fun getGroupSummary(
         user: User,
         groupId: Long,
-        minDate: ZonedDateTime?,
-        maxDate: ZonedDateTime?
+        minDate: LocalDate?,
+        maxDate: LocalDate?
     ): GroupSummaryDto {
         if (!groupRepository.existsOneByIdAndUserId(userId = user.id!!, id = groupId)) {
             return GroupSummaryDto(listOf())

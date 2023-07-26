@@ -6,10 +6,10 @@ import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardDto
 import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto
 import com.ynixt.sharedfinances.model.dto.creditcard.NewCreditCardDto
 import com.ynixt.sharedfinances.model.dto.creditcard.UpdateCreditCardDto
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 interface CreditCardService {
-    fun getSummary(user: User, creditCardId: Long, maxCreditCardBillDate: ZonedDateTime): CreditCardSummaryDto
+    fun getSummary(user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate): CreditCardSummaryDto
     fun getOne(user: User, id: Long): CreditCard?
     fun listCreditCard(user: User): List<CreditCard>
     fun listCreditCardAsCreditCardDto(user: User): List<CreditCardDto>

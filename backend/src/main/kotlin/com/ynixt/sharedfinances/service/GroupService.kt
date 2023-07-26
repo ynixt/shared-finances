@@ -3,7 +3,7 @@ package com.ynixt.sharedfinances.service
 import com.ynixt.sharedfinances.entity.Group
 import com.ynixt.sharedfinances.entity.User
 import com.ynixt.sharedfinances.model.dto.group.*
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 interface GroupService {
     fun listGroup(user: User): List<Group>
@@ -14,5 +14,5 @@ interface GroupService {
     fun newGroup(user: User, newDto: NewGroupDto): Group
     fun delete(user: User, id: Long)
 
-    fun getGroupSummary(user: User, groupId: Long, minDate: ZonedDateTime?, maxDate: ZonedDateTime?): GroupSummaryDto
+    fun getGroupSummary(user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?): GroupSummaryDto
 }

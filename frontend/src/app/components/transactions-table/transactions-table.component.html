@@ -73,7 +73,7 @@
             <div class="new-transaction-menu">
               <div class="actions">
                 <button
-                  [disabled]="transaction.transactionType === 'Transfer' || transaction.transactionType === 'CreditCardBillPayment'"
+                  [disabled]="transaction.type === 'Transfer' || transaction.type === 'CreditCardBillPayment'"
                   mat-menu-item
                   (click)="editTransaction(transaction)"
                 >

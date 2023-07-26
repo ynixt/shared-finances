@@ -8,7 +8,7 @@ import jakarta.persistence.EntityManager
 import jakarta.persistence.NoResultException
 import jakarta.persistence.PersistenceContext
 import java.math.BigDecimal
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 
 class CustomTransactionRepositoryImpl : CustomTransactionRepository {
@@ -16,7 +16,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     private lateinit var entityManager: EntityManager
 
     override fun getBankAccountSummary(
-        userId: Long, bankAccountId: Long?, maxDate: ZonedDateTime?
+        userId: Long, bankAccountId: Long?, maxDate: LocalDate?
     ): BankAccountSummaryDto {
         var hql = """
             select new com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto(
@@ -60,7 +60,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     }
 
     override fun getCreditCardSummary(
-        userId: Long, creditCardId: Long?, maxCreditCardBillDate: ZonedDateTime?
+        userId: Long, creditCardId: Long?, maxCreditCardBillDate: LocalDate?
     ): CreditCardSummaryDto {
         var hql = """
                     select new com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto(
@@ -111,12 +111,12 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     }
 
     override fun getGroupSummaryByUser(
-        groupId: Long, minDate: ZonedDateTime?, maxDate: ZonedDateTime?
+        groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
     ): List<GroupSummaryByUserDto> {
         var hql = """
             select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
                 (sum(t.value) * -1),
-                t.userId
+                t.user.id
             )
             from Transaction t
             join t.group g

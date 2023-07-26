@@ -8,8 +8,6 @@ server:
         include-message: always
 
 spring:
-    jackson:
-        property-naming-strategy: SNAKE_CASE
     jpa:
         show-sql: true
         database-platform: org.hibernate.dialect.MySQL8Dialect
