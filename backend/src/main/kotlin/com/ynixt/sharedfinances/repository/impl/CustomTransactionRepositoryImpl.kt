@@ -128,6 +128,9 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
            from Transaction t
            left join fetch t.group g
            left join fetch t.category c
+           left join fetch t.otherSide oc
+           left join fetch oc.bankAccount ocb
+           left join fetch oc.user ocu
        """.trimIndent()
 
         var countHql = "select count(1) from Transaction t"

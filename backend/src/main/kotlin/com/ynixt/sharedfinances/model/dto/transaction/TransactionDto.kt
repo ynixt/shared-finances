@@ -3,8 +3,10 @@ package com.ynixt.sharedfinances.model.dto.transaction
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.ynixt.sharedfinances.enums.TransactionType
+import com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountNameDto
 import com.ynixt.sharedfinances.model.dto.group.GroupDto
 import com.ynixt.sharedfinances.model.dto.transactioncategory.TransactionCategoryDto
+import com.ynixt.sharedfinances.model.dto.user.UserDto
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -24,13 +26,13 @@ abstract class TransactionDto(
     val value: BigDecimal,
     val description: String?,
     val category: TransactionCategoryDto?,
-    val firstUserId: Long,
+    val userId: Long,
     val group: GroupDto?,
 )
 
 abstract class BankTransactionDto(
     val bankAccountId: Long,
-    firstUserId: Long,
+    userId: Long,
     group: GroupDto?,
     type: TransactionType,
     date: LocalDate,
@@ -38,7 +40,7 @@ abstract class BankTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : TransactionDto(
-    firstUserId = firstUserId,
+    userId = userId,
     group = group,
     type = type,
     date = date,
@@ -49,7 +51,7 @@ abstract class BankTransactionDto(
 
 class RevenueTransactionDto(
     bankAccountId: Long,
-    firstUserId: Long,
+    userId: Long,
     group: GroupDto?,
     type: TransactionType,
     date: LocalDate,
@@ -58,7 +60,7 @@ class RevenueTransactionDto(
     category: TransactionCategoryDto?,
 ) : BankTransactionDto(
     bankAccountId = bankAccountId,
-    firstUserId = firstUserId,
+    userId = userId,
     group = group,
     type = type,
     date = date,
@@ -69,7 +71,7 @@ class RevenueTransactionDto(
 
 class ExpenseTransactionDto(
     bankAccountId: Long,
-    firstUserId: Long,
+    userId: Long,
     group: GroupDto?,
     type: TransactionType,
     date: LocalDate,
@@ -78,7 +80,7 @@ class ExpenseTransactionDto(
     category: TransactionCategoryDto?,
 ) : BankTransactionDto(
     bankAccountId = bankAccountId,
-    firstUserId = firstUserId,
+    userId = userId,
     group = group,
     type = type,
     date = date,
@@ -87,20 +89,26 @@ class ExpenseTransactionDto(
     category = category,
 )
 
+class OtherSideTransactionDto(
+    val bankAccountId: Long,
+    val bankAccount: BankAccountNameDto,
+    val userId: Long,
+    val user: UserDto,
+)
+
 class TransferTransactionDto(
     bankAccountId: Long,
-    val bankAccount2Id: Long,
-    firstUserId: Long,
+    userId: Long,
     group: GroupDto?,
-    val secondUserId: Long?,
     type: TransactionType,
     date: LocalDate,
     value: BigDecimal,
     description: String?,
     category: TransactionCategoryDto?,
+    val otherSide: OtherSideTransactionDto?,
 ) : BankTransactionDto(
     bankAccountId = bankAccountId,
-    firstUserId = firstUserId,
+    userId = userId,
     group = group,
     type = type,
     date = date,
@@ -113,7 +121,7 @@ class CreditCardTransactionDto(
     val creditCardId: Long,
     val creditCardBillId: Long,
     val totalInstallments: Int?,
-    firstUserId: Long,
+    userId: Long,
     group: GroupDto?,
     type: TransactionType,
     date: LocalDate,
@@ -121,7 +129,7 @@ class CreditCardTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : TransactionDto(
-    firstUserId = firstUserId,
+    userId = userId,
     group = group,
     type = type,
     date = date,
@@ -135,7 +143,7 @@ class CreditCardBillPaymentTransactionDto(
     val creditCardId: Long,
     val creditCardBillId: Long,
     val totalInstallments: Int?,
-    firstUserId: Long,
+    userId: Long,
     group: GroupDto?,
     type: TransactionType,
     date: LocalDate,
@@ -143,7 +151,7 @@ class CreditCardBillPaymentTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : TransactionDto(
-    firstUserId = firstUserId,
+    userId = userId,
     group = group,
     type = type,
     date = date,

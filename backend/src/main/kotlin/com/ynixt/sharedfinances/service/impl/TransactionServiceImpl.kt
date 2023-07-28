@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.service.impl
 import com.ynixt.sharedfinances.entity.*
 import com.ynixt.sharedfinances.mapper.TransactionMapper
 import com.ynixt.sharedfinances.model.dto.transaction.*
+import com.ynixt.sharedfinances.model.exceptions.SFException
 import com.ynixt.sharedfinances.repository.TransactionRepository
 import com.ynixt.sharedfinances.service.CreditCardBillService
 import com.ynixt.sharedfinances.service.TransactionService
@@ -49,6 +50,7 @@ class TransactionServiceImpl(
         val category = if (newDto.categoryId == null) null else entityManager.getReference(
             TransactionCategory::class.java, newDto.categoryId
         )
+        var otherSideTransaction: Transaction? = null
 
         var transaction = Transaction(
             type = newDto.type,
@@ -67,11 +69,29 @@ class TransactionServiceImpl(
         }
 
         if (newDto is NewTransferTransactionDto) {
+            if (newDto.bankAccountId == newDto.bankAccount2Id) {
+                throw SFException(
+                    reason = "The bank account can't be the same on transfer."
+                )
+            }
+
             val user2 = entityManager.getReference(User::class.java, newDto.secondUserId)
             val bank2 = entityManager.getReference(BankAccount::class.java, newDto.bankAccount2Id)
 
-            transaction.secondUser = user2
-            transaction.secondBankAccount = bank2
+            otherSideTransaction = Transaction(
+                type = transaction.type,
+                category = transaction.category,
+                group = transaction.group,
+                user = user2,
+                bankAccount = bank2,
+                date = transaction.date,
+                value = transaction.value,
+                description = transaction.description,
+            )
+
+            transactionRepository.save(otherSideTransaction)
+
+            transaction.otherSide = otherSideTransaction
         }
 
         if (newDto is NewCreditCardTransactionDto) {
@@ -88,6 +108,12 @@ class TransactionServiceImpl(
         }
 
         transactionRepository.save(transaction)
+
+        if (otherSideTransaction != null) {
+            otherSideTransaction.otherSide = transaction
+            transactionRepository.save(otherSideTransaction)
+        }
+
         transaction = transactionRepository.findOneByIdIncludeGroupAndCategory(transaction.id!!)!!
 
         if (newDto is NewBankTransactionDto && group == null) {
@@ -105,9 +131,7 @@ class TransactionServiceImpl(
             transactionMapper.toDto(transaction)!!
         )
         simpMessagingTemplate.convertAndSendToUser(
-            user.email,
-            "/queue/bank-account/transaction-created",
-            transactionMapper.toDto(transaction)!!
+            user.email, "/queue/bank-account/transaction-created", transactionMapper.toDto(transaction)!!
         )
     }
 
@@ -119,9 +143,7 @@ class TransactionServiceImpl(
             transactionMapper.toDto(transaction)!!
         )
         simpMessagingTemplate.convertAndSendToUser(
-            user.email,
-            "/queue/bank-account/transaction-updated",
-            transactionMapper.toDto(transaction)!!
+            user.email, "/queue/bank-account/transaction-updated", transactionMapper.toDto(transaction)!!
         )
     }
 
@@ -133,9 +155,7 @@ class TransactionServiceImpl(
             transactionMapper.toDto(transaction)!!
         )
         simpMessagingTemplate.convertAndSendToUser(
-            user.email,
-            "/queue/bank-account/transaction-deleted",
-            transactionMapper.toDto(transaction)!!
+            user.email, "/queue/bank-account/transaction-deleted", transactionMapper.toDto(transaction)!!
         )
     }
 }

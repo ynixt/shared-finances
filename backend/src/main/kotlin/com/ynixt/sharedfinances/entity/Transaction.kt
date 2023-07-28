@@ -17,15 +17,13 @@ class Transaction(
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id") var user: User? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "second_user_id") var secondUser: User? = null,
-
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "bank_account_id") var bankAccount: BankAccount? = null,
-
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "second_bank_account_id") var secondBankAccount: BankAccount? = null,
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "credit_card_id") var creditCard: CreditCard? = null,
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "credit_card_bill_date_id") var creditCardBillDate: CreditCardBillDate? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "other_side_id") var otherSide: Transaction? = null,
 
     var date: LocalDate,
 
@@ -43,18 +41,15 @@ class Transaction(
     @Column(name = "user_id", updatable = false, insertable = false)
     var userId: Long? = null
 
-    @Column(name = "second_user_id", updatable = false, insertable = false)
-    var secondUserId: Long? = null
-
     @Column(name = "bank_account_id", updatable = false, insertable = false)
     var bankAccountId: Long? = null
-
-    @Column(name = "second_bank_account_id", updatable = false, insertable = false)
-    var secondBankAccountId: Long? = null
 
     @Column(name = "credit_card_id", updatable = false, insertable = false)
     var creditCardId: Long? = null
 
     @Column(name = "credit_card_bill_date_id", updatable = false, insertable = false)
     var creditCardBillDateId: Long? = null
+
+    @Column(name = "other_side_id", updatable = false, insertable = false)
+    var otherSideId: Long? = null
 }
