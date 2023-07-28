@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.controllers.rest
 
 import com.ynixt.sharedfinances.mapper.TransactionMapper
-import com.ynixt.sharedfinances.model.dto.transaction.TransactionDto
+import com.ynixt.sharedfinances.model.dto.transaction.NewTransactionDto
 import com.ynixt.sharedfinances.service.SecurityService
 import com.ynixt.sharedfinances.service.TransactionService
 import org.springframework.security.core.Authentication
@@ -18,8 +18,8 @@ class TransactionController(
     private val transactionMapper: TransactionMapper
 ) {
     @PostMapping
-    fun newTransaction(authentication: Authentication, @RequestBody body: TransactionDto): TransactionDto {
+    fun newTransaction(authentication: Authentication, @RequestBody body: NewTransactionDto): NewTransactionDto {
         val user = securityService.authenticationToUser(authentication)!!
-        return transactionMapper.toDto(transactionService.newTransaction(user, body))!!
+        return transactionMapper.toNewDto(transactionService.newTransaction(user, body))!!
     }
 }

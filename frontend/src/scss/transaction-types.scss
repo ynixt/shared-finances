@@ -1,14 +1,14 @@
 @import './variables.scss';
 
 .expense-color {
-  color: $expense-color;
+  color: $expense-color !important;
 }
 .credit-card-color {
-  color: $credit-card-color;
+  color: $credit-card-color !important;
 }
 .transfer-color {
-  color: $transfer-color;
+  color: $transfer-color !important;
 }
 .revenue-color {
-  color: $revenue-color;
+  color: $revenue-color !important;
 }

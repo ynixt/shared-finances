@@ -7,7 +7,12 @@
 }
 
 .transactions {
-  .mat-mdc-list-item ~ .mat-list-item {
+  .mat-mdc-list-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .mdc-list-item ~ .mdc-list-item {
     margin-top: 2rem;
   }
 
@@ -17,8 +22,8 @@
     &.negative .transaction-value {
       color: $expense-color;
     }
-    /* TODO(mdc-migration): The following rule targets internal classes of list that may no longer apply for the MDC version. */
-    .mat-list-item-content {
+
+    .mdc-list-item__content {
       padding: 0 !important;
     }
   }

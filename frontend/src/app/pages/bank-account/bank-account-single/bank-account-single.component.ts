@@ -4,13 +4,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoService } from '@ngneat/transloco';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import moment, { Moment } from 'moment';
-import { merge, Observable, Subscription } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { lastValueFrom, merge, Observable, Subscription } from "rxjs";
+import { switchMap, take } from "rxjs/operators";
 import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
 import { BankAccount, BankAccountSummary, Page, Transaction } from 'src/app/@core/models';
 import { Chart } from 'src/app/@core/models/chart';
 import { TransactionService, BankAccountService } from 'src/app/@core/services';
 import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
+import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
 
 @UntilDestroy()
 @Component({
@@ -32,8 +33,23 @@ export class BankAccountSingleComponent implements OnInit {
 
   disallowFutureOnSameMonth = true;
 
-  colorScheme = '#5AA454'
-  colorSchemeExpense = '#E44D25'
+  colorScheme: Color = {
+    name: 'default',
+    selectable: true,
+    group: 0 as any,
+    domain: [
+      '#5AA454'
+    ]
+  }
+
+  colorSchemeExpense: Color = {
+    name: 'expense',
+    selectable: true,
+    group: 0 as any,
+    domain: [
+      '#E44D25'
+    ]
+  }
 
   bankAccount: BankAccount;
   pageSize = DEFAULT_PAGE_SIZE;
@@ -63,15 +79,15 @@ export class BankAccountSingleComponent implements OnInit {
         switchMap(params => {
           return this.bankAccountService.getBankAccount(params.bankAccountId);
         }),
-      )
+      )//
       .subscribe(bankAccount => this.getBankAccount(bankAccount));
   }
 
-  public getTransactions(page = 1): void {
+  public getTransactions(page = 0): void {
     this.transactionsPage$ = this.bankAccountService.getTransactions(
       this.bankAccount.id,
       { maxDate: moment(this.monthDate).endOf('month'), minDate: moment(this.monthDate).startOf('month') },
-      { page, pageSize: this.pageSize },
+      { page, size: this.pageSize },
     );
   }
 
@@ -94,10 +110,7 @@ export class BankAccountSingleComponent implements OnInit {
   public async getChart(): Promise<void> {
     this.transactionsGroupedYearMonth = undefined;
 
-    const bankAccountNamesById = new Map<string, string>();
-    bankAccountNamesById.set(this.bankAccount.id, this.bankAccount.name);
-
-    const charts = await this.bankAccountService.getTransactionsChart(bankAccountNamesById, this.getMaxDate().add(1), {
+    const charts = await this.bankAccountService.getTransactionsChart(this.bankAccount, this.getMaxDate().add(1), {
       bankAccountId: this.bankAccount.id,
       maxDate: this.getMaxDate(),
       minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, 'month'),
@@ -153,6 +166,14 @@ export class BankAccountSingleComponent implements OnInit {
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {
+        const transactionsPage = await lastValueFrom(this.transactionsPage$.pipe(take(1)))
+
+        if(transactionsPage.number == 0) {
+          this.getTransactions()
+        } else {
+          // TODO: ask to user if he wants update
+        }
+
         await Promise.all([this.getBankAccountSummary(), this.getChart()]);
       });
   }

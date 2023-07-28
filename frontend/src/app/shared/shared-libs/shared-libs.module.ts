@@ -19,6 +19,7 @@ import { ScrollingModule } from "@angular/cdk/scrolling";
 import { MatPaginatorModule } from "@angular/material/paginator";
 import { ApolloModule } from "apollo-angular";
 import { MatButtonModule } from "@angular/material/button";
+import { MatLineModule } from "@angular/material/core";
 
 const layoutModules = [
   ScrollingModule,
@@ -32,6 +33,7 @@ const layoutModules = [
   MatProgressSpinnerModule,
   MatTooltipModule,
   MatPaginatorModule,
+  MatLineModule,
   ApolloModule,
 
   CovalentBreadcrumbsModule,

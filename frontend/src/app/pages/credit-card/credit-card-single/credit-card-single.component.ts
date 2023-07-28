@@ -105,7 +105,7 @@ export class CreditCardSingleComponent implements OnInit {
       {
         creditCardBillDate: moment(this.monthDate),
       },
-      { page, pageSize: this.pageSize },
+      { page, size: this.pageSize },
     );
   }
 

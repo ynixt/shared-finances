@@ -91,7 +91,7 @@ export class GroupSinglePageComponent implements OnInit {
     this.transactionsPage$ = this.groupsService.getTransactions(
       this.group.id,
       { maxDate: moment(this.monthDate).endOf('month'), minDate: moment(this.monthDate).startOf('month') },
-      { page, pageSize: this.pageSize },
+      { page, size: this.pageSize },
     );
   }
 

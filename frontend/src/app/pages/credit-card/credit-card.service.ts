@@ -141,7 +141,7 @@ export class CreditCardService {
       variables: {
         creditCardId,
         page: pagination?.page,
-        pageSize: pagination?.pageSize,
+        size: pagination?.size,
         maxDate: args?.maxDate?.toISOString(),
         minDate: args?.minDate?.toISOString(),
         creditCardBillDate: args?.creditCardBillDate?.toISOString()

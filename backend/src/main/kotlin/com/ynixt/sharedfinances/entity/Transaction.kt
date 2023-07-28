@@ -40,7 +40,7 @@ class Transaction(
     @Column(name = "group_id", updatable = false, insertable = false)
     var groupId: Long? = null
 
-    @Column(name = "first_user_id", updatable = false, insertable = false)
+    @Column(name = "user_id", updatable = false, insertable = false)
     var userId: Long? = null
 
     @Column(name = "second_user_id", updatable = false, insertable = false)

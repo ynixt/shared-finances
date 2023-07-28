@@ -8,6 +8,11 @@ server:
         include-message: always
 
 spring:
+    data:
+        web:
+            pageable:
+                max-page-size: 100
+                default-page-size: 40
     jpa:
         show-sql: true
         database-platform: org.hibernate.dialect.MySQL8Dialect

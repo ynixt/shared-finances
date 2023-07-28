@@ -7,7 +7,7 @@ import org.mapstruct.Mapper
 import org.mapstruct.ObjectFactory
 import org.mapstruct.ReportingPolicy
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = [UserMapper::class, TransactionCategoryMapper::class])
 interface TransactionMapper {
     @ObjectFactory
     fun createTransactionDto(entity: Transaction?): TransactionDto? {
@@ -26,4 +26,22 @@ interface TransactionMapper {
     fun toCreditCardDto(transaction: Transaction?): CreditCardTransactionDto?
     fun toTransferDto(transaction: Transaction?): TransferTransactionDto?
     fun toCreditCardBillPaymentDto(transaction: Transaction?): CreditCardBillPaymentTransactionDto?
+
+    @ObjectFactory
+    fun createNewTransactionDto(entity: Transaction?): NewTransactionDto? {
+        return if (entity == null) return null else when (entity.type) {
+            TransactionType.Revenue -> toNewRevenueDto(entity)
+            TransactionType.Expense -> toNewExpenseDto(entity)
+            TransactionType.CreditCard -> toNewCreditCardDto(entity)
+            TransactionType.Transfer -> toNewTransferDto(entity)
+            TransactionType.CreditCardBillPayment -> toNewCreditCardBillPaymentDto(entity)
+        }
+    }
+
+    fun toNewDto(transaction: Transaction?): NewTransactionDto?
+    fun toNewRevenueDto(transaction: Transaction?): NewRevenueTransactionDto?
+    fun toNewExpenseDto(transaction: Transaction?): NewExpenseTransactionDto?
+    fun toNewCreditCardDto(transaction: Transaction?): NewCreditCardTransactionDto?
+    fun toNewTransferDto(transaction: Transaction?): NewTransferTransactionDto?
+    fun toNewCreditCardBillPaymentDto(transaction: Transaction?): NewCreditCardBillPaymentTransactionDto?
 }

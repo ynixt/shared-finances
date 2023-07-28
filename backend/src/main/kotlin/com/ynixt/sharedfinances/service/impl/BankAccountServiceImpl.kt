@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.service.impl
 
 import com.ynixt.sharedfinances.entity.BankAccount
 import com.ynixt.sharedfinances.entity.User
+import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
 import com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto
 import com.ynixt.sharedfinances.model.dto.bankAccount.NewBankAccountDto
 import com.ynixt.sharedfinances.model.exceptions.SFException
@@ -52,5 +53,19 @@ class BankAccountServiceImpl(
         bankAccount = bankAccountRepository.save(bankAccount)
 
         return bankAccount
+    }
+
+    override fun getChartByBankAccountId(
+        user: User,
+        bankAccountId: Long,
+        minDate: LocalDate?,
+        maxDate: LocalDate?
+    ): List<TransactionValuesAndDateDto> {
+        return transactionRepository.findAllByBankAccountIdGroupedByDate(
+            userId = user.id!!,
+            bankAccountId = bankAccountId,
+            minDate = minDate ?: LocalDate.now(),
+            maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        )
     }
 }

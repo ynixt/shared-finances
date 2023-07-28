@@ -95,17 +95,15 @@ class GroupServiceImpl(
     }
 
     override fun getGroupSummary(
-        user: User,
-        groupId: Long,
-        minDate: LocalDate?,
-        maxDate: LocalDate?
+        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
     ): GroupSummaryDto {
         if (!groupRepository.existsOneByIdAndUserId(userId = user.id!!, id = groupId)) {
             return GroupSummaryDto(listOf())
         }
 
-        val expensesOfUsers =
-            transactionRepository.getGroupSummaryByUser(groupId = groupId, maxDate = maxDate, minDate = minDate)
+        val expensesOfUsers = transactionRepository.getGroupSummaryByUser(
+            groupId = groupId, minDate = minDate ?: LocalDate.now(), maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        )
 
         return GroupSummaryDto(expensesOfUsers)
     }

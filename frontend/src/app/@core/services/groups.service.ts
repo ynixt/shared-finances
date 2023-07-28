@@ -15,12 +15,15 @@ import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "../constants";
 import { Chart } from "../models/chart";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { StompService } from "./stomp.service";
+import { addHttpParamsIntoUrl } from "../util";
+import { ISO_DATE_FORMAT } from "../../moment-extension";
 
 @Injectable({
   providedIn: "root"
 })
 export class GroupsService {
-  private apollo: Apollo
+  private apollo: Apollo;
+
   constructor(private stompService: StompService, private httpClient: HttpClient) {
   }
 
@@ -172,7 +175,7 @@ export class GroupsService {
       variables: {
         groupId,
         page: pagination?.page,
-        pageSize: pagination?.pageSize,
+        size: pagination?.size,
         maxDate: args?.maxDate?.toISOString(),
         minDate: args?.minDate?.toISOString()
       }
@@ -184,16 +187,12 @@ export class GroupsService {
   }
 
   async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment): Promise<GroupSummary> {
-    const httpParams = new HttpParams({
-      fromObject: {
-        maxDate: maxDate?.toISOString(),
-        minDate: minDate?.toISOString()
-      }
+    const url = addHttpParamsIntoUrl(`/api/group/summary/${groupId}`, {
+      maxDate: maxDate?.toISOString(),
+      minDate: minDate?.toISOString()
     });
 
-    return lastValueFrom(this.httpClient.get<GroupSummary>(
-      `/api/group/summary/${groupId}?${httpParams.toString()}`).pipe(take(1))
-    );
+    return lastValueFrom(this.httpClient.get<GroupSummary>(url));
   }
 
   private subscribeToTransactionChanges(

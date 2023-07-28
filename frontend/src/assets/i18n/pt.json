@@ -1,4 +1,7 @@
 {
+  "date-format": {
+    "month-year": "MM/YYYY"
+  },
   "app-title": "Finanças compartilhadas",
   "finances": "Finanças",
   "login": "Entrar",

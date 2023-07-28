@@ -39,7 +39,7 @@
     "@ngrx/effects": "^15.4.0",
     "@ngrx/store": "^15.4.0",
     "@stomp/rx-stomp": "^2.0.0",
-    "@swimlane/ngx-charts": "^20.1.2",
+    "@swimlane/ngx-charts": "^20.4.1",
     "apollo-angular": "^5.0.0",
     "firebase": "^7.0 || ^8.0",
     "graphql": "^15.0.0",

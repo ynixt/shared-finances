@@ -5,11 +5,14 @@ import { EmptyObject } from "apollo-angular/types";
 import moment, { Moment } from "moment";
 import { lastValueFrom, Observable } from "rxjs";
 import { map, take } from "rxjs/operators";
-import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
-import { BankAccount, BankAccountSummary, CreditCard, Page, Pagination, Transaction } from "src/app/@core/models";
-import { Chart } from "src/app/@core/models/chart";
+import { CHART_DEFAULT_MINIMUM_MONTHS } from "src/app/@core/constants";
+import { BankAccount, BankAccountSummary, Page, Pagination, Transaction } from "src/app/@core/models";
+import { Chart, ChartSerie } from "src/app/@core/models/chart";
 import { StompService } from "./stomp.service";
 import { HttpClient } from "@angular/common/http";
+import { ISO_DATE_FORMAT } from "../../moment-extension";
+import { TransactionValuesAndDateDto } from "../models/transaction-values-and-date";
+import { addHttpParamsIntoUrl } from "../util";
 
 const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
   subscription bankAccountTransactionCreated($bankAccountId: String) {
@@ -83,58 +86,46 @@ const TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION = gql`
   providedIn: "root"
 })
 export class BankAccountService {
-  constructor(private apollo: Apollo, private translocoService: TranslocoService, private stompService: StompService, private httpClient: HttpClient) {
+  private apollo: Apollo;
+
+  constructor(private translocoService: TranslocoService, private stompService: StompService, private httpClient: HttpClient) {
   }
 
   getBankAccount(bankAccountId: string): Observable<BankAccount> {
-    return this.apollo
-      .watchQuery<{ bankAccount: BankAccount }>({
-        query: gql`
-          query($bankAccountId: String!) {
-            bankAccount(bankAccountId: $bankAccountId) {
-              id
-              name
-            }
-          }
-        `,
-        variables: {
-          bankAccountId
-        }
-      })
-      .valueChanges.pipe(map(result => result.data.bankAccount));
+    const w = this.stompService.watch({
+      destination: `/user/queue/bank-account/${bankAccountId}`
+    });
+
+    this.stompService.publish({ destination: `/app/bank-account/${bankAccountId}` });
+
+    return w.pipe(map(message => JSON.parse(message.body) as BankAccount));
   }
 
   onTransactionCreated(bankAccountId?: string): Observable<string> {
-    return this.apollo
-      .subscribe<{ bankAccountTransactionCreated: { id: string } }>({
-        query: TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE,
-        variables: {
-          bankAccountId: bankAccountId
-        }
-      })
-      .pipe(map(result => result.data.bankAccountTransactionCreated.id));
+    return this.stompService.watch({
+      destination: "/user/queue/bank-account/transaction-created/" + bankAccountId ?? ""
+    }).pipe(
+      map(message => JSON.parse(message.body) as BankAccount),
+      map(bank => bank.id)
+    );
   }
 
   onTransactionUpdated(bankAccountId?: string): Observable<string> {
-    return this.apollo
-      .subscribe<{ bankAccountTransactionUpdated: { id: string } }>({
-        query: TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE,
-        variables: {
-          bankAccountId: bankAccountId
-        }
-      })
-      .pipe(map(result => result.data.bankAccountTransactionUpdated.id));
+    return this.stompService.watch({
+      destination: "/user/queue/bank-account/transaction-updated/" + bankAccountId ?? ""
+    }).pipe(
+      map(message => JSON.parse(message.body) as BankAccount),
+      map(bank => bank.id)
+    );
   }
 
   onTransactionDeleted(bankAccountId?: string): Observable<string> {
-    return this.apollo
-      .subscribe<{ bankAccountTransactionDeleted: { id: string } }>({
-        query: TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION,
-        variables: {
-          bankAccountId: bankAccountId
-        }
-      })
-      .pipe(map(result => result.data.bankAccountTransactionDeleted.id));
+    return this.stompService.watch({
+      destination: "/user/queue/bank-account/transaction-deleted/" + bankAccountId ?? ""
+    }).pipe(
+      map(message => JSON.parse(message.body) as BankAccount),
+      map(bank => bank.id)
+    );
   }
 
   getTransactions(
@@ -142,45 +133,14 @@ export class BankAccountService {
     args: { maxDate: Moment; minDate: Moment },
     pagination?: Pagination
   ): Observable<Page<Transaction>> {
-    const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
-      query: gql`
-        query($bankAccountId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String) {
-          transactions(bankAccountId: $bankAccountId, page: $page, pageSize: $pageSize, maxDate: $maxDate, minDate: $minDate) {
-            items {
-              id
-              transactionType
-              group {
-                id
-                name
-              }
-              date
-              value
-              description
-              category {
-                id
-                name
-                color
-              }
-              bankAccountId
-            }
-            total
-            page
-            pageSize
-          }
-        }
-      `,
-      variables: {
-        bankAccountId,
-        page: pagination?.page,
-        pageSize: pagination?.pageSize,
-        maxDate: args?.maxDate?.toISOString(),
-        minDate: args?.minDate?.toISOString()
-      }
-    });
+    const url = addHttpParamsIntoUrl(`/api/bank-account/${bankAccountId}/transactions`, {
+      page: pagination?.page,
+      size: pagination?.size,
+      maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
+    })
 
-    this.subscribeToTransactionChanges(transactionsQueryRef, bankAccountId, args.minDate, args.maxDate);
-
-    return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
+    return this.httpClient.get<Page<Transaction>>(url);
   }
 
   private subscribeToTransactionChanges(
@@ -290,29 +250,12 @@ export class BankAccountService {
   }
 
   getBankAccountSummary(obj?: { maxDate?: Moment; bankAccountId?: string }): Promise<BankAccountSummary> {
-    return lastValueFrom(this.httpClient.get<BankAccountSummary>("/api/bank-account/summary").pipe(take(1)));
+    const url = addHttpParamsIntoUrl('/api/bank-account/summary', {
+      bankAccountId: obj?.bankAccountId,
+      maxDate: obj?.maxDate?.format(ISO_DATE_FORMAT)
+    })
 
-    // return this.apollo
-    //   .query<{ bankAccountSummary: BankAccountSummary }>({
-    //     query: gql`
-    //       query($bankAccountId: String, $maxDate: String) {
-    //         bankAccountSummary(bankAccountId: $bankAccountId, maxDate: $maxDate) {
-    //           balance
-    //           expenses
-    //           revenues
-    //         }
-    //       }
-    //     `,
-    //     variables: {
-    //       bankAccountId: obj?.bankAccountId,
-    //       maxDate: obj?.maxDate.toISOString(true),
-    //     },
-    //   })
-    //   .pipe(
-    //     take(1),
-    //     map(result => result.data.bankAccountSummary),
-    //   )
-    //   .toPromise();
+    return lastValueFrom(this.httpClient.get<BankAccountSummary>(url).pipe(take(1)));
   }
 
   newBankAccount(bankAccount: Partial<BankAccount>): Observable<BankAccount> {
@@ -336,73 +279,65 @@ export class BankAccountService {
     return this.httpClient.delete<void>(`/api/bank-account/${bankAccountId}`);
   }
 
-  getTransactionsChart(
-    bankAccountNamesById: Map<string, string>,
+  async getTransactionsChart(
+    bankAccount: BankAccount,
     initialMonthIfNoChart: Moment | string,
     args?: { bankAccountId: string; maxDate?: Moment; minDate?: Moment },
     minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS
   ): Promise<Chart[]> {
-    const transactionsChartQueryRef = this.apollo.watchQuery<{ transactionsBankAccountChart: Chart[] }>({
-      query: gql`
-        query($bankAccountId: String, $timezone: String!, $maxDate: String, $minDate: String) {
-          transactionsBankAccountChart(bankAccountId: $bankAccountId, timezone: $timezone, maxDate: $maxDate, minDate: $minDate) {
-            name
-            series {
-              name
-              value
-            }
-          }
+    const url = addHttpParamsIntoUrl(`/api/bank-account/${bankAccount.id}/chart`, {
+      maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
+    })
+
+    const values = await lastValueFrom(
+      this.httpClient.get<TransactionValuesAndDateDto[]>(url).pipe(take(1))
+    );
+
+    const charts: Chart[] = [];
+    const dateFormat = this.translocoService.translate("date-format.month-year");
+    const dateFormatFromServer = "YYYY-MM";
+
+    charts.push(new Chart({
+      name: `${bankAccount.name} - ${this.translocoService.translate("balance")}`,
+      series: values.map(v => new ChartSerie({
+        name: moment(v.date, dateFormatFromServer).format(dateFormat),
+        value: v.balance
+      }))
+    }));
+
+    charts.push(new Chart({
+      name: `${bankAccount.name} - ${this.translocoService.translate("revenues")}`,
+      series: values.map(v => new ChartSerie({
+        name: moment(v.date, dateFormatFromServer).format(dateFormat),
+        value: v.revenues
+      }))
+    }));
+
+    charts.push(new Chart({
+      name: `${bankAccount.name} - ${this.translocoService.translate("expenses")}`,
+      series: values.map(v => new ChartSerie({
+        name: moment(v.date, dateFormatFromServer).format(dateFormat),
+        value: v.expenses
+      }))
+    }));
+
+    charts.forEach(chart => {
+      if (chart.series.length < minimumMonths) {
+        const missing = minimumMonths - chart.series.length;
+        const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
+
+        for (let i = 0; i < missing; i++) {
+          chart.series.splice(i, 0, {
+            name: moment(firstDate, dateFormat)
+              .subtract(missing - i, "month")
+              .format(dateFormat),
+            value: 0
+          });
         }
-      `,
-      variables: {
-        bankAccountId: args.bankAccountId,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        maxDate: args?.maxDate?.toISOString(),
-        minDate: args?.minDate?.toISOString()
       }
     });
 
-    return transactionsChartQueryRef.valueChanges
-      .pipe(
-        map(result => {
-          const charts: Chart[] = result.data.transactionsBankAccountChart.map(chart => {
-            const dateFormat = "MM/YYYY";
-            const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
-            const series = chart.series.map(serie => ({
-              ...serie,
-              name: moment(serie.name).format(dateFormat)
-            }));
-
-            if (series.length < minimumMonths) {
-              const missing = minimumMonths - series.length;
-
-              for (let i = 0; i < missing; i++) {
-                series.splice(i, 0, {
-                  name: moment(firstDate)
-                    .subtract(missing - i, "month")
-                    .format(dateFormat),
-                  value: 0
-                });
-              }
-            }
-
-            let newName = chart.name;
-
-            if (newName.includes("-expenses")) {
-              newName = `${bankAccountNamesById.get(newName.replace("-expenses", ""))} (${this.translocoService.translate("expenses")})`;
-            } else if (newName.includes("-revenues")) {
-              newName = `${bankAccountNamesById.get(newName.replace("-revenues", ""))} (${this.translocoService.translate("revenues")})`;
-            } else {
-              newName = `${bankAccountNamesById.get(newName)} (${this.translocoService.translate("balance")})`;
-            }
-
-            return { name: newName, series };
-          });
-
-          return charts;
-        }),
-        take(1)
-      )
-      .toPromise();
+    return charts;
   }
 }

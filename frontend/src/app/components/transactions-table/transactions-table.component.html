@@ -19,22 +19,22 @@
           <mat-icon
             [matTooltip]="t(getTransactionTranslateKey(transaction))"
             class="transaction-type p-0	cursor-help {{ getTransactionCssColor(transaction) }}"
-            matListIcon
+            matListItemIcon
           >
             {{ getIconForTransaction(transaction) }}
           </mat-icon>
 
-          <h3 matLine class="flex items-center">
+          <h3 class="flex items-center">
             <mat-icon [matTooltip]="t('value')" class="info-icon mr-2 cursor-help">attach_money</mat-icon>
             <span class="transaction-value"> {{ transaction.value | currency | spaceOnSignal }}</span>
           </h3>
 
-          <h3 matLine *ngIf="transaction.description != null" class="flex items-center">
+          <h3 *ngIf="transaction.description != null" class="flex items-center">
             <mat-icon [matTooltip]="t('description')" class="info-icon mr-2 cursor-help">title</mat-icon>
             <span>{{ transaction.description }}</span>
           </h3>
 
-          <div matLine class="grid md:grid-cols-5 extras-info md:gap-4">
+          <div class="grid md:grid-cols-5 extras-info md:gap-4">
             <div *ngIf="transaction.group != null" class="flex items-center extra-info">
               <mat-icon [matTooltip]="t('group')" class="info-icon mr-2 cursor-help">group</mat-icon>
               <span>{{ transaction.group.name }}</span>
@@ -65,7 +65,8 @@
             *ngIf="dateIsBiggerThanToday(transaction.date)"
             >warning
           </mat-icon>
-          <button mat-icon-button [matMenuTriggerFor]="transactionMoreMenu">
+
+          <button style="color: inherit !important;" mat-icon-button matListItemMeta [matMenuTriggerFor]="transactionMoreMenu">
             <mat-icon>more_vert</mat-icon>
           </button>
 

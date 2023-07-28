@@ -251,7 +251,7 @@ export class TransactionsTableComponent implements OnInit {
   private mountTransactionsOfPageByDate(transactionsPage: TransactionsPage): TransactionsDate[] {
     const map = new Map<string, Transaction[]>();
 
-    transactionsPage.items.forEach(transaction => {
+    transactionsPage.content.forEach(transaction => {
       const date = moment(transaction.date).startOf('day').toISOString();
 
       if (map.has(date)) {
