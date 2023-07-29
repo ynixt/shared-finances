@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.repository.TransactionRepository
 import com.ynixt.sharedfinances.service.CreditCardBillService
 import com.ynixt.sharedfinances.service.TransactionService
 import jakarta.persistence.EntityManager
+import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -44,6 +45,7 @@ class TransactionServiceImpl(
         return page.map { transactionMapper.toDto(it) }
     }
 
+    @Transactional
     override fun newTransaction(user: User, newDto: NewTransactionDto): Transaction {
         val firstUser = entityManager.getReference(User::class.java, newDto.firstUserId)
         val group = if (newDto.groupId == null) null else entityManager.getReference(Group::class.java, newDto.groupId)
@@ -60,12 +62,17 @@ class TransactionServiceImpl(
             date = newDto.date,
             value = newDto.value,
             description = newDto.description
-        )
+        ).apply {
+            categoryId = newDto.categoryId
+            groupId = newDto.groupId
+            userId = newDto.firstUserId
+        }
 
         if (newDto is NewBankTransactionDto) {
             val bank = entityManager.getReference(BankAccount::class.java, newDto.bankAccountId)
 
             transaction.bankAccount = bank
+            transaction.bankAccountId = newDto.bankAccountId
         }
 
         if (newDto is NewTransferTransactionDto) {
@@ -99,6 +106,7 @@ class TransactionServiceImpl(
             val creditCardBillDate = creditCardBillService.getOrCreate(newDto.creditCardBillDateValue, creditCard)
 
             transaction.creditCard = creditCard
+            transaction.creditCardId = newDto.categoryId
             transaction.creditCardBillDate = creditCardBillDate
             transaction.totalInstallments = newDto.totalInstallments
         }

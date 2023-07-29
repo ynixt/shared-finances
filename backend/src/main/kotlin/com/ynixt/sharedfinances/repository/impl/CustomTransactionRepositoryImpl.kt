@@ -170,6 +170,8 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
             countHql += " and t.date < :maxDate"
         }
 
+        hql += " order by t.date desc, t.id desc"
+
         hql = hql.replace("where and", "where")
         countHql = countHql.replace("where and", "where")
 
