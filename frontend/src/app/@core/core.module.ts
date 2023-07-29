@@ -20,7 +20,6 @@ import { TitleService } from "./services";
 import moment from "moment";
 import { initializeApp, provideFirebaseApp } from "@angular/fire/app";
 import { StompService } from "./services/stomp.service";
-import { CamelCaseResponseInterceptor } from "./interceptors/camel-case-response.interceptor";
 
 export function createCurrencyMaskConfig(): CurrencyMaskConfig {
   const currencySymbol = getCurrencySymbol(getLocaleCurrencyCode("pt"), "narrow");
@@ -66,11 +65,6 @@ moment.locale("pt");
       useClass: TokenInterceptor,
       multi: true
     },
-    // {
-    //   provide: HTTP_INTERCEPTORS,
-    //   useClass: CamelCaseResponseInterceptor,
-    //   multi: true
-    // },
     { provide: LOCALE_ID, useValue: "pt" },
     {
       provide: DEFAULT_CURRENCY_CODE,

@@ -118,7 +118,6 @@
   "balance": "Saldo",
   "balance-value": "Saldo: {{value}}",
   "transaction-type": "Tipo",
-  "page-of": "Página {{n1}} de {{n2}}",
   "transaction-future-warning": "Essa é uma transação futura.",
   "credit-card-bill-date": "Fatura",
   "credit-card-bill-date-explanation": "Data da fatura (data de fechamento do cartão)",
@@ -175,5 +174,13 @@
   "delete-all-installments": "Excluir todas parcelas",
   "delete-next-installments": "Excluir parcelas daqui para frente",
   "enabled": "Ativo",
-  "displayOnGroup": "Exibir no grupo"
+  "displayOnGroup": "Exibir no grupo",
+  "pagination": {
+    "firstPage": "Primeira página",
+    "lastPage": "Última página",
+    "nextPage": "Próxima página",
+    "previousPage": "Página anterior",
+    "itemsPerPage": "Itens por página",
+    "pageRange": "Página {{currentPage}} de {{totalPages}}"
+  }
 }

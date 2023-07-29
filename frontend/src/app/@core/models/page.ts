@@ -2,7 +2,7 @@ import { DEFAULT_PAGE_SIZE } from '../constants';
 
 export interface Page<T> {
   content: T[];
-  total: number;
+  totalElements: number;
   number: number;
   totalPages: number;
 }

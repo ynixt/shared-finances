@@ -97,7 +97,7 @@
       <app-transactions-table
         [transactionsPage$]="transactionsPage$"
         [pageSize]="pageSize"
-        (getTransactionsRequested)="getTransactions($event.page)"
+        (getTransactionsRequested)="getTransactions($event.page, $event.pageSize)"
         (editTransactionRequested)="editTransaction($event)"
       >
       </app-transactions-table>

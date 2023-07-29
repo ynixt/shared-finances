@@ -14,6 +14,7 @@ import { DateUtil } from 'src/app/@core/util';
 
 export interface TransactionsRequested {
   page: number;
+  pageSize: number;
 }
 
 export interface TransactionsDate {
@@ -33,6 +34,7 @@ export type TransactionsPage = Page<Transaction>;
 export class TransactionsTableComponent implements OnInit {
   transactionsPage: TransactionsPage;
   transactionsOfPageByDate: TransactionsDate[];
+  readonly pageSizeOptions = [5, 10, DEFAULT_PAGE_SIZE, 100]
 
   private transactionsPageSubscription: Subscription;
 
@@ -45,6 +47,7 @@ export class TransactionsTableComponent implements OnInit {
         .subscribe(transactionsPage => {
           this.transactionsPage = transactionsPage;
           this.transactionsOfPageByDate = this.mountTransactionsOfPageByDate(transactionsPage);
+          console.log(this.transactionsPage)
         });
     } else {
       this.transactionsPage = null;
@@ -70,8 +73,9 @@ export class TransactionsTableComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  public getTransactions(page = 1): void {
-    this.getTransactionsRequested.next({ page });
+  public getTransactions(page = 1, pageSize = this.pageSize): void {
+    this.pageSize = pageSize;
+    this.getTransactionsRequested.next({ page, pageSize });
   }
 
   public editTransaction(transaction: Transaction): void {

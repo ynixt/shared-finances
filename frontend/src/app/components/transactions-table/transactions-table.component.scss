@@ -2,56 +2,68 @@
 @import 'src/scss/variables.scss';
 @import 'src/scss/breakpoints';
 
-.transaction-future {
-  opacity: 0.5;
-}
-
-.transactions {
-  .mat-mdc-list-item {
+.transactions-table {
+  .mat-mdc-paginator-container {
+    margin-left: -32px;
+    background-color: #FAFAFA;
+    width: calc(100% + 64px);
+    margin-right: -32px;
     display: flex;
-    align-items: center;
+    justify-content: center;
   }
 
-  .mdc-list-item ~ .mdc-list-item {
-    margin-top: 2rem;
+
+  .transaction-future {
+    opacity: 0.5;
   }
 
-  .transaction {
-    height: auto !important;
-
-    &.negative .transaction-value {
-      color: $expense-color;
+  .transactions {
+    .mat-mdc-list-item {
+      display: flex;
+      align-items: center;
     }
 
-    .mdc-list-item__content {
-      padding: 0 !important;
+    .mdc-list-item ~ .mdc-list-item {
+      margin-top: 2rem;
     }
-  }
-}
 
-.card-content {
-  min-height: 56px;
-}
+    .transaction {
+      height: auto !important;
 
-.info-icon {
-  $size: 20px;
-  font-size: $size;
-  height: $size;
-  width: $size;
-}
+      &.negative .transaction-value {
+        color: $expense-color;
+      }
 
-.extras-info {
-  gap: 12px;
-
-  @include layout-bp(lt-md) {
-    & > *:first-child {
-      margin-top: 6px;
+      .mdc-list-item__content {
+        padding: 0 !important;
+      }
     }
   }
 
-  .extra-info {
-    .info-icon {
-      color: rgba(0, 0, 0, 0.38);
+  .card-content {
+    min-height: 56px;
+  }
+
+  .info-icon {
+    $size: 20px;
+    font-size: $size;
+    height: $size;
+    width: $size;
+  }
+
+  .extras-info {
+    gap: 12px;
+
+    @include layout-bp(lt-md) {
+      & > *:first-child {
+        margin-top: 6px;
+      }
+    }
+
+    .extra-info {
+      .info-icon {
+        color: rgba(0, 0, 0, 0.38);
+      }
     }
   }
 }
