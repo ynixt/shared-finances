@@ -88,7 +88,7 @@ export class BankAccountSingleComponent implements OnInit {
 
     this.transactionsPage$ = this.bankAccountService.getTransactions(
       this.bankAccount.id,
-      { maxDate: moment(this.monthDate).endOf('month'), minDate: moment(this.monthDate).startOf('month') },
+      { maxDate: this.getMaxDate(), minDate: moment(this.monthDate).startOf('month') },
       { page, size: this.pageSize },
     );
   }
