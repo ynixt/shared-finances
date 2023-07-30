@@ -1,7 +1,5 @@
 import { Injectable } from "@angular/core";
 import { TranslocoService } from "@ngneat/transloco";
-import { Apollo, gql, QueryRef } from "apollo-angular";
-import { EmptyObject } from "apollo-angular/types";
 import moment, { Moment } from "moment";
 import { lastValueFrom, Observable } from "rxjs";
 import { map, take } from "rxjs/operators";
@@ -14,80 +12,10 @@ import { ISO_DATE_FORMAT } from "../../moment-extension";
 import { TransactionValuesAndDateDto } from "../models/transaction-values-and-date";
 import { addHttpParamsIntoUrl } from "../util";
 
-const TRANSACTION_OF_BANK_ACCOUNT_CREATED_SUBSCRIPTION_FOR_BALANCE = gql`
-  subscription bankAccountTransactionCreated($bankAccountId: String) {
-    bankAccountTransactionCreated(bankAccountId: $bankAccountId) {
-      id
-    }
-  }
-`;
-
-const TRANSACTION_OF_BANK_ACCOUNT_CREATED_WITH_DATA_SUBSCRIPTION = gql`
-  subscription bankAccountTransactionCreated($bankAccountId: String!) {
-    bankAccountTransactionCreated(bankAccountId: $bankAccountId) {
-      id
-      transactionType
-      group {
-        id
-        name
-      }
-      date
-      value
-      description
-      category {
-        id
-        name
-        color
-      }
-      bankAccountId
-    }
-  }
-`;
-
-const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION_FOR_BALANCE = gql`
-  subscription bankAccountTransactionUpdated($bankAccountId: String) {
-    bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
-      id
-    }
-  }
-`;
-
-const TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION = gql`
-  subscription bankAccountTransactionUpdated($bankAccountId: String) {
-    bankAccountTransactionUpdated(bankAccountId: $bankAccountId) {
-      id
-      transactionType
-      group {
-        id
-        name
-      }
-      date
-      value
-      description
-      category {
-        id
-        name
-        color
-      }
-      bankAccountId
-    }
-  }
-`;
-
-const TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION = gql`
-  subscription bankAccountTransactionDeleted($bankAccountId: String) {
-    bankAccountTransactionDeleted(bankAccountId: $bankAccountId) {
-      id
-    }
-  }
-`;
-
 @Injectable({
   providedIn: "root"
 })
 export class BankAccountService {
-  private apollo: Apollo;
-
   constructor(private translocoService: TranslocoService, private stompService: StompService, private httpClient: HttpClient) {
   }
 
@@ -141,112 +69,6 @@ export class BankAccountService {
     })
 
     return this.httpClient.get<Page<Transaction>>(url);
-  }
-
-  private subscribeToTransactionChanges(
-    transactionsQueryRef: QueryRef<
-      {
-        transactions: Page<Transaction>;
-      },
-      EmptyObject
-    >,
-    bankAccountId: string,
-    minDate: string | Moment,
-    maxDate: string | Moment
-  ) {
-    // transactionsQueryRef.subscribeToMore({
-    //   document: TRANSACTION_OF_BANK_ACCOUNT_CREATED_WITH_DATA_SUBSCRIPTION,
-    //   variables: {
-    //     bankAccountId,
-    //   },
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     const newTransaction: Transaction = subscriptionData.data.bankAccountTransactionCreated;
-    //
-    //     if (moment(newTransaction.date).isSameOrAfter(minDate) && moment(newTransaction.date).isBefore(maxDate)) {
-    //       if (prev.transactions != null) {
-    //         const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-    //
-    //         transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
-    //
-    //         prev = {
-    //           transactions: transactionsPage,
-    //         };
-    //         return {
-    //           ...prev,
-    //         };
-    //       } else {
-    //         const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
-    //
-    //         transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
-    //
-    //         prev = {
-    //           transactions: transactionsPage,
-    //         };
-    //         return {
-    //           ...prev,
-    //         };
-    //       }
-    //     }
-    //
-    //     return prev;
-    //   },
-    // });
-    //
-    // transactionsQueryRef.subscribeToMore({
-    //   document: TRANSACTION_OF_BANK_ACCOUNT_UPDATED_SUBSCRIPTION,
-    //   variables: {
-    //     bankAccountId,
-    //   },
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     if (prev.transactions != null) {
-    //       const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-    //
-    //       transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
-    //
-    //       const transactionUpdatedIndex = transactionsPage.items.findIndex(
-    //         item => item.id === subscriptionData.data.bankAccountTransactionUpdated.id,
-    //       );
-    //
-    //       if (transactionUpdatedIndex != -1) {
-    //         transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.bankAccountTransactionUpdated;
-    //       }
-    //
-    //       prev = {
-    //         transactions: transactionsPage,
-    //       };
-    //       return {
-    //         ...prev,
-    //       };
-    //     }
-    //
-    //     return prev;
-    //   },
-    // });
-    //
-    // transactionsQueryRef.subscribeToMore({
-    //   document: TRANSACTION_OF_BANK_ACCOUNT_DELETED_SUBSCRIPTION,
-    //   variables: {
-    //     bankAccountId,
-    //   },
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     if (prev.transactions != null) {
-    //       const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-    //
-    //       transactionsPage.items = transactionsPage.items.filter(
-    //         item => item.id !== subscriptionData.data.bankAccountTransactionDeleted.id,
-    //       );
-    //
-    //       prev = {
-    //         transactions: transactionsPage,
-    //       };
-    //       return {
-    //         ...prev,
-    //       };
-    //     }
-    //
-    //     return prev;
-    //   },
-    // });
   }
 
   getBankAccountSummary(obj?: { maxDate?: Moment; bankAccountId?: string }): Promise<BankAccountSummary> {
