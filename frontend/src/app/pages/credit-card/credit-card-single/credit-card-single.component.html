@@ -11,12 +11,12 @@
         </div>
       </app-title-bar>
 
-      <ng-container *ngIf="creditCard.billDates?.length > 0; else noTransactions">
+      <ng-container *ngIf="creditCard.billDatesValue?.length > 0; else noTransactions">
         <div class="pb-6">
           <app-options-bar
             [title]="t('credit-card-bill-date-explanation')"
             [formatValue]="formatValue"
-            [values]="creditCard.billDates"
+            [values]="creditCard.billDatesValue"
             [currentIndex]="billDateIndex"
             (valueChange)="dateChanged($event)"
           >

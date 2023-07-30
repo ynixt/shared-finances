@@ -6,16 +6,16 @@ import jakarta.persistence.MappedSuperclass
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
-import java.time.ZonedDateTime
+import java.time.OffsetDateTime
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 abstract class AuditedEntity {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: ZonedDateTime? = null
+    var createdAt: OffsetDateTime? = null
 
     @LastModifiedDate
     @Column(name = "updated_at")
-    var updatedAt: ZonedDateTime? = null
+    var updatedAt: OffsetDateTime? = null
 }

@@ -69,15 +69,16 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     ): CreditCardSummaryDto {
         var hql = """
                     select new com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto(
-                        sum(t.value),
-                        sum(t.value) FILTER (WHERE t.type = "CreditCard"),
-                        sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment"),
-                        sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment" and bd.billDate = :maxCreditCardBillDate),
-                        sum(t.value) FILTER (WHERE t.type = "CreditCard" and bd.billDate = :maxCreditCardBillDate)
+                        COALESCE(sum(t.value), 0),
+                        COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCard"), 0),
+                        COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment"), 0),
+                        COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment" and bd.billDate = :maxCreditCardBillDate), 0),
+                        COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCard" and bd.billDate = :maxCreditCardBillDate), 0)
                     )
                     from Transaction t
                     join t.creditCard c
-                    join c.billDates bd
+                    left join c.billDates bd
+                    where t.userId = :userId
         """.trimIndent()
 
         if (creditCardId != null) {
@@ -105,13 +106,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         return try {
             query.singleResult
         } catch (ex: NoResultException) {
-            CreditCardSummaryDto(
-                bill = BigDecimal.ZERO,
-                expenses = BigDecimal.ZERO,
-                payments = BigDecimal.ZERO,
-                paymentsOfThisBill = BigDecimal.ZERO,
-                expensesOfThisBill = BigDecimal.ZERO,
-            )
+            CreditCardSummaryDto()
         }
     }
 
@@ -122,6 +117,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         creditCardId: Long?,
         minDate: LocalDate?,
         maxDate: LocalDate?,
+        creditCardBillDate: LocalDate?,
         pageable: Pageable
     ): Page<Transaction> {
         var hql = """
@@ -131,11 +127,20 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
            left join fetch t.otherSide oc
            left join fetch oc.bankAccount ocb
            left join fetch oc.user ocu
+           left join fetch t.creditCard cc
+           left join fetch cc.billDates ccbd
        """.trimIndent()
 
-        var countHql = "select count(1) from Transaction t"
+        var countHql = """
+            select count(1) from Transaction t
+            left join t.creditCard cc
+            left join cc.billDates ccbd
+        """.trimIndent()
 
-        if (userId != null || groupId != null || bankAccountId != null || creditCardId != null || minDate != null || maxDate != null) {
+        if (
+            userId != null || groupId != null || bankAccountId != null || creditCardId != null || minDate != null ||
+            maxDate != null || creditCardBillDate != null
+        ) {
             hql += " where"
             countHql += " where"
         }
@@ -168,6 +173,11 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         if (maxDate != null) {
             hql += " and t.date <= :maxDate"
             countHql += " and t.date <= :maxDate"
+        }
+
+        if (creditCardBillDate != null) {
+            hql += " and ccbd.billDate = :creditCardBillDate"
+            countHql += " and ccbd.billDate = :creditCardBillDate"
         }
 
         hql += " order by t.date desc, t.id desc"
@@ -206,6 +216,11 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         if (maxDate != null) {
             query.setParameter("maxDate", maxDate)
             countQuery.setParameter("maxDate", maxDate)
+        }
+
+        if (creditCardBillDate != null) {
+            query.setParameter("creditCardBillDate", creditCardBillDate)
+            countQuery.setParameter("creditCardBillDate", creditCardBillDate)
         }
 
         val count = countQuery.singleResult

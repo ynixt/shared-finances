@@ -3,9 +3,9 @@ package com.ynixt.sharedfinances.repository
 import com.ynixt.sharedfinances.entity.User
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.Repository
+import org.springframework.data.repository.CrudRepository
 
-interface UserRepository : Repository<User, Long> {
+interface UserRepository : CrudRepository<User, Long> {
     @Query(
         """
         from User u

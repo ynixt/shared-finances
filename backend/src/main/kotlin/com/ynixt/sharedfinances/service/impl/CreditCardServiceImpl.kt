@@ -3,10 +3,8 @@ package com.ynixt.sharedfinances.service.impl
 import com.ynixt.sharedfinances.entity.CreditCard
 import com.ynixt.sharedfinances.entity.User
 import com.ynixt.sharedfinances.mapper.CreditCardMapper
-import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardDto
-import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto
-import com.ynixt.sharedfinances.model.dto.creditcard.NewCreditCardDto
-import com.ynixt.sharedfinances.model.dto.creditcard.UpdateCreditCardDto
+import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
+import com.ynixt.sharedfinances.model.dto.creditcard.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
 import com.ynixt.sharedfinances.repository.CreditCardRepository
 import com.ynixt.sharedfinances.repository.TransactionRepository
@@ -14,6 +12,7 @@ import com.ynixt.sharedfinances.service.CreditCardService
 import jakarta.transaction.Transactional
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 import java.time.LocalDate
 
 @Service
@@ -32,11 +31,11 @@ class CreditCardServiceImpl(
     }
 
     override fun getOne(user: User, id: Long): CreditCard? {
-        return creditCardRepository.findOneByIdAndUserId(userId = user.id!!, id = id)
+        return creditCardRepository.findOneByIdAndUserIdIncludeBillDates(userId = user.id!!, id = id)
     }
 
     override fun listCreditCard(user: User): List<CreditCard> {
-        return creditCardRepository.findAllByUserId(user.id!!)
+        return creditCardRepository.findAllByUserIdIncludeBillDates(user.id!!)
     }
 
     override fun listCreditCardAsCreditCardDto(user: User): List<CreditCardDto> {
@@ -79,6 +78,30 @@ class CreditCardServiceImpl(
     override fun delete(user: User, id: Long) {
         creditCardRepository.deleteByIdAndUserId(userId = user.id!!, id = id)
         creditCardsWasUpdated(user)
+    }
+
+    override fun getChartByCreditCardId(
+        user: User, creditCardId: Long, minCreditCardBillDate: LocalDate?, maxCreditCardBillDate: LocalDate?
+    ): List<TransactionValuesAndDateDto> {
+        return transactionRepository.findAllByCreditCardIdGroupedByDate(
+            userId = user.id!!,
+            creditCardId = creditCardId,
+            minCreditCardBillDate = minCreditCardBillDate ?: LocalDate.now(),
+            maxCreditCardBillDate = maxCreditCardBillDate ?: LocalDate.now().plusDays(1)
+        )
+    }
+
+    @Transactional
+    override fun addToAvailableLimit(user: User, creditCardId: Long, delta: BigDecimal) {
+        creditCardRepository.addToAvailableLimit(
+            id = creditCardId, userId = user.id!!, delta = delta
+        )
+    }
+
+    override fun getCurrentLimit(user: User, creditCardId: Long): CreditCardLimitDto? {
+        return creditCardRepository.getCurrentAvailableLimit(
+            id = creditCardId, userId = user.id!!
+        )
     }
 
     private fun creditCardsWasUpdated(user: User) {

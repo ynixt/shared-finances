@@ -1,23 +1,25 @@
-import { Component, Inject, OnInit, Renderer2 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import moment, { Moment } from 'moment';
-import { switchMap } from 'rxjs/operators';
-import { CreditCard, CreditCardSummary, Page, Transaction } from 'src/app/@core/models';
-import { CreditCardService } from '../credit-card.service';
-import { CreditCardService as CreditCardCoreService } from 'src/app/@core/services'; // TODO change name of this service or join them
-import { merge, Observable, Subscription } from 'rxjs';
-import { DOCUMENT } from '@angular/common';
-import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
-import { CreditCardBillPaymentDialogService } from 'src/app/components/credit-card-bill-payment';
-import { Chart } from 'src/app/@core/models/chart';
-import { DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
+import { Component, Inject, OnInit, Renderer2 } from "@angular/core";
+import { ActivatedRoute, Router } from "@angular/router";
+import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
+import moment, { Moment } from "moment";
+import { switchMap } from "rxjs/operators";
+import { CreditCard, CreditCardSummary, Page, Transaction } from "src/app/@core/models";
+import { CreditCardService } from "../credit-card.service";
+import { CreditCardService as CreditCardCoreService } from "src/app/@core/services"; // TODO change name of this service or join them
+import { merge, Observable, Subscription } from "rxjs";
+import { DOCUMENT } from "@angular/common";
+import { NewTransactionDialogService } from "src/app/components/new-transaction/new-transaction-dialog.service";
+import { CreditCardBillPaymentDialogService } from "src/app/components/credit-card-bill-payment";
+import { Chart } from "src/app/@core/models/chart";
+import { DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
+import { ISO_DATE_FORMAT } from "../../../moment-extension";
+import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
 
 @UntilDestroy()
 @Component({
-  selector: 'app-credit-card-single',
-  templateUrl: './credit-card-single.component.html',
-  styleUrls: ['./credit-card-single.component.scss'],
+  selector: "app-credit-card-single",
+  templateUrl: "./credit-card-single.component.html",
+  styleUrls: ["./credit-card-single.component.scss"]
 })
 export class CreditCardSingleComponent implements OnInit {
   creditCard: CreditCard;
@@ -32,7 +34,14 @@ export class CreditCardSingleComponent implements OnInit {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
-  colorScheme = '#5AA454'
+  colorScheme: Color = {
+    name: "default",
+    selectable: true,
+    group: 0 as any,
+    domain: [
+      "#5AA454"
+    ]
+  };
 
   pageSize = DEFAULT_PAGE_SIZE;
   transactionsPage$: Observable<Page<Transaction>>;
@@ -58,8 +67,9 @@ export class CreditCardSingleComponent implements OnInit {
     @Inject(DOCUMENT) private document: any,
     private renderer2: Renderer2,
     private creditCardBillPaymentDialogService: CreditCardBillPaymentDialogService,
-    private router: Router,
-  ) {}
+    private router: Router
+  ) {
+  }
 
   ngOnInit(): void {
     this.loadCreditCard();
@@ -73,7 +83,7 @@ export class CreditCardSingleComponent implements OnInit {
         untilDestroyed(this),
         switchMap(params => {
           return this.creditCardService.getById(params.creditCardId);
-        }),
+        })
       )
       .subscribe(creditCard => this.getCreditCardInfo(creditCard));
   }
@@ -82,7 +92,7 @@ export class CreditCardSingleComponent implements OnInit {
     this.creditCard = creditCard;
 
     if (this.creditCard == null) {
-      this.router.navigateByUrl('/404');
+      this.router.navigateByUrl("/404");
     } else {
       this.setBillDateOfCurrentDate();
       this.getInfoBasedOnCreditCard();
@@ -91,7 +101,7 @@ export class CreditCardSingleComponent implements OnInit {
   }
 
   formatValue(date: string): string {
-    return moment(date).format('L');
+    return moment(date).format("L");
   }
 
   async dateChanged(newDate: Moment): Promise<void> {
@@ -99,13 +109,13 @@ export class CreditCardSingleComponent implements OnInit {
     await this.getInfoBasedOnCreditCardAndDate();
   }
 
-  getTransactions(page = 1): void {
+  getTransactions(page = 0): void {
     this.transactionsPage$ = this.creditCardService.getTransactions(
       this.creditCard.id,
       {
-        creditCardBillDate: moment(this.monthDate),
+        creditCardBillDate: moment(this.monthDate)
       },
-      { page, size: this.pageSize },
+      { page, size: this.pageSize }
     );
   }
 
@@ -116,8 +126,8 @@ export class CreditCardSingleComponent implements OnInit {
   openPayBillDialog(): void {
     this.creditCardBillPaymentDialogService.openDialog(this.document, this.renderer2, {
       creditCard: this.creditCard,
-      creditCardBillDate: moment(this.monthDate).startOf('day'),
-      billValue: this.creditCardSummary.bill,
+      creditCardBillDate: moment(this.monthDate).startOf("day"),
+      billValue: this.creditCardSummary.bill
     });
   }
 
@@ -132,14 +142,12 @@ export class CreditCardSingleComponent implements OnInit {
       return;
     }
 
-    const creditCardNamesById = new Map<string, string>();
-    creditCardNamesById.set(this.creditCard.id, this.creditCard.name);
-
-    const charts = await this.creditCardCoreService.getTransactionsChart(creditCardNamesById, this.monthDate, this.creditCard.closingDay, {
-      creditCardId: this.creditCard.id,
-      maxCreditCardBillDate: moment(this.monthDate),
-      minCreditCardBillDate: moment(this.creditCard.billDates[0]),
-    });
+    const charts = await this.creditCardCoreService.getTransactionsChart(
+      this.creditCard, this.monthDate, this.creditCard.closingDay, {
+        maxCreditCardBillDate: moment(this.monthDate, ISO_DATE_FORMAT),
+        minCreditCardBillDate: moment(this.creditCard.billDatesValue[0], ISO_DATE_FORMAT)
+      }
+    );
 
     this.transactionsGroupedYearMonth = charts;
   }
@@ -164,12 +172,12 @@ export class CreditCardSingleComponent implements OnInit {
 
     this.billDateOfCurrentMonth = this.creditCardCoreService.findCreditCardBillDate(
       moment(),
-      this.creditCard.billDates,
-      this.creditCard.closingDay,
+      this.creditCard.billDatesValue,
+      this.creditCard.closingDay
     );
 
     if (this.billDateOfCurrentMonth) {
-      this.billDateIndex = this.creditCard.billDates.indexOf(this.billDateOfCurrentMonth.toISOString());
+      this.billDateIndex = this.creditCard.billDatesValue.indexOf(this.billDateOfCurrentMonth.format(ISO_DATE_FORMAT));
     }
 
     this.monthDate = this.billDateOfCurrentMonth;
@@ -177,24 +185,28 @@ export class CreditCardSingleComponent implements OnInit {
 
   private insertCurrentMonthOnBillDatesIfMissing() {
     if (
-      this.creditCard.billDates?.length > 0 &&
-      this.creditCard.billDates.find(billDate => moment(billDate).isSame(moment(), 'month')) == null
+      this.creditCard.billDatesValue?.length > 0 &&
+      this.creditCard.billDatesValue.find(billDate => moment(billDate, ISO_DATE_FORMAT).isSame(moment(), "month")) == null
     ) {
-      this.creditCard.billDates = [
-        ...this.creditCard.billDates,
-        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay, 0).toISOString(),
-      ].sort((billDateA, billDateB) => moment(billDateA).format('X').localeCompare(moment(billDateB).format('X')));
+      this.creditCard.billDatesValue = [
+        ...this.creditCard.billDatesValue,
+        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay, 0).format(ISO_DATE_FORMAT)
+      ].sort((billDateA, billDateB) => moment(
+        billDateA, ISO_DATE_FORMAT).format("X"
+      ).localeCompare(moment(billDateB, ISO_DATE_FORMAT).format("X")));
     }
   }
 
   private insertNextMonthOnBillDatesIfLastIsCurrent() {
     if (
-      this.creditCard.billDates?.length > 0 &&
-      moment(this.creditCard.billDates[this.creditCard.billDates.length - 1]).isSame(moment(), 'month')
+      this.creditCard.billDatesValue?.length > 0 &&
+      moment(
+        this.creditCard.billDatesValue[this.creditCard.billDatesValue.length - 1], ISO_DATE_FORMAT
+      ).isSame(moment(), "month")
     ) {
-      this.creditCard.billDates = [
-        ...this.creditCard.billDates,
-        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay).toISOString(),
+      this.creditCard.billDatesValue = [
+        ...this.creditCard.billDatesValue,
+        this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay).toISOString()
       ];
     }
   }
@@ -205,7 +217,7 @@ export class CreditCardSingleComponent implements OnInit {
     this.transactionsChangeSubscription = merge(
       this.creditCardCoreService.onTransactionCreated(this.creditCard.id),
       this.creditCardCoreService.onTransactionUpdated(this.creditCard.id),
-      this.creditCardCoreService.onTransactionDeleted(this.creditCard.id),
+      this.creditCardCoreService.onTransactionDeleted(this.creditCard.id)
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {

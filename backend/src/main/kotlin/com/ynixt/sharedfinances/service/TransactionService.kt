@@ -22,6 +22,7 @@ interface TransactionService {
         creditCardId: Long?,
         minDate: LocalDate?,
         maxDate: LocalDate?,
+        creditCardBillDate: LocalDate? = null,
         pageable: Pageable
     ): Page<TransactionDto>
 

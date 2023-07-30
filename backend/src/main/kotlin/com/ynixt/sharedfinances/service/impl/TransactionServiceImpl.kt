@@ -7,12 +7,15 @@ import com.ynixt.sharedfinances.model.dto.transaction.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
 import com.ynixt.sharedfinances.model.exceptions.SFExceptionForbidden
 import com.ynixt.sharedfinances.repository.TransactionRepository
+import com.ynixt.sharedfinances.repository.UserRepository
 import com.ynixt.sharedfinances.service.CreditCardBillService
+import com.ynixt.sharedfinances.service.CreditCardService
 import com.ynixt.sharedfinances.service.GroupService
 import com.ynixt.sharedfinances.service.TransactionService
 import jakarta.persistence.EntityManager
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,6 +29,8 @@ class TransactionServiceImpl(
     private val simpMessagingTemplate: SimpMessagingTemplate,
     private val transactionMapper: TransactionMapper,
     private val groupService: GroupService,
+    private val creditCardService: CreditCardService,
+    private val userRepository: UserRepository
 ) : TransactionService {
     override fun findOneIncludeGroupAndCategory(
         id: Long, user: User, groupId: Long?
@@ -46,6 +51,7 @@ class TransactionServiceImpl(
         creditCardId: Long?,
         minDate: LocalDate?,
         maxDate: LocalDate?,
+        creditCardBillDate: LocalDate?,
         pageable: Pageable
     ): Page<TransactionDto> {
         if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
@@ -59,6 +65,7 @@ class TransactionServiceImpl(
             creditCardId = creditCardId,
             minDate = minDate,
             maxDate = maxDate,
+            creditCardBillDate = creditCardBillDate,
             pageable = pageable
         )
 
@@ -67,22 +74,23 @@ class TransactionServiceImpl(
 
     @Transactional()
     override fun newTransaction(user: User, newDto: NewTransactionDto): Transaction {
-        val firstUser = entityManager.getReference(User::class.java, newDto.firstUserId)
+        val targetUser =
+            if (newDto.firstUserId == user.id) user else userRepository.findByIdOrNull(newDto.firstUserId)!!
         val group = if (newDto.groupId == null) null else entityManager.getReference(Group::class.java, newDto.groupId)
         val category = if (newDto.categoryId == null) null else entityManager.getReference(
             TransactionCategory::class.java, newDto.categoryId
         )
         var otherSideTransaction: Transaction? = null
 
-//        if (newDto.groupId != null && !groupService.userHasPermissionToGroup(user, newDto.groupId)) {
-//            throw SFExceptionForbidden()
-//        }
+        if (newDto.groupId != null && !groupService.userHasPermissionToGroup(user, newDto.groupId)) {
+            throw SFExceptionForbidden()
+        }
 
         var transaction = Transaction(
             type = newDto.type,
             category = category,
             group = group,
-            user = firstUser,
+            user = targetUser,
             date = newDto.date,
             value = newDto.value,
             description = newDto.description
@@ -103,6 +111,7 @@ class TransactionServiceImpl(
 
         if (newDto is NewCreditCardTransactionDto) {
             applyCreditCardDtoIntoEntity(transaction, newDto)
+            creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, newDto.value)
         }
 
         if (newDto is NewCreditCardBillPaymentTransactionDto) {
@@ -122,8 +131,12 @@ class TransactionServiceImpl(
             id = transaction.id!!, user = user, groupId = newDto.groupId
         )!!
 
-        if (newDto is NewBankTransactionDto && newDto.groupId == null) {
-            bankAccountTransactionCreated(user, transaction)
+        if (newDto is NewBankTransactionDto) {
+            bankAccountTransactionCreated(targetUser, transaction)
+        }
+
+        if (newDto is NewCreditCardTransactionDto) {
+            creditCardTransactionCreated(targetUser, transaction)
         }
 
         return transaction
@@ -141,8 +154,17 @@ class TransactionServiceImpl(
             reason = "Transaction not found"
         ))
 
+        val targetUser =
+            if (editDto.firstUserId == user.id) user else userRepository.findByIdOrNull(editDto.firstUserId)!!
+
+        val oldUserId = transaction.userId
+        val oldValue = transaction.value
+        val oldCreditCardId = transaction.creditCardId
+
         transaction.apply {
             type = editDto.type
+            this.user = targetUser
+            this.userId = editDto.firstUserId
             this.category = category
             categoryId = editDto.categoryId
             date = editDto.date
@@ -179,8 +201,21 @@ class TransactionServiceImpl(
             id = transaction.id!!, user = user, groupId = editDto.groupId
         )!!
 
-        if (editDto is NewBankTransactionDto && editDto.groupId == null) {
-            bankAccountTransactionUpdated(user, updatedTransaction)
+        if (editDto is NewBankTransactionDto) {
+            bankAccountTransactionUpdated(targetUser, updatedTransaction)
+        }
+
+        if (editDto is NewCreditCardTransactionDto) {
+            creditCardTransactionUpdated(targetUser, updatedTransaction)
+            creditCardService.addToAvailableLimit(targetUser, editDto.creditCardId, editDto.value)
+        }
+
+        if (oldCreditCardId != null) {
+            creditCardService.addToAvailableLimit(
+                if (oldUserId == user.id) user else userRepository.findByIdOrNull(oldUserId!!)!!,
+                oldCreditCardId,
+                oldValue.negate()
+            )
         }
 
         return updatedTransaction
@@ -197,6 +232,11 @@ class TransactionServiceImpl(
 
             if (transaction.type == TransactionType.Revenue || transaction.type == TransactionType.Expense || transaction.type == TransactionType.Transfer) {
                 bankAccountTransactionDeleted(user, transaction)
+            }
+
+            if (transaction.type == TransactionType.CreditCard) {
+                creditCardTransactionDeleted(user, transaction)
+                creditCardService.addToAvailableLimit(user, transaction.creditCardId!!, transaction.value.negate())
             }
         }
     }
@@ -289,6 +329,27 @@ class TransactionServiceImpl(
         )
         simpMessagingTemplate.convertAndSendToUser(
             user.email, "/queue/bank-account/transaction-deleted", transactionMapper.toDto(transaction)!!
+        )
+    }
+
+    private fun creditCardTransactionCreated(user: User, transaction: Transaction) {
+        val creditCardId = transaction.creditCardId!!
+        simpMessagingTemplate.convertAndSendToUser(
+            user.email, "/queue/credit-card/transaction-created/${creditCardId}", transactionMapper.toDto(transaction)!!
+        )
+    }
+
+    private fun creditCardTransactionUpdated(user: User, transaction: Transaction) {
+        val creditCardId = transaction.creditCardId!!
+        simpMessagingTemplate.convertAndSendToUser(
+            user.email, "/queue/credit-card/transaction-updated/${creditCardId}", transactionMapper.toDto(transaction)!!
+        )
+    }
+
+    private fun creditCardTransactionDeleted(user: User, transaction: Transaction) {
+        val creditCardId = transaction.creditCardId!!
+        simpMessagingTemplate.convertAndSendToUser(
+            user.email, "/queue/credit-card/transaction-deleted/${creditCardId}", transactionMapper.toDto(transaction)!!
         )
     }
 }

@@ -7,6 +7,8 @@ import { map, take } from "rxjs/operators";
 import { DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
 import { CreditCard, Page, Pagination, Transaction } from "src/app/@core/models";
 import { HttpClient } from "@angular/common/http";
+import { addHttpParamsIntoUrl } from "../../@core/util";
+import { ISO_DATE_FORMAT } from "../../moment-extension";
 
 const TRANSACTION_OF_CREDIT_CARD_CREATED_SUBSCRIPTION = gql`
   subscription creditCardTransactionCreated($creditCardId: String!) {
@@ -64,7 +66,9 @@ const TRANSACTION_OF_CREDIT_CARD_DELETED_SUBSCRIPTION = gql`
   providedIn: "root"
 })
 export class CreditCardService {
-  constructor(private apollo: Apollo, private httpClient: HttpClient) {
+  private apollo: Apollo
+  
+  constructor(private httpClient: HttpClient) {
   }
 
   newCreditCard(creditCard: Partial<CreditCard>): Observable<CreditCard> {
@@ -102,6 +106,16 @@ export class CreditCardService {
     args?: { maxDate?: Moment; minDate?: Moment; creditCardBillDate: Moment },
     pagination?: Pagination
   ): Observable<Page<Transaction>> {
+    const url = addHttpParamsIntoUrl(`/api/credit-card/${creditCardId}/transactions`, {
+      page: pagination?.page,
+      size: pagination?.size,
+      maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT),
+      creditCardBillDate: args?.creditCardBillDate?.format(ISO_DATE_FORMAT)
+    })
+
+    return this.httpClient.get<Page<Transaction>>(url);
+
     const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
       query: gql`
         query($creditCardId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String, $creditCardBillDate: String) {

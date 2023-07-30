@@ -30,6 +30,7 @@ interface CustomTransactionRepository {
         creditCardId: Long?,
         minDate: LocalDate?,
         maxDate: LocalDate?,
+        creditCardBillDate: LocalDate?,
         pageable: Pageable
     ): Page<Transaction>
 
@@ -89,5 +90,31 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
         bankAccountId: Long,
         minDate: LocalDate,
         maxDate: LocalDate,
+    ): List<TransactionValuesAndDateDto>
+
+    @Query(
+        """
+          select new com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto(
+                    to_char(bd.billDate, 'YYYY-MM'),
+                    COALESCE(sum(t.value), 0),
+                    COALESCE(sum(t.value * -1) FILTER (WHERE t.value < 0), 0),
+                    COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0)
+                )
+                from Transaction t
+                join t.creditCard c
+                join c.billDates bd
+                where
+                    t.userId = :userId
+                    and t.creditCardId = :creditCardId
+                    and bd.billDate >= :minCreditCardBillDate
+                    and bd.billDate <= :maxCreditCardBillDate
+                group by 1
+    """
+    )
+    fun findAllByCreditCardIdGroupedByDate(
+        userId: Long,
+        creditCardId: Long,
+        minCreditCardBillDate: LocalDate,
+        maxCreditCardBillDate: LocalDate,
     ): List<TransactionValuesAndDateDto>
 }

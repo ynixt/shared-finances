@@ -3,9 +3,9 @@ package com.ynixt.sharedfinances.model.dto.creditcard
 import java.math.BigDecimal
 
 data class CreditCardSummaryDto(
-    val bill: BigDecimal,
-    val expenses: BigDecimal,
-    val payments: BigDecimal,
-    val paymentsOfThisBill: BigDecimal,
-    val expensesOfThisBill: BigDecimal,
+    val bill: BigDecimal = BigDecimal.ZERO,
+    val expenses: BigDecimal = BigDecimal.ZERO,
+    val payments: BigDecimal = BigDecimal.ZERO,
+    val paymentsOfThisBill: BigDecimal = BigDecimal.ZERO,
+    val expensesOfThisBill: BigDecimal = BigDecimal.ZERO,
 )
