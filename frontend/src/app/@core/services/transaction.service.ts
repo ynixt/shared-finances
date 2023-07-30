@@ -110,42 +110,10 @@ export class TransactionService {
   }
 
   payCreditCardBill(transaction: Partial<Transaction>): Observable<Transaction> {
-    return this.apollo
-      .mutate<{ payCreditCardBill: Transaction }>({
-        mutation: gql`
-          mutation(
-            $date: String!
-            $value: Float!
-            $description: String
-            $bankAccountId: String!
-            $creditCardId: String!
-            $creditCardBillDate: String!
-          ) {
-            payCreditCardBill(
-              date: $date
-              value: $value
-              description: $description
-              bankAccountId: $bankAccountId
-              creditCardId: $creditCardId
-              creditCardBillDate: $creditCardBillDate
-            ) {
-              id
-            }
-          }
-        `,
-        variables: {
-          date: transaction.date,
-          value: transaction.value,
-          description: transaction.description,
-          bankAccountId: transaction.bankAccountId,
-          creditCardId: transaction.creditCardId,
-          creditCardBillDate: transaction.creditCardBillDateValue
-        }
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.payCreditCardBill)
-      );
+    return this.newTransaction({
+      ...transaction,
+      type: TransactionType.CreditCardBillPayment
+    });
   }
 
   editTransaction(transaction: Transaction): Observable<Transaction> {
@@ -180,7 +148,7 @@ export class TransactionService {
       ...obj
     });
 
-    return this.httpClient.delete<void>(url)
+    return this.httpClient.delete<void>(url);
 
     // return this.apollo
     //   .mutate<{ deleteTransaction: boolean }>({

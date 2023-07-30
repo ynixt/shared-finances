@@ -22,13 +22,13 @@ abstract class NewTransactionDto(
     val value: BigDecimal,
     val description: String?,
     val categoryId: Long?,
-    val firstUserId: Long,
+    val firstUserId: Long?,
     val groupId: Long?,
 )
 
 abstract class NewBankTransactionDto(
     val bankAccountId: Long,
-    firstUserId: Long,
+    firstUserId: Long?,
     groupId: Long?,
     type: TransactionType,
     date: LocalDate,
@@ -47,7 +47,7 @@ abstract class NewBankTransactionDto(
 
 class NewRevenueTransactionDto(
     bankAccountId: Long,
-    firstUserId: Long,
+    firstUserId: Long?,
     groupId: Long?,
     type: TransactionType,
     date: LocalDate,
@@ -67,7 +67,7 @@ class NewRevenueTransactionDto(
 
 class NewExpenseTransactionDto(
     bankAccountId: Long,
-    firstUserId: Long,
+    firstUserId: Long?,
     groupId: Long?,
     type: TransactionType,
     date: LocalDate,
@@ -88,7 +88,7 @@ class NewExpenseTransactionDto(
 class NewTransferTransactionDto(
     bankAccountId: Long,
     val bankAccount2Id: Long,
-    firstUserId: Long,
+    firstUserId: Long?,
     groupId: Long?,
     val secondUserId: Long?,
     type: TransactionType,
@@ -107,11 +107,24 @@ class NewTransferTransactionDto(
     categoryId = categoryId,
 )
 
+interface INewCreditCardTransactionDto {
+    val creditCardId: Long
+    val creditCardBillDateValue: LocalDate
+    val totalInstallments: Int?
+    val firstUserId: Long?
+    val groupId: Long?
+    val type: TransactionType
+    val date: LocalDate
+    val value: BigDecimal
+    val description: String?
+    val categoryId: Long?
+}
+
 class NewCreditCardTransactionDto(
-    val creditCardId: Long,
-    val creditCardBillDateValue: LocalDate,
-    val totalInstallments: Int?,
-    firstUserId: Long,
+    override val creditCardId: Long,
+    override val creditCardBillDateValue: LocalDate,
+    override val totalInstallments: Int?,
+    firstUserId: Long?,
     groupId: Long?,
     type: TransactionType,
     date: LocalDate,
@@ -126,21 +139,22 @@ class NewCreditCardTransactionDto(
     value = value,
     description = description,
     categoryId = categoryId,
-)
+), INewCreditCardTransactionDto
 
 class NewCreditCardBillPaymentTransactionDto(
-    val bankAccountId: Long,
-    val creditCardId: Long,
-    val creditCardBillId: Long,
-    val totalInstallments: Int?,
-    firstUserId: Long,
+    bankAccountId: Long,
+    override val creditCardId: Long,
+    override val creditCardBillDateValue: LocalDate,
+    override val totalInstallments: Int?,
+    firstUserId: Long?,
     groupId: Long?,
     type: TransactionType,
     date: LocalDate,
     value: BigDecimal,
     description: String?,
     categoryId: Long?,
-) : NewTransactionDto(
+) : NewBankTransactionDto(
+    bankAccountId = bankAccountId,
     firstUserId = firstUserId,
     groupId = groupId,
     type = type,
@@ -148,4 +162,4 @@ class NewCreditCardBillPaymentTransactionDto(
     value = value,
     description = description,
     categoryId = categoryId,
-)
+), INewCreditCardTransactionDto

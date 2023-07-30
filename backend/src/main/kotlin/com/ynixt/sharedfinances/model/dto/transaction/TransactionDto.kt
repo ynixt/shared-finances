@@ -127,11 +127,25 @@ class TransferTransactionDto(
     category = category,
 )
 
+interface ICreditCardTransactionDto {
+    val id: Long?
+    val creditCardId: Long
+    val creditCardBillId: Long
+    val totalInstallments: Int?
+    val userId: Long
+    val group: GroupDto?
+    val type: TransactionType
+    val date: LocalDate
+    val value: BigDecimal
+    val description: String?
+    val category: TransactionCategoryDto?
+}
+
 class CreditCardTransactionDto(
     id: Long?,
-    val creditCardId: Long,
-    val creditCardBillId: Long,
-    val totalInstallments: Int?,
+    override val creditCardId: Long,
+    override val creditCardBillId: Long,
+    override val totalInstallments: Int?,
     userId: Long,
     group: GroupDto?,
     type: TransactionType,
@@ -148,14 +162,14 @@ class CreditCardTransactionDto(
     value = value,
     description = description,
     category = category,
-)
+), ICreditCardTransactionDto
 
 class CreditCardBillPaymentTransactionDto(
     id: Long?,
-    val bankAccountId: Long,
-    val creditCardId: Long,
-    val creditCardBillId: Long,
-    val totalInstallments: Int?,
+    bankAccountId: Long,
+    override val creditCardId: Long,
+    override val creditCardBillId: Long,
+    override val totalInstallments: Int?,
     userId: Long,
     group: GroupDto?,
     type: TransactionType,
@@ -163,7 +177,7 @@ class CreditCardBillPaymentTransactionDto(
     value: BigDecimal,
     description: String?,
     category: TransactionCategoryDto?,
-) : TransactionDto(
+) : BankTransactionDto(
     id = id,
     userId = userId,
     group = group,
@@ -172,4 +186,5 @@ class CreditCardBillPaymentTransactionDto(
     value = value,
     description = description,
     category = category,
-)
+    bankAccountId = bankAccountId,
+), ICreditCardTransactionDto

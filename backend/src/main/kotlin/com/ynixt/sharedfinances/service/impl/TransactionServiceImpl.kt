@@ -75,7 +75,9 @@ class TransactionServiceImpl(
     @Transactional()
     override fun newTransaction(user: User, newDto: NewTransactionDto): Transaction {
         val targetUser =
-            if (newDto.firstUserId == user.id) user else userRepository.findByIdOrNull(newDto.firstUserId)!!
+            if (newDto.firstUserId == null || newDto.firstUserId == user.id) user else userRepository.findByIdOrNull(
+                newDto.firstUserId
+            )!!
         val group = if (newDto.groupId == null) null else entityManager.getReference(Group::class.java, newDto.groupId)
         val category = if (newDto.categoryId == null) null else entityManager.getReference(
             TransactionCategory::class.java, newDto.categoryId
@@ -109,13 +111,16 @@ class TransactionServiceImpl(
             otherSideTransaction = transaction.otherSide
         }
 
-        if (newDto is NewCreditCardTransactionDto) {
+        if (newDto is INewCreditCardTransactionDto) {
             applyCreditCardDtoIntoEntity(transaction, newDto)
+        }
+
+        if (newDto is NewCreditCardTransactionDto) {
             creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, newDto.value)
         }
 
         if (newDto is NewCreditCardBillPaymentTransactionDto) {
-            TODO()
+            creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, newDto.value.negate())
         }
 
         transactionRepository.saveAndFlush(transaction)
@@ -135,7 +140,7 @@ class TransactionServiceImpl(
             bankAccountTransactionCreated(targetUser, transaction)
         }
 
-        if (newDto is NewCreditCardTransactionDto) {
+        if (newDto is INewCreditCardTransactionDto) {
             creditCardTransactionCreated(targetUser, transaction)
         }
 
@@ -155,7 +160,9 @@ class TransactionServiceImpl(
         ))
 
         val targetUser =
-            if (editDto.firstUserId == user.id) user else userRepository.findByIdOrNull(editDto.firstUserId)!!
+            if (editDto.firstUserId == null || editDto.firstUserId == user.id) user else userRepository.findByIdOrNull(
+                editDto.firstUserId
+            )!!
 
         val oldUserId = transaction.userId
         val oldValue = transaction.value
@@ -248,7 +255,7 @@ class TransactionServiceImpl(
         transaction.bankAccountId = dto.bankAccountId
     }
 
-    private fun applyCreditCardDtoIntoEntity(transaction: Transaction, dto: NewCreditCardTransactionDto) {
+    private fun applyCreditCardDtoIntoEntity(transaction: Transaction, dto: INewCreditCardTransactionDto) {
         val creditCard = entityManager.getReference(CreditCard::class.java, dto.creditCardId)
         val creditCardBillDate = creditCardBillService.getOrCreate(dto.creditCardBillDateValue, creditCard)
 
