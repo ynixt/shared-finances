@@ -13,14 +13,18 @@ export class StompService extends RxStomp implements OnDestroy {
     this.user$ = user(this.auth).pipe();
   }
 
-  async start() {
-    const user = await lastValueFrom(this.user$.pipe(take(1)).pipe(take(1)));
-    const token = await user.getIdToken();
-
+  start() {
     this.configure({
       brokerURL: "ws://localhost:8080/api/socket",
-      connectHeaders: { "Authorization": `Bearer ${token}` }
-
+      beforeConnect: (async client => {
+        const user = await lastValueFrom(this.user$.pipe(take(1)).pipe(take(1)));
+        const token = await user.getIdToken();
+        client.configure({
+          connectHeaders: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+      })
     });
     this.activate();
   }
