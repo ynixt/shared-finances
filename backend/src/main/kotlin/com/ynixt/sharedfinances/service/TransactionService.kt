@@ -9,7 +9,13 @@ import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 
 interface TransactionService {
-    fun findAllByIdIncludeGroupAndCategoryAsTransactionDto(
+    fun findOneIncludeGroupAndCategory(
+        id: Long,
+        user: User,
+        groupId: Long?
+    ): Transaction?
+
+    fun findAllIncludeGroupAndCategoryAsTransactionDto(
         user: User,
         groupId: Long?,
         bankAccountId: Long?,
@@ -20,4 +26,8 @@ interface TransactionService {
     ): Page<TransactionDto>
 
     fun newTransaction(user: User, newDto: NewTransactionDto): Transaction
+    fun editTransaction(user: User, id: Long, editDto: NewTransactionDto): Transaction
+    fun editTransaction(user: User, transaction: Transaction, editDto: NewTransactionDto): Transaction
+
+    fun delete(user: User, id: Long, groupId: Long?)
 }

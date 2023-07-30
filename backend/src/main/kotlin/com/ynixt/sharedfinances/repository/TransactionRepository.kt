@@ -19,13 +19,11 @@ interface CustomTransactionRepository {
     ): BankAccountSummaryDto
 
     fun getCreditCardSummary(
-        userId: Long,
-        creditCardId: Long?,
-        maxCreditCardBillDate: LocalDate?
+        userId: Long, creditCardId: Long?, maxCreditCardBillDate: LocalDate?
     ): CreditCardSummaryDto
 
 
-    fun findAllByIdIncludeGroupAndCategory(
+    fun findAllIncludeGroupAndCategory(
         userId: Long?,
         groupId: Long?,
         bankAccountId: Long?,
@@ -34,19 +32,21 @@ interface CustomTransactionRepository {
         maxDate: LocalDate?,
         pageable: Pageable
     ): Page<Transaction>
+
+    fun findOneIncludeGroupAndCategory(
+        id: Long,
+        userId: Long?,
+        groupId: Long?,
+    ): Transaction?
+
+    fun findOne(
+        id: Long,
+        userId: Long?,
+        groupId: Long?,
+    ): Transaction?
 }
 
 interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTransactionRepository {
-    @Query(
-        """
-        from Transaction t
-        left join fetch t.group g
-        left join fetch t.category c
-        where t.id = :id
-    """
-    )
-    fun findOneByIdIncludeGroupAndCategory(id: Long): Transaction?
-
     @Query(
         """
           select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
@@ -62,9 +62,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
     """
     )
     fun getGroupSummaryByUser(
-        groupId: Long,
-        minDate: LocalDate,
-        maxDate: LocalDate
+        groupId: Long, minDate: LocalDate, maxDate: LocalDate
     ): List<GroupSummaryByUserDto>
 
     @Query(

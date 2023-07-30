@@ -71,6 +71,7 @@
     <app-transactions-table
       [transactionsPage$]="transactionsPage$"
       [pageSize]="pageSize"
+      [groupId]="group.id"
       (getTransactionsRequested)="getTransactions($event.page)"
       (editTransactionRequested)="editTransaction($event)"
     >

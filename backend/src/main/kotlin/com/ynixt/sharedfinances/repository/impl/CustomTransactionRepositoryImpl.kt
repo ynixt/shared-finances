@@ -115,7 +115,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         }
     }
 
-    override fun findAllByIdIncludeGroupAndCategory(
+    override fun findAllIncludeGroupAndCategory(
         userId: Long?,
         groupId: Long?,
         bankAccountId: Long?,
@@ -218,5 +218,80 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         query.maxResults = pageable.pageSize
 
         return PageImpl(query.resultList, pageable, count);
+    }
+
+    override fun findOneIncludeGroupAndCategory(
+        id: Long, userId: Long?, groupId: Long?
+    ): Transaction? {
+        var hql = """
+           from Transaction t
+           left join fetch t.group g
+           left join fetch t.category c
+           left join fetch t.otherSide oc
+           left join fetch oc.bankAccount ocb
+           left join fetch oc.user ocu
+           where t.id = :id
+       """.trimIndent()
+
+        if (userId != null) {
+            hql += " and t.userId = :userId"
+        }
+
+        if (groupId != null) {
+            hql += " and t.groupId = :groupId"
+        }
+
+        val query = entityManager.createQuery(hql, Transaction::class.java)
+
+        query.setParameter("id", id)
+
+        if (userId != null) {
+            query.setParameter("userId", userId)
+        }
+
+        if (groupId != null) {
+            query.setParameter("groupId", groupId)
+        }
+
+        return try {
+            query.singleResult
+        } catch (ex: NoResultException) {
+            null
+        }
+    }
+
+    override fun findOne(
+        id: Long, userId: Long?, groupId: Long?
+    ): Transaction? {
+        var hql = """
+           from Transaction t
+           where t.id = :id
+       """.trimIndent()
+
+        if (userId != null) {
+            hql += " and t.userId = :userId"
+        }
+
+        if (groupId != null) {
+            hql += " and t.groupId = :groupId"
+        }
+
+        val query = entityManager.createQuery(hql, Transaction::class.java)
+
+        query.setParameter("id", id)
+
+        if (userId != null) {
+            query.setParameter("userId", userId)
+        }
+
+        if (groupId != null) {
+            query.setParameter("groupId", groupId)
+        }
+
+        return try {
+            query.singleResult
+        } catch (ex: NoResultException) {
+            null
+        }
     }
 }

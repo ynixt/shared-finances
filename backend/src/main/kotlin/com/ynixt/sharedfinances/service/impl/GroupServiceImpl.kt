@@ -94,10 +94,14 @@ class GroupServiceImpl(
         }
     }
 
+    override fun userHasPermissionToGroup(user: User, groupId: Long): Boolean {
+        return groupRepository.existsOneByIdAndUserId(userId = user.id!!, id = groupId)
+    }
+
     override fun getGroupSummary(
         user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
     ): GroupSummaryDto {
-        if (!groupRepository.existsOneByIdAndUserId(userId = user.id!!, id = groupId)) {
+        if (!userHasPermissionToGroup(user, groupId)) {
             return GroupSummaryDto(listOf())
         }
 

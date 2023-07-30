@@ -1,16 +1,16 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
-import { TdDialogService } from '@covalent/core/dialogs';
-import { HotToastService } from '@ngneat/hot-toast';
-import { TranslocoService } from '@ngneat/transloco';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import moment, { Moment } from 'moment';
-import { from, Observable, Subscription } from 'rxjs';
-import { take } from 'rxjs/operators';
-import { DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
-import { TransactionType } from 'src/app/@core/enums';
-import { Page, Transaction } from 'src/app/@core/models';
-import { ErrorService, TransactionService } from 'src/app/@core/services';
-import { DateUtil } from 'src/app/@core/util';
+import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from "@angular/core";
+import { TdDialogService } from "@covalent/core/dialogs";
+import { HotToastService } from "@ngneat/hot-toast";
+import { TranslocoService } from "@ngneat/transloco";
+import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
+import moment, { Moment } from "moment";
+import { from, Observable, Subscription } from "rxjs";
+import { take } from "rxjs/operators";
+import { DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
+import { TransactionType } from "src/app/@core/enums";
+import { Page, Transaction } from "src/app/@core/models";
+import { ErrorService, TransactionService } from "src/app/@core/services";
+import { DateUtil } from "src/app/@core/util";
 
 export interface TransactionsRequested {
   page: number;
@@ -26,15 +26,15 @@ export type TransactionsPage = Page<Transaction>;
 
 @UntilDestroy()
 @Component({
-  selector: 'app-transactions-table',
-  templateUrl: './transactions-table.component.html',
-  styleUrls: ['./transactions-table.component.scss'],
-  encapsulation: ViewEncapsulation.None,
+  selector: "app-transactions-table",
+  templateUrl: "./transactions-table.component.html",
+  styleUrls: ["./transactions-table.component.scss"],
+  encapsulation: ViewEncapsulation.None
 })
 export class TransactionsTableComponent implements OnInit {
   transactionsPage: TransactionsPage;
   transactionsOfPageByDate: TransactionsDate[];
-  readonly pageSizeOptions = [5, 10, DEFAULT_PAGE_SIZE, 100]
+  readonly pageSizeOptions = [5, 10, DEFAULT_PAGE_SIZE, 100];
 
   private transactionsPageSubscription: Subscription;
 
@@ -47,7 +47,6 @@ export class TransactionsTableComponent implements OnInit {
         .subscribe(transactionsPage => {
           this.transactionsPage = transactionsPage;
           this.transactionsOfPageByDate = this.mountTransactionsOfPageByDate(transactionsPage);
-          console.log(this.transactionsPage)
         });
     } else {
       this.transactionsPage = null;
@@ -56,6 +55,7 @@ export class TransactionsTableComponent implements OnInit {
   }
 
   @Input() pageSize = DEFAULT_PAGE_SIZE;
+  @Input() groupId: string;
 
   @Output() getTransactionsRequested = new EventEmitter<TransactionsRequested>();
   @Output() editTransactionRequested = new EventEmitter<Transaction>();
@@ -68,10 +68,12 @@ export class TransactionsTableComponent implements OnInit {
     private translocoService: TranslocoService,
     private transactionService: TransactionService,
     private toast: HotToastService,
-    private errorService: ErrorService,
-  ) {}
+    private errorService: ErrorService
+  ) {
+  }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+  }
 
   public getTransactions(page = 1, pageSize = this.pageSize): void {
     this.pageSize = pageSize;
@@ -88,22 +90,22 @@ export class TransactionsTableComponent implements OnInit {
 
   public async deleteTransaction(transaction: Transaction): Promise<void> {
     const confirm = await this.showDeleteConfirmation(
-      this.translocoService.translate('delete-confirm', { name: transaction.description ?? '' }),
+      this.translocoService.translate("delete-confirm", { name: transaction.description ?? "" })
     );
 
     if (confirm) {
       await this.transactionService
-        .deleteTransaction(transaction.id)
+        .deleteTransaction(transaction.id, this.groupId)
         .pipe(
           take(1),
           this.toast.observe({
-            loading: this.translocoService.translate('deleting'),
-            success: this.translocoService.translate('deleting-successful', { name: transaction.description ?? '' }),
+            loading: this.translocoService.translate("deleting"),
+            success: this.translocoService.translate("deleting-successful", { name: transaction.description ?? "" }),
             error: error =>
-              this.errorService.getInstantErrorMessage(error, 'deleting-error', 'deleting-error-with-description', {
-                name: transaction.description,
-              }),
-          }),
+              this.errorService.getInstantErrorMessage(error, "deleting-error", "deleting-error-with-description", {
+                name: transaction.description
+              })
+          })
         )
         .toPromise();
 
@@ -113,30 +115,30 @@ export class TransactionsTableComponent implements OnInit {
 
   public async deleteTransactionAllInstallments(transaction: Transaction): Promise<void> {
     const confirm = await this.showDeleteConfirmation(
-      this.translocoService.translate('delete-all-installments-confirm', {
-        name: transaction.description ?? '',
-        totalInstallments: transaction.totalInstallments,
-      }),
+      this.translocoService.translate("delete-all-installments-confirm", {
+        name: transaction.description ?? "",
+        totalInstallments: transaction.totalInstallments
+      })
     );
 
     if (confirm) {
       await this.transactionService
-        .deleteTransaction(transaction.id, { deleteAllInstallments: true })
+        .deleteTransaction(transaction.id, this.groupId, { deleteAllInstallments: true })
         .pipe(
           take(1),
           this.toast.observe({
-            loading: this.translocoService.translate('deleting'),
-            success: this.translocoService.translate('deleting-successful-all-installments', { name: transaction.description ?? '' }),
+            loading: this.translocoService.translate("deleting"),
+            success: this.translocoService.translate("deleting-successful-all-installments", { name: transaction.description ?? "" }),
             error: error =>
               this.errorService.getInstantErrorMessage(
                 error,
-                'deleting-error-all-installments',
-                'deleting-error-with-description-all-installments',
+                "deleting-error-all-installments",
+                "deleting-error-with-description-all-installments",
                 {
-                  name: transaction.description,
-                },
-              ),
-          }),
+                  name: transaction.description
+                }
+              )
+          })
         )
         .toPromise();
 
@@ -151,37 +153,37 @@ export class TransactionsTableComponent implements OnInit {
       installments.push(i);
     }
 
-    const installmentsByComma = installments.join(', ');
+    const installmentsByComma = installments.join(", ");
 
     const confirm = await this.showDeleteConfirmation(
-      this.translocoService.translate('delete-next-installments-confirm', {
-        name: transaction.description ?? '',
-        installments: installmentsByComma,
-      }),
+      this.translocoService.translate("delete-next-installments-confirm", {
+        name: transaction.description ?? "",
+        installments: installmentsByComma
+      })
     );
 
     if (confirm) {
       await this.transactionService
-        .deleteTransaction(transaction.id, { deleteNextInstallments: true })
+        .deleteTransaction(transaction.id, this.groupId, { deleteNextInstallments: true })
         .pipe(
           take(1),
           this.toast.observe({
-            loading: this.translocoService.translate('deleting'),
-            success: this.translocoService.translate('deleting-successful-next-installments', {
-              name: transaction.description ?? '',
-              installments: installmentsByComma,
+            loading: this.translocoService.translate("deleting"),
+            success: this.translocoService.translate("deleting-successful-next-installments", {
+              name: transaction.description ?? "",
+              installments: installmentsByComma
             }),
             error: error =>
               this.errorService.getInstantErrorMessage(
                 error,
-                'deleting-error-next-installments',
-                'deleting-error-with-description-next-installments',
+                "deleting-error-next-installments",
+                "deleting-error-with-description-next-installments",
                 {
                   name: transaction.description,
-                  installments: installmentsByComma,
-                },
-              ),
-          }),
+                  installments: installmentsByComma
+                }
+              )
+          })
         )
         .toPromise();
 
@@ -192,45 +194,45 @@ export class TransactionsTableComponent implements OnInit {
   public getIconForTransaction(transaction: Transaction): string {
     switch (transaction.type) {
       case TransactionType.CreditCard:
-        return 'credit_card';
+        return "credit_card";
       case TransactionType.Expense:
-        return 'trending_down';
+        return "trending_down";
       case TransactionType.Revenue:
-        return 'trending_up';
+        return "trending_up";
       case TransactionType.Transfer:
-        return 'sync_alt';
+        return "sync_alt";
       case TransactionType.CreditCardBillPayment:
-        return 'credit_score';
+        return "credit_score";
     }
   }
 
   public getTransactionTranslateKey(transaction: Transaction): string {
     switch (transaction.type) {
       case TransactionType.CreditCard:
-        return 'credit-card';
+        return "credit-card";
       case TransactionType.Expense:
-        return 'expense';
+        return "expense";
       case TransactionType.Revenue:
-        return 'revenue';
+        return "revenue";
       case TransactionType.Transfer:
-        return 'transfer';
+        return "transfer";
       case TransactionType.CreditCardBillPayment:
-        return 'credit-card-bill-payment';
+        return "credit-card-bill-payment";
     }
   }
 
   public getTransactionCssColor(transaction: Transaction): string {
     switch (transaction.type) {
       case TransactionType.CreditCard:
-        return 'credit-card-color';
+        return "credit-card-color";
       case TransactionType.Expense:
-        return 'expense-color';
+        return "expense-color";
       case TransactionType.Revenue:
-        return 'revenue-color';
+        return "revenue-color";
       case TransactionType.Transfer:
-        return 'transfer-color';
+        return "transfer-color";
       case TransactionType.CreditCardBillPayment:
-        return 'credit-card-bill-payment-color';
+        return "credit-card-bill-payment-color";
     }
   }
 
@@ -241,11 +243,11 @@ export class TransactionsTableComponent implements OnInit {
   private showDeleteConfirmation(message: string): Promise<boolean> {
     return this.dialogService
       .openConfirm({
-        title: this.translocoService.translate('confirm'),
+        title: this.translocoService.translate("confirm"),
         message: message,
-        cancelButton: this.translocoService.translate('cancel'),
-        acceptButton: this.translocoService.translate('delete'),
-        width: '500px',
+        cancelButton: this.translocoService.translate("cancel"),
+        acceptButton: this.translocoService.translate("delete"),
+        width: "500px"
       })
       .afterClosed()
       .pipe(take(1))
@@ -256,7 +258,7 @@ export class TransactionsTableComponent implements OnInit {
     const map = new Map<string, Transaction[]>();
 
     transactionsPage.content.forEach(transaction => {
-      const date = moment(transaction.date).startOf('day').toISOString();
+      const date = moment(transaction.date).startOf("day").toISOString();
 
       if (map.has(date)) {
         map.get(date).push(transaction);
@@ -267,7 +269,7 @@ export class TransactionsTableComponent implements OnInit {
 
     return Array.from(map).map(([date, transactions]) => ({
       transactions,
-      date: moment(date),
+      date: moment(date)
     }));
   }
 }

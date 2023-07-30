@@ -21,6 +21,7 @@ import java.time.LocalDate
     JsonSubTypes.Type(value = CreditCardBillPaymentTransactionDto::class, name = "CreditCardBillPayment"),
 )
 abstract class TransactionDto(
+    val id: Long?,
     val type: TransactionType,
     val date: LocalDate,
     val value: BigDecimal,
@@ -31,6 +32,7 @@ abstract class TransactionDto(
 )
 
 abstract class BankTransactionDto(
+    id: Long?,
     val bankAccountId: Long,
     userId: Long,
     group: GroupDto?,
@@ -40,6 +42,7 @@ abstract class BankTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : TransactionDto(
+    id = id,
     userId = userId,
     group = group,
     type = type,
@@ -50,6 +53,7 @@ abstract class BankTransactionDto(
 )
 
 class RevenueTransactionDto(
+    id: Long?,
     bankAccountId: Long,
     userId: Long,
     group: GroupDto?,
@@ -59,6 +63,7 @@ class RevenueTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : BankTransactionDto(
+    id = id,
     bankAccountId = bankAccountId,
     userId = userId,
     group = group,
@@ -70,6 +75,7 @@ class RevenueTransactionDto(
 )
 
 class ExpenseTransactionDto(
+    id: Long?,
     bankAccountId: Long,
     userId: Long,
     group: GroupDto?,
@@ -79,6 +85,7 @@ class ExpenseTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : BankTransactionDto(
+    id = id,
     bankAccountId = bankAccountId,
     userId = userId,
     group = group,
@@ -90,6 +97,7 @@ class ExpenseTransactionDto(
 )
 
 class OtherSideTransactionDto(
+    val id: Long?,
     val bankAccountId: Long,
     val bankAccount: BankAccountNameDto,
     val userId: Long,
@@ -97,6 +105,7 @@ class OtherSideTransactionDto(
 )
 
 class TransferTransactionDto(
+    id: Long?,
     bankAccountId: Long,
     userId: Long,
     group: GroupDto?,
@@ -107,6 +116,7 @@ class TransferTransactionDto(
     category: TransactionCategoryDto?,
     val otherSide: OtherSideTransactionDto?,
 ) : BankTransactionDto(
+    id = id,
     bankAccountId = bankAccountId,
     userId = userId,
     group = group,
@@ -118,6 +128,7 @@ class TransferTransactionDto(
 )
 
 class CreditCardTransactionDto(
+    id: Long?,
     val creditCardId: Long,
     val creditCardBillId: Long,
     val totalInstallments: Int?,
@@ -129,6 +140,7 @@ class CreditCardTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : TransactionDto(
+    id = id,
     userId = userId,
     group = group,
     type = type,
@@ -139,6 +151,7 @@ class CreditCardTransactionDto(
 )
 
 class CreditCardBillPaymentTransactionDto(
+    id: Long?,
     val bankAccountId: Long,
     val creditCardId: Long,
     val creditCardBillId: Long,
@@ -151,6 +164,7 @@ class CreditCardBillPaymentTransactionDto(
     description: String?,
     category: TransactionCategoryDto?,
 ) : TransactionDto(
+    id = id,
     userId = userId,
     group = group,
     type = type,

@@ -1,11 +1,14 @@
 package com.ynixt.sharedfinances.service.impl
 
 import com.ynixt.sharedfinances.entity.*
+import com.ynixt.sharedfinances.enums.TransactionType
 import com.ynixt.sharedfinances.mapper.TransactionMapper
 import com.ynixt.sharedfinances.model.dto.transaction.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
+import com.ynixt.sharedfinances.model.exceptions.SFExceptionForbidden
 import com.ynixt.sharedfinances.repository.TransactionRepository
 import com.ynixt.sharedfinances.service.CreditCardBillService
+import com.ynixt.sharedfinances.service.GroupService
 import com.ynixt.sharedfinances.service.TransactionService
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
@@ -21,9 +24,22 @@ class TransactionServiceImpl(
     private val transactionRepository: TransactionRepository,
     private val creditCardBillService: CreditCardBillService,
     private val simpMessagingTemplate: SimpMessagingTemplate,
-    private val transactionMapper: TransactionMapper
+    private val transactionMapper: TransactionMapper,
+    private val groupService: GroupService,
 ) : TransactionService {
-    override fun findAllByIdIncludeGroupAndCategoryAsTransactionDto(
+    override fun findOneIncludeGroupAndCategory(
+        id: Long, user: User, groupId: Long?
+    ): Transaction? {
+        if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
+            throw SFExceptionForbidden()
+        }
+
+        return transactionRepository.findOneIncludeGroupAndCategory(
+            id = id, userId = if (groupId == null) user.id!! else null, groupId = groupId
+        )
+    }
+
+    override fun findAllIncludeGroupAndCategoryAsTransactionDto(
         user: User,
         groupId: Long?,
         bankAccountId: Long?,
@@ -32,7 +48,11 @@ class TransactionServiceImpl(
         maxDate: LocalDate?,
         pageable: Pageable
     ): Page<TransactionDto> {
-        val page = transactionRepository.findAllByIdIncludeGroupAndCategory(
+        if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
+            throw SFExceptionForbidden()
+        }
+
+        val page = transactionRepository.findAllIncludeGroupAndCategory(
             userId = if (groupId == null) user.id!! else null,
             groupId = groupId,
             bankAccountId = bankAccountId,
@@ -54,6 +74,10 @@ class TransactionServiceImpl(
         )
         var otherSideTransaction: Transaction? = null
 
+        if (newDto.groupId != null && !groupService.userHasPermissionToGroup(user, newDto.groupId)) {
+            throw SFExceptionForbidden()
+        }
+
         var transaction = Transaction(
             type = newDto.type,
             category = category,
@@ -69,46 +93,16 @@ class TransactionServiceImpl(
         }
 
         if (newDto is NewBankTransactionDto) {
-            val bank = entityManager.getReference(BankAccount::class.java, newDto.bankAccountId)
-
-            transaction.bankAccount = bank
-            transaction.bankAccountId = newDto.bankAccountId
+            applyBankDtoIntoEntity(transaction, newDto)
         }
 
         if (newDto is NewTransferTransactionDto) {
-            if (newDto.bankAccountId == newDto.bankAccount2Id) {
-                throw SFException(
-                    reason = "The bank account can't be the same on transfer."
-                )
-            }
-
-            val user2 = entityManager.getReference(User::class.java, newDto.secondUserId)
-            val bank2 = entityManager.getReference(BankAccount::class.java, newDto.bankAccount2Id)
-
-            otherSideTransaction = Transaction(
-                type = transaction.type,
-                category = transaction.category,
-                group = transaction.group,
-                user = user2,
-                bankAccount = bank2,
-                date = transaction.date,
-                value = transaction.value,
-                description = transaction.description,
-            )
-
-            transactionRepository.save(otherSideTransaction)
-
-            transaction.otherSide = otherSideTransaction
+            applyTransferDtoIntoEntity(transaction, newDto)
+            otherSideTransaction = transaction.otherSide
         }
 
         if (newDto is NewCreditCardTransactionDto) {
-            val creditCard = entityManager.getReference(CreditCard::class.java, newDto.creditCardId)
-            val creditCardBillDate = creditCardBillService.getOrCreate(newDto.creditCardBillDateValue, creditCard)
-
-            transaction.creditCard = creditCard
-            transaction.creditCardId = newDto.categoryId
-            transaction.creditCardBillDate = creditCardBillDate
-            transaction.totalInstallments = newDto.totalInstallments
+            applyCreditCardDtoIntoEntity(transaction, newDto)
         }
 
         if (newDto is NewCreditCardBillPaymentTransactionDto) {
@@ -122,13 +116,147 @@ class TransactionServiceImpl(
             transactionRepository.save(otherSideTransaction)
         }
 
-        transaction = transactionRepository.findOneByIdIncludeGroupAndCategory(transaction.id!!)!!
+        transaction = findOneIncludeGroupAndCategory(
+            id = transaction.id!!, user = user, groupId = newDto.groupId
+        )!!
 
-        if (newDto is NewBankTransactionDto && group == null) {
+        if (newDto is NewBankTransactionDto && newDto.groupId == null) {
             bankAccountTransactionCreated(user, transaction)
         }
 
         return transaction
+    }
+
+    override fun editTransaction(user: User, id: Long, editDto: NewTransactionDto): Transaction {
+        val transaction = (findOne(
+            id = id, user = user, groupId = editDto.groupId
+        ) ?: throw SFException(
+            reason = "Transaction not found"
+        ))
+
+        entityManager.detach(transaction)
+
+        return editTransaction(user, transaction, editDto)
+    }
+
+    @Transactional
+    override fun editTransaction(user: User, transaction: Transaction, editDto: NewTransactionDto): Transaction {
+        val category = if (editDto.categoryId == null) null else entityManager.getReference(
+            TransactionCategory::class.java, editDto.categoryId
+        )
+
+        transaction.apply {
+            type = editDto.type
+            this.category = category
+            categoryId = editDto.categoryId
+            date = editDto.date
+            value = editDto.value
+            description = editDto.description
+            bankAccount = null
+            bankAccountId = null
+            creditCard = null
+            creditCardId = null
+            creditCardBillDate = null
+            totalInstallments = null
+        }
+
+        if (editDto is NewBankTransactionDto) {
+            applyBankDtoIntoEntity(transaction, editDto)
+        }
+
+        if (editDto is NewTransferTransactionDto) {
+            TODO()
+        }
+
+        if (editDto is NewCreditCardTransactionDto) {
+            applyCreditCardDtoIntoEntity(transaction, editDto)
+        }
+
+        if (editDto is NewCreditCardBillPaymentTransactionDto) {
+            TODO()
+        }
+
+        transactionRepository.save(transaction)
+
+        val updatedTransaction = findOneIncludeGroupAndCategory(
+            id = transaction.id!!, user = user, groupId = editDto.groupId
+        )!!
+
+        if (editDto is NewBankTransactionDto && editDto.groupId == null) {
+            bankAccountTransactionUpdated(user, updatedTransaction)
+        }
+
+        return updatedTransaction
+    }
+
+    @Transactional
+    override fun delete(user: User, id: Long, groupId: Long?) {
+        val transaction = findOneIncludeGroupAndCategory(
+            id = id, user = user, groupId = groupId
+        )
+
+        if (transaction != null) {
+            transactionRepository.deleteById(transaction.id!!)
+
+            if (transaction.type == TransactionType.Revenue || transaction.type == TransactionType.Expense || transaction.type == TransactionType.Transfer) {
+                bankAccountTransactionDeleted(user, transaction)
+            }
+        }
+    }
+
+    private fun applyBankDtoIntoEntity(transaction: Transaction, dto: NewBankTransactionDto) {
+        val bank = entityManager.getReference(BankAccount::class.java, dto.bankAccountId)
+
+        transaction.bankAccount = bank
+        transaction.bankAccountId = dto.bankAccountId
+    }
+
+    private fun applyCreditCardDtoIntoEntity(transaction: Transaction, dto: NewCreditCardTransactionDto) {
+        val creditCard = entityManager.getReference(CreditCard::class.java, dto.creditCardId)
+        val creditCardBillDate = creditCardBillService.getOrCreate(dto.creditCardBillDateValue, creditCard)
+
+        transaction.creditCard = creditCard
+        transaction.creditCardId = dto.categoryId
+        transaction.creditCardBillDate = creditCardBillDate
+        transaction.totalInstallments = dto.totalInstallments
+    }
+
+    private fun applyTransferDtoIntoEntity(transaction: Transaction, dto: NewTransferTransactionDto) {
+        if (dto.bankAccountId == dto.bankAccount2Id) {
+            throw SFException(
+                reason = "The bank account can't be the same on transfer."
+            )
+        }
+
+        val user2 = entityManager.getReference(User::class.java, dto.secondUserId)
+        val bank2 = entityManager.getReference(BankAccount::class.java, dto.bankAccount2Id)
+
+        val otherSideTransaction = Transaction(
+            type = transaction.type,
+            category = transaction.category,
+            group = transaction.group,
+            user = user2,
+            bankAccount = bank2,
+            date = transaction.date,
+            value = transaction.value,
+            description = transaction.description,
+        )
+
+        transactionRepository.save(otherSideTransaction)
+
+        transaction.otherSide = otherSideTransaction
+    }
+
+    private fun findOne(
+        id: Long, user: User, groupId: Long?
+    ): Transaction? {
+        if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
+            throw SFExceptionForbidden()
+        }
+
+        return transactionRepository.findOne(
+            id = id, userId = if (groupId == null) user.id!! else null, groupId = groupId
+        )
     }
 
     private fun bankAccountTransactionCreated(user: User, transaction: Transaction) {

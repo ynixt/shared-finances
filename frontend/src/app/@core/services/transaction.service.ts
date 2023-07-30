@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
-import moment, { Moment } from 'moment';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
-import { Transaction } from 'src/app/@core/models';
-import { TransactionType } from '../enums';
-import { DateUtil } from '../util';
+import { Injectable } from "@angular/core";
+import { Apollo, gql } from "apollo-angular";
+import moment, { Moment } from "moment";
+import { Observable } from "rxjs";
+import { map, take } from "rxjs/operators";
+import { Transaction } from "src/app/@core/models";
+import { TransactionType } from "../enums";
+import { addHttpParamsIntoUrl, DateUtil } from "../util";
 import { HttpClient } from "@angular/common/http";
 
 export const TRANSACTION_CREATED_SUBSCRIPTION = gql`
@@ -83,14 +83,16 @@ export const TRANSACTION_DELETED_SUBSCRIPTION = gql`
 `;
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root"
 })
 export class TransactionService {
-  private apollo: Apollo
-  constructor(private httpClient: HttpClient) {}
+  private apollo: Apollo;
+
+  constructor(private httpClient: HttpClient) {
+  }
 
   newTransaction(transaction: Partial<Transaction>): Observable<Transaction> {
-    return this.httpClient.post<Transaction>('/api/transaction', {
+    return this.httpClient.post<Transaction>("/api/transaction", {
       type: transaction.type,
       date: transaction.date,
       value: transaction.value,
@@ -103,8 +105,8 @@ export class TransactionService {
       firstUserId: transaction.user?.id,
       secondUserId: transaction.user2?.id,
       creditCardBillDateValue: transaction.creditCardBillDateValue,
-      totalInstallments: transaction.totalInstallments,
-    })
+      totalInstallments: transaction.totalInstallments
+    });
   }
 
   payCreditCardBill(transaction: Partial<Transaction>): Observable<Transaction> {
@@ -137,100 +139,70 @@ export class TransactionService {
           description: transaction.description,
           bankAccountId: transaction.bankAccountId,
           creditCardId: transaction.creditCardId,
-          creditCardBillDate: transaction.creditCardBillDateValue,
-        },
+          creditCardBillDate: transaction.creditCardBillDateValue
+        }
       })
       .pipe(
         take(1),
-        map(result => result.data.payCreditCardBill),
+        map(result => result.data.payCreditCardBill)
       );
   }
 
   editTransaction(transaction: Transaction): Observable<Transaction> {
-    return this.apollo
-      .mutate<{ editTransaction: Transaction }>({
-        mutation: gql`
-          mutation(
-            $transactionId: String!
-            $transactionType: String!
-            $date: String!
-            $value: Float!
-            $description: String
-            $bankAccountId: String
-            $bankAccount2Id: String
-            $categoryId: String
-            $creditCardId: String
-            $groupId: String
-            $firstUserId: String!
-            $secondUserId: String
-            $creditCardBillDate: String
-          ) {
-            editTransaction(
-              transactionId: $transactionId
-              transactionType: $transactionType
-              date: $date
-              value: $value
-              description: $description
-              bankAccountId: $bankAccountId
-              bankAccount2Id: $bankAccount2Id
-              categoryId: $categoryId
-              creditCardId: $creditCardId
-              groupId: $groupId
-              firstUserId: $firstUserId
-              secondUserId: $secondUserId
-              creditCardBillDate: $creditCardBillDate
-            ) {
-              id
-            }
-          }
-        `,
-        variables: {
-          transactionId: transaction.id,
-          transactionType: transaction.type,
-          date: transaction.date,
-          value: transaction.value,
-          description: transaction.description,
-          bankAccountId: transaction.bankAccountId,
-          bankAccount2Id: transaction.bankAccount2Id,
-          categoryId: transaction.categoryId,
-          creditCardId: transaction.creditCardId,
-          groupId: transaction.groupId,
-          firstUserId: transaction.user?.id,
-          secondUserId: transaction.user2?.id,
-          creditCardBillDate: transaction.creditCardBillDateValue,
-        },
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.editTransaction),
-      );
+    return this.httpClient.put<Transaction>(`/api/transaction/${transaction.id}`, {
+      type: transaction.type,
+      date: transaction.date,
+      value: transaction.value,
+      description: transaction.description,
+      bankAccountId: transaction.bankAccountId,
+      bankAccount2Id: transaction.bankAccount2Id,
+      categoryId: transaction.categoryId,
+      creditCardId: transaction.creditCardId,
+      groupId: transaction.groupId,
+      firstUserId: transaction.user?.id,
+      secondUserId: transaction.user2?.id,
+      creditCardBillDateValue: transaction.creditCardBillDateValue,
+      totalInstallments: transaction.totalInstallments
+    });
   }
 
   deleteTransaction(
     transactionId: string,
-    obj?: { deleteAllInstallments?: boolean; deleteNextInstallments?: boolean },
-  ): Observable<boolean> {
-    return this.apollo
-      .mutate<{ deleteTransaction: boolean }>({
-        mutation: gql`
-          mutation($transactionId: String!, $deleteAllInstallments: Boolean, $deleteNextInstallments: Boolean) {
-            deleteTransaction(
-              transactionId: $transactionId
-              deleteAllInstallments: $deleteAllInstallments
-              deleteNextInstallments: $deleteNextInstallments
-            )
-          }
-        `,
-        variables: {
-          transactionId,
-          deleteAllInstallments: obj?.deleteAllInstallments,
-          deleteNextInstallments: obj?.deleteNextInstallments,
-        },
-      })
-      .pipe(
-        take(1),
-        map(result => result.data.deleteTransaction),
-      );
+    groupId: string,
+    obj?: { deleteAllInstallments?: boolean; deleteNextInstallments?: boolean }
+  ): Observable<void> {
+    if (!obj) {
+      obj = {};
+    }
+
+    const url = addHttpParamsIntoUrl(`/api/transaction/${transactionId}`, {
+      groupId,
+      ...obj
+    });
+
+    return this.httpClient.delete<void>(url)
+
+    // return this.apollo
+    //   .mutate<{ deleteTransaction: boolean }>({
+    //     mutation: gql`
+    //       mutation($transactionId: String!, $deleteAllInstallments: Boolean, $deleteNextInstallments: Boolean) {
+    //         deleteTransaction(
+    //           transactionId: $transactionId
+    //           deleteAllInstallments: $deleteAllInstallments
+    //           deleteNextInstallments: $deleteNextInstallments
+    //         )
+    //       }
+    //     `,
+    //     variables: {
+    //       transactionId,
+    //       deleteAllInstallments: obj?.deleteAllInstallments,
+    //       deleteNextInstallments: obj?.deleteNextInstallments
+    //     }
+    //   })
+    //   .pipe(
+    //     take(1),
+    //     map(result => result.data.deleteTransaction)
+    //   );
   }
 
   isTransactionNegative(transactionType: TransactionType): boolean {
@@ -252,8 +224,8 @@ export class TransactionService {
       .subscribe<{ transactionCreated: { id: string } }>({
         query: TRANSACTION_CREATED_SUBSCRIPTION,
         variables: {
-          groupId,
-        },
+          groupId
+        }
       })
       .pipe(map(result => result.data.transactionCreated.id));
   }
@@ -263,8 +235,8 @@ export class TransactionService {
       .subscribe<{ transactionUpdated: { id: string } }>({
         query: TRANSACTION_UPDATED_SUBSCRIPTION,
         variables: {
-          groupId,
-        },
+          groupId
+        }
       })
       .pipe(map(result => result.data.transactionUpdated.id));
   }
@@ -274,8 +246,8 @@ export class TransactionService {
       .subscribe<{ transactionDeleted: { id: string } }>({
         query: TRANSACTION_DELETED_SUBSCRIPTION,
         variables: {
-          groupId,
-        },
+          groupId
+        }
       })
       .pipe(map(result => result.data.transactionDeleted.id));
   }
@@ -286,9 +258,9 @@ export class TransactionService {
    * @returns
    */
   getMaxDate(monthDate: Moment | string, disallowFutureOnSameMonth: boolean): Moment {
-    let maxDate = moment(monthDate).endOf('month');
+    let maxDate = moment(monthDate).endOf("month");
 
-    if (disallowFutureOnSameMonth && moment(monthDate).isSame(moment(), 'month') && DateUtil.dateIsBiggerThanToday(maxDate)) {
+    if (disallowFutureOnSameMonth && moment(monthDate).isSame(moment(), "month") && DateUtil.dateIsBiggerThanToday(maxDate)) {
       maxDate = moment();
     }
 

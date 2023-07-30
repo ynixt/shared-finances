@@ -13,6 +13,6 @@ interface GroupService {
     fun updateGroup(user: User, id: Long, updateDto: UpdateGroupDto): Group
     fun newGroup(user: User, newDto: NewGroupDto): Group
     fun delete(user: User, id: Long)
-
+    fun userHasPermissionToGroup(user: User, groupId: Long): Boolean
     fun getGroupSummary(user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?): GroupSummaryDto
 }

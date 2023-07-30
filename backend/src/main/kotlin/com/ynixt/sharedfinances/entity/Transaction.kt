@@ -9,7 +9,7 @@ import java.time.LocalDate
 class Transaction(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
 
-    @Enumerated(EnumType.STRING) val type: TransactionType,
+    @Enumerated(EnumType.STRING) var type: TransactionType,
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "category_id") var category: TransactionCategory? = null,
 
