@@ -166,8 +166,8 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         }
 
         if (maxDate != null) {
-            hql += " and t.date < :maxDate"
-            countHql += " and t.date < :maxDate"
+            hql += " and t.date <= :maxDate"
+            countHql += " and t.date <= :maxDate"
         }
 
         hql += " order by t.date desc, t.id desc"

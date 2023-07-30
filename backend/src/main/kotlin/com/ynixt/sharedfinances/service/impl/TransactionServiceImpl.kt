@@ -11,11 +11,11 @@ import com.ynixt.sharedfinances.service.CreditCardBillService
 import com.ynixt.sharedfinances.service.GroupService
 import com.ynixt.sharedfinances.service.TransactionService
 import jakarta.persistence.EntityManager
-import jakarta.transaction.Transactional
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @Service
@@ -65,7 +65,7 @@ class TransactionServiceImpl(
         return page.map { transactionMapper.toDto(it) }
     }
 
-    @Transactional
+    @Transactional()
     override fun newTransaction(user: User, newDto: NewTransactionDto): Transaction {
         val firstUser = entityManager.getReference(User::class.java, newDto.firstUserId)
         val group = if (newDto.groupId == null) null else entityManager.getReference(Group::class.java, newDto.groupId)
@@ -74,9 +74,9 @@ class TransactionServiceImpl(
         )
         var otherSideTransaction: Transaction? = null
 
-        if (newDto.groupId != null && !groupService.userHasPermissionToGroup(user, newDto.groupId)) {
-            throw SFExceptionForbidden()
-        }
+//        if (newDto.groupId != null && !groupService.userHasPermissionToGroup(user, newDto.groupId)) {
+//            throw SFExceptionForbidden()
+//        }
 
         var transaction = Transaction(
             type = newDto.type,
@@ -109,12 +109,14 @@ class TransactionServiceImpl(
             TODO()
         }
 
-        transactionRepository.save(transaction)
+        transactionRepository.saveAndFlush(transaction)
 
         if (otherSideTransaction != null) {
             otherSideTransaction.otherSide = transaction
-            transactionRepository.save(otherSideTransaction)
+            transactionRepository.saveAndFlush(otherSideTransaction)
         }
+
+        entityManager.clear()
 
         transaction = findOneIncludeGroupAndCategory(
             id = transaction.id!!, user = user, groupId = newDto.groupId
@@ -127,23 +129,17 @@ class TransactionServiceImpl(
         return transaction
     }
 
+    @Transactional
     override fun editTransaction(user: User, id: Long, editDto: NewTransactionDto): Transaction {
+        val category = if (editDto.categoryId == null) null else entityManager.getReference(
+            TransactionCategory::class.java, editDto.categoryId
+        )
+
         val transaction = (findOne(
             id = id, user = user, groupId = editDto.groupId
         ) ?: throw SFException(
             reason = "Transaction not found"
         ))
-
-        entityManager.detach(transaction)
-
-        return editTransaction(user, transaction, editDto)
-    }
-
-    @Transactional
-    override fun editTransaction(user: User, transaction: Transaction, editDto: NewTransactionDto): Transaction {
-        val category = if (editDto.categoryId == null) null else entityManager.getReference(
-            TransactionCategory::class.java, editDto.categoryId
-        )
 
         transaction.apply {
             type = editDto.type
@@ -176,7 +172,8 @@ class TransactionServiceImpl(
             TODO()
         }
 
-        transactionRepository.save(transaction)
+        transactionRepository.saveAndFlush(transaction)
+        entityManager.clear()
 
         val updatedTransaction = findOneIncludeGroupAndCategory(
             id = transaction.id!!, user = user, groupId = editDto.groupId

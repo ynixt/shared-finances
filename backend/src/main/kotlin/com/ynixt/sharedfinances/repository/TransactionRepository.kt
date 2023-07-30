@@ -47,6 +47,8 @@ interface CustomTransactionRepository {
 }
 
 interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTransactionRepository {
+    fun saveAndFlush(entity: Transaction): Transaction
+
     @Query(
         """
           select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
@@ -78,7 +80,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
                     t.userId = :userId
                     and t.bankAccountId = :bankAccountId
                     and t.date >= :minDate
-                    and t.date < :maxDate
+                    and t.date <= :maxDate
                 group by 1
     """
     )

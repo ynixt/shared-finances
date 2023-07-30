@@ -27,7 +27,6 @@ interface TransactionService {
 
     fun newTransaction(user: User, newDto: NewTransactionDto): Transaction
     fun editTransaction(user: User, id: Long, editDto: NewTransactionDto): Transaction
-    fun editTransaction(user: User, transaction: Transaction, editDto: NewTransactionDto): Transaction
 
     fun delete(user: User, id: Long, groupId: Long?)
 }
