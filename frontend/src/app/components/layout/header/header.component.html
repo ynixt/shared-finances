@@ -59,7 +59,7 @@
             </mat-menu>
           </div>
 
-          <a *ngIf="userState.user == null" mat-icon-button routerLink="/auth/login" [matTooltip]="t('login')">
+          <a class="text-white" *ngIf="userState.user == null" mat-icon-button routerLink="/auth/login" [matTooltip]="t('login')">
             <mat-icon>login</mat-icon>
           </a>
         </div>
