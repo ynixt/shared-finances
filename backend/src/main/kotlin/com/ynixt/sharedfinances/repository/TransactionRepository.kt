@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto
 import com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 import java.time.LocalDate
@@ -117,4 +118,18 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
         minCreditCardBillDate: LocalDate,
         maxCreditCardBillDate: LocalDate,
     ): List<TransactionValuesAndDateDto>
+
+
+    fun findAllByInstallmentId(installmentId: String): List<Transaction>
+
+    @Modifying
+    fun deleteAllByInstallmentId(installmentId: String)
+
+    fun findAllByInstallmentIdAndInstallmentGreaterThanEqual(
+        installmentId: String,
+        minInstallment: Int
+    ): List<Transaction>
+
+    @Modifying
+    fun deleteAllByInstallmentIdAndInstallmentGreaterThanEqual(installmentId: String, minInstallment: Int)
 }

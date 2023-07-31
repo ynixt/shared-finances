@@ -149,28 +149,6 @@ export class TransactionService {
     });
 
     return this.httpClient.delete<void>(url);
-
-    // return this.apollo
-    //   .mutate<{ deleteTransaction: boolean }>({
-    //     mutation: gql`
-    //       mutation($transactionId: String!, $deleteAllInstallments: Boolean, $deleteNextInstallments: Boolean) {
-    //         deleteTransaction(
-    //           transactionId: $transactionId
-    //           deleteAllInstallments: $deleteAllInstallments
-    //           deleteNextInstallments: $deleteNextInstallments
-    //         )
-    //       }
-    //     `,
-    //     variables: {
-    //       transactionId,
-    //       deleteAllInstallments: obj?.deleteAllInstallments,
-    //       deleteNextInstallments: obj?.deleteNextInstallments
-    //     }
-    //   })
-    //   .pipe(
-    //     take(1),
-    //     map(result => result.data.deleteTransaction)
-    //   );
   }
 
   isTransactionNegative(transactionType: TransactionType): boolean {

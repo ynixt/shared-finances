@@ -36,10 +36,18 @@ class TransactionController(
     fun delete(
         authentication: Authentication,
         @PathVariable("id") id: Long,
-        @RequestParam("groupId", required = false) groupId: Long?
+        @RequestParam("groupId", required = false) groupId: Long?,
+        @RequestParam("deleteAllInstallments", defaultValue = "false") deleteAllInstallments: Boolean,
+        @RequestParam("deleteNextInstallments", defaultValue = "false") deleteNextInstallments: Boolean,
     ) {
         val user = securityService.authenticationToUser(authentication)!!
 
-        return transactionService.delete(user, id, groupId)
+        return transactionService.delete(
+            user,
+            id = id,
+            groupId = groupId,
+            deleteAllInstallments = deleteAllInstallments,
+            deleteNextInstallments = deleteNextInstallments
+        )
     }
 }

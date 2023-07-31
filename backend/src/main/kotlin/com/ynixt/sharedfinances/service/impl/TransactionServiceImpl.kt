@@ -121,22 +121,20 @@ class TransactionServiceImpl(
 
                 val creditCard = transaction.creditCard!!
 
-                transactionRepository.saveAll(
-                    (2..newDto.totalInstallments!!).map { i ->
-                        transaction.copy(
-                            id = null,
-                            installment = i,
-                            date = transaction.date.plusMonths((i - 1).toLong()),
-                            creditCardBillDate = creditCardBillService.getOrCreate(
-                                creditCardBillService.getNextBillDateValue(
-                                    newDto.creditCardBillDateValue,
-                                    creditCardClosingDay = creditCard.closingDay,
-                                    next = i - 1
-                                ), creditCard
-                            )
+                transactionRepository.saveAll((2..newDto.totalInstallments!!).map { i ->
+                    transaction.copy(
+                        id = null,
+                        installment = i,
+                        date = transaction.date.plusMonths((i - 1).toLong()),
+                        creditCardBillDate = creditCardBillService.getOrCreate(
+                            creditCardBillService.getNextBillDateValue(
+                                newDto.creditCardBillDateValue,
+                                creditCardClosingDay = creditCard.closingDay,
+                                next = i - 1
+                            ), creditCard
                         )
-                    }
-                )
+                    )
+                })
             }
         }
 
@@ -254,21 +252,42 @@ class TransactionServiceImpl(
     }
 
     @Transactional
-    override fun delete(user: User, id: Long, groupId: Long?) {
+    override fun delete(
+        user: User, id: Long, groupId: Long?, deleteAllInstallments: Boolean, deleteNextInstallments: Boolean
+    ) {
         val transaction = findOneIncludeGroupAndCategory(
             id = id, user = user, groupId = groupId
         )
 
         if (transaction != null) {
-            transactionRepository.deleteById(transaction.id!!)
+            val transactionsToWS = mutableListOf<Transaction>()
 
-            if (transaction.type == TransactionType.Revenue || transaction.type == TransactionType.Expense || transaction.type == TransactionType.Transfer) {
-                bankAccountTransactionDeleted(user, transaction)
+            if (deleteAllInstallments) {
+                transactionsToWS.addAll(transactionRepository.findAllByInstallmentId(transaction.installmentId!!))
+                transactionRepository.deleteAllByInstallmentId(transaction.installmentId!!)
+            } else if (deleteNextInstallments) {
+                transactionsToWS.addAll(
+                    transactionRepository.findAllByInstallmentIdAndInstallmentGreaterThanEqual(
+                        transaction.installmentId!!, transaction.installment!!
+                    )
+                )
+                transactionRepository.deleteAllByInstallmentIdAndInstallmentGreaterThanEqual(
+                    transaction.installmentId!!, transaction.installment!!
+                )
+            } else {
+                transactionsToWS.add(transaction)
+                transactionRepository.deleteById(transaction.id!!)
             }
 
-            if (transaction.type == TransactionType.CreditCard) {
-                creditCardTransactionDeleted(user, transaction)
-                creditCardService.addToAvailableLimit(user, transaction.creditCardId!!, transaction.value.negate())
+            transactionsToWS.forEach {
+                if (it.type == TransactionType.Revenue || it.type == TransactionType.Expense || it.type == TransactionType.Transfer) {
+                    bankAccountTransactionDeleted(user, it)
+                }
+
+                if (it.type == TransactionType.CreditCard) {
+                    creditCardTransactionDeleted(user, it)
+                    creditCardService.addToAvailableLimit(user, it.creditCardId!!, it.value.negate())
+                }
             }
         }
     }

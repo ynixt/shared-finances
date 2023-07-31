@@ -10,9 +10,7 @@ import java.time.LocalDate
 
 interface TransactionService {
     fun findOneIncludeGroupAndCategory(
-        id: Long,
-        user: User,
-        groupId: Long?
+        id: Long, user: User, groupId: Long?
     ): Transaction?
 
     fun findAllIncludeGroupAndCategoryAsTransactionDto(
@@ -29,5 +27,5 @@ interface TransactionService {
     fun newTransaction(user: User, newDto: NewTransactionDto): Transaction
     fun editTransaction(user: User, id: Long, editDto: NewTransactionDto): Transaction
 
-    fun delete(user: User, id: Long, groupId: Long?)
+    fun delete(user: User, id: Long, groupId: Long?, deleteAllInstallments: Boolean, deleteNextInstallments: Boolean)
 }
