@@ -20,6 +20,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.util.*
 
 @Service
 class TransactionServiceImpl(
@@ -113,6 +114,30 @@ class TransactionServiceImpl(
 
         if (newDto is INewCreditCardTransactionDto) {
             applyCreditCardDtoIntoEntity(transaction, newDto)
+
+            if (newDto.totalInstallments != null) {
+                transaction.installment = 1
+                transaction.installmentId = UUID.randomUUID().toString()
+
+                val creditCard = transaction.creditCard!!
+
+                transactionRepository.saveAll(
+                    (2..newDto.totalInstallments!!).map { i ->
+                        transaction.copy(
+                            id = null,
+                            installment = i,
+                            date = transaction.date.plusMonths((i - 1).toLong()),
+                            creditCardBillDate = creditCardBillService.getOrCreate(
+                                creditCardBillService.getNextBillDateValue(
+                                    newDto.creditCardBillDateValue,
+                                    creditCardClosingDay = creditCard.closingDay,
+                                    next = i - 1
+                                ), creditCard
+                            )
+                        )
+                    }
+                )
+            }
         }
 
         if (newDto is NewCreditCardTransactionDto) {

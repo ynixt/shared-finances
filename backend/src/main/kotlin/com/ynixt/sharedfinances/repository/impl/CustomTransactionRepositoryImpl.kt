@@ -122,19 +122,20 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     ): Page<Transaction> {
         var hql = """
            from Transaction t
+           join fetch t.user u
            left join fetch t.group g
            left join fetch t.category c
            left join fetch t.otherSide oc
            left join fetch oc.bankAccount ocb
            left join fetch oc.user ocu
            left join fetch t.creditCard cc
-           left join fetch cc.billDates ccbd
+           left join fetch t.creditCardBillDate ccbd
        """.trimIndent()
 
         var countHql = """
             select count(1) from Transaction t
             left join t.creditCard cc
-            left join cc.billDates ccbd
+            left join t.creditCardBillDate ccbd
         """.trimIndent()
 
         if (
@@ -240,6 +241,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     ): Transaction? {
         var hql = """
            from Transaction t
+           join fetch t.user u
            left join fetch t.group g
            left join fetch t.category c
            left join fetch t.otherSide oc

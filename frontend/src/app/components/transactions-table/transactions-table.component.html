@@ -34,7 +34,7 @@
             <span>{{ transaction.description }}</span>
           </h3>
 
-          <div class="grid md:grid-cols-5 extras-info md:gap-4">
+          <div class="extras-info flex flex-wrap">
             <div *ngIf="transaction.group != null" class="flex items-center extra-info">
               <mat-icon [matTooltip]="t('group')" class="info-icon mr-2 cursor-help">group</mat-icon>
               <span>{{ transaction.group.name }}</span>
@@ -52,7 +52,7 @@
               <span>{{ transaction.category.name }}</span>
             </div>
 
-            <div *ngIf="transaction.user != null" class="flex items-center extra-info">
+            <div *ngIf="transaction.user != null && groupId != null" class="flex items-center extra-info">
               <mat-icon [matTooltip]="t('paid-by')" class="info-icon mr-2 cursor-help">person</mat-icon>
               <span>{{ transaction.user.name }}</span>
             </div>

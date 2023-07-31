@@ -26,8 +26,8 @@ class Transaction(
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "other_side_id") var otherSide: Transaction? = null,
 
     var date: LocalDate,
-
     var value: BigDecimal,
+    var installmentId: String? = null,
     var description: String?,
     var installment: Int? = null,
     var totalInstallments: Int? = null
@@ -52,4 +52,53 @@ class Transaction(
 
     @Column(name = "other_side_id", updatable = false, insertable = false)
     var otherSideId: Long? = null
+
+    fun copy(
+        id: Long? = this.id,
+        type: TransactionType = this.type,
+        category: TransactionCategory? = this.category,
+        group: Group? = this.group,
+        user: User? = this.user,
+        bankAccount: BankAccount? = this.bankAccount,
+        creditCard: CreditCard? = this.creditCard,
+        creditCardBillDate: CreditCardBillDate? = this.creditCardBillDate,
+        otherSide: Transaction? = this.otherSide,
+        date: LocalDate = this.date,
+        value: BigDecimal = this.value,
+        description: String? = this.description,
+        installment: Int? = this.installment,
+        installmentId: String? = this.installmentId,
+        totalInstallments: Int? = this.totalInstallments,
+        categoryId: Long? = this.categoryId,
+        groupId: Long? = this.groupId,
+        userId: Long? = this.userId,
+        bankAccountId: Long? = this.bankAccountId,
+        creditCardId: Long? = this.creditCardId,
+        otherSideId: Long? = this.otherSideId
+    ): Transaction {
+        return Transaction(
+            id = id,
+            type = type,
+            category = category,
+            group = group,
+            user = user,
+            bankAccount = bankAccount,
+            creditCard = creditCard,
+            creditCardBillDate = creditCardBillDate,
+            otherSide = otherSide,
+            date = date,
+            value = value,
+            description = description,
+            installment = installment,
+            installmentId = installmentId,
+            totalInstallments = totalInstallments,
+        ).apply {
+            this.categoryId = categoryId
+            this.groupId = groupId
+            this.userId = userId
+            this.bankAccountId = bankAccountId
+            this.creditCardId = creditCardId
+            this.otherSideId = otherSideId
+        }
+    }
 }

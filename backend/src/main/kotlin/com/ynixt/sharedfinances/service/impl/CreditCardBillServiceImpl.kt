@@ -10,6 +10,15 @@ import java.time.LocalDate
 @Service
 class CreditCardBillServiceImpl(private val creditCardBillDateRepository: CreditCardBillDateRepository) :
     CreditCardBillService {
+
+    override fun getNextBillDateValue(
+        currentBillDateValue: LocalDate,
+        creditCardClosingDay: Int,
+        next: Int
+    ): LocalDate {
+        return currentBillDateValue.plusMonths(next.toLong()).withDayOfMonth(creditCardClosingDay)
+    }
+
     override fun getOrCreate(creditCardBillDateValue: LocalDate, creditCard: CreditCard): CreditCardBillDate {
         val creditCardBillDate =
             creditCardBillDateRepository.getOneByBillDateAndCreditCardId(creditCardBillDateValue, creditCard.id!!)

@@ -49,6 +49,8 @@
     font-size: $size;
     height: $size;
     width: $size;
+    min-height: $size;
+    min-width: $size;
   }
 
   .extras-info {
