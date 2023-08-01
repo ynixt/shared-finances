@@ -9,3 +9,4 @@ export * from './credit-card-summary';
 export * from './bank-account-summary';
 export * from './group-summary';
 export * from './credit-card-bill-date';
+export * from './group-invite';

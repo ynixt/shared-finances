@@ -1,23 +1,25 @@
-import { Component, Inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { merge, Observable, Subscription } from 'rxjs';
-import { TdDialogService } from '@covalent/core/dialogs';
-import { Group } from 'src/app/@core/models/group';
-import { TranslocoService } from '@ngneat/transloco';
-import { TitleService, GroupsService, TransactionService } from 'src/app/@core/services';
-import moment, { Moment } from 'moment';
-import { GroupSummary, Page, Transaction } from 'src/app/@core/models';
-import { DOCUMENT } from '@angular/common';
-import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { Chart } from 'src/app/@core/models/chart';
-import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
+import { Component, Inject, OnDestroy, OnInit, Renderer2 } from "@angular/core";
+import { ActivatedRoute, Router } from "@angular/router";
+import { lastValueFrom, merge, Observable, Subscription } from "rxjs";
+import { TdDialogService } from "@covalent/core/dialogs";
+import { Group } from "src/app/@core/models/group";
+import { TranslocoService } from "@ngneat/transloco";
+import { TitleService, GroupsService, TransactionService } from "src/app/@core/services";
+import moment, { Moment } from "moment";
+import { GroupSummary, Page, Transaction } from "src/app/@core/models";
+import { DOCUMENT } from "@angular/common";
+import { NewTransactionDialogService } from "src/app/components/new-transaction/new-transaction-dialog.service";
+import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
+import { Chart } from "src/app/@core/models/chart";
+import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
+import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
+import { take } from "rxjs/operators";
 
 @UntilDestroy()
 @Component({
-  selector: 'app-group-single-page',
-  templateUrl: './group-single-page.component.html',
-  styleUrls: ['./group-single-page.component.scss'],
+  selector: "app-group-single-page",
+  templateUrl: "./group-single-page.component.html",
+  styleUrls: ["./group-single-page.component.scss"]
 })
 export class GroupSinglePageComponent implements OnInit {
   group: Group;
@@ -27,7 +29,7 @@ export class GroupSinglePageComponent implements OnInit {
   transactionsGroupedYearMonth: Chart[];
 
   groupSummaryState: { isLoading: boolean; summary?: GroupSummary } = {
-    isLoading: true,
+    isLoading: true
   };
 
   disallowFutureOnSameMonth = true;
@@ -38,7 +40,14 @@ export class GroupSinglePageComponent implements OnInit {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
-  colorScheme = '#5AA454'
+  colorScheme: Color = {
+    name: "expense",
+    selectable: true,
+    group: 0 as any,
+    domain: [
+      "#E44D25"
+    ]
+  };
 
   private groupSubscription: Subscription;
   private groupId: string;
@@ -55,8 +64,9 @@ export class GroupSinglePageComponent implements OnInit {
     private transactionService: TransactionService,
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
-    private renderer2: Renderer2,
-  ) {}
+    private renderer2: Renderer2
+  ) {
+  }
 
   ngOnInit(): void {
     this.activatedRoute.params.pipe(untilDestroyed(this)).subscribe(
@@ -71,11 +81,13 @@ export class GroupSinglePageComponent implements OnInit {
       const sharedLink = await this.groupsService.generateShareLink(this.groupId);
 
       this.dialogService.openPrompt({
-        title: this.translocoService.translate('link-created'),
-        message: this.translocoService.translate('link-created-message'),
-        value: `${window.location.origin}/finances/shared/invite/${sharedLink}`,
-        cancelButton: this.translocoService.translate('cancel'),
-        acceptButton: this.translocoService.translate('ok'),
+        title: this.translocoService.translate("link-created"),
+        message: this.translocoService.translate(
+          "link-created-message", { expiresOn: sharedLink.expiresOn }
+        ),
+        value: `${window.location.origin}/finances/shared/invite/${sharedLink.code}`,
+        cancelButton: this.translocoService.translate("cancel"),
+        acceptButton: this.translocoService.translate("ok")
       });
     } finally {
       this.sharedLinkLoading = false;
@@ -87,11 +99,11 @@ export class GroupSinglePageComponent implements OnInit {
     await this.getInfoBasedOnGroupAndDate();
   }
 
-  getTransactions(page = 1): void {
+  getTransactions(page = 0): void {
     this.transactionsPage$ = this.groupsService.getTransactions(
       this.group.id,
-      { maxDate: moment(this.monthDate).endOf('month'), minDate: moment(this.monthDate).startOf('month') },
-      { page, size: this.pageSize },
+      { maxDate: moment(this.monthDate).endOf("month"), minDate: moment(this.monthDate).startOf("month") },
+      { page, size: this.pageSize }
     );
   }
 
@@ -102,13 +114,10 @@ export class GroupSinglePageComponent implements OnInit {
   public async getChart(): Promise<void> {
     this.transactionsGroupedYearMonth = undefined;
 
-    const groupNamesById = new Map<string, string>();
-    groupNamesById.set(this.group.id, this.group.name);
-
-    const charts = await this.groupsService.getTransactionsChart(groupNamesById, this.getMaxDate().add(1), {
+    const charts = await this.groupsService.getTransactionsChart(this.group, this.getMaxDate().add(1), {
       groupId: this.group.id,
       maxDate: this.getMaxDate(),
-      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, 'month'),
+      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, "month")
     });
 
     this.transactionsGroupedYearMonth = charts;
@@ -125,38 +134,38 @@ export class GroupSinglePageComponent implements OnInit {
     this.groupSubscription?.unsubscribe();
     this.groupSubscription = this.groupsService.getGroup(groupId).pipe(untilDestroyed(this)).subscribe(group => {
       if (group) {
-        this.titleService.changeTitle('group-name', {
-          name: group.name,
+        this.titleService.changeTitle("group-name", {
+          name: group.name
         });
 
         this.group = group;
 
         this.transactionsChangeObserver();
       } else {
-        this.router.navigateByUrl('/404');
+        this.router.navigateByUrl("/404");
       }
-    })
+    });
   }
 
   private async getInfoBasedOnGroupAndDate() {
-    // this.getTransactions();
+    this.getTransactions();
     return Promise.all([this.getGroupSummary(), this.getChart()]);
   }
 
   private async getGroupSummary() {
     this.groupSummaryState = {
-      isLoading: true,
+      isLoading: true
     };
 
     const summary = await this.groupsService.getGroupSummary(
       this.group.id,
-      moment(this.monthDate).startOf('month'),
-      moment(this.monthDate).endOf('month'),
+      moment(this.monthDate).startOf("month"),
+      moment(this.monthDate).endOf("month")
     );
 
     this.groupSummaryState = {
       isLoading: false,
-      summary,
+      summary
     };
   }
 
@@ -166,10 +175,23 @@ export class GroupSinglePageComponent implements OnInit {
     this.transactionsChangeSubscription = merge(
       this.transactionService.onTransactionCreated(this.group.id),
       this.transactionService.onTransactionUpdated(this.group.id),
-      this.transactionService.onTransactionDeleted(this.group.id),
+      this.transactionService.onTransactionDeleted(this.group.id)
     )
       .pipe(untilDestroyed(this))
-      .subscribe(() => Promise.all([this.getGroupSummary(), this.getChart()]));
+      .subscribe(async () => {
+          const transactionsPage = await lastValueFrom(this.transactionsPage$.pipe(take(1)));
+
+          if (transactionsPage.number == 0) {
+            this.getTransactions();
+          } else {
+            // TODO: ask to user if he wants update
+          }
+
+          await Promise.all([
+            this.getGroupSummary(), this.getChart()
+          ]);
+        }
+      );
   }
 
   private getMaxDate(disallowFutureOnSameMonth = this.disallowFutureOnSameMonth) {

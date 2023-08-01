@@ -1,32 +1,16 @@
-import { Injectable } from '@angular/core';
-import { Apollo, gql } from 'apollo-angular';
-import { take } from 'rxjs/operators';
+import { Injectable } from "@angular/core";
+import { take } from "rxjs/operators";
+import { HttpClient } from "@angular/common/http";
+import { lastValueFrom } from "rxjs";
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root"
 })
 export class InviteService {
-  constructor(private apollo: Apollo) {}
+  constructor(private httpClient: HttpClient) {
+  }
 
   async useInvite(invite: string): Promise<string> {
-    const result = await this.apollo
-      .mutate<{ useInvite: string }>({
-        mutation: gql`
-          mutation($invite: String!) {
-            useInvite(invite: $invite)
-          }
-        `,
-        variables: {
-          invite,
-        },
-      })
-      .pipe(take(1))
-      .toPromise();
-
-    if (result.errors) {
-      throw result.errors;
-    }
-
-    return result.data.useInvite;
+    return lastValueFrom(this.httpClient.get<string>(`/api/group/invite/${invite}`).pipe(take(1)));
   }
 }

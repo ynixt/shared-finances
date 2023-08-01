@@ -23,9 +23,9 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     ): BankAccountSummaryDto {
         var hql = """
             select new com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto(
-                sum(t.value),
-                (sum(t.value) FILTER (WHERE t.value < 0))  * -1,
-                sum(t.value) FILTER (WHERE t.value > 0)
+                COALESCE(sum(t.value), 0),
+                COALESCE((sum(t.value) FILTER (WHERE t.value < 0))  * -1, 0),
+                COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0)
             )
             from Transaction t
             where t.user.id = :userId
@@ -243,6 +243,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
            from Transaction t
            join fetch t.user u
            left join fetch t.group g
+           left join fetch g.users gu
            left join fetch t.category c
            left join fetch t.otherSide oc
            left join fetch oc.bankAccount ocb

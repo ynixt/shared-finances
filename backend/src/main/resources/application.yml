@@ -25,3 +25,12 @@ spring:
         url: jdbc:postgresql://${POSTGRES_CONNECTION_STRING}/${POSTGRES_DB}
         username: ${POSTGRES_USER}
         password: ${POSTGRES_PASSWORD}
+    quartz:
+        job-store-type: jdbc
+        jdbc:
+            initialize-schema: always
+
+sf-app:
+    job-timezone: ${JOB_TIMEZONE}
+    expires-invite-after-min: 30
+    expires-invite-cron: 0 0/30 * ? * * *

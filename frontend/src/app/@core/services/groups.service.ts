@@ -1,30 +1,23 @@
 import { Injectable } from "@angular/core";
 import { Group } from "src/app/@core/models/group";
-import { Apollo, gql, QueryRef } from "apollo-angular";
 import { map, take } from "rxjs/operators";
 import { lastValueFrom, Observable } from "rxjs";
 import moment, { Moment } from "moment";
-import { CreditCard, GroupSummary, Page, Pagination, Transaction } from "../models";
-import { EmptyObject } from "apollo-angular/types";
-import {
-  TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION,
-  TRANSACTION_DELETED_SUBSCRIPTION,
-  TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION
-} from "./transaction.service";
-import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "../constants";
-import { Chart } from "../models/chart";
-import { HttpClient, HttpParams } from "@angular/common/http";
+import { GroupInvite, GroupSummary, Page, Pagination, Transaction } from "../models";
+import { CHART_DEFAULT_MINIMUM_MONTHS } from "../constants";
+import { Chart, ChartSerie } from "../models/chart";
+import { HttpClient } from "@angular/common/http";
 import { StompService } from "./stomp.service";
 import { addHttpParamsIntoUrl } from "../util";
 import { ISO_DATE_FORMAT } from "../../moment-extension";
+import { TransactionValuesAndDateDto } from "../models/transaction-values-and-date";
+import { TranslocoService } from "@ngneat/transloco";
 
 @Injectable({
   providedIn: "root"
 })
 export class GroupsService {
-  private apollo: Apollo;
-
-  constructor(private stompService: StompService, private httpClient: HttpClient) {
+  constructor(private stompService: StompService, private httpClient: HttpClient, private translocoService: TranslocoService) {
   }
 
   getGroups(): Observable<Group[]> {
@@ -41,49 +34,8 @@ export class GroupsService {
     return this.httpClient.delete<void>(`/api/group/${groupId}`);
   }
 
-  async getGroupsWithUsers(): Promise<Group[] | null> {
-    // TODO: It would be better to just search for the user when selecting the group and then search for bank accounts and credit cards in just one query.
-    try {
-      const result = await this.apollo
-        .query<{ groups: Group[] }>({
-          query: gql`
-            query GetGroups {
-              groups {
-                id
-                name
-                users {
-                  id
-                  name
-                  bankAccounts {
-                    id
-                    name
-                    enabled
-                    displayOnGroup
-                  }
-                  creditCards {
-                    id
-                    name
-                    closingDay
-                    enabled
-                    displayOnGroup
-                  }
-                }
-              }
-            }
-          `
-        })
-        .pipe(take(1))
-        .toPromise();
-
-      if (result.errors || result.data == null || result.data.groups == null) {
-        return [];
-      }
-
-      return result.data.groups;
-    } catch (err) {
-      console.error(err);
-      return null;
-    }
+  async getGroupsWithUsers(): Promise<Group[]> {
+    return lastValueFrom(this.httpClient.get<Group[]>("/api/group/with-users").pipe(take(1)));
   }
 
   getGroup(groupId: string): Observable<Group | null> {
@@ -112,248 +64,78 @@ export class GroupsService {
     });
   }
 
-  async generateShareLink(groupId: string): Promise<string> {
-    const result = await this.apollo
-      .mutate<{ createInvite: string }>({
-        mutation: gql`
-          mutation($groupId: String!) {
-            createInvite(groupId: $groupId)
-          }
-        `,
-        variables: {
-          groupId
-        }
-      })
-      .pipe(take(1))
-      .toPromise();
-
-    if (result.errors) {
-      throw result.errors;
-    }
-
-    return result.data.createInvite;
+  async generateShareLink(groupId: string): Promise<GroupInvite> {
+    return lastValueFrom(
+      this.httpClient.post<GroupInvite>(`/api/group/${groupId}/invite`, undefined).pipe(take(1))
+    );
   }
 
   getTransactions(groupId: string, args?: {
     maxDate: Moment;
     minDate: Moment
   }, pagination?: Pagination): Observable<Page<Transaction>> {
-    const transactionsQueryRef = this.apollo.watchQuery<{ transactions: Page<Transaction> }>({
-      query: gql`
-        query($groupId: String!, $page: Int, $pageSize: Int, $maxDate: String, $minDate: String) {
-          transactions(groupId: $groupId, page: $page, pageSize: $pageSize, maxDate: $maxDate, minDate: $minDate) {
-            items {
-              id
-              transactionType
-              group {
-                id
-                name
-              }
-              date
-              value
-              description
-              category {
-                id
-                name
-                color
-              }
-              bankAccountId
-              creditCardId
-              user {
-                id
-                name
-              }
-              installment
-              totalInstallments
-            }
-            total
-            page
-            pageSize
-          }
-        }
-      `,
-      variables: {
-        groupId,
-        page: pagination?.page,
-        size: pagination?.size,
-        maxDate: args?.maxDate?.toISOString(),
-        minDate: args?.minDate?.toISOString()
-      }
+    const url = addHttpParamsIntoUrl(`/api/group/${groupId}/transactions`, {
+      page: pagination?.page,
+      size: pagination?.size,
+      maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
     });
 
-    this.subscribeToTransactionChanges(transactionsQueryRef, groupId, args.minDate, args.maxDate);
-
-    return transactionsQueryRef.valueChanges.pipe(map(result => result.data.transactions));
+    return this.httpClient.get<Page<Transaction>>(url);
   }
 
   async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment): Promise<GroupSummary> {
     const url = addHttpParamsIntoUrl(`/api/group/summary/${groupId}`, {
-      maxDate: maxDate?.toISOString(),
-      minDate: minDate?.toISOString()
+      maxDate: maxDate?.format(ISO_DATE_FORMAT),
+      minDate: minDate?.format(ISO_DATE_FORMAT)
     });
 
     return lastValueFrom(this.httpClient.get<GroupSummary>(url));
   }
 
-  private subscribeToTransactionChanges(
-    transactionsQueryRef: QueryRef<
-      {
-        transactions: Page<Transaction>;
-      },
-      EmptyObject
-    >,
-    groupId: string,
-    minDate: Moment,
-    maxDate: Moment
-  ) {
-    // transactionsQueryRef.subscribeToMore({
-    //   document: TRANSACTION_CREATED_WITH_DATA_SUBSCRIPTION,
-    //   variables: {
-    //     groupId,
-    //   },
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     const newTransaction: Transaction = subscriptionData.data.transactionCreated;
-    //
-    //     if (moment(newTransaction.date).isSameOrAfter(minDate) && moment(newTransaction.date).isBefore(maxDate)) {
-    //       if (prev.transactions != null) {
-    //         const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-    //
-    //         transactionsPage.items = [newTransaction, ...JSON.parse(JSON.stringify(transactionsPage.items))];
-    //
-    //         prev = {
-    //           transactions: transactionsPage,
-    //         };
-    //         return {
-    //           ...prev,
-    //         };
-    //       } else {
-    //         const transactionsPage: Page<Transaction> = { items: new Array<Transaction>(), total: 1, page: 1, pageSize: DEFAULT_PAGE_SIZE };
-    //
-    //         transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
-    //
-    //         prev = {
-    //           transactions: transactionsPage,
-    //         };
-    //         return {
-    //           ...prev,
-    //         };
-    //       }
-    //     }
-    //
-    //     return prev;
-    //   },
-    // });
-    //
-    // transactionsQueryRef.subscribeToMore({
-    //   document: TRANSACTION_UPDATED_WITH_DATA_SUBSCRIPTION,
-    //   variables: {
-    //     groupId,
-    //   },
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     if (prev.transactions != null) {
-    //       const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-    //
-    //       transactionsPage.items = JSON.parse(JSON.stringify(transactionsPage.items));
-    //
-    //       const transactionUpdatedIndex = transactionsPage.items.findIndex(item => item.id === subscriptionData.data.transactionUpdated.id);
-    //
-    //       if (transactionUpdatedIndex != -1) {
-    //         transactionsPage.items[transactionUpdatedIndex] = subscriptionData.data.transactionUpdated;
-    //       }
-    //
-    //       prev = {
-    //         transactions: transactionsPage,
-    //       };
-    //       return {
-    //         ...prev,
-    //       };
-    //     }
-    //
-    //     return prev;
-    //   },
-    // });
-    //
-    // transactionsQueryRef.subscribeToMore({
-    //   document: TRANSACTION_DELETED_SUBSCRIPTION,
-    //   variables: {
-    //     groupId,
-    //   },
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     if (prev.transactions != null) {
-    //       const transactionsPage = { items: new Array<Transaction>(), ...prev.transactions };
-    //
-    //       transactionsPage.items = transactionsPage.items.filter(item => item.id !== subscriptionData.data.transactionDeleted.id);
-    //
-    //       prev = {
-    //         transactions: transactionsPage,
-    //       };
-    //       return {
-    //         ...prev,
-    //       };
-    //     }
-    //
-    //     return prev;
-    //   },
-    // });
-  }
-
-  getTransactionsChart(
-    groupNamesById: Map<string, string>,
+  async getTransactionsChart(
+    group: Group,
     initialMonthIfNoChart: Moment | string,
     args: { groupId: string; maxDate?: Moment; minDate?: Moment },
     minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS
   ): Promise<Chart[]> {
-    const transactionsChartQueryRef = this.apollo.query<{ transactionsGroupChart: Chart[] }>({
-      query: gql`
-        query($groupId: String, $timezone: String!, $maxDate: String, $minDate: String) {
-          transactionsGroupChart(groupId: $groupId, timezone: $timezone, maxDate: $maxDate, minDate: $minDate) {
-            name
-            series {
-              name
-              value
-            }
-          }
+    const url = addHttpParamsIntoUrl(`/api/group/${group.id}/chart`, {
+      maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
+    });
+
+    const values = await lastValueFrom(
+      this.httpClient.get<TransactionValuesAndDateDto[]>(url).pipe(take(1))
+    );
+
+    const charts: Chart[] = [];
+    const dateFormat = this.translocoService.translate("date-format.month-year");
+    const dateFormatFromServer = "YYYY-MM";
+
+    charts.push(new Chart({
+      name: `${group.name}`,
+      series: values.map(v => new ChartSerie({
+        name: moment(v.date, dateFormatFromServer).format(dateFormat),
+        value: v.expenses
+      }))
+    }));
+
+    charts.forEach(chart => {
+      if (chart.series.length < minimumMonths) {
+        const missing = minimumMonths - chart.series.length;
+        const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
+
+        for (let i = 0; i < missing; i++) {
+          chart.series.splice(i, 0, {
+            name: moment(firstDate, dateFormat)
+              .subtract(missing - i, "month")
+              .format(dateFormat),
+            value: 0
+          });
         }
-      `,
-      variables: {
-        groupId: args.groupId,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        maxDate: args.maxDate?.toISOString(),
-        minDate: args.minDate?.toISOString()
       }
     });
 
-    return transactionsChartQueryRef
-      .pipe(
-        map(result => {
-          const charts: Chart[] = result.data.transactionsGroupChart.map(chart => {
-            const dateFormat = "MM/YYYY";
-            const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
-            const series = chart.series.map(serie => ({
-              ...serie,
-              name: moment(serie.name).format(dateFormat)
-            }));
-
-            if (series.length < minimumMonths) {
-              const missing = minimumMonths - series.length;
-
-              for (let i = 0; i < missing; i++) {
-                series.splice(i, 0, {
-                  name: moment(firstDate)
-                    .subtract(missing - i, "month")
-                    .format(dateFormat),
-                  value: 0
-                });
-              }
-            }
-
-            return { name: groupNamesById.get(chart.name), series };
-          });
-
-          return charts;
-        }),
-        take(1)
-      )
-      .toPromise();
+    return charts;
   }
 }

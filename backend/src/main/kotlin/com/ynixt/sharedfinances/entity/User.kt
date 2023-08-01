@@ -15,13 +15,13 @@ class User(
     val photoUrl: String?,
 ) : AuditedEntity(), UserDetails {
     @OneToMany(mappedBy = "user")
-    var creditCards: MutableList<CreditCard>? = null
+    var creditCards: MutableSet<CreditCard>? = null
 
     @ManyToMany(mappedBy = "users")
-    var groups: MutableList<Group>? = null
+    var groups: MutableSet<Group>? = null
 
     @OneToMany(mappedBy = "user")
-    var bankAccounts: MutableList<BankAccount>? = null
+    var bankAccounts: MutableSet<BankAccount>? = null
 
     override fun getAuthorities(): List<GrantedAuthority> {
         return listOf()

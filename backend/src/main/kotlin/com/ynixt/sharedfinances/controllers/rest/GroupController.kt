@@ -1,12 +1,17 @@
 package com.ynixt.sharedfinances.controllers.rest
 
+import com.ynixt.sharedfinances.mapper.GroupInviteMapper
 import com.ynixt.sharedfinances.mapper.GroupMapper
-import com.ynixt.sharedfinances.model.dto.group.GroupDto
-import com.ynixt.sharedfinances.model.dto.group.GroupSummaryDto
-import com.ynixt.sharedfinances.model.dto.group.NewGroupDto
-import com.ynixt.sharedfinances.model.dto.group.UpdateGroupDto
+import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
+import com.ynixt.sharedfinances.model.dto.group.*
+import com.ynixt.sharedfinances.model.dto.groupinvite.GroupInviteDto
+import com.ynixt.sharedfinances.model.dto.transaction.TransactionDto
+import com.ynixt.sharedfinances.service.GroupInviteService
 import com.ynixt.sharedfinances.service.GroupService
 import com.ynixt.sharedfinances.service.SecurityService
+import com.ynixt.sharedfinances.service.TransactionService
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
@@ -17,8 +22,17 @@ import java.time.LocalDate
 class GroupController(
     private val groupService: GroupService,
     private val securityService: SecurityService,
-    private val groupMapper: GroupMapper
+    private val groupMapper: GroupMapper,
+    private val transactionService: TransactionService,
+    private val groupInviteService: GroupInviteService,
+    private val groupInviteMapper: GroupInviteMapper
 ) {
+    @GetMapping("with-users")
+    fun listAllWithUsers(authentication: Authentication): List<GroupWithUserDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+        return groupMapper.toGroupWithUserDtoList(groupService.listAllWithUsers(user))!!
+    }
+
     @GetMapping("summary/{groupId}")
     fun getGroupSummary(
         authentication: Authentication,
@@ -40,9 +54,7 @@ class GroupController(
 
     @PutMapping("{id}")
     fun update(
-        authentication: Authentication,
-        @PathVariable id: Long,
-        @RequestBody updateDto: UpdateGroupDto
+        authentication: Authentication, @PathVariable id: Long, @RequestBody updateDto: UpdateGroupDto
     ): GroupDto {
         val user = securityService.authenticationToUser(authentication)!!
 
@@ -61,5 +73,60 @@ class GroupController(
         val user = securityService.authenticationToUser(authentication)!!
 
         return groupService.delete(user, id)
+    }
+
+    @GetMapping("{groupId}/transactions")
+    fun listTransactions(
+        authentication: Authentication,
+        @PathVariable groupId: Long,
+        @RequestParam minDate: LocalDate?,
+        @RequestParam maxDate: LocalDate?,
+        pageable: Pageable
+    ): Page<TransactionDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+
+        return transactionService.findAllIncludeGroupAndCategoryAsTransactionDto(
+            bankAccountId = null,
+            groupId = groupId,
+            creditCardId = null,
+            user = user,
+            minDate = minDate,
+            maxDate = maxDate,
+            pageable = pageable
+        )
+    }
+
+    @GetMapping("{groupId}/chart")
+    fun getChartByGroupId(
+        authentication: Authentication,
+        @PathVariable groupId: Long,
+        @RequestParam minDate: LocalDate?,
+        @RequestParam maxDate: LocalDate?,
+    ): List<TransactionValuesAndDateDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+
+        return groupService.getChartByGroupId(
+            user = user, groupId = groupId, minDate = minDate, maxDate = maxDate
+        )
+    }
+
+    @PostMapping("{groupId}/invite")
+    fun generateInvite(
+        authentication: Authentication,
+        @PathVariable groupId: Long,
+    ): GroupInviteDto {
+        val user = securityService.authenticationToUser(authentication)!!
+
+        return groupInviteMapper.toDto(groupInviteService.generateInvite(user, groupId))!!
+    }
+
+    @GetMapping("invite/{code}")
+    fun useInvite(
+        authentication: Authentication,
+        @PathVariable code: String,
+    ): Long? {
+        val user = securityService.authenticationToUser(authentication)!!
+
+        return groupInviteService.useInvite(user, code)
     }
 }

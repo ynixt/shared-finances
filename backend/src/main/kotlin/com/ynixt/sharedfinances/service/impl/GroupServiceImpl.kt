@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.service.impl
 import com.ynixt.sharedfinances.entity.Group
 import com.ynixt.sharedfinances.entity.User
 import com.ynixt.sharedfinances.mapper.GroupMapper
+import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
 import com.ynixt.sharedfinances.model.dto.group.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
 import com.ynixt.sharedfinances.repository.GroupRepository
@@ -32,6 +33,14 @@ class GroupServiceImpl(
         return groupRepository.getOneByIdAndUserId(id = id, userId = user.id!!)
     }
 
+    override fun getOne(id: Long): Group? {
+        return groupRepository.findById(id).orElse(null)
+    }
+
+    override fun save(group: Group): Group {
+        return groupRepository.save(group)
+    }
+
     override fun getOneAsViewDto(user: User, id: Long): GroupViewDto? {
         val group = groupRepository.getOneByIdAndUserIdWithUsers(id = id, userId = user.id!!)
         return groupMapper.toViewDto(group)
@@ -44,7 +53,7 @@ class GroupServiceImpl(
         )
 
         groupMapper.update(group, updateDto)
-        group = groupRepository.save(group)
+        group = save(group)
         groupWasUpdated(id, group.users!!)
         return group
     }
@@ -57,7 +66,7 @@ class GroupServiceImpl(
             users = mutableListOf(user)
         }
 
-        group = groupRepository.save(group)
+        group = save(group)
 
         groupWasUpdated(group.id!!, group.users!!)
 
@@ -110,5 +119,21 @@ class GroupServiceImpl(
         )
 
         return GroupSummaryDto(expensesOfUsers)
+    }
+
+    override fun getChartByGroupId(
+        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
+    ): List<TransactionValuesAndDateDto> {
+        return transactionRepository.findAllByGroupIdGroupedByDate(
+            userId = user.id!!,
+            groupId = groupId,
+            minDate = minDate ?: LocalDate.now(),
+            maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        )
+    }
+
+    override fun listAllWithUsers(user: User): List<Group> {
+        // TODO: improve
+        return groupRepository.findAllWithUsers(user.id!!)
     }
 }

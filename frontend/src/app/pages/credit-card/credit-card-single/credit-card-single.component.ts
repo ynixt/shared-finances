@@ -2,11 +2,11 @@ import { Component, Inject, OnInit, Renderer2 } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import moment, { Moment } from "moment";
-import { switchMap } from "rxjs/operators";
+import { switchMap, take } from "rxjs/operators";
 import { CreditCard, CreditCardSummary, Page, Transaction } from "src/app/@core/models";
 import { CreditCardService } from "../credit-card.service";
 import { CreditCardService as CreditCardCoreService } from "src/app/@core/services"; // TODO change name of this service or join them
-import { merge, Observable, Subscription } from "rxjs";
+import { lastValueFrom, merge, Observable, Subscription } from "rxjs";
 import { DOCUMENT } from "@angular/common";
 import { NewTransactionDialogService } from "src/app/components/new-transaction/new-transaction-dialog.service";
 import { CreditCardBillPaymentDialogService } from "src/app/components/credit-card-bill-payment";
@@ -221,8 +221,16 @@ export class CreditCardSingleComponent implements OnInit {
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {
+        const transactionsPage = await lastValueFrom(this.transactionsPage$.pipe(take(1)));
+
+        if (transactionsPage.number == 0) {
+          this.getTransactions();
+        } else {
+          // TODO: ask to user if he wants update
+        }
+
         if (this.creditCard.billDates?.length > 0) {
-          await Promise.all([this.getInfoBasedOnCreditCardAndDate(), this.reloadAvailableLimit()]);
+          await Promise.all([this.getCreditCardSummary(), this.getChart(), this.reloadAvailableLimit()]);
         } else {
           await this.loadCreditCard();
         }

@@ -41,4 +41,16 @@ interface GroupRepository : CrudRepository<Group, Long> {
     """
     )
     fun getOneByIdAndUserIdWithUsers(id: Long, userId: Long): Group?
+
+    @Query(
+        """
+        from Group g
+        join g.users u
+        join fetch g.users gu
+        left join fetch gu.bankAccounts b
+        left join fetch gu.creditCards c
+        where u.id = :userId
+    """
+    )
+    fun findAllWithUsers(userId: Long): List<Group>
 }

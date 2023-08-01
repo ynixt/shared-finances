@@ -45,7 +45,7 @@
   "groups": "Grupos",
   "create-share-url": "Gerar link compartilhavel",
   "link-created": "Link criado",
-  "link-created-message": "Link gerado com sucesso. Agora é só enviar o link abaixo para a pessoa! Lembrando que este link é de USO ÚNICO.",
+  "link-created-message": "Link gerado com sucesso. Agora é só enviar o link abaixo para a pessoa! Lembrando que este link é de USO ÚNICO e irá expirar automaticamente em {{expiresOn}}.",
   "error-404": {
     "title": "Ops! Página não encontrada.",
     "button-home": "Voltar para início"

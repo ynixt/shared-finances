@@ -167,6 +167,10 @@ class TransactionServiceImpl(
             creditCardTransactionCreated(targetUser, transaction)
         }
 
+        if (newDto.groupId != null) {
+            groupTransactionCreated(transaction)
+        }
+
         return transaction
     }
 
@@ -248,6 +252,10 @@ class TransactionServiceImpl(
             )
         }
 
+        if (editDto.groupId != null) {
+            groupTransactionUpdated(transaction)
+        }
+
         return updatedTransaction
     }
 
@@ -263,11 +271,11 @@ class TransactionServiceImpl(
             val transactionsToWS = mutableListOf<Transaction>()
 
             if (deleteAllInstallments) {
-                transactionsToWS.addAll(transactionRepository.findAllByInstallmentId(transaction.installmentId!!))
+                transactionsToWS.addAll(transactionRepository.findAllByInstallmentIdIncludeGroup(transaction.installmentId!!))
                 transactionRepository.deleteAllByInstallmentId(transaction.installmentId!!)
             } else if (deleteNextInstallments) {
                 transactionsToWS.addAll(
-                    transactionRepository.findAllByInstallmentIdAndInstallmentGreaterThanEqual(
+                    transactionRepository.findAllByInstallmentIdAndInstallmentGreaterThanEqualIncludeGroup(
                         transaction.installmentId!!, transaction.installment!!
                     )
                 )
@@ -287,6 +295,10 @@ class TransactionServiceImpl(
                 if (it.type == TransactionType.CreditCard) {
                     creditCardTransactionDeleted(user, it)
                     creditCardService.addToAvailableLimit(user, it.creditCardId!!, it.value.negate())
+                }
+
+                if (it.groupId != null) {
+                    groupTransactionDeleted(transaction)
                 }
             }
         }
@@ -402,5 +414,35 @@ class TransactionServiceImpl(
         simpMessagingTemplate.convertAndSendToUser(
             user.email, "/queue/credit-card/transaction-deleted/${creditCardId}", transactionMapper.toDto(transaction)!!
         )
+    }
+
+    private fun groupTransactionCreated(transaction: Transaction) {
+        val group = transaction.group!!
+
+        group.users!!.forEach { user ->
+            simpMessagingTemplate.convertAndSendToUser(
+                user.email, "/queue/group/transaction-created/${group.id}", transactionMapper.toDto(transaction)!!
+            )
+        }
+    }
+
+    private fun groupTransactionUpdated(transaction: Transaction) {
+        val group = transaction.group!!
+
+        group.users!!.forEach { user ->
+            simpMessagingTemplate.convertAndSendToUser(
+                user.email, "/queue/group/transaction-updated/${group.id}", transactionMapper.toDto(transaction)!!
+            )
+        }
+    }
+
+    private fun groupTransactionDeleted(transaction: Transaction) {
+        val group = transaction.group!!
+
+        group.users!!.forEach { user ->
+            simpMessagingTemplate.convertAndSendToUser(
+                user.email, "/queue/group/transaction-deleted/${group.id}", transactionMapper.toDto(transaction)!!
+            )
+        }
     }
 }

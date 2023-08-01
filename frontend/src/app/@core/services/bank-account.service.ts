@@ -33,8 +33,8 @@ export class BankAccountService {
     return this.stompService.watch({
       destination: "/user/queue/bank-account/transaction-created/" + bankAccountId ?? ""
     }).pipe(
-      map(message => JSON.parse(message.body) as BankAccount),
-      map(bank => bank.id)
+      map(message => JSON.parse(message.body) as Transaction),
+      map(transaction => transaction.id)
     );
   }
 
@@ -42,8 +42,8 @@ export class BankAccountService {
     return this.stompService.watch({
       destination: "/user/queue/bank-account/transaction-updated/" + bankAccountId ?? ""
     }).pipe(
-      map(message => JSON.parse(message.body) as BankAccount),
-      map(bank => bank.id)
+      map(message => JSON.parse(message.body) as Transaction),
+      map(transaction => transaction.id)
     );
   }
 
@@ -51,8 +51,8 @@ export class BankAccountService {
     return this.stompService.watch({
       destination: "/user/queue/bank-account/transaction-deleted/" + bankAccountId ?? ""
     }).pipe(
-      map(message => JSON.parse(message.body) as BankAccount),
-      map(bank => bank.id)
+      map(message => JSON.parse(message.body) as Transaction),
+      map(transaction => transaction.id)
     );
   }
 

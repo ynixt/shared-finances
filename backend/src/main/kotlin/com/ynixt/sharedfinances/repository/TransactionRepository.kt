@@ -54,7 +54,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
     @Query(
         """
           select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
-                (sum(t.value) * -1.0),
+                (COALESCE(sum(t.value) * -1, 0)),
                 t.user.id
             )
             from Transaction t
@@ -73,9 +73,9 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
         """
           select new com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto(
                     to_char(t.date, 'YYYY-MM'),
-                    sum(t.value),
-                    sum(t.value * -1) FILTER (WHERE t.value < 0),
-                    sum(t.value) FILTER (WHERE t.value > 0)
+                    COALESCE(sum(t.value), 0),
+                    COALESCE(sum(t.value * -1) FILTER (WHERE t.value < 0), 0),
+                    COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0)
                 )
                 from Transaction t
                 where
@@ -119,13 +119,54 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
         maxCreditCardBillDate: LocalDate,
     ): List<TransactionValuesAndDateDto>
 
+    @Query(
+        """
+          select new com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto(
+                    to_char(t.date, 'YYYY-MM'),
+                    COALESCE(sum(t.value), 0),
+                    COALESCE(sum(t.value * -1) FILTER (WHERE t.value < 0), 0),
+                    COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0)
+                )
+                from Transaction t
+                where
+                    t.userId = :userId
+                    and t.groupId = :groupId
+                    and t.date >= :minDate
+                    and t.date <= :maxDate
+                group by 1
+    """
+    )
+    fun findAllByGroupIdGroupedByDate(
+        userId: Long,
+        groupId: Long,
+        minDate: LocalDate,
+        maxDate: LocalDate,
+    ): List<TransactionValuesAndDateDto>
 
-    fun findAllByInstallmentId(installmentId: String): List<Transaction>
+    @Query(
+        """
+        from Transaction t
+        left join fetch t.group g
+        left join fetch g.users gu
+        where t.installmentId = :installmentId
+    """
+    )
+    fun findAllByInstallmentIdIncludeGroup(installmentId: String): List<Transaction>
 
     @Modifying
     fun deleteAllByInstallmentId(installmentId: String)
 
-    fun findAllByInstallmentIdAndInstallmentGreaterThanEqual(
+    @Query(
+        """
+        from Transaction t
+        left join fetch t.group g
+        left join fetch g.users gu
+        where
+            t.installmentId = :installmentId
+            and t.installment >= :minInstallment
+    """
+    )
+    fun findAllByInstallmentIdAndInstallmentGreaterThanEqualIncludeGroup(
         installmentId: String,
         minInstallment: Int
     ): List<Transaction>
