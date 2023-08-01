@@ -13,6 +13,7 @@
   "creating": "Criando...",
   "paying": "Pagando...",
   "editing": "Editando...",
+  "legend": "Legenda",
   "deleting-successful": "'{{name}}' foi deletado com sucesso.",
   "deleting-successful-all-installments": "Todas as parcelas de '{{name}}' foram deletado com sucesso.",
   "deleting-successful-next-installments": "As parcelas [{{installments}}] de '{{name}}' foram deletado com sucesso.",
