@@ -9,9 +9,7 @@ data class GroupSummaryDto(val expenses: List<GroupSummaryByUserDto>) {
     init {
         expenses.forEach {
             it.percentageOfExpenses =
-                (((it.expense * BigDecimal(100) / totalExpenses) * BigDecimal(100)).round(MathContext(4)) * BigDecimal(
-                    100
-                )).toInt()
+                (((it.expense * BigDecimal(100) / totalExpenses)).round(MathContext(2)))
         }
     }
 }
@@ -19,5 +17,5 @@ data class GroupSummaryDto(val expenses: List<GroupSummaryByUserDto>) {
 data class GroupSummaryByUserDto(
     val expense: BigDecimal, val userId: Long
 ) {
-    var percentageOfExpenses: Int = 0
+    var percentageOfExpenses: BigDecimal = BigDecimal.ZERO
 }
