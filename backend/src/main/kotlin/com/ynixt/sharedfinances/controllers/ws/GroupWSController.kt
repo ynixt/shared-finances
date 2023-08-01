@@ -6,7 +6,6 @@ import com.ynixt.sharedfinances.service.GroupService
 import com.ynixt.sharedfinances.service.SecurityService
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
-import org.springframework.messaging.handler.annotation.SendTo
 import org.springframework.messaging.simp.annotation.SendToUser
 import org.springframework.stereotype.Controller
 import java.security.Principal
@@ -22,7 +21,7 @@ class GroupWSController(
     }
 
     @MessageMapping("/group/{groupId}")
-    @SendTo("/topic/group/{groupId}")
+    @SendToUser("/queue/group/{groupId}")
     fun viewGroup(principal: Principal, @DestinationVariable groupId: Long): GroupViewDto? {
         return groupService.getOneAsViewDto(securityService.principalToUser(principal)!!, groupId)
     }

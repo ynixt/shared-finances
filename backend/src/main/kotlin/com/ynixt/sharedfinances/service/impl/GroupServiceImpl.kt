@@ -90,16 +90,16 @@ class GroupServiceImpl(
             simpMessagingTemplate.convertAndSendToUser(
                 it.email, "/queue/group", listGroupAsGroupDto(it)
             )
-        }
 
-        val groupView = getOneAsViewDto(users[0]!!, groupId)
+            val groupView = getOneAsViewDto(users[0]!!, groupId)
 
-        if (groupView != null) {
-            simpMessagingTemplate.convertAndSend(
-                "/topic/group/$groupId", groupView
-            )
-        } else {
-            // TODO: send that group was deleted!
+            if (groupView != null) {
+                simpMessagingTemplate.convertAndSendToUser(
+                    it.email, "/queue/group/$groupId", groupView
+                )
+            } else {
+                // TODO: send that group was deleted!
+            }
         }
     }
 

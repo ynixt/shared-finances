@@ -6,7 +6,7 @@ import com.ynixt.sharedfinances.service.SecurityService
 import com.ynixt.sharedfinances.service.TransactionCategoryService
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
-import org.springframework.messaging.handler.annotation.SendTo
+import org.springframework.messaging.simp.annotation.SendToUser
 import org.springframework.stereotype.Controller
 import java.security.Principal
 
@@ -17,7 +17,7 @@ class GroupTransactionCategoryWSController(
     private val securityService: SecurityService
 ) {
     @MessageMapping("/group-transaction-category/{groupId}")
-    @SendTo("/topic/group-transaction-category/{groupId}")
+    @SendToUser("/queue/group-transaction-category/{groupId}")
     fun listTransactionCategories(
         principal: Principal, @DestinationVariable groupId: Long
     ): List<GroupTransactionCategoryDto> {

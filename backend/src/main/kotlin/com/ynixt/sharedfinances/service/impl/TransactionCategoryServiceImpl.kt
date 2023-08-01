@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.entity.UserTransactionCategory
 import com.ynixt.sharedfinances.mapper.TransactionCategoryMapper
 import com.ynixt.sharedfinances.model.dto.transactioncategory.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
+import com.ynixt.sharedfinances.repository.GroupRepository
 import com.ynixt.sharedfinances.repository.GroupTransactionCategoryRepository
 import com.ynixt.sharedfinances.repository.UserTransactionCategoryRepository
 import com.ynixt.sharedfinances.service.TransactionCategoryService
@@ -21,7 +22,8 @@ class TransactionCategoryServiceImpl(
     private val groupTransactionCategoryRepository: GroupTransactionCategoryRepository,
     private val simpMessagingTemplate: SimpMessagingTemplate,
     private val transactionCategoryMapper: TransactionCategoryMapper,
-    private val entityManager: EntityManager
+    private val entityManager: EntityManager,
+    private val groupRepository: GroupRepository
 ) : TransactionCategoryService {
     override fun findAllUserCategories(user: User): List<UserTransactionCategory> {
         return userTransactionCategoryRepository.findAllByUserId(user.id!!)
@@ -32,13 +34,11 @@ class TransactionCategoryServiceImpl(
     }
 
     override fun findAllGroupCategoriesAsGroupTransactionCategoryDto(
-        user: User,
-        groupId: Long
+        user: User, groupId: Long
     ): List<GroupTransactionCategoryDto> {
         return transactionCategoryMapper.toDtoGroupList(
             groupTransactionCategoryRepository.findAllByUserIdAndGroupId(
-                user.id!!,
-                groupId
+                user.id!!, groupId
             )
         )!!
     }
@@ -64,9 +64,7 @@ class TransactionCategoryServiceImpl(
 
     @Transactional
     override fun updateUserCategory(
-        user: User,
-        id: Long,
-        updateDto: UpdateUserTransactionCategoryDto
+        user: User, id: Long, updateDto: UpdateUserTransactionCategoryDto
     ): UserTransactionCategory {
         var category = getOneUserCategory(user, id) ?: throw SFException(
             reason = "User category not found"
@@ -101,15 +99,13 @@ class TransactionCategoryServiceImpl(
 
         category = groupTransactionCategoryRepository.save(category)
 
-        groupCategoryWasUpdated(user, category.groupId!!)
+        groupCategoryWasUpdated(category.groupId!!)
 
         return category
     }
 
     override fun updateGroupCategory(
-        user: User,
-        id: Long,
-        updateDto: UpdateGroupTransactionCategoryDto
+        user: User, id: Long, updateDto: UpdateGroupTransactionCategoryDto
     ): GroupTransactionCategory {
         var category = getOneGroupCategory(user, id) ?: throw SFException(
             reason = "Group category not found"
@@ -118,7 +114,7 @@ class TransactionCategoryServiceImpl(
         transactionCategoryMapper.updateGroup(category, updateDto)
         category = groupTransactionCategoryRepository.save(category)
 
-        groupCategoryWasUpdated(user, category.groupId!!)
+        groupCategoryWasUpdated(category.groupId!!)
 
         return category
     }
@@ -133,7 +129,7 @@ class TransactionCategoryServiceImpl(
 
         if (category != null) {
             groupTransactionCategoryRepository.deleteById(id)
-            groupCategoryWasUpdated(user, category.groupId!!)
+            groupCategoryWasUpdated(category.groupId!!)
         }
     }
 
@@ -143,10 +139,15 @@ class TransactionCategoryServiceImpl(
         )
     }
 
-    private fun groupCategoryWasUpdated(user: User, groupId: Long) {
-        simpMessagingTemplate.convertAndSend(
-            "/topic/group-transaction-category/$groupId",
-            findAllGroupCategoriesAsGroupTransactionCategoryDto(user, groupId)
-        )
+    private fun groupCategoryWasUpdated(groupId: Long) {
+        val allGroupUsers = groupRepository.findAllUsersFromGroup(groupId)
+
+        allGroupUsers.forEach { user ->
+            simpMessagingTemplate.convertAndSendToUser(
+                user.email,
+                "/queue/group-transaction-category/$groupId",
+                findAllGroupCategoriesAsGroupTransactionCategoryDto(user, groupId)
+            )
+        }
     }
 }

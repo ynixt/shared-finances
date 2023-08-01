@@ -40,7 +40,7 @@ export class GroupsService {
 
   getGroup(groupId: string): Observable<Group | null> {
     const w = this.stompService.watch({
-      destination: `/topic/group/${groupId}`
+      destination: `/user/queue/group/${groupId}`
     });
 
     this.stompService.publish({ destination: `/app/group/${groupId}` });

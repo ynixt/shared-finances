@@ -18,7 +18,7 @@ export class SharedCategoryService extends GenericCategoryService {
 
   watchCategories(groupId: string): Observable<Category[]> {
     const w = this.stompService.watch({
-      destination: "/topic/group-transaction-category/" + groupId
+      destination: "/user/queue/group-transaction-category/" + groupId
     });
 
     this.stompService.publish({ destination: "/app/group-transaction-category/" + groupId });

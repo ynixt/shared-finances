@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.repository
 
 import com.ynixt.sharedfinances.entity.Group
+import com.ynixt.sharedfinances.entity.User
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
 
@@ -53,4 +54,14 @@ interface GroupRepository : CrudRepository<Group, Long> {
     """
     )
     fun findAllWithUsers(userId: Long): List<Group>
+
+    @Query(
+        """
+        select u
+        from Group g
+        left join g.users u
+        where g.id = :groupId
+    """
+    )
+    fun findAllUsersFromGroup(groupId: Long): List<User>
 }
