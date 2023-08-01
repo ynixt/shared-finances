@@ -1,8 +1,8 @@
 import { RxStomp, RxStompState } from "@stomp/rx-stomp";
 import { Injectable, OnDestroy } from "@angular/core";
 import { Auth, user, User as FirebaseUser } from "@angular/fire/auth";
-import { lastValueFrom, Observable } from "rxjs";
-import { take } from "rxjs/operators";
+import { lastValueFrom, Observable, takeUntil } from "rxjs";
+import { filter, take } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import { HotToastService } from "@ngneat/hot-toast";
 import { TranslocoService } from "@ngneat/transloco";
@@ -21,6 +21,7 @@ export class StompService extends RxStomp implements OnDestroy {
   }
 
   start() {
+    this.serverOffline = false;
     this.configure({
       brokerURL: "ws://localhost:8080/api/socket",
       beforeConnect: (async client => {
@@ -34,7 +35,12 @@ export class StompService extends RxStomp implements OnDestroy {
       })
     });
 
-    this.connectionState$.pipe(untilDestroyed(this)).subscribe(state => {
+    this.connectionState$.pipe(
+      untilDestroyed(this),
+      takeUntil(
+        this.user$.pipe(filter(u => u == null))
+      )
+    ).subscribe(state => {
       if (state == RxStompState.CLOSED) {
         if (this.firstClosedState) {
           this.firstClosedState = false;
