@@ -1,54 +1,17 @@
 import { Injectable } from "@angular/core";
-import { Apollo, gql, QueryRef } from "apollo-angular";
-import { EmptyObject } from "apollo-angular/types";
 import { lastValueFrom, Observable } from "rxjs";
 import { map, take } from "rxjs/operators";
 import { GenericCategoryService, GroupWithIdName } from "src/app/components/category";
 
-import { Category, CreditCard } from "../models";
+import { Category } from "../models";
 import { StompService } from "./stomp.service";
 import { HttpClient } from "@angular/common/http";
-
-const USER_CATEGORY_CREATED_SUBSCRIPTION = gql`
-  subscription userCategoryCreated {
-    userCategoryCreated {
-      id
-      name
-      color
-    }
-  }
-`;
-
-const USER_CATEGORY_UPDATED_SUBSCRIPTION = gql`
-  subscription userCategoryUpdated {
-    userCategoryUpdated {
-      id
-      name
-      color
-    }
-  }
-`;
-
-const USER_CATEGORY_DELETED_SUBSCRIPTION = gql`
-  subscription userCategoryDeleted {
-    userCategoryDeleted {
-      id
-    }
-  }
-`;
 
 @Injectable({
   providedIn: "root"
 })
 export class UserCategoryService extends GenericCategoryService {
-  private categoriesQueryRef: QueryRef<
-    {
-      categories: Category[];
-    },
-    EmptyObject
-  >;
-
-  constructor(private apollo: Apollo, private stompService: StompService, private httpClient: HttpClient) {
+  constructor(private stompService: StompService, private httpClient: HttpClient) {
     super();
   }
 
@@ -89,50 +52,5 @@ export class UserCategoryService extends GenericCategoryService {
 
   async getGroup(groupId: string): Promise<GroupWithIdName | null> {
     return null;
-  }
-
-  private subscribeToMoreCategories() {
-    // this.categoriesQueryRef.subscribeToMore({
-    //   document: USER_CATEGORY_CREATED_SUBSCRIPTION,
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     const categories = prev.categories ?? [];
-    //
-    //     prev = {
-    //       categories: [...categories, subscriptionData.data.userCategoryCreated],
-    //     };
-    //
-    //     return {
-    //       ...prev,
-    //     };
-    //   },
-    // });
-    //
-    // this.categoriesQueryRef.subscribeToMore({
-    //   document: USER_CATEGORY_UPDATED_SUBSCRIPTION,
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     const editedCategory = subscriptionData.data.userCategoryUpdated;
-    //
-    //     prev = {
-    //       categories: [...prev.categories.filter(category => category.id !== editedCategory.id), editedCategory],
-    //     };
-    //
-    //     return {
-    //       ...prev,
-    //     };
-    //   },
-    // });
-    //
-    // this.categoriesQueryRef.subscribeToMore({
-    //   document: USER_CATEGORY_DELETED_SUBSCRIPTION,
-    //   updateQuery: (prev, { subscriptionData }) => {
-    //     prev = {
-    //       categories: prev.categories.filter(category => category.id !== subscriptionData.data.userCategoryDeleted.id),
-    //     };
-    //
-    //     return {
-    //       ...prev,
-    //     };
-    //   },
-    // });
   }
 }

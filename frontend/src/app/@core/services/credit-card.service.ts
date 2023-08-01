@@ -1,5 +1,4 @@
 import { Injectable } from "@angular/core";
-import { EmptyObject } from "apollo-angular/types";
 import moment, { Moment } from "moment";
 import { lastValueFrom, Observable } from "rxjs";
 import { map, take } from "rxjs/operators";
