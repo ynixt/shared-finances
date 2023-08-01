@@ -12,7 +12,6 @@ import { MatInputModule } from '@angular/material/input';
 import { CovalentDialogsModule } from '@covalent/core/dialogs';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { NgApexchartsModule } from "ng-apexcharts";
 
 import { BankAccountSingleComponent } from './bank-account-single/bank-account-single.component';
 import { MonthBarModule } from 'src/app/components/month-bar';
@@ -33,7 +32,6 @@ import { BankAccountSummaryDashboardModule } from 'src/app/components/bank-accou
     MonthBarModule,
     TransactionsTableModule,
     NgxChartsModule,
-    NgApexchartsModule,
     BankAccountSummaryDashboardModule,
     MatCheckboxModule,
   ],

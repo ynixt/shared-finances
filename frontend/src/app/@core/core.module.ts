@@ -8,7 +8,6 @@ import localePt from "@angular/common/locales/pt";
 import { TokenInterceptor } from "./interceptors/token.interceptor";
 import { AppStoreModule } from "../store/app-store.module";
 import { TranslocoRootModule } from "./i18n";
-import { GraphQLModule } from "./graphql.module";
 
 import { registerLocaleData } from "@angular/common";
 import { ErrorService } from "./services/error.service";
@@ -56,7 +55,6 @@ moment.locale("pt");
     })),
     provideAuth(() => getAuth()),
     AppStoreModule,
-    GraphQLModule,
     MatMomentDateModule
   ],
   providers: [
