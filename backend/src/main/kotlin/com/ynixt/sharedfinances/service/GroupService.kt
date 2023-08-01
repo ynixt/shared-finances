@@ -2,7 +2,7 @@ package com.ynixt.sharedfinances.service
 
 import com.ynixt.sharedfinances.entity.Group
 import com.ynixt.sharedfinances.entity.User
-import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
+import com.ynixt.sharedfinances.model.dto.TransactionValuesGroupChartDto
 import com.ynixt.sharedfinances.model.dto.group.*
 import java.time.LocalDate
 
@@ -20,7 +20,7 @@ interface GroupService {
     fun getGroupSummary(user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?): GroupSummaryDto
     fun getChartByGroupId(
         user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
-    ): List<TransactionValuesAndDateDto>
+    ): TransactionValuesGroupChartDto
 
     fun listAllWithUsers(user: User): List<Group>
 }

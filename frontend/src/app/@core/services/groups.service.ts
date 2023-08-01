@@ -10,7 +10,7 @@ import { HttpClient } from "@angular/common/http";
 import { StompService } from "./stomp.service";
 import { addHttpParamsIntoUrl } from "../util";
 import { ISO_DATE_FORMAT } from "../../moment-extension";
-import { TransactionValuesAndDateDto } from "../models/transaction-values-and-date";
+import { TransactionValuesGroupChartDto } from "../models/transaction-values-and-date";
 import { TranslocoService } from "@ngneat/transloco";
 
 @Injectable({
@@ -104,21 +104,35 @@ export class GroupsService {
       minDate: args?.minDate?.format(ISO_DATE_FORMAT)
     });
 
-    const values = await lastValueFrom(
-      this.httpClient.get<TransactionValuesAndDateDto[]>(url).pipe(take(1))
+    const chart = await lastValueFrom(
+      this.httpClient.get<TransactionValuesGroupChartDto>(url).pipe(take(1))
     );
 
     const charts: Chart[] = [];
     const dateFormat = this.translocoService.translate("date-format.month-year");
     const dateFormatFromServer = "YYYY-MM";
 
+
     charts.push(new Chart({
-      name: `${group.name}`,
-      series: values.map(v => new ChartSerie({
+      name: group.name,
+      series: chart.values.map(v => new ChartSerie({
         name: moment(v.date, dateFormatFromServer).format(dateFormat),
         value: v.expenses
       }))
     }));
+
+    Object.keys(chart.valuesByUser).forEach(userId => {
+      const user = group.users.find(u => u.id == userId)
+      charts.push(new Chart({
+        name: user.name,
+        series: chart.valuesByUser[userId].map(v => new ChartSerie({
+          name: moment(v.date, dateFormatFromServer).format(dateFormat),
+          value: v.expenses
+        }))
+      }));
+    });
+
+
 
     charts.forEach(chart => {
       if (chart.series.length < minimumMonths) {

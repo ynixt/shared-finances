@@ -3,9 +3,10 @@ package com.ynixt.sharedfinances.service.impl
 import com.ynixt.sharedfinances.entity.Group
 import com.ynixt.sharedfinances.entity.User
 import com.ynixt.sharedfinances.mapper.GroupMapper
-import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
+import com.ynixt.sharedfinances.model.dto.TransactionValuesGroupChartDto
 import com.ynixt.sharedfinances.model.dto.group.*
 import com.ynixt.sharedfinances.model.exceptions.SFException
+import com.ynixt.sharedfinances.model.exceptions.SFExceptionForbidden
 import com.ynixt.sharedfinances.repository.GroupRepository
 import com.ynixt.sharedfinances.repository.TransactionRepository
 import com.ynixt.sharedfinances.service.GroupService
@@ -42,7 +43,11 @@ class GroupServiceImpl(
     }
 
     override fun getOneAsViewDto(user: User, id: Long): GroupViewDto? {
-        val group = groupRepository.getOneByIdAndUserIdWithUsers(id = id, userId = user.id!!)
+        if (!userHasPermissionToGroup(user, id)) {
+            throw SFExceptionForbidden()
+        }
+
+        val group = groupRepository.getOneByIdWithUsers(id)
         return groupMapper.toViewDto(group)
     }
 
@@ -123,12 +128,26 @@ class GroupServiceImpl(
 
     override fun getChartByGroupId(
         user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
-    ): List<TransactionValuesAndDateDto> {
-        return transactionRepository.findAllByGroupIdGroupedByDate(
-            userId = user.id!!,
+    ): TransactionValuesGroupChartDto {
+        if (!userHasPermissionToGroup(user, groupId)) {
+            throw SFExceptionForbidden()
+        }
+
+        val byUser = transactionRepository.findAllByGroupIdGroupedByDateAndUser(
             groupId = groupId,
             minDate = minDate ?: LocalDate.now(),
             maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        )
+
+        val all = transactionRepository.findAllByGroupIdGroupedByDate(
+            groupId = groupId,
+            minDate = minDate ?: LocalDate.now(),
+            maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        )
+
+        return TransactionValuesGroupChartDto(
+            values = all,
+            allValuesByUser = byUser
         )
     }
 

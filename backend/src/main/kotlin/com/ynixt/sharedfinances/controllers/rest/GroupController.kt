@@ -2,7 +2,7 @@ package com.ynixt.sharedfinances.controllers.rest
 
 import com.ynixt.sharedfinances.mapper.GroupInviteMapper
 import com.ynixt.sharedfinances.mapper.GroupMapper
-import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
+import com.ynixt.sharedfinances.model.dto.TransactionValuesGroupChartDto
 import com.ynixt.sharedfinances.model.dto.group.*
 import com.ynixt.sharedfinances.model.dto.groupinvite.GroupInviteDto
 import com.ynixt.sharedfinances.model.dto.transaction.TransactionDto
@@ -102,7 +102,7 @@ class GroupController(
         @PathVariable groupId: Long,
         @RequestParam minDate: LocalDate?,
         @RequestParam maxDate: LocalDate?,
-    ): List<TransactionValuesAndDateDto> {
+    ): TransactionValuesGroupChartDto {
         val user = securityService.authenticationToUser(authentication)!!
 
         return groupService.getChartByGroupId(

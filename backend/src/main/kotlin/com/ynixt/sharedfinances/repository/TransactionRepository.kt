@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.repository
 
 import com.ynixt.sharedfinances.entity.Transaction
+import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateAndUserNameDto
 import com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateDto
 import com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto
 import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto
@@ -128,20 +129,43 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
                     COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0)
                 )
                 from Transaction t
+                join t.user u
                 where
-                    t.userId = :userId
-                    and t.groupId = :groupId
+                    t.groupId = :groupId
                     and t.date >= :minDate
                     and t.date <= :maxDate
                 group by 1
     """
     )
     fun findAllByGroupIdGroupedByDate(
-        userId: Long,
         groupId: Long,
         minDate: LocalDate,
         maxDate: LocalDate,
     ): List<TransactionValuesAndDateDto>
+
+    @Query(
+        """
+          select new com.ynixt.sharedfinances.model.dto.TransactionValuesAndDateAndUserNameDto(
+                    to_char(t.date, 'YYYY-MM'),
+                    COALESCE(sum(t.value), 0),
+                    COALESCE(sum(t.value * -1) FILTER (WHERE t.value < 0), 0),
+                    COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0),
+                    u.id
+                )
+                from Transaction t
+                join t.user u
+                where
+                    t.groupId = :groupId
+                    and t.date >= :minDate
+                    and t.date <= :maxDate
+                group by 1, u.id
+    """
+    )
+    fun findAllByGroupIdGroupedByDateAndUser(
+        groupId: Long,
+        minDate: LocalDate,
+        maxDate: LocalDate,
+    ): List<TransactionValuesAndDateAndUserNameDto>
 
     @Query(
         """

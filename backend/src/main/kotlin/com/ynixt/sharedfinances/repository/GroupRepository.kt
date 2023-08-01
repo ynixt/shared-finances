@@ -38,10 +38,10 @@ interface GroupRepository : CrudRepository<Group, Long> {
         """
         from Group g
         join fetch g.users u
-        where g.id = :id and u.id = :userId
+        where g.id = :id
     """
     )
-    fun getOneByIdAndUserIdWithUsers(id: Long, userId: Long): Group?
+    fun getOneByIdWithUsers(id: Long): Group?
 
     @Query(
         """

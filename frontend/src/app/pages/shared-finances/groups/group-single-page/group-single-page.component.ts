@@ -40,14 +40,7 @@ export class GroupSinglePageComponent implements OnInit {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
-  colorScheme: Color = {
-    name: "expense",
-    selectable: true,
-    group: 0 as any,
-    domain: [
-      "#E44D25"
-    ]
-  };
+  colorScheme: Color
 
   private groupSubscription: Subscription;
   private groupId: string;
@@ -140,6 +133,16 @@ export class GroupSinglePageComponent implements OnInit {
 
         this.group = group;
 
+        this.colorScheme = {
+          name: "expense",
+          selectable: true,
+          group: 0 as any,
+          domain: [
+            "#E44D25",
+            ...(this.group.users.map(() => this.randomColor()))
+          ]
+        };
+
         this.transactionsChangeObserver();
       } else {
         this.router.navigateByUrl("/404");
@@ -196,5 +199,9 @@ export class GroupSinglePageComponent implements OnInit {
 
   private getMaxDate(disallowFutureOnSameMonth = this.disallowFutureOnSameMonth) {
     return this.transactionService.getMaxDate(this.monthDate, disallowFutureOnSameMonth);
+  }
+
+  private randomColor(): string {
+    return `#${(0x1000000 + Math.random() * 0xffffff).toString(16).substr(1, 6)}`;
   }
 }

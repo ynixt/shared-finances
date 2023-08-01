@@ -253,7 +253,7 @@ class TransactionServiceImpl(
         }
 
         if (editDto.groupId != null) {
-            groupTransactionUpdated(transaction)
+            groupTransactionUpdated(updatedTransaction)
         }
 
         return updatedTransaction
