@@ -19,7 +19,7 @@ class CreditCard(
     var displayOnGroup: Boolean,
 ) : AuditedEntity() {
     @OneToMany(mappedBy = "creditCard")
-    var billDates: MutableList<CreditCardBillDate>? = null
+    var billDates: MutableList<CreditCardBillDate> = mutableListOf()
 
     @Column(name = "user_id", updatable = false, insertable = false)
     var userId: Long? = null
