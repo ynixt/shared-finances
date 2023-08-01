@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.ynixt.sharedfinances.enums.TransactionType
 import com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountNameDto
+import com.ynixt.sharedfinances.model.dto.creditcard.CreditCardNameDto
 import com.ynixt.sharedfinances.model.dto.group.GroupDto
 import com.ynixt.sharedfinances.model.dto.transactioncategory.TransactionCategoryDto
 import com.ynixt.sharedfinances.model.dto.user.UserDto
@@ -34,7 +35,7 @@ abstract class TransactionDto(
 
 abstract class BankTransactionDto(
     id: Long?,
-    val bankAccountId: Long,
+    val bankAccount: BankAccountNameDto,
     userId: Long,
     user: UserDto,
     group: GroupDto?,
@@ -57,7 +58,7 @@ abstract class BankTransactionDto(
 
 class RevenueTransactionDto(
     id: Long?,
-    bankAccountId: Long,
+    bankAccount: BankAccountNameDto,
     userId: Long,
     user: UserDto,
     group: GroupDto?,
@@ -68,7 +69,7 @@ class RevenueTransactionDto(
     category: TransactionCategoryDto?,
 ) : BankTransactionDto(
     id = id,
-    bankAccountId = bankAccountId,
+    bankAccount = bankAccount,
     userId = userId,
     user = user,
     group = group,
@@ -81,7 +82,7 @@ class RevenueTransactionDto(
 
 class ExpenseTransactionDto(
     id: Long?,
-    bankAccountId: Long,
+    bankAccount: BankAccountNameDto,
     userId: Long,
     user: UserDto,
     group: GroupDto?,
@@ -92,7 +93,7 @@ class ExpenseTransactionDto(
     category: TransactionCategoryDto?,
 ) : BankTransactionDto(
     id = id,
-    bankAccountId = bankAccountId,
+    bankAccount = bankAccount,
     userId = userId,
     user = user,
     group = group,
@@ -105,14 +106,13 @@ class ExpenseTransactionDto(
 
 class OtherSideTransactionDto(
     val id: Long?,
-    val bankAccountId: Long,
     val bankAccount: BankAccountNameDto,
     val userId: Long,
 )
 
 class TransferTransactionDto(
     id: Long?,
-    bankAccountId: Long,
+    bankAccount: BankAccountNameDto,
     userId: Long,
     user: UserDto,
     group: GroupDto?,
@@ -124,7 +124,7 @@ class TransferTransactionDto(
     val otherSide: OtherSideTransactionDto?,
 ) : BankTransactionDto(
     id = id,
-    bankAccountId = bankAccountId,
+    bankAccount = bankAccount,
     userId = userId,
     user = user,
     group = group,
@@ -137,7 +137,7 @@ class TransferTransactionDto(
 
 interface ICreditCardTransactionDto {
     val id: Long?
-    val creditCardId: Long
+    val creditCard: CreditCardNameDto
     val creditCardBillDateId: Long
     val totalInstallments: Int?
     val installment: Int?
@@ -154,7 +154,7 @@ interface ICreditCardTransactionDto {
 
 class CreditCardTransactionDto(
     id: Long?,
-    override val creditCardId: Long,
+    override val creditCard: CreditCardNameDto,
     override val creditCardBillDateId: Long,
     override val totalInstallments: Int?,
     override val installment: Int?,
@@ -181,8 +181,8 @@ class CreditCardTransactionDto(
 
 class CreditCardBillPaymentTransactionDto(
     id: Long?,
-    bankAccountId: Long,
-    override val creditCardId: Long,
+    bankAccount: BankAccountNameDto,
+    override val creditCard: CreditCardNameDto,
     override val creditCardBillDateId: Long,
     override val totalInstallments: Int?,
     override val installment: Int?,
@@ -205,5 +205,5 @@ class CreditCardBillPaymentTransactionDto(
     value = value,
     description = description,
     category = category,
-    bankAccountId = bankAccountId,
+    bankAccount = bankAccount,
 ), ICreditCardTransactionDto

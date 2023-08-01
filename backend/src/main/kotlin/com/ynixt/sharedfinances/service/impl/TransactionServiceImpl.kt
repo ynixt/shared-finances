@@ -33,14 +33,14 @@ class TransactionServiceImpl(
     private val creditCardService: CreditCardService,
     private val userRepository: UserRepository
 ) : TransactionService {
-    override fun findOneIncludeGroupAndCategory(
+    override fun findOneIncludeGroupAndCategoryAndBankAndCreditCard(
         id: Long, user: User, groupId: Long?
     ): Transaction? {
         if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
             throw SFExceptionForbidden()
         }
 
-        return transactionRepository.findOneIncludeGroupAndCategory(
+        return transactionRepository.findOneIncludeGroupAndCategoryAndBankAndCreditCard(
             id = id, userId = if (groupId == null) user.id!! else null, groupId = groupId
         )
     }
@@ -59,7 +59,7 @@ class TransactionServiceImpl(
             throw SFExceptionForbidden()
         }
 
-        val page = transactionRepository.findAllIncludeGroupAndCategory(
+        val page = transactionRepository.findAllIncludeGroupAndCategoryAndBankAndCreditCard(
             userId = if (groupId == null) user.id!! else null,
             groupId = groupId,
             bankAccountId = bankAccountId,
@@ -155,7 +155,7 @@ class TransactionServiceImpl(
 
         entityManager.clear()
 
-        transaction = findOneIncludeGroupAndCategory(
+        transaction = findOneIncludeGroupAndCategoryAndBankAndCreditCard(
             id = transaction.id!!, user = user, groupId = newDto.groupId
         )!!
 
@@ -231,7 +231,7 @@ class TransactionServiceImpl(
         transactionRepository.saveAndFlush(transaction)
         entityManager.clear()
 
-        val updatedTransaction = findOneIncludeGroupAndCategory(
+        val updatedTransaction = findOneIncludeGroupAndCategoryAndBankAndCreditCard(
             id = transaction.id!!, user = user, groupId = editDto.groupId
         )!!
 
@@ -263,7 +263,7 @@ class TransactionServiceImpl(
     override fun delete(
         user: User, id: Long, groupId: Long?, deleteAllInstallments: Boolean, deleteNextInstallments: Boolean
     ) {
-        val transaction = findOneIncludeGroupAndCategory(
+        val transaction = findOneIncludeGroupAndCategoryAndBankAndCreditCard(
             id = id, user = user, groupId = groupId
         )
 
@@ -331,6 +331,8 @@ class TransactionServiceImpl(
         val user2 = entityManager.getReference(User::class.java, dto.secondUserId)
         val bank2 = entityManager.getReference(BankAccount::class.java, dto.bankAccount2Id)
 
+        transaction.value = transaction.value.negate()
+
         val otherSideTransaction = Transaction(
             type = transaction.type,
             category = transaction.category,
@@ -338,7 +340,7 @@ class TransactionServiceImpl(
             user = user2,
             bankAccount = bank2,
             date = transaction.date,
-            value = transaction.value,
+            value = transaction.value.negate(),
             description = transaction.description,
         )
 

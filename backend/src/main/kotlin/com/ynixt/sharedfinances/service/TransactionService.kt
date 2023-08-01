@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 
 interface TransactionService {
-    fun findOneIncludeGroupAndCategory(
+    fun findOneIncludeGroupAndCategoryAndBankAndCreditCard(
         id: Long, user: User, groupId: Long?
     ): Transaction?
 

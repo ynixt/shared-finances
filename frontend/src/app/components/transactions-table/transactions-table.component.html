@@ -35,6 +35,21 @@
           </h3>
 
           <div class="extras-info flex flex-wrap">
+            <div *ngIf="transaction.bankAccount != null && transaction.group != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('bank-account')" class="info-icon mr-2 cursor-help">account_balance</mat-icon>
+              <span>{{ transaction.bankAccount.name }}</span>
+            </div>
+
+            <div *ngIf="transaction.otherSide != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('bank-account') + ' ' + 2" class="info-icon mr-2 cursor-help">account_balance</mat-icon>
+              <span>{{ transaction.otherSide.bankAccount.name }}</span>
+            </div>
+
+            <div *ngIf="transaction.creditCard != null && transaction.group != null" class="flex items-center extra-info">
+              <mat-icon [matTooltip]="t('credit-card')" class="info-icon mr-2 cursor-help">credit_card</mat-icon>
+              <span>{{ transaction.creditCard.name }}</span>
+            </div>
+
             <div *ngIf="transaction.group != null" class="flex items-center extra-info">
               <mat-icon [matTooltip]="t('group')" class="info-icon mr-2 cursor-help">group</mat-icon>
               <span>{{ transaction.group.name }}</span>
