@@ -6,12 +6,12 @@ This is an open source project, under [MIT](/LICENSE), to help anyone with finan
 
 ## Demo
 
-You can freely use this project on https://financas.gabrielsilva.dev/.
+You can freely use this project on https://finances.gabrielsilva.dev/.
 
 ## Technologies
 
 ### Backend
-- Spring 3
+- Kotlin + SpringBoot 3
 - Firebase auth
 
 ### Frontend
@@ -23,8 +23,14 @@ You can freely use this project on https://financas.gabrielsilva.dev/.
 
 ### Requisites
 
-The first thing needed is add a `service-account.json`, from Firebase, in `backend/src/main/resources`. This file can be
-generated with help of
-this [guide](https://sharma-vikashkr.medium.com/firebase-how-to-setup-a-firebase-service-account-836a70bb6646).
+The first thing needed is about backend environment variables and firebase service account. Please read how do
+that [here](/backend/README.md).
+
+Frontend also have some environemnt variables. Please read how do
+that [here](/backend/README.md).
 
 ### Using docker
+
+`docker compose up -d`
+
+
