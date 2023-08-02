@@ -1,46 +1,30 @@
-# English
+# Shared Finances
 
-Cooming soon
+> Control your family or individual finances.
 
-# Português
+This is an open source project, under [MIT](/LICENSE), to help anyone with finances control.
 
-**Demo:** https://financas.gabrielsilva.dev/
+## Demo
 
-Controle suas finanças familiares ou individuais.
+You can freely use this project on https://financas.gabrielsilva.dev/.
 
-## Tecnologias
+## Technologies
 
-- Angular
-- NestJS
-- GraphQL
-- Ngnix
-- Docker
+### Backend
+- Spring 3
+- Firebase auth
 
-## Como instalar
+### Frontend
+- Angular 15 + Angular Material
+- NgRx
+- RxStomp
 
-### Docker (prod)
+## Running
 
-1. Insira uma chave de admin firebase em `backend/unk-shared-finances-firebase-adminsdk.json`;
-2. Altere o arquivo `init-letsencrypt.sh` substituindo o domínio `financas.gabrielsilva.dev` pelo seu domínio e o email `admin@unkapps.com` pelo seu email;
-3. Altere o arquivo `frontend/environments/environment.prod.ts` para que graphqlWebsocketUrl aponte para a url de websocket correta;
-4. Crie o arquivo `.env` com o seguinte conteúdo:
-````
-db_user=USUARIO
-db_password=SENHA
-````
-5. Execute o comando `chmod +x .init-letsencrypt.sh/`;
-6. Execute o comando `chmod +x mongodb/initiate_replica.sh`;
-7. Execute o comando  `docker-compose build`;
-8. Execute o comando `sudo ./init-letsencrypt.sh`.
+### Requisites
 
-### Local
+The first thing needed is add a `service-account.json`, from Firebase, in `backend/src/main/resources`. This file can be
+generated with help of
+this [guide](https://sharma-vikashkr.medium.com/firebase-how-to-setup-a-firebase-service-account-836a70bb6646).
 
-#### Requisitos
-- Mongodb em modo replica
-- Node
-
-#### Executando
-
-1. Crie uma variável de ambiente com nome `GOOGLE_APPLICATION_CREDENTIALS` e como valor o caminho para o arquivo de chave de admin do firebase;
-2. Execute o comando `npm i` na pasta `backend` e também na pasta `frontend`;
-3. Execute o comando `npm start` na pasta `backend` para iniciar o backend e o mesmo comando na pasta `frontend` para iniciar o frontend.
+### Using docker

@@ -4,7 +4,7 @@ services:
   db:
     image: postgres:15.3-bookworm
     env_file:
-      - backend/.dev.env
+      - backend/.docker.env
     container_name: shared_finances-postgres
     restart: unless-stopped
     volumes:
@@ -13,44 +13,37 @@ services:
       - 5432:5432
     networks:
       - database
-#  api:
-#    container_name: shared_finances-api
-#    build:
-#      context: ./backend
-#      dockerfile: ./Dockerfile
-#    ports:
-#      - 3000:3000
-#    networks:
-#      - api
-#      - database
-#    depends_on:
-#      - db
-#      - db_replica_configure
-#    environment:
-#      - DB_URL=mongodb://${db_user}:${db_password}@shared_finances-mongo
-#  nginx:
-#    container_name: shared_finances-nginx
-#    build:
-#      context: ./frontend
-#      dockerfile: ./Dockerfile
-#    networks:
-#      - api
-#      - front
-#    depends_on:
-#      - api
-#    ports:
-#      - 80:80
-#      - 443:443
-#    volumes:
-#      - ./data/certbot/conf:/etc/letsencrypt
-#      - ./data/certbot/www:/var/www/certbot
-#    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-#  certbot:
-#    image: certbot/certbot
-#    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-#    volumes:
-#      - ./data/certbot/conf:/etc/letsencrypt
-#      - ./data/certbot/www:/var/www/certbot
+  api:
+    container_name: shared_finances-api
+    restart: unless-stopped
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
+    networks:
+      - api
+      - database
+    depends_on:
+      - db
+    env_file:
+      - backend/.docker.env
+  nginx:
+    container_name: shared_finances-nginx
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+    networks:
+      - api
+      - front
+    depends_on:
+      - api
+    ports:
+      - 80:80
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    env_file:
+      - .env
 
 networks:
   api:
@@ -60,4 +53,3 @@ networks:
 
 volumes:
   postgresdb_data_container:
-  credentials:
