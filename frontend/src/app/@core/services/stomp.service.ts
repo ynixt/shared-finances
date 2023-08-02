@@ -6,6 +6,7 @@ import { filter, take } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import { HotToastService } from "@ngneat/hot-toast";
 import { TranslocoService } from "@ngneat/transloco";
+import { environment } from '../../../environments/environment'
 
 @Injectable()
 @UntilDestroy()
@@ -15,7 +16,11 @@ export class StompService extends RxStomp implements OnDestroy {
   private firstClosedState = true;
   private serverOffline = false;
 
-  constructor(private auth: Auth, private toast: HotToastService, private translocoService: TranslocoService) {
+  constructor(
+    private auth: Auth,
+    private toast: HotToastService,
+    private translocoService: TranslocoService
+  ) {
     super();
     this.user$ = user(this.auth).pipe();
   }
@@ -23,7 +28,7 @@ export class StompService extends RxStomp implements OnDestroy {
   start() {
     this.serverOffline = false;
     this.configure({
-      brokerURL: "ws://localhost:8080/api/socket",
+      brokerURL: environment.websocketUrl,
       beforeConnect: (async client => {
         const user = await lastValueFrom(this.user$.pipe(take(1)).pipe(take(1)));
         const token = await user.getIdToken();

@@ -3,7 +3,7 @@ server:
         contextPath: /api
     logging:
         enabled: false
-    port: 8080
+    port: ${PORT}
     error:
         include-message: always
 

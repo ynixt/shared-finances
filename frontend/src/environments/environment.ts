@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  graphqlWebsocketUrl: 'ws://localhost:3000/graphql',
+  websocketUrl: 'ws://localhost:8080/api/socket',
 };
 
 /*
