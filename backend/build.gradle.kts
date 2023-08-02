@@ -72,3 +72,7 @@ kapt {
         arg("mapstruct.defaultComponentModel", "spring")
     }
 }
+
+tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    this.archiveFileName.set("shared-finances.${archiveExtension.get()}")
+}
