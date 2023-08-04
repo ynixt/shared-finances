@@ -2,6 +2,12 @@ FROM node:18.12.1-alpine as builder
 
 WORKDIR /usr/src/shared_finances/frontend
 
+ARG NG_APP_SERVER_URL
+ENV NG_APP_SERVER_URL $NG_APP_SERVER_URL
+
+ARG NG_APP_USE_SSL
+ENV NG_APP_USE_SSL $NG_APP_USE_SSL
+
 COPY package.json ./
 COPY package-lock.json ./
 
