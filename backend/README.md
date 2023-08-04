@@ -20,6 +20,8 @@ To run this project is also necessary have the `service-account.json` in `src/ma
 generated with help of
 this [guide](https://sharma-vikashkr.medium.com/firebase-how-to-setup-a-firebase-service-account-836a70bb6646).
 
+Another option is to set the variable `GOOGLE_APPLICATION_CREDENTIALS` that points to file path.
+
 ## Local running
 
 Just call the gradle command `bootRun` (or just run the main method at `SharedFinancesApplication.kt`) and the
