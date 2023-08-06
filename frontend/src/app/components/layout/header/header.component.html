@@ -46,6 +46,10 @@
                 </div>
                 <mat-divider></mat-divider>
                 <div class="actions">
+                  <a mat-menu-item routerLink="settings">
+                    <mat-icon>settings</mat-icon>
+                    <span>{{t('settings')}}</span>
+                  </a>
                   <a mat-menu-item href="https://github.com/ynixt/shared-finances">
                     <fa-icon class="mat-icon fa-mat-icon" [icon]="faGithub"></fa-icon>
                     <span>Github</span>

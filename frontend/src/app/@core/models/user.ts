@@ -10,4 +10,5 @@ export interface User {
   permissions?: any[];
   creditCards?: CreditCard[];
   bankAccounts?: BankAccount[];
+  lang: string;
 }

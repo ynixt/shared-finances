@@ -7,5 +7,6 @@ data class CurrentUserDto(
     val email: String,
     val name: String,
     val photoUrl: String?,
-    val bankAccounts: List<BankAccountDto>
+    val bankAccounts: List<BankAccountDto>,
+    val lang: String
 )

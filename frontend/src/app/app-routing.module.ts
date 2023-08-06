@@ -19,6 +19,11 @@ const routes: Routes = [
     canActivate: [PermissionGuard],
   },
   {
+    path: 'settings',
+    loadChildren: () => import('./pages/settings/settings-page.module').then(m => m.SettingsPageModule),
+    canActivate: [PermissionGuard],
+  },
+  {
     path: '404',
     component: NotFoundComponent,
     canActivate: [TitleGuard],

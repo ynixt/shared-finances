@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { TRANSLOCO_LOADER, Translation, TranslocoLoader, TRANSLOCO_CONFIG, translocoConfig, TranslocoModule } from '@ngneat/transloco';
 import { Injectable, NgModule } from '@angular/core';
 import { environment } from '../../../environments/environment';
+import { availableLanguages } from "./available-languages";
 
 @Injectable({ providedIn: 'root' })
 export class TranslocoHttpLoader implements TranslocoLoader {
@@ -18,8 +19,8 @@ export class TranslocoHttpLoader implements TranslocoLoader {
     {
       provide: TRANSLOCO_CONFIG,
       useValue: translocoConfig({
-        availableLangs: ['pt'],
-        defaultLang: 'pt',
+        availableLangs: availableLanguages,
+        defaultLang: 'en',
         prodMode: environment.production,
       }),
     },

@@ -1,4 +1,8 @@
 {
+  "languages": {
+    "pt": "Português",
+    "en": "Inglês"
+  },
   "date-format": {
     "month-year": "MM/YYYY"
   },
@@ -8,6 +12,7 @@
   "logout": "Sair",
   "ok": "Ok",
   "cancel": "Cancelar",
+  "saving": "Salvando...",
   "loading": "Carregando",
   "deleting": "Deletando...",
   "creating": "Criando...",
@@ -33,6 +38,7 @@
   "generic-error-with-description": "Um erro aconteceu:<br>{{error}}.",
   "add": "Adicionar",
   "edit": "Editar",
+  "save": "Salvar",
   "delete": "Excluir",
   "close": "Fechar",
   "confirm": "Confirmação",
@@ -184,5 +190,14 @@
     "previousPage": "Página anterior",
     "itemsPerPage": "Itens por página",
     "pageRange": "Página {{currentPage}} de {{totalPages}}"
-  }
+  },
+  "settings": "Configurações",
+  "language": "Idioma",
+  "settings-save-successful": "As configurações foram salvas com sucesso.",
+  "settings-save-error": "Não foi possível atualizar as configurações.",
+  "settings-save-error-with-description": "Não foi possível atualizar as configurações.<br>Erro: {{error}}.",
+  "delete-account": "Deletar conta",
+  "delete-account-error": "Erro ao deletar conta.",
+  "delete-account-error-with-description": "Erro ao deletar conta.<br>Erro: {{error}}.",
+  "delete-account-confirm": "Tem certeza de que deseja excluir sua conta? Essa ação não pode ser desfeita."
 }

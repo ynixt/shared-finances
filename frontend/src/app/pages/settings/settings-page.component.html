@@ -1,0 +1,25 @@
+<ng-container *transloco="let t">
+  <div class="content settings-page">
+    <form (ngSubmit)="updateSettings()">
+      <mat-form-field class="w-full">
+        <mat-label>{{ t('language') }}</mat-label>
+        <mat-select [(ngModel)]="currentLang" name="lang">
+          <mat-option *ngFor="let language of languages" [value]="language">
+            {{ t('languages.' + language) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button class="add-button md:w-auto md:ml-auto block" type="submit" mat-raised-button color="primary">
+        {{ t('save') }}
+      </button>
+    </form>
+
+    <div class="pt-14">
+      <button (click)="confirmDeleteAccount()" class="add-button mr-auto ml-auto block" type="button"
+              mat-raised-button color="warn">
+        {{ t('delete-account') }}
+      </button>
+    </div>
+  </div>
+</ng-container>

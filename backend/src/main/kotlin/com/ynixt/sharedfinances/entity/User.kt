@@ -13,6 +13,7 @@ class User(
     val email: String,
     val name: String,
     val photoUrl: String?,
+    var lang: String
 ) : AuditedEntity(), UserDetails {
     @OneToMany(mappedBy = "user")
     var creditCards: MutableSet<CreditCard>? = null
@@ -49,6 +50,10 @@ class User(
 
     override fun isEnabled(): Boolean {
         return true
+    }
+
+    companion object {
+        const val DEFAULT_LANG = "en"
     }
 }
 

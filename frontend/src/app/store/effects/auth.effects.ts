@@ -4,19 +4,23 @@ import { of, from } from 'rxjs';
 import { switchMap, map, catchError, filter } from 'rxjs/operators';
 import { AuthService } from 'src/app/@core/services';
 import { AuthActions, BankAccountActions, CreditCardActions, UserCategoryActions } from '../actions';
+import { TranslocoService } from "@ngneat/transloco";
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthEffects {
-  constructor(private actions$: Actions, private authService: AuthService) {}
+  constructor(private actions$: Actions, private authService: AuthService, private translocoService: TranslocoService) {}
 
   getCurrentUser$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.getCurrentUser),
       switchMap(() =>
         from(this.authService.getCurrentUser()).pipe(
-          map(user => AuthActions.authSuccess({ user })),
+          map(user => {
+            this.translocoService.setActiveLang(user.lang);
+            return AuthActions.authSuccess({ user })
+          }),
           catchError(error => of(AuthActions.authError({ error }))),
         ),
       ),

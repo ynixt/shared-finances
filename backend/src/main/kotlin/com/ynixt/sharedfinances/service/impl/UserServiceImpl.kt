@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.service.impl
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseToken
 import com.ynixt.sharedfinances.entity.User
+import com.ynixt.sharedfinances.model.dto.user.UserSettingsDto
 import com.ynixt.sharedfinances.repository.UserRepository
 import com.ynixt.sharedfinances.service.UserService
 import jakarta.transaction.Transactional
@@ -11,7 +13,9 @@ import org.springframework.stereotype.Service
 
 
 @Service
-class UserServiceImpl(private val userRepository: UserRepository) : UserService {
+class UserServiceImpl(
+    private val userRepository: UserRepository, private val firebaseAuth: FirebaseAuth
+) : UserService {
     override fun getForCurrentUser(id: Long): User? {
         return userRepository.findCurrentUserOneById(id)
     }
@@ -24,6 +28,7 @@ class UserServiceImpl(private val userRepository: UserRepository) : UserService 
                 name = firebaseToken.name,
                 email = firebaseToken.email,
                 photoUrl = firebaseToken.picture,
+                lang = User.DEFAULT_LANG
             )
         )
     }
@@ -32,5 +37,17 @@ class UserServiceImpl(private val userRepository: UserRepository) : UserService 
         return UserDetailsService { username ->
             userRepository.findByEmail(username) ?: throw UsernameNotFoundException("User not found")
         }
+    }
+
+    @Transactional
+    override fun updateSettings(user: User, newSettingsDto: UserSettingsDto) {
+        user.lang = newSettingsDto.lang
+        userRepository.save(user)
+    }
+
+    @Transactional
+    override fun deleteAccount(user: User) {
+        userRepository.deleteById(user.id!!)
+        firebaseAuth.deleteUser(user.uid)
     }
 }
