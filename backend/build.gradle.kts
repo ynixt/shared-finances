@@ -19,7 +19,7 @@ allOpen {
 }
 
 group = "com.ynixt"
-version = "0.0.1-SNAPSHOT"
+version = "0.3.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_20
