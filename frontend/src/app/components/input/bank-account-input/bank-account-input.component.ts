@@ -22,6 +22,7 @@ export class BankAccountInputComponent extends ControlValueAccessorConnector<Acc
 
   @Input() title: string;
   @Input() autoMount = true;
+  @Input() isShared: boolean;
 
   constructor(
     private authSelectors: AuthSelectors,

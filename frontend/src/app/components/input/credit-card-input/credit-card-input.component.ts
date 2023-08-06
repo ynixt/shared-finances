@@ -32,6 +32,7 @@ export class CreditCardInputComponent
   creditCardsWithPersons$: Observable<CreditCardWithPerson[]>;
 
   @Input() autoMount = true;
+  @Input() isShared: boolean;
 
   private creditCardsWithPersonsSubject: BehaviorSubject<CreditCardWithPerson[]>;
   private creditCardFromOtherUsers = new BehaviorSubject<CreditCardWithPerson[]>([]);

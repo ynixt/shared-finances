@@ -1,6 +1,6 @@
 <mat-form-field *transloco="let t" class="w-full">
   <mat-label>{{ t('credit-card') }}</mat-label>
-  <mat-select *transloco="let t" [compareWith]="creditCardInputValueCompare" [formControl]="control">
+  <mat-select *ngIf="isShared" [compareWith]="creditCardInputValueCompare" [formControl]="control">
     <mat-option>{{ t('mat-select-none') }}</mat-option>
     <mat-optgroup *ngFor="let creditsPerson of creditCardsWithPersons$ | async" [label]="creditsPerson.person.name">
       <mat-option
@@ -10,5 +10,16 @@
         {{ creditCard.name }}
       </mat-option>
     </mat-optgroup>
+  </mat-select>
+  <mat-select *ngIf="!isShared" [compareWith]="creditCardInputValueCompare" [formControl]="control">
+    <mat-option>{{ t('mat-select-none') }}</mat-option>
+    <ng-container *ngIf="creditCardsWithPersons$ | async as creditCardsWithPersons">
+      <mat-option
+        *ngFor="let creditCard of creditCardsWithPersons[0]?.creditCards"
+        [value]="{ creditCardId: creditCard.id, personId: creditCardsWithPersons[0].person.id }"
+      >
+        {{ creditCard.name }}
+      </mat-option>
+    </ng-container>
   </mat-select>
 </mat-form-field>
