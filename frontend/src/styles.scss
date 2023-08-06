@@ -32,10 +32,9 @@ button:focus {
 }
 
 .td-window-dialog {
-  width: 99vw;
-  height: 99vh;
-  max-width: 99vw !important;
-  max-height: 99vh !important;
+  width: 100vw;
+  max-width: 100vw !important;
+  height: 100%;
 
   @screen md {
     width: 50vw;
