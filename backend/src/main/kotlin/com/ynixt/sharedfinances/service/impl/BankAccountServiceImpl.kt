@@ -56,16 +56,20 @@ class BankAccountServiceImpl(
     }
 
     override fun getChartByBankAccountId(
-        user: User,
-        bankAccountId: Long,
-        minDate: LocalDate?,
-        maxDate: LocalDate?
+        user: User, bankAccountId: Long, maxDate: LocalDate?
     ): List<TransactionValuesAndDateDto> {
-        return transactionRepository.findAllByBankAccountIdGroupedByDate(
+        val chartValues = transactionRepository.findAllByBankAccountIdGroupedByDate(
             userId = user.id!!,
             bankAccountId = bankAccountId,
-            minDate = minDate ?: LocalDate.now(),
             maxDate = maxDate ?: LocalDate.now().plusDays(1)
         )
+
+        for (i in 1..<chartValues.size) {
+            val value = chartValues[i]
+            val previousValue = chartValues[i - 1]
+            value.balance += previousValue.balance
+        }
+
+        return chartValues
     }
 }

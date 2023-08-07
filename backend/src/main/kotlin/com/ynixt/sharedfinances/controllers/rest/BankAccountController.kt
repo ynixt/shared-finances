@@ -88,7 +88,6 @@ class BankAccountController(
     fun getChartByBankAccountId(
         authentication: Authentication,
         @PathVariable bankAccountId: Long,
-        @RequestParam minDate: LocalDate?,
         @RequestParam maxDate: LocalDate?,
     ): List<TransactionValuesAndDateDto> {
         val user = securityService.authenticationToUser(authentication)!!
@@ -96,7 +95,6 @@ class BankAccountController(
         return bankAccountService.getChartByBankAccountId(
             user = user,
             bankAccountId = bankAccountId,
-            minDate = minDate,
             maxDate = maxDate
         )
     }

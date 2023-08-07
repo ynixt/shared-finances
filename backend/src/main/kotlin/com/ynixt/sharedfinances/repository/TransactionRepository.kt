@@ -82,7 +82,6 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
                 where
                     t.userId = :userId
                     and t.bankAccountId = :bankAccountId
-                    and t.date >= :minDate
                     and t.date <= :maxDate
                 group by 1
     """
@@ -90,7 +89,6 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
     fun findAllByBankAccountIdGroupedByDate(
         userId: Long,
         bankAccountId: Long,
-        minDate: LocalDate,
         maxDate: LocalDate,
     ): List<TransactionValuesAndDateDto>
 

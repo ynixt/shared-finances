@@ -16,7 +16,6 @@ interface BankAccountService {
     fun getChartByBankAccountId(
         user: User,
         bankAccountId: Long,
-        minDate: LocalDate?,
         maxDate: LocalDate?
     ): List<TransactionValuesAndDateDto>
 }

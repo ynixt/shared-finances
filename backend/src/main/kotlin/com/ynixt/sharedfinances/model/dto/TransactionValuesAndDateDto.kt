@@ -4,7 +4,7 @@ import java.math.BigDecimal
 
 data class TransactionValuesAndDateDto(
     val date: String,
-    val balance: BigDecimal,
+    var balance: BigDecimal,
     val expenses: BigDecimal,
     val revenues: BigDecimal,
 )
