@@ -6,12 +6,13 @@ import { filter, take } from "rxjs/operators";
 import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
 import { HotToastService } from "@ngneat/hot-toast";
 import { TranslocoService } from "@ngneat/transloco";
-import { environment } from '../../../environments/environment'
+import { environment } from "../../../environments/environment";
 
 @Injectable()
 @UntilDestroy()
 export class StompService extends RxStomp implements OnDestroy {
   private readonly connectionErrorToastId = "connectionErrorToastId";
+  private readonly connectionReestablishedToastId = "connectionReestablishedToastId";
   private user$: Observable<FirebaseUser>;
   private firstClosedState = true;
   private serverOffline = false;
@@ -60,7 +61,9 @@ export class StompService extends RxStomp implements OnDestroy {
       } else if (state == RxStompState.OPEN) {
         if (this.serverOffline) {
           this.toast.close(this.connectionErrorToastId);
-          this.toast.success(this.translocoService.translate("connection-reestablished"));
+          this.toast.success(this.translocoService.translate("connection-reestablished"), {
+            id: this.connectionReestablishedToastId
+          });
           this.serverOffline = false;
         }
       }
