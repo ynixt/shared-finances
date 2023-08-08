@@ -85,7 +85,7 @@ class GroupController(
     ): Page<TransactionDto> {
         val user = securityService.authenticationToUser(authentication)!!
 
-        return transactionService.findAllIncludeGroupAndCategoryAsTransactionDto(
+        return transactionService.findAllIncludeGroupAndCategoriesAsTransactionDto(
             bankAccountId = null,
             groupId = groupId,
             creditCardId = null,

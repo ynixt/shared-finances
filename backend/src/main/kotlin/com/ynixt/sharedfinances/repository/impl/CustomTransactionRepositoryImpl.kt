@@ -110,7 +110,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         }
     }
 
-    override fun findAllIncludeGroupAndCategoryAndBankAndCreditCard(
+    override fun findAllIncludeGroupAndCategoriesAndBankAndCreditCard(
         userId: Long?,
         groupId: Long?,
         bankAccountId: Long?,
@@ -121,10 +121,11 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         pageable: Pageable
     ): Page<Transaction> {
         var hql = """
+           select distinct t
            from Transaction t
            join fetch t.user u
            left join fetch t.group g
-           left join fetch t.category c
+           left join fetch t.categories c
            left join fetch t.bankAccount b
            left join fetch t.otherSide oc
            left join fetch oc.bankAccount ocb
@@ -237,17 +238,18 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         return PageImpl(query.resultList, pageable, count);
     }
 
-    override fun findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+    override fun findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
         id: Long, userId: Long?, groupId: Long?
     ): Transaction? {
         var hql = """
+           select distinct t
            from Transaction t
            join fetch t.user u
            left join fetch t.group g
            left join fetch t.creditCard cc
            left join fetch t.bankAccount b
            left join fetch g.users gu
-           left join fetch t.category c
+           left join fetch t.categories c
            left join fetch t.otherSide oc
            left join fetch oc.bankAccount ocb
            left join fetch oc.user ocu

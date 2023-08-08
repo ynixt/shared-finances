@@ -21,7 +21,7 @@ abstract class NewTransactionDto(
     val date: LocalDate,
     val value: BigDecimal,
     val description: String?,
-    val categoryId: Long?,
+    val categoriesIds: List<Long>?,
     val firstUserId: Long?,
     val groupId: Long?,
 )
@@ -34,7 +34,7 @@ abstract class NewBankTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    categoryId: Long?,
+    categoriesIds: List<Long>?,
 ) : NewTransactionDto(
     firstUserId = firstUserId,
     groupId = groupId,
@@ -42,7 +42,7 @@ abstract class NewBankTransactionDto(
     date = date,
     value = value,
     description = description,
-    categoryId = categoryId,
+    categoriesIds = categoriesIds,
 )
 
 class NewRevenueTransactionDto(
@@ -53,7 +53,7 @@ class NewRevenueTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    categoryId: Long?,
+    categoriesIds: List<Long>?,
 ) : NewBankTransactionDto(
     bankAccountId = bankAccountId,
     firstUserId = firstUserId,
@@ -62,7 +62,7 @@ class NewRevenueTransactionDto(
     date = date,
     value = value,
     description = description,
-    categoryId = categoryId,
+    categoriesIds = categoriesIds,
 )
 
 class NewExpenseTransactionDto(
@@ -73,7 +73,7 @@ class NewExpenseTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    categoryId: Long?,
+    categoriesIds: List<Long>?,
 ) : NewBankTransactionDto(
     bankAccountId = bankAccountId,
     firstUserId = firstUserId,
@@ -82,7 +82,7 @@ class NewExpenseTransactionDto(
     date = date,
     value = value,
     description = description,
-    categoryId = categoryId,
+    categoriesIds = categoriesIds,
 )
 
 class NewTransferTransactionDto(
@@ -95,7 +95,7 @@ class NewTransferTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    categoryId: Long?,
+    categoriesIds: List<Long>?,
 ) : NewBankTransactionDto(
     bankAccountId = bankAccountId,
     firstUserId = firstUserId,
@@ -104,7 +104,7 @@ class NewTransferTransactionDto(
     date = date,
     value = value,
     description = description,
-    categoryId = categoryId,
+    categoriesIds = categoriesIds,
 )
 
 interface INewCreditCardTransactionDto {
@@ -117,7 +117,7 @@ interface INewCreditCardTransactionDto {
     val date: LocalDate
     val value: BigDecimal
     val description: String?
-    val categoryId: Long?
+    val categoriesIds: List<Long>?
 }
 
 class NewCreditCardTransactionDto(
@@ -130,7 +130,7 @@ class NewCreditCardTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    categoryId: Long?,
+    categoriesIds: List<Long>?,
 ) : NewTransactionDto(
     firstUserId = firstUserId,
     groupId = groupId,
@@ -138,7 +138,7 @@ class NewCreditCardTransactionDto(
     date = date,
     value = value,
     description = description,
-    categoryId = categoryId,
+    categoriesIds = categoriesIds,
 ), INewCreditCardTransactionDto
 
 class NewCreditCardBillPaymentTransactionDto(
@@ -152,7 +152,7 @@ class NewCreditCardBillPaymentTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    categoryId: Long?,
+    categoriesIds: List<Long>?,
 ) : NewBankTransactionDto(
     bankAccountId = bankAccountId,
     firstUserId = firstUserId,
@@ -161,5 +161,5 @@ class NewCreditCardBillPaymentTransactionDto(
     date = date,
     value = value,
     description = description,
-    categoryId = categoryId,
+    categoriesIds = categoriesIds,
 ), INewCreditCardTransactionDto

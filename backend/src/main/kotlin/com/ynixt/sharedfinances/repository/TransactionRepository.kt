@@ -25,7 +25,7 @@ interface CustomTransactionRepository {
     ): CreditCardSummaryDto
 
 
-    fun findAllIncludeGroupAndCategoryAndBankAndCreditCard(
+    fun findAllIncludeGroupAndCategoriesAndBankAndCreditCard(
         userId: Long?,
         groupId: Long?,
         bankAccountId: Long?,
@@ -36,7 +36,7 @@ interface CustomTransactionRepository {
         pageable: Pageable
     ): Page<Transaction>
 
-    fun findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+    fun findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
         id: Long,
         userId: Long?,
         groupId: Long?,

@@ -27,7 +27,7 @@ abstract class TransactionDto(
     val date: LocalDate,
     val value: BigDecimal,
     val description: String?,
-    val category: TransactionCategoryDto?,
+    val categories: List<TransactionCategoryDto>?,
     val userId: Long,
     val user: UserDto,
     val group: GroupDto?,
@@ -43,7 +43,7 @@ abstract class BankTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    category: TransactionCategoryDto?,
+    categories: List<TransactionCategoryDto>?,
 ) : TransactionDto(
     id = id,
     userId = userId,
@@ -53,7 +53,7 @@ abstract class BankTransactionDto(
     date = date,
     value = value,
     description = description,
-    category = category,
+    categories = categories,
 )
 
 class RevenueTransactionDto(
@@ -66,7 +66,7 @@ class RevenueTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    category: TransactionCategoryDto?,
+    categories: List<TransactionCategoryDto>?,
 ) : BankTransactionDto(
     id = id,
     bankAccount = bankAccount,
@@ -77,7 +77,7 @@ class RevenueTransactionDto(
     date = date,
     value = value,
     description = description,
-    category = category,
+    categories = categories,
 )
 
 class ExpenseTransactionDto(
@@ -90,7 +90,7 @@ class ExpenseTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    category: TransactionCategoryDto?,
+    categories: List<TransactionCategoryDto>?,
 ) : BankTransactionDto(
     id = id,
     bankAccount = bankAccount,
@@ -101,7 +101,7 @@ class ExpenseTransactionDto(
     date = date,
     value = value,
     description = description,
-    category = category,
+    categories = categories,
 )
 
 class OtherSideTransactionDto(
@@ -120,7 +120,7 @@ class TransferTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    category: TransactionCategoryDto?,
+    categories: List<TransactionCategoryDto>?,
     val otherSide: OtherSideTransactionDto?,
 ) : BankTransactionDto(
     id = id,
@@ -132,7 +132,7 @@ class TransferTransactionDto(
     date = date,
     value = value,
     description = description,
-    category = category,
+    categories = categories,
 )
 
 interface ICreditCardTransactionDto {
@@ -149,7 +149,7 @@ interface ICreditCardTransactionDto {
     val date: LocalDate
     val value: BigDecimal
     val description: String?
-    val category: TransactionCategoryDto?
+    val categories: List<TransactionCategoryDto>?
 }
 
 class CreditCardTransactionDto(
@@ -166,7 +166,7 @@ class CreditCardTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    category: TransactionCategoryDto?,
+    categories: List<TransactionCategoryDto>?,
 ) : TransactionDto(
     id = id,
     userId = userId,
@@ -176,7 +176,7 @@ class CreditCardTransactionDto(
     date = date,
     value = value,
     description = description,
-    category = category,
+    categories = categories,
 ), ICreditCardTransactionDto
 
 class CreditCardBillPaymentTransactionDto(
@@ -194,7 +194,7 @@ class CreditCardBillPaymentTransactionDto(
     date: LocalDate,
     value: BigDecimal,
     description: String?,
-    category: TransactionCategoryDto?,
+    categories: List<TransactionCategoryDto>?,
 ) : BankTransactionDto(
     id = id,
     userId = userId,
@@ -204,6 +204,6 @@ class CreditCardBillPaymentTransactionDto(
     date = date,
     value = value,
     description = description,
-    category = category,
+    categories = categories,
     bankAccount = bankAccount,
 ), ICreditCardTransactionDto

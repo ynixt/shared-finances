@@ -11,8 +11,6 @@ class Transaction(
 
     @Enumerated(EnumType.STRING) var type: TransactionType,
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "category_id") var category: TransactionCategory? = null,
-
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "group_id") var group: Group? = null,
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id") var user: User? = null,
@@ -32,8 +30,13 @@ class Transaction(
     var installment: Int? = null,
     var totalInstallments: Int? = null
 ) : AuditedEntity() {
-    @Column(name = "category_id", updatable = false, insertable = false)
-    var categoryId: Long? = null
+    @ManyToMany
+    @JoinTable(
+        name = "transaction_has_categories",
+        joinColumns = [JoinColumn(name = "transaction_id")],
+        inverseJoinColumns = [JoinColumn(name = "category_id")]
+    )
+    var categories: MutableSet<TransactionCategory>? = null
 
     @Column(name = "group_id", updatable = false, insertable = false)
     var groupId: Long? = null
@@ -56,7 +59,7 @@ class Transaction(
     fun copy(
         id: Long? = this.id,
         type: TransactionType = this.type,
-        category: TransactionCategory? = this.category,
+        categories: MutableSet<TransactionCategory>? = this.categories,
         group: Group? = this.group,
         user: User? = this.user,
         bankAccount: BankAccount? = this.bankAccount,
@@ -69,7 +72,6 @@ class Transaction(
         installment: Int? = this.installment,
         installmentId: String? = this.installmentId,
         totalInstallments: Int? = this.totalInstallments,
-        categoryId: Long? = this.categoryId,
         groupId: Long? = this.groupId,
         userId: Long? = this.userId,
         bankAccountId: Long? = this.bankAccountId,
@@ -79,7 +81,6 @@ class Transaction(
         return Transaction(
             id = id,
             type = type,
-            category = category,
             group = group,
             user = user,
             bankAccount = bankAccount,
@@ -93,7 +94,7 @@ class Transaction(
             installmentId = installmentId,
             totalInstallments = totalInstallments,
         ).apply {
-            this.categoryId = categoryId
+            this.categories = categories
             this.groupId = groupId
             this.userId = userId
             this.bankAccountId = bankAccountId

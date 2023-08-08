@@ -4,4 +4,5 @@ export interface BankAccount {
   balance?: number;
   enabled: boolean;
   displayOnGroup: boolean;
+  userId?: string;
 }

@@ -60,12 +60,14 @@
               <span>{{ t('value-one-of-value-two', { value1: transaction.installment, value2: transaction.totalInstallments }) }}</span>
             </div>
 
-            <div *ngIf="transaction.category != null" class="flex items-center extra-info">
-              <mat-icon [matTooltip]="t('category')" class="info-icon mr-2 cursor-help" [style.color]="transaction.category.color"
-                >local_offer</mat-icon
-              >
-              <span>{{ transaction.category.name }}</span>
-            </div>
+            <ng-container *ngIf="transaction.categories != null">
+              <div *ngFor="let category of transaction.categories" class="flex items-center extra-info">
+                <mat-icon [matTooltip]="t('category')" class="info-icon mr-2 cursor-help" [style.color]="category.color"
+                  >local_offer</mat-icon
+                >
+                <span>{{ category.name }}</span>
+              </div>
+            </ng-container>
 
             <div *ngIf="transaction.user != null && groupId != null" class="flex items-center extra-info">
               <mat-icon [matTooltip]="t('paid-by')" class="info-icon mr-2 cursor-help">person</mat-icon>

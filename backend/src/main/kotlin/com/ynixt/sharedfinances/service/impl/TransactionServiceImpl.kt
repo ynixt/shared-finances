@@ -33,19 +33,19 @@ class TransactionServiceImpl(
     private val creditCardService: CreditCardService,
     private val userRepository: UserRepository
 ) : TransactionService {
-    override fun findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+    override fun findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
         id: Long, user: User, groupId: Long?
     ): Transaction? {
         if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
             throw SFExceptionForbidden()
         }
 
-        return transactionRepository.findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+        return transactionRepository.findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
             id = id, userId = if (groupId == null) user.id!! else null, groupId = groupId
         )
     }
 
-    override fun findAllIncludeGroupAndCategoryAsTransactionDto(
+    override fun findAllIncludeGroupAndCategoriesAsTransactionDto(
         user: User,
         groupId: Long?,
         bankAccountId: Long?,
@@ -59,7 +59,7 @@ class TransactionServiceImpl(
             throw SFExceptionForbidden()
         }
 
-        val page = transactionRepository.findAllIncludeGroupAndCategoryAndBankAndCreditCard(
+        val page = transactionRepository.findAllIncludeGroupAndCategoriesAndBankAndCreditCard(
             userId = if (groupId == null) user.id!! else null,
             groupId = groupId,
             bankAccountId = bankAccountId,
@@ -73,16 +73,19 @@ class TransactionServiceImpl(
         return page.map { transactionMapper.toDto(it) }
     }
 
-    @Transactional()
+    @Transactional
     override fun newTransaction(user: User, newDto: NewTransactionDto): Transaction {
         val targetUser =
             if (newDto.firstUserId == null || newDto.firstUserId == user.id) user else userRepository.findByIdOrNull(
                 newDto.firstUserId
             )!!
         val group = if (newDto.groupId == null) null else entityManager.getReference(Group::class.java, newDto.groupId)
-        val category = if (newDto.categoryId == null) null else entityManager.getReference(
-            TransactionCategory::class.java, newDto.categoryId
-        )
+        val categories = if (newDto.categoriesIds == null) null else newDto.categoriesIds.map {
+            entityManager.getReference(
+                TransactionCategory::class.java, it
+            )
+        }.toMutableList()
+
         var otherSideTransaction: Transaction? = null
 
         if (newDto.groupId != null && !groupService.userHasPermissionToGroup(user, newDto.groupId)) {
@@ -91,14 +94,13 @@ class TransactionServiceImpl(
 
         var transaction = Transaction(
             type = newDto.type,
-            category = category,
             group = group,
             user = targetUser,
             date = newDto.date,
             value = newDto.value,
             description = newDto.description
         ).apply {
-            categoryId = newDto.categoryId
+            this.categories = categories?.toMutableSet()
             groupId = newDto.groupId
             userId = newDto.firstUserId
         }
@@ -155,7 +157,7 @@ class TransactionServiceImpl(
 
         entityManager.clear()
 
-        transaction = findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+        transaction = findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
             id = transaction.id!!, user = user, groupId = newDto.groupId
         )!!
 
@@ -176,9 +178,11 @@ class TransactionServiceImpl(
 
     @Transactional
     override fun editTransaction(user: User, id: Long, editDto: NewTransactionDto): Transaction {
-        val category = if (editDto.categoryId == null) null else entityManager.getReference(
-            TransactionCategory::class.java, editDto.categoryId
-        )
+        val categories = if (editDto.categoriesIds == null) null else editDto.categoriesIds.map {
+            entityManager.getReference(
+                TransactionCategory::class.java, it
+            )
+        }.toMutableList()
 
         val transaction = (findOne(
             id = id, user = user, groupId = editDto.groupId
@@ -199,8 +203,7 @@ class TransactionServiceImpl(
             type = editDto.type
             this.user = targetUser
             this.userId = editDto.firstUserId
-            this.category = category
-            categoryId = editDto.categoryId
+            this.categories = categories?.toMutableSet()
             date = editDto.date
             value = editDto.value
             description = editDto.description
@@ -231,7 +234,7 @@ class TransactionServiceImpl(
         transactionRepository.saveAndFlush(transaction)
         entityManager.clear()
 
-        val updatedTransaction = findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+        val updatedTransaction = findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
             id = transaction.id!!, user = user, groupId = editDto.groupId
         )!!
 
@@ -263,7 +266,7 @@ class TransactionServiceImpl(
     override fun delete(
         user: User, id: Long, groupId: Long?, deleteAllInstallments: Boolean, deleteNextInstallments: Boolean
     ) {
-        val transaction = findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+        val transaction = findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
             id = id, user = user, groupId = groupId
         )
 
@@ -316,7 +319,7 @@ class TransactionServiceImpl(
         val creditCardBillDate = creditCardBillService.getOrCreate(dto.creditCardBillDateValue, creditCard)
 
         transaction.creditCard = creditCard
-        transaction.creditCardId = dto.categoryId
+        transaction.creditCardId = dto.creditCardId
         transaction.creditCardBillDate = creditCardBillDate
         transaction.totalInstallments = dto.totalInstallments
     }
@@ -333,15 +336,13 @@ class TransactionServiceImpl(
 
         transaction.value = transaction.value.negate()
 
-        val otherSideTransaction = Transaction(
-            type = transaction.type,
-            category = transaction.category,
-            group = transaction.group,
+        val otherSideTransaction = transaction.copy(
+            id = null,
             user = user2,
+            userId = dto.secondUserId,
             bankAccount = bank2,
-            date = transaction.date,
+            bankAccountId = dto.bankAccount2Id,
             value = transaction.value.negate(),
-            description = transaction.description,
         )
 
         transactionRepository.save(otherSideTransaction)

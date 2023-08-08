@@ -7,30 +7,30 @@ import {
   ChangeDetectorRef,
   OnDestroy,
   Inject,
-  ViewChild,
-} from '@angular/core';
-import { AbstractControl, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { HotToastService } from '@ngneat/hot-toast';
-import { TranslocoService } from '@ngneat/transloco';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import moment, { Moment } from 'moment';
-import { combineLatest } from 'rxjs';
-import { startWith, take } from 'rxjs/operators';
-import { TransactionType } from 'src/app/@core/enums';
-import { Transaction, User } from 'src/app/@core/models';
-import { Group } from 'src/app/@core/models/group';
-import { CreditCardService, GroupsService, TitleService, TransactionService } from 'src/app/@core/services';
-import { ErrorService } from 'src/app/@core/services/error.service';
-import { BankAccountInputComponent, CreditCardInputComponent, CreditCardWithPerson } from '../input';
-import { NewTransactionComponentArgs } from './new-transaction-component-args';
+  ViewChild
+} from "@angular/core";
+import { AbstractControl, UntypedFormControl, UntypedFormGroup, Validators } from "@angular/forms";
+import { MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { HotToastService } from "@ngneat/hot-toast";
+import { TranslocoService } from "@ngneat/transloco";
+import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
+import moment, { Moment } from "moment";
+import { combineLatest } from "rxjs";
+import { startWith, take } from "rxjs/operators";
+import { TransactionType } from "src/app/@core/enums";
+import { Transaction, User } from "src/app/@core/models";
+import { Group } from "src/app/@core/models/group";
+import { CreditCardService, GroupsService, TitleService, TransactionService } from "src/app/@core/services";
+import { ErrorService } from "src/app/@core/services/error.service";
+import { BankAccountInputComponent, CreditCardInputComponent, CreditCardWithPerson } from "../input";
+import { NewTransactionComponentArgs } from "./new-transaction-component-args";
 
 function requiredWhenTransactionTypeIsNotCredit(formControl: AbstractControl) {
   if (!formControl.parent) {
     return null;
   }
 
-  if (formControl.parent.get('transactionType').value !== TransactionType.CreditCard) {
+  if (formControl.parent.get("transactionType").value !== TransactionType.CreditCard) {
     return Validators.required(formControl);
   }
 
@@ -42,7 +42,7 @@ function requiredWhenTransactionTypeIsTransfer(formControl: AbstractControl) {
     return null;
   }
 
-  if (formControl.parent.get('transactionType').value === TransactionType.Transfer) {
+  if (formControl.parent.get("transactionType").value === TransactionType.Transfer) {
     return Validators.required(formControl);
   }
 
@@ -54,7 +54,7 @@ function requiredWhenTransactionTypeIsCredit(formControl: AbstractControl) {
     return null;
   }
 
-  if (formControl.parent.get('transactionType').value === TransactionType.CreditCard) {
+  if (formControl.parent.get("transactionType").value === TransactionType.CreditCard) {
     return Validators.required(formControl);
   }
 
@@ -77,9 +77,9 @@ const initialValue = 0.01;
 
 @UntilDestroy()
 @Component({
-  selector: 'app-new-transaction',
-  templateUrl: './new-transaction.component.html',
-  styleUrls: ['./new-transaction.component.scss'],
+  selector: "app-new-transaction",
+  templateUrl: "./new-transaction.component.html",
+  styleUrls: ["./new-transaction.component.scss"]
 })
 export class NewTransactionComponent implements OnInit, AfterContentChecked, OnDestroy {
   @Output() closed: EventEmitter<void> = new EventEmitter();
@@ -94,8 +94,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   loading = false;
 
   @ViewChild(CreditCardInputComponent) creditCardInput: CreditCardInputComponent;
-  @ViewChild('bankAccount') bankAccountInput: BankAccountInputComponent;
-  @ViewChild('bankAccountTwo') bankAccountTwoInput: BankAccountInputComponent;
+  @ViewChild("bankAccount") bankAccountInput: BankAccountInputComponent;
+  @ViewChild("bankAccountTwo") bankAccountTwoInput: BankAccountInputComponent;
 
   private previousTitle: string;
 
@@ -108,7 +108,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     private titleService: TitleService,
     private groupsService: GroupsService,
     @Inject(MAT_DIALOG_DATA) data: NewTransactionComponentArgs,
-    private creditCardService: CreditCardService,
+    private creditCardService: CreditCardService
   ) {
     this.shared = data.shared;
     this.editingTransaction = data.transaction != null ? { ...data.transaction } : undefined;
@@ -131,7 +131,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   get creditCardBillDateFormControl() {
-    return this.formGroup.get('creditCardBillDate');
+    return this.formGroup.get("creditCardBillDate");
   }
 
   get creditCardBillDate() {
@@ -139,7 +139,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   }
 
   get useInstallmentFormControl() {
-    return this.formGroup.get('useInstallment');
+    return this.formGroup.get("useInstallment");
   }
 
   get useInstallment() {
@@ -191,7 +191,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
   creditCardBillDateInputValueCompare(obj1: any, obj2: any) {
     return (
       obj1 === obj2 ||
-      (obj1 != null && obj2 != null && 'toISOString' in obj1 && 'toISOString' in obj2 && obj1?.toISOString() === obj2?.toISOString())
+      (obj1 != null && obj2 != null && "toISOString" in obj1 && "toISOString" in obj2 && obj1?.toISOString() === obj2?.toISOString())
     );
   }
 
@@ -199,7 +199,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     this.createFormGroup();
 
     this.previousTitle = await this.titleService.getCurrentTitle();
-    this.titleService.changeTitle('new-transaction');
+    this.titleService.changeTitle("new-transaction");
 
     if (this.transactionType === TransactionType.CreditCard) {
       this.mountCreditCardBillDateOptions();
@@ -228,19 +228,19 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         }
 
         this.formGroup
-          .get('group')
+          .get("group")
           .valueChanges.pipe(untilDestroyed(this))
           .subscribe(group => {
             Promise.all([
               this.bankAccountInput?.mountAccounts(group).then(() => this.selectCurrentBankAccount()),
               this.bankAccountTwoInput?.mountAccounts(group).then(() => this.selectCurrentBankAccountTwo()),
-              this.creditCardInput?.mountCreditCards(group).then(() => this.selectCurrentCreditCard()),
+              this.creditCardInput?.mountCreditCards(group).then(() => this.selectCurrentCreditCard())
             ])
               .then(() => resolve())
               .catch(err => console.error(err));
           });
       }),
-      this.mountGroups(),
+      this.mountGroups()
     ]);
   }
 
@@ -249,7 +249,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     bankAccount2: any,
     creditCard: any,
     user: Partial<User>,
-    user2: Partial<User>,
+    user2: Partial<User>
   ): Promise<void> {
     await this.transactionService
       .editTransaction({
@@ -261,24 +261,24 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         bankAccountId: bankAccount?.accountId,
         bankAccount2Id: bankAccount2?.accountId,
         creditCardId: creditCard?.creditCardId,
-        categoryId: this.formGroup.value.category?.id,
+        categoriesIds: this.formGroup.value.categories?.map(category => category.id),
         groupId: this.group?.id,
         user,
         user2,
-        creditCardBillDateValue: this.creditCardBillDate,
+        creditCardBillDateValue: this.creditCardBillDate
       })
       .pipe(
         take(1),
         this.toast.observe({
-          loading: this.translocoService.translate('editing'),
-          success: this.translocoService.translate('transacation-editing-successful'),
+          loading: this.translocoService.translate("editing"),
+          success: this.translocoService.translate("transacation-editing-successful"),
           error: error =>
             this.errorService.getInstantErrorMessage(
               error,
-              'transacation-editing-error-no-name',
-              'transacation-editing-error-with-description',
-            ),
-        }),
+              "transacation-editing-error-no-name",
+              "transacation-editing-error-with-description"
+            )
+        })
       )
       .toPromise();
   }
@@ -288,7 +288,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     bankAccount2: any,
     creditCard: any,
     user: Partial<User>,
-    user2: Partial<User>,
+    user2: Partial<User>
   ): Promise<void> {
     await this.transactionService
       .newTransaction({
@@ -299,25 +299,25 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         bankAccountId: bankAccount?.accountId,
         bankAccount2Id: bankAccount2?.accountId,
         creditCardId: creditCard?.creditCardId,
-        categoryId: this.formGroup.value.category?.id,
+        categoriesIds: this.formGroup.value.categories?.map(category => category.id),
         groupId: this.group?.id,
         user,
         user2,
         creditCardBillDateValue: this.creditCardBillDate,
-        totalInstallments: this.formGroup.value.totalInstallments,
+        totalInstallments: this.formGroup.value.totalInstallments
       })
       .pipe(
         take(1),
         this.toast.observe({
-          loading: this.translocoService.translate('creating'),
-          success: this.translocoService.translate('transacation-creating-successful'),
+          loading: this.translocoService.translate("creating"),
+          success: this.translocoService.translate("transacation-creating-successful"),
           error: error =>
             this.errorService.getInstantErrorMessage(
               error,
-              'transacation-creating-error-no-name',
-              'transacation-creating-error-with-description',
-            ),
-        }),
+              "transacation-creating-error-no-name",
+              "transacation-creating-error-with-description"
+            )
+        })
       )
       .toPromise();
   }
@@ -327,6 +327,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       this.bankAccountInput.selectBankAccount(this.editingTransaction.bankAccountId);
     }
   }
+
   private async selectCurrentBankAccountTwo() {
     if (this.editingTransaction?.bankAccount2Id != null) {
       this.bankAccountTwoInput.selectBankAccount(this.editingTransaction.bankAccount2Id);
@@ -343,7 +344,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     this.groups = this.shared ? await this.groupsService.getGroupsWithUsers() : undefined;
 
     if (this.editingTransaction?.group != null) {
-      this.formGroup.get('group').setValue(this.groups.find(group => group.id === this.editingTransaction.group.id));
+      this.formGroup.get("group").setValue(this.groups.find(group => group.id === this.editingTransaction.group.id));
     }
   }
 
@@ -351,66 +352,75 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
     this.formGroup = new UntypedFormGroup({
       transactionType: new UntypedFormControl(
         this.editingTransaction?.type ?? (this.shared ? TransactionType.Expense : TransactionType.Revenue),
-        [Validators.required],
+        [Validators.required]
       ),
-      date: new UntypedFormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf('day'), [
-        Validators.required,
+      date: new UntypedFormControl(this.editingTransaction?.date ? moment(this.editingTransaction?.date) : moment().startOf("day"), [
+        Validators.required
       ]),
       creditCardBillDate: new UntypedFormControl(
         {
-          value: this.editingTransaction?.creditCardBillDateValue ? moment(this.editingTransaction?.creditCardBillDateValue) : '',
-          disabled: true,
+          value: this.editingTransaction?.creditCardBillDateValue ? moment(this.editingTransaction?.creditCardBillDateValue) : "",
+          disabled: true
         },
-        [requiredWhenTransactionTypeIsCredit],
+        [requiredWhenTransactionTypeIsCredit]
       ),
       value: new UntypedFormControl(this.editingTransaction?.value ?? initialValue, [Validators.required]),
       description: new UntypedFormControl(this.editingTransaction?.description, [Validators.maxLength(50)]),
-      bankAccount: new UntypedFormControl(undefined, requiredWhenTransactionTypeIsNotCredit),
-      bankAccount2: new UntypedFormControl(undefined, requiredWhenTransactionTypeIsTransfer),
-      category: new UntypedFormControl(this.editingTransaction?.category),
-      creditCard: new UntypedFormControl(undefined, requiredWhenTransactionTypeIsCredit),
-      group: new UntypedFormControl(undefined, formControl => requiredIfShared(this.shared, formControl)),
+      bankAccount: new UntypedFormControl(this.editingTransaction?.bankAccount != null ? {
+        accountId: this.editingTransaction.bankAccount.id,
+        personId: this.editingTransaction.bankAccount.userId
+      } : null, requiredWhenTransactionTypeIsNotCredit),
+      bankAccount2: new UntypedFormControl(this.editingTransaction?.otherSide?.bankAccount != null ? {
+        accountId: this.editingTransaction.otherSide.bankAccount.id,
+        personId: this.editingTransaction.otherSide.bankAccount.userId
+      } : null, requiredWhenTransactionTypeIsTransfer),
+      categories: new UntypedFormControl(this.editingTransaction?.categories),
+      creditCard: new UntypedFormControl(this.editingTransaction?.creditCard != null ? {
+        creditCardId: this.editingTransaction.creditCard.id,
+        personId: this.editingTransaction.creditCard.userId
+      } : null, requiredWhenTransactionTypeIsCredit),
+      group: new UntypedFormControl(this.editingTransaction?.group, formControl => requiredIfShared(this.shared, formControl)),
       useInstallment: new UntypedFormControl(this.editingTransaction?.installment != null),
-      totalInstallments: new UntypedFormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)]),
+      totalInstallments: new UntypedFormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)])
     });
   }
 
   private watchTransactionTypeChanges(): void {
     this.formGroup
-      .get('transactionType')
+      .get("transactionType")
       .valueChanges.pipe(untilDestroyed(this))
       .subscribe(transactionType => {
         const value = this.formGroup.value.value || initialValue;
 
-        this.formGroup.get('group').setValue(undefined);
-        this.formGroup.get('value').setValue(this.transactionService.ifNecessaryMakeValueNegative(value, transactionType));
+        this.formGroup.get("group").setValue(undefined);
+        this.formGroup.get("value").setValue(this.transactionService.ifNecessaryMakeValueNegative(value, transactionType));
 
         if (transactionType !== TransactionType.Transfer) {
-          this.formGroup.get('bankAccount2').setValue(undefined);
+          this.formGroup.get("bankAccount2").setValue(undefined);
         }
 
         if (transactionType === TransactionType.CreditCard) {
-          this.formGroup.get('bankAccount').setValue(undefined);
+          this.formGroup.get("bankAccount").setValue(undefined);
           setTimeout(() => {
             this.mountCreditCardBillDateOptions();
           });
         } else {
-          this.formGroup.get('creditCard').setValue(undefined);
+          this.formGroup.get("creditCard").setValue(undefined);
           this.creditCardBillDateFormControl.setValue(undefined);
         }
 
-        this.formGroup.get('group').updateValueAndValidity();
-        this.formGroup.get('bankAccount').updateValueAndValidity();
-        this.formGroup.get('creditCard').updateValueAndValidity();
+        this.formGroup.get("group").updateValueAndValidity();
+        this.formGroup.get("bankAccount").updateValueAndValidity();
+        this.formGroup.get("creditCard").updateValueAndValidity();
         this.creditCardBillDateFormControl.updateValueAndValidity();
       });
   }
 
   private mountCreditCardBillDateOptions(): void {
     combineLatest([
-      this.formGroup.get('date').valueChanges.pipe(startWith(this.date)),
-      this.formGroup.get('creditCard').valueChanges.pipe(startWith(this.creditCard)),
-      this.creditCardInput.creditCardsWithPersons$,
+      this.formGroup.get("date").valueChanges.pipe(startWith(this.date)),
+      this.formGroup.get("creditCard").valueChanges.pipe(startWith(this.creditCard)),
+      this.creditCardInput.creditCardsWithPersons$
     ])
       .pipe(untilDestroyed(this))
       .subscribe(combined => {

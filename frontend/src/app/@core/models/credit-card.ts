@@ -11,4 +11,5 @@ export interface CreditCard {
   availableLimit?: number;
   enabled: boolean;
   displayOnGroup: boolean;
+  userId?: string;
 }

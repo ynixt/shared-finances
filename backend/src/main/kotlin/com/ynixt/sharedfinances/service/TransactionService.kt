@@ -9,11 +9,11 @@ import org.springframework.data.domain.Pageable
 import java.time.LocalDate
 
 interface TransactionService {
-    fun findOneIncludeGroupAndCategoryAndBankAndCreditCard(
+    fun findOneIncludeGroupAndCategoriesAndBankAndCreditCard(
         id: Long, user: User, groupId: Long?
     ): Transaction?
 
-    fun findAllIncludeGroupAndCategoryAsTransactionDto(
+    fun findAllIncludeGroupAndCategoriesAsTransactionDto(
         user: User,
         groupId: Long?,
         bankAccountId: Long?,

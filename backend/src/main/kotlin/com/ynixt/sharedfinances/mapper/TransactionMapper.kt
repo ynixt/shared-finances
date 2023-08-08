@@ -9,8 +9,7 @@ import org.mapstruct.ReportingPolicy
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = [UserMapper::class, TransactionCategoryMapper::class])
 interface TransactionMapper {
-    @ObjectFactory
-    fun createTransactionDto(entity: Transaction?): TransactionDto? {
+    fun toDto(entity: Transaction?): TransactionDto? {
         return if (entity == null) return null else when (entity.type) {
             TransactionType.Revenue -> toRevenueDto(entity)
             TransactionType.Expense -> toExpenseDto(entity)
@@ -20,7 +19,6 @@ interface TransactionMapper {
         }
     }
 
-    fun toDto(transaction: Transaction?): TransactionDto?
     fun toRevenueDto(transaction: Transaction?): RevenueTransactionDto?
     fun toExpenseDto(transaction: Transaction?): ExpenseTransactionDto?
     fun toCreditCardDto(transaction: Transaction?): CreditCardTransactionDto?

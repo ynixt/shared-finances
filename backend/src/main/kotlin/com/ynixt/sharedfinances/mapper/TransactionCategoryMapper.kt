@@ -21,6 +21,7 @@ interface TransactionCategoryMapper {
     fun toDto(entity: TransactionCategory?): TransactionCategoryDto?
     fun toDtoList(entity: List<TransactionCategory>?): List<TransactionCategoryDto>?
 
+
     @Named("toDtoUserTransactionCategory")
     fun toDtoUser(entity: UserTransactionCategory?): UserTransactionCategoryDto?
 

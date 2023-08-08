@@ -8,7 +8,7 @@ import jakarta.persistence.*
     name = "type", discriminatorType = DiscriminatorType.STRING
 )
 abstract class TransactionCategory(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
+    id: Long? = null,
     var name: String,
     var color: String,
-) : AuditedEntity()
+) : DatabaseEntity(id)

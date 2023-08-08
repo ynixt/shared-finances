@@ -73,7 +73,7 @@ class BankAccountController(
     ): Page<TransactionDto> {
         val user = securityService.authenticationToUser(authentication)!!
 
-        return transactionService.findAllIncludeGroupAndCategoryAsTransactionDto(
+        return transactionService.findAllIncludeGroupAndCategoriesAsTransactionDto(
             bankAccountId = bankAccountId,
             groupId = null,
             creditCardId = null,

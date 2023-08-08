@@ -17,8 +17,8 @@ export interface Transaction {
   bankAccount2Id?: string;
   creditCardId?: string;
   creditCard?: CreditCard;
-  categoryId?: string;
-  category?: Category;
+  categoriesIds?: string[];
+  categories?: Category[];
   group?: Group;
   groupId?: string;
   user: Partial<User>;
