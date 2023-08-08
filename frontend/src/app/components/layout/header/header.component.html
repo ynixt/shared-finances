@@ -2,7 +2,7 @@
   <ng-container *ngIf="userState$ | async as userState">
     <td-layout class="layout-nav-list-demo" sidenavWidth="280px">
       <td-navigation-drawer flex [sidenavTitle]="t('app-title')">
-        <app-menu *ngIf="shouldShowMenu(userState.user !== null)"></app-menu>
+        <app-menu (onMenuClose)="tdLayout.close()" *ngIf="shouldShowMenu(userState.user !== null)"></app-menu>
         <div td-navigation-drawer-menu>
           <mat-nav-list>
             <a mat-list-item>

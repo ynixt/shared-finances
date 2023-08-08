@@ -18,19 +18,19 @@
     </div>
   </mat-menu>
 
-  <a routerLink="/finances">
+  <a (click)="closeMenu()" routerLink="/finances">
     <mat-list-item routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
       <span class="item" matLine> <mat-icon>dashboard</mat-icon> {{ t('dashboard') }} </span>
     </mat-list-item>
   </a>
 
-  <a routerLink="/finances/credit">
+  <a (click)="closeMenu()" routerLink="/finances/credit">
     <mat-list-item routerLinkActive="active">
       <span class="item" matLine> <mat-icon>credit_card</mat-icon> {{ t('credit-cards') }} </span>
     </mat-list-item>
   </a>
 
-  <a routerLink="/finances/bank">
+  <a (click)="closeMenu()" routerLink="/finances/bank">
     <mat-list-item routerLinkActive="active">
       <span class="item" matLine> <mat-icon>account_balance</mat-icon> {{ t('bank-accounts') }} </span>
     </mat-list-item>
@@ -45,7 +45,7 @@
       </mat-panel-title>
     </mat-expansion-panel-header>
 
-    <a routerLink="/finances/single/category">
+    <a (click)="closeMenu()" routerLink="/finances/single/category">
       <mat-list-item [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active">
         <span class="item child" matLine>
           {{ t('categories') }}
@@ -54,7 +54,7 @@
     </a>
   </mat-expansion-panel>
 
-  <a routerLink="/finances/shared">
+  <a (click)="closeMenu()" routerLink="/finances/shared">
     <mat-list-item routerLinkActive="active">
       <span class="item" matLine> <mat-icon>groups</mat-icon> {{ t('groups') }} </span>
     </mat-list-item>

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ViewEncapsulation } from "@angular/core";
+import { Component, OnDestroy, OnInit, ViewChild, ViewEncapsulation } from "@angular/core";
 import { Router } from "@angular/router";
 import { Observable, Subscription } from "rxjs";
 import { AuthDispatchers } from "src/app/store";
@@ -8,26 +8,31 @@ import { BreakpointObserver, Breakpoints, BreakpointState } from "@angular/cdk/l
 import { Location } from "@angular/common";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { environment } from "../../../../environments/environment";
+import { TdLayoutComponent } from "@covalent/core/layout";
 
 @Component({
-  selector: 'app-header',
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss'],
+  selector: "app-header",
+  templateUrl: "./header.component.html",
+  styleUrls: ["./header.component.scss"],
   encapsulation: ViewEncapsulation.None
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   userState$: Observable<AuthState>;
   userOpen: boolean;
   faGithub = faGithub;
-  version = 'v' + environment.version
+  version = "v" + environment.version;
 
   isMobile = false;
+  menuOpen = true;
 
   private observerSmallSubscription: Subscription;
   private observerMediumSubscription: Subscription;
 
+  @ViewChild(TdLayoutComponent)
+  tdLayout: TdLayoutComponent;
+
   get isHome() {
-    return ['', '/'].includes(this.location.path());
+    return ["", "/"].includes(this.location.path());
   }
 
   constructor(
@@ -35,8 +40,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private authDispatchers: AuthDispatchers,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private location: Location,
-  ) {}
+    private location: Location
+  ) {
+  }
 
   ngOnInit(): void {
     this.userState$ = this.authSelectors.state$;
@@ -51,6 +57,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .observe([Breakpoints.Medium, Breakpoints.Large, Breakpoints.XLarge])
       .subscribe((state: BreakpointState) => {
         this.isMobile = !state.matches;
+        if (!this.isMobile) {
+          this.tdLayout.close();
+        }
       });
   }
 
@@ -69,11 +78,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   login(): void {
-    this.router.navigateByUrl('/auth/login');
+    this.router.navigateByUrl("/auth/login");
   }
 
   getToolbarLink(userIsLogged: boolean): string {
-    return userIsLogged ? '/finances' : '/';
+    return userIsLogged ? "/finances" : "/";
   }
 
   shouldShowMenu(userIsLogged: boolean) {
