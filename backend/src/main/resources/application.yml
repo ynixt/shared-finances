@@ -35,6 +35,11 @@ spring:
                     jobStore:
                         driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
 
+management:
+    endpoints:
+        web:
+            exposure:
+                include: info, health, flyway, loggers, loggers-name, quartz, quartz-jobsOrTriggers-group-name, quartz-jobsOrTriggers-group, quartz-jobsOrTriggers
 
 sf-app:
     job-timezone: ${JOB_TIMEZONE}

@@ -29,7 +29,7 @@ class WebSecurityConfiguration(private val jwtRequestFilter: JwtRequestFilter, p
         http.csrf { obj: CsrfConfigurer<HttpSecurity> -> obj.disable() }
             .authorizeHttpRequests { request ->
                 request.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                request.requestMatchers("/socket", "/404").permitAll()
+                request.requestMatchers("/socket", "/404", "/actuator/**").permitAll()
                 request.requestMatchers("/error").anonymous()
                 request.anyRequest().authenticated()
             }
