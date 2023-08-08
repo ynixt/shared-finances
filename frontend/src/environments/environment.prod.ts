@@ -4,5 +4,6 @@ const websocketUrl = "ws" + (useSsl ? "s" : "") + "://" + serverUrl + "/api/sock
 
 export const environment = {
   production: true,
-  websocketUrl
+  websocketUrl,
+  version: require('../../package.json').version,
 };

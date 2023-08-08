@@ -7,6 +7,7 @@ import { AuthSelectors } from "src/app/store/services/selectors";
 import { BreakpointObserver, Breakpoints, BreakpointState } from "@angular/cdk/layout";
 import { Location } from "@angular/common";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import { environment } from "../../../../environments/environment";
 
 @Component({
   selector: 'app-header',
@@ -18,6 +19,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   userState$: Observable<AuthState>;
   userOpen: boolean;
   faGithub = faGithub;
+  version = 'v' + environment.version
 
   isMobile = false;
 

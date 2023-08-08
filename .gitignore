@@ -47,3 +47,4 @@ Thumbs.db
 
 unk-shared-finances-firebase-adminsdk.json
 .env
+docker-compose.yml
