@@ -48,6 +48,15 @@ class UserTransactionCategoryController(
         )
     }
 
+    @GetMapping
+    fun list(authentication: Authentication): List<UserTransactionCategoryDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+        
+        return transactionCategoryService.findAllUserCategoriesAsUserTransactionCategoryDto(
+            user
+        )
+    }
+
     @DeleteMapping("{id}")
     fun delete(authentication: Authentication, @PathVariable id: Long) {
         val user = securityService.authenticationToUser(authentication)!!

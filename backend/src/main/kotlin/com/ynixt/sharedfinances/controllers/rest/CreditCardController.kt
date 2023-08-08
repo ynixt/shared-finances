@@ -33,6 +33,12 @@ class CreditCardController(
         return this.creditCardService.getSummary(user, creditCardId, maxCreditCardBillDate, categoriesId)
     }
 
+    @GetMapping
+    fun listCreditCards(authentication: Authentication): List<CreditCardDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+        return creditCardService.listCreditCardAsCreditCardDto(user)
+    }
+
     @GetMapping("{id}")
     fun getOne(authentication: Authentication, @PathVariable id: Long): ResponseEntity<CreditCardDto> {
         val user = securityService.authenticationToUser(authentication)!!

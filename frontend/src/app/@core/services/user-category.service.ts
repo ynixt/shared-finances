@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { lastValueFrom, Observable } from "rxjs";
-import { map, take } from "rxjs/operators";
+import { map, startWith, switchMap, take } from "rxjs/operators";
 import { GenericCategoryService, GroupWithIdName } from "src/app/components/category";
 
 import { Category } from "../models";
@@ -16,13 +16,12 @@ export class UserCategoryService extends GenericCategoryService {
   }
 
   watchCategories(): Observable<Category[]> {
-    const w = this.stompService.watch({
-      destination: "/user/queue/user-transaction-category"
-    });
-
-    this.stompService.publish({ destination: "/app/user-transaction-category" });
-
-    return w.pipe(map(message => JSON.parse(message.body) as Category[]));
+    return this.httpClient.get<Category[]>(`/api/user-transaction-category`).pipe(
+      switchMap(cats => this.stompService.watch({
+          destination: "/user/queue/user-transaction-category"
+        }).pipe(map(message => JSON.parse(message.body) as Category[]), startWith(cats))
+      )
+    );
   }
 
   newCategory(category: Partial<Category>): Observable<Category> {

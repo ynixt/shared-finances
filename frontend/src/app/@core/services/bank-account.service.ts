@@ -2,9 +2,9 @@ import { Injectable } from "@angular/core";
 import { TranslocoService } from "@ngneat/transloco";
 import moment, { Moment } from "moment";
 import { lastValueFrom, Observable } from "rxjs";
-import { map, take } from "rxjs/operators";
+import { map, startWith, switchMap, take } from "rxjs/operators";
 import { CHART_DEFAULT_MINIMUM_MONTHS } from "src/app/@core/constants";
-import { BankAccount, BankAccountSummary, Page, Pagination, Transaction } from "src/app/@core/models";
+import { BankAccount, BankAccountSummary, Category, Page, Pagination, Transaction } from "src/app/@core/models";
 import { Chart, ChartSerie } from "src/app/@core/models/chart";
 import { StompService } from "./stomp.service";
 import { HttpClient } from "@angular/common/http";
@@ -20,13 +20,12 @@ export class BankAccountService {
   }
 
   getBankAccount(bankAccountId: string): Observable<BankAccount> {
-    const w = this.stompService.watch({
-      destination: `/user/queue/bank-account/${bankAccountId}`
-    });
-
-    this.stompService.publish({ destination: `/app/bank-account/${bankAccountId}` });
-
-    return w.pipe(map(message => JSON.parse(message.body) as BankAccount));
+    return this.httpClient.get<BankAccount>(`/api/bank-account/${bankAccountId}`).pipe(
+      switchMap(cats => this.stompService.watch({
+          destination: `/user/queue/bank-account/${bankAccountId}`
+        }).pipe(map(message => JSON.parse(message.body) as BankAccount), startWith(cats))
+      )
+    );
   }
 
   onTransactionCreated(bankAccountId?: string): Observable<string> {

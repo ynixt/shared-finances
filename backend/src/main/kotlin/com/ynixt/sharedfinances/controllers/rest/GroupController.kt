@@ -33,6 +33,12 @@ class GroupController(
         return groupMapper.toGroupWithUserDtoList(groupService.listAllWithUsers(user))!!
     }
 
+    @GetMapping
+    fun listGroups(authentication: Authentication): List<GroupDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+        return groupService.listGroupAsGroupDto(user)
+    }
+
     @GetMapping("summary/{groupId}")
     fun getGroupSummary(
         authentication: Authentication,
@@ -47,6 +53,11 @@ class GroupController(
         )
     }
 
+    @GetMapping("{id}/view")
+    fun viewGroup(authentication: Authentication, @PathVariable id: Long): GroupViewDto? {
+        val user = securityService.authenticationToUser(authentication)!!
+        return groupService.getOneAsViewDto(user, id)
+    }
 
     @GetMapping("{id}")
     fun getOne(authentication: Authentication, @PathVariable id: Long): ResponseEntity<GroupDto> {

@@ -36,9 +36,7 @@ class GroupTransactionCategoryController(
 
         return transactionCategoryMapper.toDtoGroup(
             transactionCategoryService.updateGroupCategory(
-                user,
-                id,
-                updateDto
+                user, id, updateDto
             )
         )!!
     }
@@ -61,5 +59,18 @@ class GroupTransactionCategoryController(
         val user = securityService.authenticationToUser(authentication)!!
 
         transactionCategoryService.deleteOneGroupCategory(user, id)
+    }
+
+    @GetMapping("all/{groupId}")
+    fun listTransactionCategories(
+        authentication: Authentication, @PathVariable groupId: Long
+    ): List<GroupTransactionCategoryDto> {
+        val user = securityService.authenticationToUser(authentication)!!
+
+        return transactionCategoryMapper.toDtoGroupList(
+            transactionCategoryService.findAllGroupCategories(
+                user, groupId
+            )
+        )!!
     }
 }

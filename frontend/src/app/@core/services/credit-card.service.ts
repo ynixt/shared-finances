@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
 import moment, { Moment } from "moment";
 import { lastValueFrom, Observable } from "rxjs";
-import { map, take } from "rxjs/operators";
+import { map, startWith, switchMap, take } from "rxjs/operators";
 import { CHART_DEFAULT_MINIMUM_MONTHS } from "../constants";
 
-import { CreditCard, CreditCardSummary } from "../models";
+import { BankAccount, CreditCard, CreditCardSummary } from "../models";
 import { Chart, ChartSerie } from "../models/chart";
 import { HttpClient } from "@angular/common/http";
 import { StompService } from "./stomp.service";
@@ -21,13 +21,12 @@ export class CreditCardService {
   }
 
   watchCreditCards(): Observable<CreditCard[]> {
-    const w = this.stompService.watch({
-      destination: "/user/queue/credit-card"
-    });
-
-    this.stompService.publish({ destination: "/app/credit-card" });
-
-    return w.pipe(map(message => JSON.parse(message.body) as CreditCard[]));
+    return this.httpClient.get<CreditCard[]>(`/api/credit-card`).pipe(
+      switchMap(cats => this.stompService.watch({
+          destination: "/user/queue/credit-card"
+        }).pipe(map(message => JSON.parse(message.body) as CreditCard[]), startWith(cats))
+      )
+    );
   }
 
   getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string | Moment, categoriesId?: string[]): Promise<CreditCardSummary> {

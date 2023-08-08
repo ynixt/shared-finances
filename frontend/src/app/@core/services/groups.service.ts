@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
 import { Group } from "src/app/@core/models/group";
-import { map, take } from "rxjs/operators";
+import { map, startWith, switchMap, take } from "rxjs/operators";
 import { lastValueFrom, Observable } from "rxjs";
 import moment, { Moment } from "moment";
-import { GroupInvite, GroupSummary, Page, Pagination, Transaction } from "../models";
+import { CreditCard, GroupInvite, GroupSummary, Page, Pagination, Transaction } from "../models";
 import { CHART_DEFAULT_MINIMUM_MONTHS } from "../constants";
 import { Chart, ChartSerie } from "../models/chart";
 import { HttpClient } from "@angular/common/http";
@@ -21,13 +21,12 @@ export class GroupsService {
   }
 
   getGroups(): Observable<Group[]> {
-    const w = this.stompService.watch({
-      destination: "/user/queue/group"
-    });
-
-    this.stompService.publish({ destination: "/app/group" });
-
-    return w.pipe(map(message => JSON.parse(message.body) as Group[]));
+    return this.httpClient.get<Group[]>(`/api/group`).pipe(
+      switchMap(cats => this.stompService.watch({
+          destination: "/user/queue/group"
+        }).pipe(map(message => JSON.parse(message.body) as Group[]), startWith(cats))
+      )
+    );
   }
 
   deleteGroup(groupId: string): Observable<void> {
@@ -39,13 +38,12 @@ export class GroupsService {
   }
 
   getGroup(groupId: string): Observable<Group | null> {
-    const w = this.stompService.watch({
-      destination: `/user/queue/group/${groupId}`
-    });
-
-    this.stompService.publish({ destination: `/app/group/${groupId}` });
-
-    return w.pipe(map(message => JSON.parse(message.body) as Group));
+    return this.httpClient.get<Group>(`/api/group/${groupId}/view`).pipe(
+      switchMap(cats => this.stompService.watch({
+          destination: `/user/queue/group/${groupId}`
+        }).pipe(map(message => JSON.parse(message.body) as Group), startWith(cats))
+      )
+    );
   }
 
   getGroupForEdit(groupId: string): Promise<Group | null> {
@@ -126,7 +124,7 @@ export class GroupsService {
     }));
 
     Object.keys(chart.valuesByUser).forEach(userId => {
-      const user = group.users.find(u => u.id == userId)
+      const user = group.users.find(u => u.id == userId);
       charts.push(new Chart({
         name: user.name,
         series: chart.valuesByUser[userId].map(v => new ChartSerie({
@@ -135,7 +133,6 @@ export class GroupsService {
         }))
       }));
     });
-
 
 
     charts.forEach(chart => {

@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { lastValueFrom, Observable } from "rxjs";
-import { map, take } from "rxjs/operators";
+import { map, startWith, switchMap, take } from "rxjs/operators";
 import { Category } from "src/app/@core/models";
 import { GenericCategoryService, GroupWithIdName } from "src/app/components/category";
 import { StompService } from "../../../@core/services/stomp.service";
@@ -17,13 +17,12 @@ export class SharedCategoryService extends GenericCategoryService {
   }
 
   watchCategories(groupId: string): Observable<Category[]> {
-    const w = this.stompService.watch({
-      destination: "/user/queue/group-transaction-category/" + groupId
-    });
-
-    this.stompService.publish({ destination: "/app/group-transaction-category/" + groupId });
-
-    return w.pipe(map(message => JSON.parse(message.body) as Category[]));
+    return this.httpClient.get<Category[]>(`/api/group-transaction-category/all/${groupId}`).pipe(
+      switchMap(cats => this.stompService.watch({
+          destination: "/user/queue/group-transaction-category/" + groupId
+        }).pipe(map(message => JSON.parse(message.body) as Category[]), startWith(cats))
+      )
+    );
   }
 
   newCategory(category: Partial<Category>, groupId: string): Observable<Category> {
@@ -37,7 +36,7 @@ export class SharedCategoryService extends GenericCategoryService {
   editCategory(category: Category): Observable<Category> {
     return this.httpClient.put<Category>(`/api/group-transaction-category/${category.id}`, {
       name: category.name,
-      color: category.color,
+      color: category.color
     });
   }
 
@@ -53,6 +52,6 @@ export class SharedCategoryService extends GenericCategoryService {
   }
 
   getGroup(groupId: string): Promise<GroupWithIdName | null> {
-    return this.groupService.getGroupForEdit(groupId)
+    return this.groupService.getGroupForEdit(groupId);
   }
 }
