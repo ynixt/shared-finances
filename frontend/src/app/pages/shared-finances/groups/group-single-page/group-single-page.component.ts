@@ -14,6 +14,7 @@ import { Chart } from "src/app/@core/models/chart";
 import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
 import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
 import { take } from "rxjs/operators";
+import { UntypedFormControl, UntypedFormGroup } from "@angular/forms";
 
 @UntilDestroy()
 @Component({
@@ -40,12 +41,20 @@ export class GroupSinglePageComponent implements OnInit {
   showYAxisLabel: boolean = true;
   showXAxisLabel: boolean = true;
 
-  colorScheme: Color
+  colorScheme: Color;
 
   private groupSubscription: Subscription;
   private groupId: string;
   private monthDate: Moment;
   private transactionsChangeSubscription: Subscription;
+
+  filterFormGroup = new UntypedFormGroup({
+    categories: new UntypedFormControl()
+  });
+
+  get filterCategories() {
+    return this.filterFormGroup.value.categories?.map(category => category.id);
+  }
 
   constructor(
     private groupsService: GroupsService,
@@ -65,6 +74,15 @@ export class GroupSinglePageComponent implements OnInit {
     this.activatedRoute.params.pipe(untilDestroyed(this)).subscribe(
       params => this.loadGroup(params.id)
     );
+  }
+
+  public filter() {
+    return this.getInfoBasedOnFilters();
+  }
+
+  public clearFilters() {
+    this.filterFormGroup.reset();
+    return this.filter();
   }
 
   async createInvite(): Promise<void> {
@@ -89,13 +107,17 @@ export class GroupSinglePageComponent implements OnInit {
 
   async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
-    await this.getInfoBasedOnGroupAndDate();
+    await this.getInfoBasedOnFilters();
   }
 
   getTransactions(page = 0): void {
     this.transactionsPage$ = this.groupsService.getTransactions(
       this.group.id,
-      { maxDate: moment(this.monthDate).endOf("month"), minDate: moment(this.monthDate).startOf("month") },
+      {
+        maxDate: moment(this.monthDate).endOf("month"),
+        minDate: moment(this.monthDate).startOf("month"),
+        categoriesId: this.filterCategories
+      },
       { page, size: this.pageSize }
     );
   }
@@ -110,7 +132,8 @@ export class GroupSinglePageComponent implements OnInit {
     const charts = await this.groupsService.getTransactionsChart(this.group, this.getMaxDate().add(1), {
       groupId: this.group.id,
       maxDate: this.getMaxDate(),
-      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, "month")
+      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, "month"),
+      categoriesId: this.filterCategories
     });
 
     this.transactionsGroupedYearMonth = charts;
@@ -118,7 +141,7 @@ export class GroupSinglePageComponent implements OnInit {
 
   public async toggleDisallowFutureOnSameMonth(): Promise<void> {
     this.disallowFutureOnSameMonth = !this.disallowFutureOnSameMonth;
-    await this.getInfoBasedOnGroupAndDate();
+    await this.getInfoBasedOnFilters();
   }
 
   private loadGroup(groupId: string) {
@@ -150,7 +173,7 @@ export class GroupSinglePageComponent implements OnInit {
     });
   }
 
-  private async getInfoBasedOnGroupAndDate() {
+  private async getInfoBasedOnFilters() {
     this.getTransactions();
     return Promise.all([this.getGroupSummary(), this.getChart()]);
   }
@@ -163,7 +186,8 @@ export class GroupSinglePageComponent implements OnInit {
     const summary = await this.groupsService.getGroupSummary(
       this.group.id,
       moment(this.monthDate).startOf("month"),
-      moment(this.monthDate).endOf("month")
+      moment(this.monthDate).endOf("month"),
+      this.filterCategories
     );
 
     this.groupSummaryState = {

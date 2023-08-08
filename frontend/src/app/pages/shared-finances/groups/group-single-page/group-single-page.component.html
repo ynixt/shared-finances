@@ -42,6 +42,34 @@
       <app-month-bar (dateChange)="dateChanged($event)"></app-month-bar>
     </div>
 
+    <div class="pb-6">
+      <form [formGroup]="filterFormGroup" (ngSubmit)="filter()" class="flex gap-2 flex-wrap">
+        <app-category-input [formControlName]="'categories'" [isShared]="true" [group]="group"></app-category-input>
+
+        <button
+          [disabled]="filterFormGroup.invalid"
+          class="add-button"
+          type="submit"
+          mat-raised-button
+          color="primary"
+          style="height: 55.99px"
+        >
+          {{ t('filter') }}
+        </button>
+        <button
+          [disabled]="filterFormGroup.invalid"
+          (click)="clearFilters()"
+          class="add-button"
+          type="button"
+          mat-raised-button
+          color="accent"
+          style="height: 55.99px"
+        >
+          {{ t('clear-filters') }}
+        </button>
+      </form>
+    </div>
+
     <app-group-summary-dashboard
       [groupSummary]="groupSummaryState.summary"
       [isLoading]="groupSummaryState.isLoading"

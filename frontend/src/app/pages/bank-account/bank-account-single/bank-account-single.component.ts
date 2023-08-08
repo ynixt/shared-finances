@@ -1,24 +1,25 @@
-import { DOCUMENT } from '@angular/common';
-import { Component, Inject, OnInit, Renderer2, ViewEncapsulation } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TranslocoService } from '@ngneat/transloco';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import moment, { Moment } from 'moment';
+import { DOCUMENT } from "@angular/common";
+import { Component, Inject, OnInit, Renderer2, ViewEncapsulation } from "@angular/core";
+import { ActivatedRoute, Router } from "@angular/router";
+import { TranslocoService } from "@ngneat/transloco";
+import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
+import moment, { Moment } from "moment";
 import { lastValueFrom, merge, Observable, Subscription } from "rxjs";
 import { switchMap, take } from "rxjs/operators";
-import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from 'src/app/@core/constants';
-import { BankAccount, BankAccountSummary, Page, Transaction } from 'src/app/@core/models';
-import { Chart } from 'src/app/@core/models/chart';
-import { TransactionService, BankAccountService } from 'src/app/@core/services';
-import { NewTransactionDialogService } from 'src/app/components/new-transaction/new-transaction-dialog.service';
+import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
+import { BankAccount, BankAccountSummary, Category, Page, Transaction } from "src/app/@core/models";
+import { Chart } from "src/app/@core/models/chart";
+import { TransactionService, BankAccountService } from "src/app/@core/services";
+import { NewTransactionDialogService } from "src/app/components/new-transaction/new-transaction-dialog.service";
 import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
+import { UntypedFormControl, UntypedFormGroup, Validators } from "@angular/forms";
 
 @UntilDestroy()
 @Component({
-  selector: 'app-bank-account-single',
-  templateUrl: './bank-account-single.component.html',
-  styleUrls: ['./bank-account-single.component.scss'],
-  encapsulation: ViewEncapsulation.None,
+  selector: "app-bank-account-single",
+  templateUrl: "./bank-account-single.component.html",
+  styleUrls: ["./bank-account-single.component.scss"],
+  encapsulation: ViewEncapsulation.None
 })
 export class BankAccountSingleComponent implements OnInit {
   transactionsGroupedYearMonth: Chart[];
@@ -34,29 +35,37 @@ export class BankAccountSingleComponent implements OnInit {
   disallowFutureOnSameMonth = true;
 
   colorScheme: Color = {
-    name: 'default',
+    name: "default",
     selectable: true,
     group: 0 as any,
     domain: [
-      '#5AA454'
+      "#5AA454"
     ]
-  }
+  };
 
   colorSchemeExpense: Color = {
-    name: 'expense',
+    name: "expense",
     selectable: true,
     group: 0 as any,
     domain: [
-      '#E44D25'
+      "#E44D25"
     ]
-  }
+  };
 
   bankAccount: BankAccount;
   pageSize = DEFAULT_PAGE_SIZE;
   transactionsPage$: Observable<Page<Transaction>>;
   bankAccountSummaryState: { isLoading: boolean; summary?: BankAccountSummary } = {
-    isLoading: true,
+    isLoading: true
   };
+
+  filterFormGroup = new UntypedFormGroup({
+    categories: new UntypedFormControl()
+  });
+
+  get filterCategories() {
+    return this.filterFormGroup.value.categories?.map(category => category.id);
+  }
 
   private monthDate: Moment;
   private transactionsChangeSubscription: Subscription;
@@ -69,8 +78,9 @@ export class BankAccountSingleComponent implements OnInit {
     private translocoService: TranslocoService,
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
-    private renderer2: Renderer2,
-  ) {}
+    private renderer2: Renderer2
+  ) {
+  }
 
   ngOnInit(): void {
     this.activatedRoute.params
@@ -78,9 +88,18 @@ export class BankAccountSingleComponent implements OnInit {
         untilDestroyed(this),
         switchMap(params => {
           return this.bankAccountService.getBankAccount(params.bankAccountId);
-        }),
+        })
       )//
       .subscribe(bankAccount => this.getBankAccount(bankAccount));
+  }
+
+  public filter() {
+    return this.getInfoBasedOnFilters();
+  }
+
+  public clearFilters() {
+    this.filterFormGroup.reset();
+    return this.filter();
   }
 
   public getTransactions(page = 0, pageSize: number = this.pageSize): void {
@@ -88,8 +107,12 @@ export class BankAccountSingleComponent implements OnInit {
 
     this.transactionsPage$ = this.bankAccountService.getTransactions(
       this.bankAccount.id,
-      { maxDate: this.getMaxDate(), minDate: moment(this.monthDate).startOf('month') },
-      { page, size: this.pageSize },
+      {
+        maxDate: this.getMaxDate(),
+        minDate: moment(this.monthDate).startOf("month"),
+        categoriesId: this.filterCategories
+      },
+      { page, size: this.pageSize }
     );
   }
 
@@ -97,15 +120,16 @@ export class BankAccountSingleComponent implements OnInit {
     const maxDate = this.getMaxDate();
 
     this.bankAccountSummaryState = {
-      isLoading: true,
+      isLoading: true
     };
 
     this.bankAccountSummaryState = {
       summary: await this.bankAccountService.getBankAccountSummary({
         bankAccountId: this.bankAccount.id,
         maxDate: maxDate,
+        categoriesId: this.filterCategories
       }),
-      isLoading: false,
+      isLoading: false
     };
   }
 
@@ -115,16 +139,17 @@ export class BankAccountSingleComponent implements OnInit {
     const charts = await this.bankAccountService.getTransactionsChart(this.bankAccount, this.getMaxDate().add(1), {
       bankAccountId: this.bankAccount.id,
       maxDate: this.getMaxDate(),
-      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, 'month'),
+      minDate: moment(this.getMaxDate(false)).subtract(CHART_DEFAULT_MINIMUM_MONTHS, "month"),
+      categoriesId: this.filterCategories
     });
 
-    this.transactionsGroupedYearMonthExpenses = charts.filter(chart => chart.name.includes(this.translocoService.translate('expenses')));
-    this.transactionsGroupedYearMonthRevenues = charts.filter(chart => chart.name.includes(this.translocoService.translate('revenues')));
+    this.transactionsGroupedYearMonthExpenses = charts.filter(chart => chart.name.includes(this.translocoService.translate("expenses")));
+    this.transactionsGroupedYearMonthRevenues = charts.filter(chart => chart.name.includes(this.translocoService.translate("revenues")));
 
     this.transactionsGroupedYearMonth = charts.filter(
       chart =>
         this.transactionsGroupedYearMonthExpenses.includes(chart) == false &&
-        this.transactionsGroupedYearMonthRevenues.includes(chart) == false,
+        this.transactionsGroupedYearMonthRevenues.includes(chart) == false
     );
   }
 
@@ -134,17 +159,17 @@ export class BankAccountSingleComponent implements OnInit {
 
   public async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
-    await this.getInfoBasedOnBankAndDate();
+    await this.getInfoBasedOnFilters();
   }
 
   async toggleDisallowFutureOnSameMonth(): Promise<void> {
     this.disallowFutureOnSameMonth = !this.disallowFutureOnSameMonth;
-    await this.getInfoBasedOnBankAndDate();
+    await this.getInfoBasedOnFilters();
   }
 
   private async getBankAccount(bankAccount: BankAccount) {
     if (bankAccount == null) {
-      this.router.navigateByUrl('/404');
+      this.router.navigateByUrl("/404");
       return;
     }
 
@@ -153,7 +178,7 @@ export class BankAccountSingleComponent implements OnInit {
     this.transactionsChangeObserver();
   }
 
-  private getInfoBasedOnBankAndDate() {
+  private getInfoBasedOnFilters() {
     this.getTransactions();
     return Promise.all([this.getBankAccountSummary(), this.getChart()]);
   }
@@ -164,14 +189,14 @@ export class BankAccountSingleComponent implements OnInit {
     this.transactionsChangeSubscription = merge(
       this.bankAccountService.onTransactionCreated(this.bankAccount.id),
       this.bankAccountService.onTransactionUpdated(this.bankAccount.id),
-      this.bankAccountService.onTransactionDeleted(this.bankAccount.id),
+      this.bankAccountService.onTransactionDeleted(this.bankAccount.id)
     )
       .pipe(untilDestroyed(this))
       .subscribe(async () => {
-        const transactionsPage = await lastValueFrom(this.transactionsPage$.pipe(take(1)))
+        const transactionsPage = await lastValueFrom(this.transactionsPage$.pipe(take(1)));
 
-        if(transactionsPage.number == 0) {
-          this.getTransactions()
+        if (transactionsPage.number == 0) {
+          this.getTransactions();
         } else {
           // TODO: ask to user if he wants update
         }

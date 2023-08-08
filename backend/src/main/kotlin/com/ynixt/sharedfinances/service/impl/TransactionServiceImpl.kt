@@ -53,6 +53,7 @@ class TransactionServiceImpl(
         minDate: LocalDate?,
         maxDate: LocalDate?,
         creditCardBillDate: LocalDate?,
+        categoriesId: List<Long>?,
         pageable: Pageable
     ): Page<TransactionDto> {
         if (groupId != null && !groupService.userHasPermissionToGroup(user, groupId)) {
@@ -67,6 +68,7 @@ class TransactionServiceImpl(
             minDate = minDate,
             maxDate = maxDate,
             creditCardBillDate = creditCardBillDate,
+            categoriesId = categoriesId,
             pageable = pageable
         )
 

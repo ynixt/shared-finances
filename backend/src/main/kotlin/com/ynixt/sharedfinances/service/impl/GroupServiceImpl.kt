@@ -113,41 +113,51 @@ class GroupServiceImpl(
     }
 
     override fun getGroupSummary(
-        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
+        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): GroupSummaryDto {
         if (!userHasPermissionToGroup(user, groupId)) {
             return GroupSummaryDto(listOf())
         }
 
-        val expensesOfUsers = transactionRepository.getGroupSummaryByUser(
+        val expensesOfUsers = if (categoriesId == null) transactionRepository.getGroupSummaryByUser(
             groupId = groupId, minDate = minDate ?: LocalDate.now(), maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        ) else transactionRepository.getGroupSummaryByUserAndCategory(
+            groupId = groupId,
+            minDate = minDate ?: LocalDate.now(),
+            maxDate = maxDate ?: LocalDate.now().plusDays(1),
+            categoriesId = categoriesId
         )
 
         return GroupSummaryDto(expensesOfUsers)
     }
 
     override fun getChartByGroupId(
-        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
+        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): TransactionValuesGroupChartDto {
         if (!userHasPermissionToGroup(user, groupId)) {
             throw SFExceptionForbidden()
         }
 
-        val byUser = transactionRepository.findAllByGroupIdGroupedByDateAndUser(
+        val byUser = if (categoriesId == null) transactionRepository.findAllByGroupIdGroupedByDateAndUser(
+            groupId = groupId, minDate = minDate ?: LocalDate.now(), maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        ) else transactionRepository.findAllByGroupIdAndCategoriesGroupedByDateAndUser(
             groupId = groupId,
             minDate = minDate ?: LocalDate.now(),
-            maxDate = maxDate ?: LocalDate.now().plusDays(1)
+            maxDate = maxDate ?: LocalDate.now().plusDays(1),
+            categoriesId = categoriesId
         )
 
-        val all = transactionRepository.findAllByGroupIdGroupedByDate(
+        val all = if (categoriesId == null) transactionRepository.findAllByGroupIdGroupedByDate(
+            groupId = groupId, minDate = minDate ?: LocalDate.now(), maxDate = maxDate ?: LocalDate.now().plusDays(1)
+        ) else transactionRepository.findAllByGroupIdAndCategoriesGroupedByDate(
             groupId = groupId,
             minDate = minDate ?: LocalDate.now(),
-            maxDate = maxDate ?: LocalDate.now().plusDays(1)
+            maxDate = maxDate ?: LocalDate.now().plusDays(1),
+            categoriesId = categoriesId
         )
 
         return TransactionValuesGroupChartDto(
-            values = all,
-            allValuesByUser = byUser
+            values = all, allValuesByUser = byUser
         )
     }
 

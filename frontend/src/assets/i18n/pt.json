@@ -199,5 +199,7 @@
   "delete-account": "Deletar conta",
   "delete-account-error": "Erro ao deletar conta.",
   "delete-account-error-with-description": "Erro ao deletar conta.<br>Erro: {{error}}.",
-  "delete-account-confirm": "Tem certeza de que deseja excluir sua conta? Essa ação não pode ser desfeita."
+  "delete-account-confirm": "Tem certeza de que deseja excluir sua conta? Essa ação não pode ser desfeita.",
+  "filter": "Filtrar",
+  "clear-filters": "Redefinir"
 }

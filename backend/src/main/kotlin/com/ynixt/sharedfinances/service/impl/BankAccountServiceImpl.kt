@@ -15,8 +15,7 @@ import java.time.LocalDate
 
 @Service
 class BankAccountServiceImpl(
-    private val bankAccountRepository: BankAccountRepository,
-    private val transactionRepository: TransactionRepository
+    private val bankAccountRepository: BankAccountRepository, private val transactionRepository: TransactionRepository
 ) : BankAccountService {
     override fun getOne(id: Long, user: User): BankAccount? {
         return bankAccountRepository.findById(id).orElse(null)
@@ -37,8 +36,10 @@ class BankAccountServiceImpl(
     }
 
 
-    override fun getSummary(user: User, bankAccountId: Long?, maxDate: LocalDate?): BankAccountSummaryDto {
-        return transactionRepository.getBankAccountSummary(user.id!!, bankAccountId, maxDate)
+    override fun getSummary(
+        user: User, bankAccountId: Long?, maxDate: LocalDate?, categoriesId: List<Long>?
+    ): BankAccountSummaryDto {
+        return transactionRepository.getBankAccountSummary(user.id!!, bankAccountId, maxDate, categoriesId)
     }
 
     @Transactional
@@ -56,12 +57,17 @@ class BankAccountServiceImpl(
     }
 
     override fun getChartByBankAccountId(
-        user: User, bankAccountId: Long, maxDate: LocalDate?
+        user: User, bankAccountId: Long, maxDate: LocalDate?, categoriesId: List<Long>?
     ): List<TransactionValuesAndDateDto> {
-        val chartValues = transactionRepository.findAllByBankAccountIdGroupedByDate(
+        val chartValues = if (categoriesId == null) transactionRepository.findAllByBankAccountIdGroupedByDate(
             userId = user.id!!,
             bankAccountId = bankAccountId,
-            maxDate = maxDate ?: LocalDate.now().plusDays(1)
+            maxDate = maxDate ?: LocalDate.now().plusDays(1),
+        ) else transactionRepository.findAllByBankAccountIdAndCategoriesGroupedByDate(
+            userId = user.id!!,
+            bankAccountId = bankAccountId,
+            maxDate = maxDate ?: LocalDate.now().plusDays(1),
+            categoriesId
         )
 
         for (i in 1..<chartValues.size) {

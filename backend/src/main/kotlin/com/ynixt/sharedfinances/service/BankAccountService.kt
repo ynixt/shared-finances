@@ -11,11 +11,12 @@ interface BankAccountService {
     fun getOne(id: Long, user: User): BankAccount?
     fun updateName(id: Long, user: User, newName: String): BankAccount
     fun deleteOne(id: Long, user: User)
-    fun getSummary(user: User, bankAccountId: Long?, maxDate: LocalDate?): BankAccountSummaryDto
+    fun getSummary(
+        user: User, bankAccountId: Long?, maxDate: LocalDate?, categoriesId: List<Long>?
+    ): BankAccountSummaryDto
+
     fun newBank(user: User, newBankAccountDto: NewBankAccountDto): BankAccount
     fun getChartByBankAccountId(
-        user: User,
-        bankAccountId: Long,
-        maxDate: LocalDate?
+        user: User, bankAccountId: Long, maxDate: LocalDate?, categoriesId: List<Long>?
     ): List<TransactionValuesAndDateDto>
 }

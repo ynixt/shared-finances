@@ -48,7 +48,7 @@ export class CategoryInputComponent extends ControlValueAccessorConnector<Catego
       }
     } else {
       this.categoriesSourceSubscription = this.userCategorySelectors.categories$.pipe(untilDestroyed(this)).subscribe(categories => {
-        this.categories = [...categories].sort((categoryA, categoryB) => categoryA.name.localeCompare(categoryB.name));
+        this.categories = categories != null ? [...categories].sort((categoryA, categoryB) => categoryA.name.localeCompare(categoryB.name)) : [];
       });
     }
   }

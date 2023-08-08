@@ -48,10 +48,11 @@ class BankAccountController(
     fun getBankAccountSummary(
         authentication: Authentication,
         @RequestParam("bankAccountId", required = false) bankAccountId: Long?,
-        @RequestParam("maxDate", required = false) maxDate: LocalDate?
+        @RequestParam("maxDate", required = false) maxDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?,
     ): BankAccountSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
-        return bankAccountService.getSummary(user, bankAccountId, maxDate)
+        return bankAccountService.getSummary(user, bankAccountId, maxDate, categoriesId)
     }
 
     @PostMapping
@@ -69,6 +70,7 @@ class BankAccountController(
         @PathVariable bankAccountId: Long,
         @RequestParam minDate: LocalDate?,
         @RequestParam maxDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?,
         pageable: Pageable
     ): Page<TransactionDto> {
         val user = securityService.authenticationToUser(authentication)!!
@@ -80,6 +82,7 @@ class BankAccountController(
             user = user,
             minDate = minDate,
             maxDate = maxDate,
+            categoriesId = categoriesId,
             pageable = pageable
         )
     }
@@ -89,13 +92,15 @@ class BankAccountController(
         authentication: Authentication,
         @PathVariable bankAccountId: Long,
         @RequestParam maxDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?,
     ): List<TransactionValuesAndDateDto> {
         val user = securityService.authenticationToUser(authentication)!!
 
         return bankAccountService.getChartByBankAccountId(
             user = user,
             bankAccountId = bankAccountId,
-            maxDate = maxDate
+            maxDate = maxDate,
+            categoriesId = categoriesId
         )
     }
 }

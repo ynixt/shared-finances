@@ -1,7 +1,6 @@
 <mat-form-field *transloco="let t" class="w-full">
   <mat-label>{{ t('category') }}</mat-label>
   <mat-select multiple [compareWith]="categoryInputValueCompare" [formControl]="control">
-    <mat-option>{{ t('mat-select-none') }}</mat-option>
       <mat-option *ngFor="let category of categories" [value]="category">
         {{ category.name }}
       </mat-option>

@@ -14,6 +14,7 @@ import { Chart } from "src/app/@core/models/chart";
 import { DEFAULT_PAGE_SIZE } from "src/app/@core/constants";
 import { ISO_DATE_FORMAT } from "../../../moment-extension";
 import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
+import { UntypedFormControl, UntypedFormGroup } from "@angular/forms";
 
 @UntilDestroy()
 @Component({
@@ -50,6 +51,14 @@ export class CreditCardSingleComponent implements OnInit {
   private billDateOfCurrentMonth: Moment;
   private transactionsChangeSubscription: Subscription;
   private creditCardSubscription: Subscription;
+
+  filterFormGroup = new UntypedFormGroup({
+    categories: new UntypedFormControl()
+  });
+
+  get filterCategories() {
+    return this.filterFormGroup.value.categories?.map(category => category.id);
+  }
 
   get isBillDateOfCurrentMonth() {
     return moment(this.monthDate).isSame(this.billDateOfCurrentMonth);
@@ -88,6 +97,15 @@ export class CreditCardSingleComponent implements OnInit {
       .subscribe(creditCard => this.getCreditCardInfo(creditCard));
   }
 
+  public filter() {
+    return this.getInfoBasedOnFilters();
+  }
+
+  public clearFilters() {
+    this.filterFormGroup.reset();
+    return this.filter();
+  }
+
   async getCreditCardInfo(creditCard: CreditCard): Promise<void> {
     this.creditCard = creditCard;
 
@@ -96,7 +114,7 @@ export class CreditCardSingleComponent implements OnInit {
     } else {
       this.setBillDateOfCurrentDate();
       this.getInfoBasedOnCreditCard();
-      await this.getInfoBasedOnCreditCardAndDate();
+      await this.getInfoBasedOnFilters();
     }
   }
 
@@ -106,14 +124,15 @@ export class CreditCardSingleComponent implements OnInit {
 
   async dateChanged(newDate: Moment): Promise<void> {
     this.monthDate = newDate;
-    await this.getInfoBasedOnCreditCardAndDate();
+    await this.getInfoBasedOnFilters();
   }
 
   getTransactions(page = 0): void {
     this.transactionsPage$ = this.creditCardService.getTransactions(
       this.creditCard.id,
       {
-        creditCardBillDate: moment(this.monthDate)
+        creditCardBillDate: moment(this.monthDate),
+        categoriesId: this.filterCategories
       },
       { page, size: this.pageSize }
     );
@@ -145,7 +164,8 @@ export class CreditCardSingleComponent implements OnInit {
     const charts = await this.creditCardCoreService.getTransactionsChart(
       this.creditCard, this.monthDate, this.creditCard.closingDay, {
         maxCreditCardBillDate: moment(this.monthDate, ISO_DATE_FORMAT),
-        minCreditCardBillDate: moment(this.creditCard.billDatesValue[0], ISO_DATE_FORMAT)
+        minCreditCardBillDate: moment(this.creditCard.billDatesValue[0], ISO_DATE_FORMAT),
+        categoriesId: this.filterCategories
       }
     );
 
@@ -156,14 +176,14 @@ export class CreditCardSingleComponent implements OnInit {
     this.transactionsChange();
   }
 
-  private async getInfoBasedOnCreditCardAndDate(): Promise<void> {
+  private async getInfoBasedOnFilters(): Promise<void> {
     this.getTransactions();
     await Promise.all([this.getCreditCardSummary(), this.getChart()]);
   }
 
   private async getCreditCardSummary(): Promise<void> {
     this.creditCardSummary = undefined;
-    this.creditCardSummary = (await this.creditCardCoreService.getCreditCardSummary(this.creditCard.id, this.monthDate)) ?? { bill: 0 };
+    this.creditCardSummary = (await this.creditCardCoreService.getCreditCardSummary(this.creditCard.id, this.monthDate, this.filterCategories)) ?? { bill: 0 };
   }
 
   private setBillDateOfCurrentDate() {

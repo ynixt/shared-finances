@@ -199,5 +199,7 @@
   "delete-account": "Delete account",
   "delete-account-error": "Error deleting account.",
   "delete-account-error-with-description": "Error deleting account.<br>Error: {{error}}.",
-  "delete-account-confirm": "Are you sure you want to delete your account? This action cannot be undone."
+  "delete-account-confirm": "Are you sure you want to delete your account? This action cannot be undone.",
+  "filter": "Filter",
+  "clear-filters": "Reset"
 }

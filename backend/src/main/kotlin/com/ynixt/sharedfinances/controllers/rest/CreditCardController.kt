@@ -24,10 +24,13 @@ class CreditCardController(
 ) {
     @GetMapping("summary/{creditCardId}/{maxCreditCardBillDate}")
     fun summary(
-        authentication: Authentication, @PathVariable creditCardId: Long, @PathVariable maxCreditCardBillDate: LocalDate
+        authentication: Authentication,
+        @PathVariable creditCardId: Long,
+        @PathVariable maxCreditCardBillDate: LocalDate,
+        @RequestParam categoriesId: List<Long>?
     ): CreditCardSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
-        return this.creditCardService.getSummary(user, creditCardId, maxCreditCardBillDate)
+        return this.creditCardService.getSummary(user, creditCardId, maxCreditCardBillDate, categoriesId)
     }
 
     @GetMapping("{id}")
@@ -74,6 +77,7 @@ class CreditCardController(
         @RequestParam minDate: LocalDate?,
         @RequestParam maxDate: LocalDate?,
         @RequestParam creditCardBillDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?,
         pageable: Pageable
     ): Page<TransactionDto> {
         val user = securityService.authenticationToUser(authentication)!!
@@ -86,6 +90,7 @@ class CreditCardController(
             minDate = minDate,
             maxDate = maxDate,
             creditCardBillDate = creditCardBillDate,
+            categoriesId = categoriesId,
             pageable = pageable
         )
     }
@@ -96,6 +101,7 @@ class CreditCardController(
         @PathVariable creditCardId: Long,
         @RequestParam minCreditCardBillDate: LocalDate?,
         @RequestParam maxCreditCardBillDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?
     ): List<TransactionValuesAndDateDto> {
         val user = securityService.authenticationToUser(authentication)!!
 
@@ -103,7 +109,8 @@ class CreditCardController(
             user = user,
             creditCardId = creditCardId,
             minCreditCardBillDate = minCreditCardBillDate,
-            maxCreditCardBillDate = maxCreditCardBillDate
+            maxCreditCardBillDate = maxCreditCardBillDate,
+            categoriesId = categoriesId
         )
     }
 }

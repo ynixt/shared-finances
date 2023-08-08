@@ -39,9 +39,12 @@ class GroupController(
         @PathVariable("groupId") groupId: Long,
         @RequestParam("minDate", required = false) minDate: LocalDate?,
         @RequestParam("maxDate", required = false) maxDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?
     ): GroupSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
-        return groupService.getGroupSummary(user, groupId, minDate = minDate, maxDate = maxDate)
+        return groupService.getGroupSummary(
+            user, groupId, minDate = minDate, maxDate = maxDate, categoriesId = categoriesId
+        )
     }
 
 
@@ -81,6 +84,7 @@ class GroupController(
         @PathVariable groupId: Long,
         @RequestParam minDate: LocalDate?,
         @RequestParam maxDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?,
         pageable: Pageable
     ): Page<TransactionDto> {
         val user = securityService.authenticationToUser(authentication)!!
@@ -92,6 +96,7 @@ class GroupController(
             user = user,
             minDate = minDate,
             maxDate = maxDate,
+            categoriesId = categoriesId,
             pageable = pageable
         )
     }
@@ -102,11 +107,12 @@ class GroupController(
         @PathVariable groupId: Long,
         @RequestParam minDate: LocalDate?,
         @RequestParam maxDate: LocalDate?,
+        @RequestParam categoriesId: List<Long>?
     ): TransactionValuesGroupChartDto {
         val user = securityService.authenticationToUser(authentication)!!
 
         return groupService.getChartByGroupId(
-            user = user, groupId = groupId, minDate = minDate, maxDate = maxDate
+            user = user, groupId = groupId, minDate = minDate, maxDate = maxDate, categoriesId = categoriesId
         )
     }
 

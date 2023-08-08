@@ -23,10 +23,13 @@ class CreditCardServiceImpl(
     private val creditCardMapper: CreditCardMapper
 ) : CreditCardService {
     override fun getSummary(
-        user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate
+        user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate, categoriesId: List<Long>?
     ): CreditCardSummaryDto {
         return transactionRepository.getCreditCardSummary(
-            userId = user.id!!, creditCardId = creditCardId, maxCreditCardBillDate = maxCreditCardBillDate
+            userId = user.id!!,
+            creditCardId = creditCardId,
+            maxCreditCardBillDate = maxCreditCardBillDate,
+            categoriesId = categoriesId
         )
     }
 
@@ -81,13 +84,23 @@ class CreditCardServiceImpl(
     }
 
     override fun getChartByCreditCardId(
-        user: User, creditCardId: Long, minCreditCardBillDate: LocalDate?, maxCreditCardBillDate: LocalDate?
+        user: User,
+        creditCardId: Long,
+        minCreditCardBillDate: LocalDate?,
+        maxCreditCardBillDate: LocalDate?,
+        categoriesId: List<Long>?
     ): List<TransactionValuesAndDateDto> {
-        return transactionRepository.findAllByCreditCardIdGroupedByDate(
+        return if (categoriesId == null) transactionRepository.findAllByCreditCardIdGroupedByDate(
             userId = user.id!!,
             creditCardId = creditCardId,
             minCreditCardBillDate = minCreditCardBillDate ?: LocalDate.now(),
             maxCreditCardBillDate = maxCreditCardBillDate ?: LocalDate.now().plusDays(1)
+        ) else transactionRepository.findAllByCreditCardIdAndCategoriesGroupedByDate(
+            userId = user.id!!,
+            creditCardId = creditCardId,
+            minCreditCardBillDate = minCreditCardBillDate ?: LocalDate.now(),
+            maxCreditCardBillDate = maxCreditCardBillDate ?: LocalDate.now().plusDays(1),
+            categoriesId = categoriesId
         )
     }
 

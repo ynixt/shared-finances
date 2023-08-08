@@ -58,24 +58,30 @@ export class BankAccountService {
 
   getTransactions(
     bankAccountId: string,
-    args: { maxDate: Moment; minDate: Moment },
+    args: { maxDate: Moment; minDate: Moment, categoriesId?: string[] },
     pagination?: Pagination
   ): Observable<Page<Transaction>> {
     const url = addHttpParamsIntoUrl(`/api/bank-account/${bankAccountId}/transactions`, {
       page: pagination?.page,
       size: pagination?.size,
       maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
-      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
-    })
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT),
+      categoriesId: args?.categoriesId
+    });
 
     return this.httpClient.get<Page<Transaction>>(url);
   }
 
-  getBankAccountSummary(obj?: { maxDate?: Moment; bankAccountId?: string }): Promise<BankAccountSummary> {
-    const url = addHttpParamsIntoUrl('/api/bank-account/summary', {
+  getBankAccountSummary(obj?: {
+    maxDate?: Moment;
+    bankAccountId?: string,
+    categoriesId?: string[]
+  }): Promise<BankAccountSummary> {
+    const url = addHttpParamsIntoUrl("/api/bank-account/summary", {
       bankAccountId: obj?.bankAccountId,
-      maxDate: obj?.maxDate?.format(ISO_DATE_FORMAT)
-    })
+      maxDate: obj?.maxDate?.format(ISO_DATE_FORMAT),
+      categoriesId: obj?.categoriesId
+    });
 
     return lastValueFrom(this.httpClient.get<BankAccountSummary>(url).pipe(take(1)));
   }
@@ -104,13 +110,14 @@ export class BankAccountService {
   async getTransactionsChart(
     bankAccount: BankAccount,
     initialMonthIfNoChart: Moment | string,
-    args?: { bankAccountId: string; maxDate?: Moment; minDate?: Moment },
+    args?: { bankAccountId: string; maxDate?: Moment; minDate?: Moment, categoriesId?: string[] },
     minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS
   ): Promise<Chart[]> {
     const url = addHttpParamsIntoUrl(`/api/bank-account/${bankAccount.id}/chart`, {
       maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
-      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
-    })
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT),
+      categoriesId: args?.categoriesId
+    });
 
     const values = await lastValueFrom(
       this.httpClient.get<TransactionValuesAndDateDto[]>(url).pipe(take(1))

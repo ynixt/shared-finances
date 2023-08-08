@@ -19,7 +19,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     private lateinit var entityManager: EntityManager
 
     override fun getBankAccountSummary(
-        userId: Long, bankAccountId: Long?, maxDate: LocalDate?
+        userId: Long, bankAccountId: Long?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): BankAccountSummaryDto {
         var hql = """
             select new com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto(
@@ -41,9 +41,19 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
             hql += " and t.date <= :maxDate"
         }
 
-        hql += """
-            group by t.user
-        """
+        if (categoriesId != null) {
+            hql += """
+                and exists (
+                        select internal_t from Transaction internal_t
+                        join t.categories internal_c
+                        where
+                            internal_t.id = t.id
+                            and internal_c.id in :categoriesId
+                    )
+            """
+        }
+
+        hql += " group by t.user"
 
         val query = entityManager.createQuery(hql, BankAccountSummaryDto::class.java)
 
@@ -53,6 +63,9 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         }
         if (maxDate != null) {
             query.setParameter("maxDate", maxDate)
+        }
+        if (categoriesId != null) {
+            query.setParameter("categoriesId", categoriesId)
         }
 
         return try {
@@ -65,7 +78,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     }
 
     override fun getCreditCardSummary(
-        userId: Long, creditCardId: Long?, maxCreditCardBillDate: LocalDate?
+        userId: Long, creditCardId: Long?, maxCreditCardBillDate: LocalDate?, categoriesId: List<Long>?
     ): CreditCardSummaryDto {
         var hql = """
                     select new com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto(
@@ -89,9 +102,19 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
             hql += " and bd.billDate <= :maxCreditCardBillDate"
         }
 
-        hql += """
-            group by t.user
-        """
+        if (categoriesId != null) {
+            hql += """
+                and exists (
+                        select internal_t from Transaction internal_t
+                        join t.categories internal_c
+                        where
+                            internal_t.id = t.id
+                            and internal_c.id in :categoriesId
+                    )
+            """
+        }
+
+        hql += " group by t.user"
 
         val query = entityManager.createQuery(hql, CreditCardSummaryDto::class.java)
 
@@ -99,8 +122,13 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         if (creditCardId != null) {
             query.setParameter("creditCardId", creditCardId)
         }
+
         if (maxCreditCardBillDate != null) {
             query.setParameter("maxCreditCardBillDate", maxCreditCardBillDate)
+        }
+
+        if (categoriesId != null) {
+            query.setParameter("categoriesId", categoriesId)
         }
 
         return try {
@@ -118,6 +146,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         minDate: LocalDate?,
         maxDate: LocalDate?,
         creditCardBillDate: LocalDate?,
+        categoriesId: List<Long>?,
         pageable: Pageable
     ): Page<Transaction> {
         var hql = """
@@ -135,9 +164,10 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
        """.trimIndent()
 
         var countHql = """
-            select count(1) from Transaction t
+            select count(distinct t.id) from Transaction t
             left join t.creditCard cc
             left join t.creditCardBillDate ccbd
+            left join t.categories c
         """.trimIndent()
 
         if (
@@ -183,6 +213,11 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
             countHql += " and ccbd.billDate = :creditCardBillDate"
         }
 
+        if (categoriesId != null) {
+            hql += " and c.id in :categoriesId"
+            countHql += " and c.id in :categoriesId"
+        }
+
         hql += " order by t.date desc, t.id desc"
 
         hql = hql.replace("where and", "where")
@@ -224,6 +259,11 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         if (creditCardBillDate != null) {
             query.setParameter("creditCardBillDate", creditCardBillDate)
             countQuery.setParameter("creditCardBillDate", creditCardBillDate)
+        }
+
+        if (categoriesId != null) {
+            query.setParameter("categoriesId", categoriesId)
+            countQuery.setParameter("categoriesId", categoriesId)
         }
 
         val count = countQuery.singleResult

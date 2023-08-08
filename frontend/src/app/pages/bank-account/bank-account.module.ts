@@ -17,6 +17,7 @@ import { BankAccountSingleComponent } from './bank-account-single/bank-account-s
 import { MonthBarModule } from 'src/app/components/month-bar';
 import { TransactionsTableModule } from 'src/app/components/transactions-table/transactions-table.module';
 import { BankAccountSummaryDashboardModule } from 'src/app/components/bank-account-summary-dashboard';
+import { CategoryInputModule } from "../../components/input/category-input";
 
 @NgModule({
   declarations: [BankAccountComponent, NewBankAccountComponent, BankAccountSingleComponent],
@@ -34,6 +35,7 @@ import { BankAccountSummaryDashboardModule } from 'src/app/components/bank-accou
     NgxChartsModule,
     BankAccountSummaryDashboardModule,
     MatCheckboxModule,
-  ],
+    CategoryInputModule
+  ]
 })
 export class BankAccountModule {}

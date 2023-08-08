@@ -72,22 +72,25 @@ export class GroupsService {
 
   getTransactions(groupId: string, args?: {
     maxDate: Moment;
-    minDate: Moment
+    minDate: Moment,
+    categoriesId?: string[]
   }, pagination?: Pagination): Observable<Page<Transaction>> {
     const url = addHttpParamsIntoUrl(`/api/group/${groupId}/transactions`, {
       page: pagination?.page,
       size: pagination?.size,
       maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
-      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT),
+      categoriesId: args?.categoriesId
     });
 
     return this.httpClient.get<Page<Transaction>>(url);
   }
 
-  async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment): Promise<GroupSummary> {
+  async getGroupSummary(groupId: string, minDate: Moment, maxDate: Moment, categoriesId?: string[]): Promise<GroupSummary> {
     const url = addHttpParamsIntoUrl(`/api/group/summary/${groupId}`, {
       maxDate: maxDate?.format(ISO_DATE_FORMAT),
-      minDate: minDate?.format(ISO_DATE_FORMAT)
+      minDate: minDate?.format(ISO_DATE_FORMAT),
+      categoriesId
     });
 
     return lastValueFrom(this.httpClient.get<GroupSummary>(url));
@@ -96,12 +99,13 @@ export class GroupsService {
   async getTransactionsChart(
     group: Group,
     initialMonthIfNoChart: Moment | string,
-    args: { groupId: string; maxDate?: Moment; minDate?: Moment },
+    args: { groupId: string; maxDate?: Moment; minDate?: Moment, categoriesId?: string[] },
     minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS
   ): Promise<Chart[]> {
     const url = addHttpParamsIntoUrl(`/api/group/${group.id}/chart`, {
       maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
-      minDate: args?.minDate?.format(ISO_DATE_FORMAT)
+      minDate: args?.minDate?.format(ISO_DATE_FORMAT),
+      categoriesId: args?.categoriesId
     });
 
     const chart = await lastValueFrom(

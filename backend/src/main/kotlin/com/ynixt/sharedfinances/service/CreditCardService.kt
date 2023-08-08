@@ -8,7 +8,10 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 interface CreditCardService {
-    fun getSummary(user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate): CreditCardSummaryDto
+    fun getSummary(
+        user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate, categoriesId: List<Long>?
+    ): CreditCardSummaryDto
+
     fun getOne(user: User, id: Long): CreditCard?
     fun listCreditCard(user: User): List<CreditCard>
     fun listCreditCardAsCreditCardDto(user: User): List<CreditCardDto>
@@ -19,7 +22,8 @@ interface CreditCardService {
         user: User,
         creditCardId: Long,
         minCreditCardBillDate: LocalDate?,
-        maxCreditCardBillDate: LocalDate?
+        maxCreditCardBillDate: LocalDate?,
+        categoriesId: List<Long>?
     ): List<TransactionValuesAndDateDto>
 
     fun addToAvailableLimit(targetUser: User, creditCardId: Long, delta: BigDecimal)

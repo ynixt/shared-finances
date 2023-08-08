@@ -30,11 +30,13 @@ export class CreditCardService {
     return w.pipe(map(message => JSON.parse(message.body) as CreditCard[]));
   }
 
-  getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string | Moment): Promise<CreditCardSummary> {
+  getCreditCardSummary(creditCardId: string, maxCreditCardBillDate: string | Moment, categoriesId?: string[]): Promise<CreditCardSummary> {
     const maxCreditCardBillDateFormatted = moment(maxCreditCardBillDate).utc().format(ISO_DATE_FORMAT);
-    return lastValueFrom(this.httpClient.get<CreditCardSummary>(
-      `/api/credit-card/summary/${creditCardId}/${maxCreditCardBillDateFormatted}`
-    ).pipe(take(1)));
+    const url = addHttpParamsIntoUrl(`/api/credit-card/summary/${creditCardId}/${maxCreditCardBillDateFormatted}`, {
+      categoriesId: categoriesId
+    });
+
+    return lastValueFrom(this.httpClient.get<CreditCardSummary>(url).pipe(take(1)));
   }
 
   getCreditCardSAvailableLimit(creditCardId: string): Promise<number> {
@@ -74,12 +76,13 @@ export class CreditCardService {
     creditCard: CreditCard,
     initialMonthIfNoChart: Moment | string,
     creditCardClosingDay: number,
-    args: { maxCreditCardBillDate?: Moment; minCreditCardBillDate?: Moment },
+    args: { maxCreditCardBillDate?: Moment; minCreditCardBillDate?: Moment, categoriesId: string[] },
     minimumMonths = CHART_DEFAULT_MINIMUM_MONTHS
   ): Promise<Chart[]> {
     const url = addHttpParamsIntoUrl(`/api/credit-card/${creditCard.id}/chart`, {
       maxCreditCardBillDate: args?.maxCreditCardBillDate?.format(ISO_DATE_FORMAT),
-      minCreditCardBillDate: args?.minCreditCardBillDate?.format(ISO_DATE_FORMAT)
+      minCreditCardBillDate: args?.minCreditCardBillDate?.format(ISO_DATE_FORMAT),
+      categoriesId: args?.categoriesId
     });
 
     const values = await lastValueFrom(

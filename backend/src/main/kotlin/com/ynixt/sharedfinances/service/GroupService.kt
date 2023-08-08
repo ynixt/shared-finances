@@ -17,9 +17,16 @@ interface GroupService {
     fun newGroup(user: User, newDto: NewGroupDto): Group
     fun delete(user: User, id: Long)
     fun userHasPermissionToGroup(user: User, groupId: Long): Boolean
-    fun getGroupSummary(user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?): GroupSummaryDto
+    fun getGroupSummary(
+        user: User,
+        groupId: Long,
+        minDate: LocalDate?,
+        maxDate: LocalDate?,
+        categoriesId: List<Long>?
+    ): GroupSummaryDto
+
     fun getChartByGroupId(
-        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?
+        user: User, groupId: Long, minDate: LocalDate?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): TransactionValuesGroupChartDto
 
     fun listAllWithUsers(user: User): List<Group>

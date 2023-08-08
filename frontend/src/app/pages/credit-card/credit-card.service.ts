@@ -46,7 +46,7 @@ export class CreditCardService {
 
   getTransactions(
     creditCardId: string,
-    args?: { maxDate?: Moment; minDate?: Moment; creditCardBillDate: Moment },
+    args?: { maxDate?: Moment; minDate?: Moment; creditCardBillDate: Moment, categoriesId: string[] },
     pagination?: Pagination
   ): Observable<Page<Transaction>> {
     const url = addHttpParamsIntoUrl(`/api/credit-card/${creditCardId}/transactions`, {
@@ -54,8 +54,9 @@ export class CreditCardService {
       size: pagination?.size,
       maxDate: args?.maxDate?.format(ISO_DATE_FORMAT),
       minDate: args?.minDate?.format(ISO_DATE_FORMAT),
-      creditCardBillDate: args?.creditCardBillDate?.format(ISO_DATE_FORMAT)
-    })
+      creditCardBillDate: args?.creditCardBillDate?.format(ISO_DATE_FORMAT),
+      categoriesId: args?.categoriesId
+    });
 
     return this.httpClient.get<Page<Transaction>>(url);
   }
