@@ -90,3 +90,11 @@ button:focus {
 :root {
   --mdc-icon-button-icon-color: black;
 }
+
+.button-filter {
+  height: 36px !important;
+
+  @screen md {
+    height: 55.99px !important;
+  }
+}

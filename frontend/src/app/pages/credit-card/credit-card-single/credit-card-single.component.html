@@ -24,27 +24,25 @@
         </div>
 
         <div class="pb-6">
-          <form [formGroup]="filterFormGroup" (ngSubmit)="filter()" class="flex gap-2 flex-wrap">
+          <form [formGroup]="filterFormGroup" (ngSubmit)="filter()" class="flex flex-col md:flex-row gap-2 flex-wrap">
             <app-category-input [formControlName]="'categories'" [isShared]="false"></app-category-input>
 
             <button
               [disabled]="filterFormGroup.invalid"
-              class="add-button"
+              class="add-button button-filter"
               type="submit"
               mat-raised-button
               color="primary"
-              style="height: 55.99px"
             >
               {{ t('filter') }}
             </button>
             <button
               [disabled]="filterFormGroup.invalid"
               (click)="clearFilters()"
-              class="add-button"
+              class="add-button button-filter"
               type="button"
               mat-raised-button
               color="accent"
-              style="height: 55.99px"
             >
               {{ t('clear-filters') }}
             </button>

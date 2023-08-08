@@ -15,6 +15,7 @@ import { CHART_DEFAULT_MINIMUM_MONTHS, DEFAULT_PAGE_SIZE } from "src/app/@core/c
 import { Color } from "@swimlane/ngx-charts/lib/utils/color-sets";
 import { take } from "rxjs/operators";
 import { UntypedFormControl, UntypedFormGroup } from "@angular/forms";
+import { BreakpointObserver, Breakpoints, BreakpointState } from "@angular/cdk/layout";
 
 @UntilDestroy()
 @Component({
@@ -35,7 +36,7 @@ export class GroupSinglePageComponent implements OnInit {
 
   disallowFutureOnSameMonth = true;
 
-  legend: boolean = true;
+  legend: boolean = false;
   showLabels: boolean = true;
   animations: boolean = true;
   showYAxisLabel: boolean = true;
@@ -66,8 +67,16 @@ export class GroupSinglePageComponent implements OnInit {
     private transactionService: TransactionService,
     private newTransactionDialogService: NewTransactionDialogService,
     @Inject(DOCUMENT) private document: any,
-    private renderer2: Renderer2
+    private renderer2: Renderer2,
+    private breakpointObserver: BreakpointObserver,
   ) {
+    this.breakpointObserver
+      .observe([Breakpoints.Medium])
+      .pipe(untilDestroyed(this))
+      .subscribe((state: BreakpointState) => {
+        this.legend = state.matches;
+      });
+
   }
 
   ngOnInit(): void {
