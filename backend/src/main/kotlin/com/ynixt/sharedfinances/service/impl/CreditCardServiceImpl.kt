@@ -33,7 +33,7 @@ class CreditCardServiceImpl(
         )
 
         return summary.copy(
-            bill = summary.bill.negate(),
+            bill = (summary.bill - summary.payments).negate(),
             expenses = summary.expenses.negate(),
             expensesOfThisBill = summary.expensesOfThisBill.negate(),
         )

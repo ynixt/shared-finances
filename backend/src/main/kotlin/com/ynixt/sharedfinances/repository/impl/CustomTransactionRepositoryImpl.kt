@@ -82,7 +82,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     ): CreditCardSummaryDto {
         var hql = """
                     select new com.ynixt.sharedfinances.model.dto.creditcard.CreditCardSummaryDto(
-                        COALESCE(sum(t.value), 0),
+                        COALESCE(sum(t.value) FILTER (WHERE t.type <> "CreditCardBillPayment"), 0),
                         COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCard"), 0),
                         COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment"), 0),
                         COALESCE(sum(t.value) FILTER (WHERE t.type = "CreditCardBillPayment" and bd.billDate = :maxCreditCardBillDate), 0),
