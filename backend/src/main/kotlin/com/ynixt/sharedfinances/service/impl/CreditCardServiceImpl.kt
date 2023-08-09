@@ -25,11 +25,17 @@ class CreditCardServiceImpl(
     override fun getSummary(
         user: User, creditCardId: Long, maxCreditCardBillDate: LocalDate, categoriesId: List<Long>?
     ): CreditCardSummaryDto {
-        return transactionRepository.getCreditCardSummary(
+        val summary = transactionRepository.getCreditCardSummary(
             userId = user.id!!,
             creditCardId = creditCardId,
             maxCreditCardBillDate = maxCreditCardBillDate,
             categoriesId = categoriesId
+        )
+
+        return summary.copy(
+            bill = summary.bill.negate(),
+            expenses = summary.expenses.negate(),
+            expensesOfThisBill = summary.expensesOfThisBill.negate(),
         )
     }
 
