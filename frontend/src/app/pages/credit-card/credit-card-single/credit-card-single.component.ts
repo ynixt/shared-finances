@@ -196,6 +196,12 @@ export class CreditCardSingleComponent implements OnInit {
       this.creditCard.closingDay
     );
 
+    this.creditCard = {
+      ...this.creditCard, billDatesValue: [...this.creditCard.billDatesValue].sort((billDateA, billDateB) => moment(
+        billDateA, ISO_DATE_FORMAT).format("x"
+      ).localeCompare(moment(billDateB, ISO_DATE_FORMAT).format("x")))
+    };
+
     if (this.billDateOfCurrentMonth) {
       this.billDateIndex = this.creditCard.billDatesValue.indexOf(this.billDateOfCurrentMonth.format(ISO_DATE_FORMAT));
     }
@@ -211,9 +217,7 @@ export class CreditCardSingleComponent implements OnInit {
       this.creditCard.billDatesValue = [
         ...this.creditCard.billDatesValue,
         this.creditCardCoreService.nextBillDate(moment(), this.creditCard.closingDay, 0).format(ISO_DATE_FORMAT)
-      ].sort((billDateA, billDateB) => moment(
-        billDateA, ISO_DATE_FORMAT).format("X"
-      ).localeCompare(moment(billDateB, ISO_DATE_FORMAT).format("X")));
+      ];
     }
   }
 
