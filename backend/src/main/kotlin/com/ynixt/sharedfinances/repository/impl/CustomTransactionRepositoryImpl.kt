@@ -90,7 +90,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
                     )
                     from Transaction t
                     join t.creditCard c
-                    left join c.billDates bd
+                    left join t.creditCardBillDate bd
                     where t.userId = :userId
         """.trimIndent()
 
@@ -199,7 +199,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         }
 
         if (minDate != null) {
-            hql += " and t.date >= :minDate"
+            hql += " and (t.creditCardId is null and t.date >= :minDate or t.creditCardId is not null and t.date >= :minDate)"
             countHql += " and t.date >= :minDate"
         }
 

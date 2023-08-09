@@ -159,7 +159,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
                 )
                 from Transaction t
                 join t.creditCard c
-                join c.billDates bd
+                join t.creditCardBillDate bd
                 where
                     t.userId = :userId
                     and t.creditCardId = :creditCardId
@@ -185,7 +185,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
                 )
                 from Transaction t
                 join t.creditCard c
-                join c.billDates bd
+                join t.creditCardBillDate bd
                 where
                     t.userId = :userId
                     and t.creditCardId = :creditCardId
