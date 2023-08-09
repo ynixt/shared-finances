@@ -48,12 +48,10 @@ interface GroupRepository : CrudRepository<Group, Long> {
         from Group g
         join g.users u
         join fetch g.users gu
-        left join fetch gu.bankAccounts b
-        left join fetch gu.creditCards c
         where u.id = :userId
     """
     )
-    fun findAllWithUsers(userId: Long): List<Group>
+    fun findAllByUserIdIncludeUsers(userId: Long): List<Group>
 
     @Query(
         """

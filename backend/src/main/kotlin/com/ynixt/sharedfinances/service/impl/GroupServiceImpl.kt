@@ -9,6 +9,7 @@ import com.ynixt.sharedfinances.model.exceptions.SFException
 import com.ynixt.sharedfinances.model.exceptions.SFExceptionForbidden
 import com.ynixt.sharedfinances.repository.GroupRepository
 import com.ynixt.sharedfinances.repository.TransactionRepository
+import com.ynixt.sharedfinances.repository.UserRepository
 import com.ynixt.sharedfinances.service.GroupService
 import jakarta.transaction.Transactional
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -20,7 +21,8 @@ class GroupServiceImpl(
     private val groupRepository: GroupRepository,
     private val simpMessagingTemplate: SimpMessagingTemplate,
     private val groupMapper: GroupMapper,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val userRepository: UserRepository
 ) : GroupService {
     override fun listGroup(user: User): List<Group> {
         return groupRepository.getAllByUserId(user.id!!)
@@ -163,6 +165,16 @@ class GroupServiceImpl(
 
     override fun listAllWithUsers(user: User): List<Group> {
         // TODO: improve
-        return groupRepository.findAllWithUsers(user.id!!)
+        val groups = groupRepository.findAllByUserIdIncludeUsers(user.id!!)
+        val usersIds = groups.map { it.users!! }.flatten().map { it.id!! }
+        val usersById = userRepository.findAllIncludeCreditCardAndBankAccount(usersIds).associateBy { it.id!! }
+
+        groups.forEach { g ->
+            g.users = g.users!!.map {
+                usersById[it.id!!]!!
+            }.toMutableList()
+        }
+
+        return groups
     }
 }

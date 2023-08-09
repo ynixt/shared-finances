@@ -19,4 +19,14 @@ interface UserRepository : CrudRepository<User, Long> {
 
     @Modifying
     fun save(user: User): User
+
+    @Query(
+        """
+        from User u
+        left join fetch u.bankAccounts ub
+        left join fetch u.creditCards cc
+        where u.id in :ids
+    """
+    )
+    fun findAllIncludeCreditCardAndBankAccount(ids: List<Long>): List<User>
 }
