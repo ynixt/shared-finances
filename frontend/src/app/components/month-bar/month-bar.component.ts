@@ -40,7 +40,7 @@ export class MonthBarComponent implements OnInit, AfterViewInit {
   }
 
   chosenMonthHandler(normalizedMonth: Moment, datepicker: MatDatepicker<Moment>) {
-    this.date = moment(this.date).month(normalizedMonth.month());
+    this.date = moment(this.date).month(normalizedMonth.month()).year(normalizedMonth.year());
     datepicker.close();
   }
 
