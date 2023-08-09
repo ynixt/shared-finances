@@ -159,6 +159,7 @@ class CreditCardTransactionDto(
     override val totalInstallments: Int?,
     override val installment: Int?,
     override val installmentId: String?,
+    val creditReversal: Boolean,
     userId: Long,
     user: UserDto,
     group: GroupDto?,

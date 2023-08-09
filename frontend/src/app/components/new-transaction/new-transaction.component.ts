@@ -73,7 +73,7 @@ function requiredIfShared(shared: boolean, formControl: AbstractControl) {
   return null;
 }
 
-const initialValue = 0.01;
+const initialValue = 0;
 
 @UntilDestroy()
 @Component({
@@ -256,7 +256,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         id: this.editingTransaction.id,
         type: this.formGroup.value.transactionType,
         date: this.formGroup.value.date,
-        value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
+        value: this.formGroup.value.value,
         description: this.formGroup.value.description,
         bankAccountId: bankAccount?.accountId,
         bankAccount2Id: bankAccount2?.accountId,
@@ -265,7 +265,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         groupId: this.group?.id,
         user,
         user2,
-        creditCardBillDateValue: this.creditCardBillDate
+        creditCardBillDateValue: this.creditCardBillDate,
+        creditReversal: this.formGroup.value.creditReversal
       })
       .pipe(
         take(1),
@@ -294,7 +295,7 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       .newTransaction({
         type: this.formGroup.value.transactionType,
         date: moment(this.formGroup.value.date).toISOString(),
-        value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, this.formGroup.value.transactionType),
+        value: this.formGroup.value.value,
         description: this.formGroup.value.description,
         bankAccountId: bankAccount?.accountId,
         bankAccount2Id: bankAccount2?.accountId,
@@ -304,7 +305,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         user,
         user2,
         creditCardBillDateValue: this.creditCardBillDate,
-        totalInstallments: this.formGroup.value.totalInstallments
+        totalInstallments: this.formGroup.value.totalInstallments,
+        creditReversal: this.formGroup.value.creditReversal
       })
       .pipe(
         take(1),
@@ -381,7 +383,8 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
       } : null, requiredWhenTransactionTypeIsCredit),
       group: new UntypedFormControl(this.editingTransaction?.group, formControl => requiredIfShared(this.shared, formControl)),
       useInstallment: new UntypedFormControl(this.editingTransaction?.installment != null),
-      totalInstallments: new UntypedFormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)])
+      totalInstallments: new UntypedFormControl(this.editingTransaction?.installment, [Validators.min(2), Validators.max(200)]),
+      creditReversal: new UntypedFormControl(this.editingTransaction?.creditReversal)
     });
   }
 
@@ -393,7 +396,6 @@ export class NewTransactionComponent implements OnInit, AfterContentChecked, OnD
         const value = this.formGroup.value.value || initialValue;
 
         this.formGroup.get("group").setValue(undefined);
-        this.formGroup.get("value").setValue(this.transactionService.ifNecessaryMakeValueNegative(value, transactionType));
 
         if (transactionType !== TransactionType.Transfer) {
           this.formGroup.get("bankAccount2").setValue(undefined);

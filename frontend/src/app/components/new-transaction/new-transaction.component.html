@@ -40,9 +40,15 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-slide-toggle *ngIf="transactionType === transactionTypeEnum.CreditCard" formControlName="useInstallment" class="my-6">{{
-        t('installment-payment')
-      }}</mat-slide-toggle>
+      <div class="flex flex-col md:flex-row md:gap-2">
+        <mat-slide-toggle *ngIf="transactionType === transactionTypeEnum.CreditCard" formControlName="creditReversal" class="my-6">{{
+          t('credit-reversal')
+          }}</mat-slide-toggle>
+
+        <mat-slide-toggle *ngIf="transactionType === transactionTypeEnum.CreditCard" formControlName="useInstallment" class="my-6">{{
+          t('installment-payment')
+          }}</mat-slide-toggle>
+      </div>
 
       <mat-form-field *ngIf="transactionType === transactionTypeEnum.CreditCard && useInstallment" class="field">
         <mat-label>{{ t('total-installments') }}</mat-label>

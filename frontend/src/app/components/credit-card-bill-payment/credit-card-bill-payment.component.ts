@@ -67,7 +67,7 @@ export class CreditCardBillPaymentComponent implements OnInit {
     if (this.formGroup.valid) {
       await this.transactionService
         .payCreditCardBill({
-          value: this.transactionService.ifNecessaryMakeValueNegative(this.formGroup.value.value, TransactionType.CreditCardBillPayment),
+          value: this.formGroup.value.value,
           bankAccountId: this.formGroup.value.bankAccount.accountId,
           creditCardId: this.creditCard.id,
           description: this.formGroup.value.description,

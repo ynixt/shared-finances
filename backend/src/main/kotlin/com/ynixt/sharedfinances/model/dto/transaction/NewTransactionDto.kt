@@ -124,6 +124,7 @@ class NewCreditCardTransactionDto(
     override val creditCardId: Long,
     override val creditCardBillDateValue: LocalDate,
     override val totalInstallments: Int?,
+    val creditReversal: Boolean,
     firstUserId: Long?,
     groupId: Long?,
     type: TransactionType,

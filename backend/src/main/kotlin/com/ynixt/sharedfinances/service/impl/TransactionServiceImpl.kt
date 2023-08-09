@@ -19,6 +19,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
@@ -94,13 +95,17 @@ class TransactionServiceImpl(
             throw SFExceptionForbidden()
         }
 
+        val creditReversal = if (newDto is NewCreditCardTransactionDto) newDto.creditReversal else null
+        val value = makeValueNegativeIfNecessary(newDto.value, newDto.type, creditReversal)
+
         var transaction = Transaction(
             type = newDto.type,
             group = group,
             user = targetUser,
             date = newDto.date,
-            value = newDto.value,
-            description = newDto.description
+            value = value,
+            description = newDto.description,
+            creditReversal = creditReversal
         ).apply {
             this.categories = categories?.toMutableSet()
             groupId = newDto.groupId
@@ -143,11 +148,11 @@ class TransactionServiceImpl(
         }
 
         if (newDto is NewCreditCardTransactionDto) {
-            creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, newDto.value)
+            creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, value)
         }
 
         if (newDto is NewCreditCardBillPaymentTransactionDto) {
-            creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, newDto.value.negate())
+            creditCardService.addToAvailableLimit(targetUser, newDto.creditCardId, value.negate())
         }
 
         transactionRepository.saveAndFlush(transaction)
@@ -200,6 +205,8 @@ class TransactionServiceImpl(
         val oldUserId = transaction.userId
         val oldValue = transaction.value
         val oldCreditCardId = transaction.creditCardId
+        val creditReversal = if (editDto is NewCreditCardTransactionDto) editDto.creditReversal else null
+        val value = makeValueNegativeIfNecessary(editDto.value, editDto.type, creditReversal)
 
         transaction.apply {
             type = editDto.type
@@ -207,7 +214,7 @@ class TransactionServiceImpl(
             this.userId = editDto.firstUserId
             this.categories = categories?.toMutableSet()
             date = editDto.date
-            value = editDto.value
+            this.value = value
             description = editDto.description
             bankAccount = null
             bankAccountId = null
@@ -246,7 +253,7 @@ class TransactionServiceImpl(
 
         if (editDto is NewCreditCardTransactionDto) {
             creditCardTransactionUpdated(targetUser, updatedTransaction)
-            creditCardService.addToAvailableLimit(targetUser, editDto.creditCardId, editDto.value)
+            creditCardService.addToAvailableLimit(targetUser, editDto.creditCardId, value)
         }
 
         if (oldCreditCardId != null) {
@@ -449,5 +456,22 @@ class TransactionServiceImpl(
                 user.email, "/queue/group/transaction-deleted/${group.id}", transactionMapper.toDto(transaction)!!
             )
         }
+    }
+
+    private fun makeValueNegativeIfNecessary(
+        value: BigDecimal,
+        type: TransactionType,
+        creditReversal: Boolean?
+    ): BigDecimal {
+        val shouldBeNegative =
+            setOf(TransactionType.CreditCard, TransactionType.Expense, TransactionType.CreditCardBillPayment).contains(
+                type
+            ) && (creditReversal == null || !creditReversal)
+
+        if (shouldBeNegative) {
+            return value.abs().negate()
+        }
+
+        return value.abs()
     }
 }

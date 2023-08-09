@@ -31,4 +31,5 @@ export interface Transaction {
   installmentId?: string;
   installment?: number;
   totalInstallments?: number;
+  creditReversal?: boolean
 }

@@ -29,7 +29,8 @@ export class TransactionService {
       firstUserId: transaction.user?.id,
       secondUserId: transaction.user2?.id,
       creditCardBillDateValue: transaction.creditCardBillDateValue,
-      totalInstallments: transaction.totalInstallments
+      totalInstallments: transaction.totalInstallments,
+      creditReversal: transaction.creditReversal
     });
   }
 
@@ -54,7 +55,8 @@ export class TransactionService {
       firstUserId: transaction.user?.id,
       secondUserId: transaction.user2?.id,
       creditCardBillDateValue: transaction.creditCardBillDateValue,
-      totalInstallments: transaction.totalInstallments
+      totalInstallments: transaction.totalInstallments,
+      creditReversal: transaction.creditReversal
     });
   }
 
@@ -73,20 +75,6 @@ export class TransactionService {
     });
 
     return this.httpClient.delete<void>(url);
-  }
-
-  isTransactionNegative(transactionType: TransactionType): boolean {
-    return [TransactionType.CreditCard, TransactionType.Expense, TransactionType.CreditCardBillPayment].includes(transactionType);
-  }
-
-  ifNecessaryMakeValueNegative(value: number, transactionType: TransactionType): number {
-    const isTransactionNegative = this.isTransactionNegative(transactionType);
-
-    if ((isTransactionNegative && value > 0) || (!isTransactionNegative && value < 0)) {
-      return value * -1;
-    }
-
-    return value;
   }
 
   onTransactionCreated(groupId: string): Observable<string> {

@@ -28,7 +28,8 @@ class Transaction(
     var installmentId: String? = null,
     var description: String?,
     var installment: Int? = null,
-    var totalInstallments: Int? = null
+    var totalInstallments: Int? = null,
+    var creditReversal: Boolean? = null
 ) : AuditedEntity() {
     @ManyToMany
     @JoinTable(
@@ -76,7 +77,8 @@ class Transaction(
         userId: Long? = this.userId,
         bankAccountId: Long? = this.bankAccountId,
         creditCardId: Long? = this.creditCardId,
-        otherSideId: Long? = this.otherSideId
+        otherSideId: Long? = this.otherSideId,
+        creditReversal: Boolean? = this.creditReversal
     ): Transaction {
         return Transaction(
             id = id,
@@ -93,6 +95,7 @@ class Transaction(
             installment = installment,
             installmentId = installmentId,
             totalInstallments = totalInstallments,
+            creditReversal = creditReversal
         ).apply {
             this.categories = categories
             this.groupId = groupId
