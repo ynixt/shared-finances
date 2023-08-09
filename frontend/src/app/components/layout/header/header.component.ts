@@ -57,7 +57,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       .observe([Breakpoints.Medium, Breakpoints.Large, Breakpoints.XLarge])
       .subscribe((state: BreakpointState) => {
         this.isMobile = !state.matches;
-        if (!this.isMobile) {
+        if (!this.isMobile && this.tdLayout) {
           this.tdLayout.close();
         }
       });

@@ -92,34 +92,36 @@ export class CreditCardService {
     const dateFormat = this.translocoService.translate("date-format.month-year");
     const dateFormatFromServer = "YYYY-MM";
 
-    charts.push(new Chart({
-      name: creditCard.name,
-      series: values.map(v => new ChartSerie({
-        name: moment(v.date, dateFormatFromServer).format(dateFormat),
-        value: v.balance * -1
-      }))
-    }));
+    if (values.length > 0) {
+      charts.push(new Chart({
+        name: creditCard.name,
+        series: values.map(v => new ChartSerie({
+          name: moment(v.date, dateFormatFromServer).format(dateFormat),
+          value: v.balance * -1
+        }))
+      }));
 
-    charts.forEach(chart => {
-      if (chart.series.length < minimumMonths) {
-        const missing = minimumMonths - chart.series.length;
-        const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
+      charts.forEach(chart => {
+        if (chart.series.length < minimumMonths) {
+          const missing = minimumMonths - chart.series.length;
+          const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
 
-        for (let i = 0; i < missing; i++) {
-          chart.series.splice(i, 0, {
-            name: this.previousBillDate(moment(firstDate, dateFormat), creditCardClosingDay, i + 1).format(dateFormat),
-            value: 0
-          });
+          for (let i = 0; i < missing; i++) {
+            chart.series.splice(i, 0, {
+              name: this.previousBillDate(moment(firstDate, dateFormat), creditCardClosingDay, i + 1).format(dateFormat),
+              value: 0
+            });
+          }
         }
-      }
 
-      chart.series.sort((b1, b2) => {
-        const b1Str = moment(b1.name, dateFormat).toISOString();
-        const b2Str = moment(b2.name, dateFormat).toISOString();
+        chart.series.sort((b1, b2) => {
+          const b1Str = moment(b1.name, dateFormat).toISOString();
+          const b2Str = moment(b2.name, dateFormat).toISOString();
 
-        return b1Str.localeCompare(b2Str);
+          return b1Str.localeCompare(b2Str);
+        });
       });
-    });
+    }
 
     return charts;
   }
