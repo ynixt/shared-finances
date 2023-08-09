@@ -9,7 +9,7 @@
     margin-left: auto;
   }
 
-  ::ng-deep .td-breadcrumb,
+   .td-breadcrumb,
   .title {
     font-size: 16px;
     @screen md {
@@ -17,14 +17,20 @@
     }
   }
 
-  ::ng-deep .td-breadcrumbs {
-    @screen md {
+  .td-breadcrumbs {
       flex-wrap: wrap;
       display: flex;
+  }
+
+  .td-breadcrumb {
+    display: block !important;
+    width: 100%;
+    @screen md {
+      width: auto;
     }
   }
 
-  ::ng-deep td-breadcrumb:last-of-type,
+  td-breadcrumb:last-of-type,
   .title {
     font-weight: bold;
   }
