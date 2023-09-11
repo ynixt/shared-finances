@@ -58,7 +58,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
     @Query(
         """
           select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
-                (COALESCE(sum(t.value) * -1, 0)),
+                COALESCE((sum(t.value) FILTER (WHERE t.value < 0))  * -1, 0),
                 t.user.id
             )
             from Transaction t
@@ -76,7 +76,7 @@ interface TransactionRepository : CrudRepository<Transaction, Long>, CustomTrans
     @Query(
         """
           select new com.ynixt.sharedfinances.model.dto.group.GroupSummaryByUserDto(
-                (COALESCE(sum(t.value) * -1, 0)),
+                COALESCE((sum(t.value) FILTER (WHERE t.value < 0))  * -1, 0),
                 t.user.id
             )
             from Transaction t
