@@ -37,9 +37,11 @@ class BankAccountServiceImpl(
 
 
     override fun getSummary(
-        user: User, bankAccountId: Long?, maxDate: LocalDate?, categoriesId: List<Long>?
+        user: User, bankAccountId: Long?, minDate: LocalDate?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): BankAccountSummaryDto {
-        return transactionRepository.getBankAccountSummary(user.id!!, bankAccountId, maxDate, categoriesId)
+        return transactionRepository.getBankAccountSummary(
+            user.id!!, bankAccountId, minDate, maxDate, categoriesId
+        )
     }
 
     @Transactional

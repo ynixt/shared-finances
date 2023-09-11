@@ -12,7 +12,7 @@ interface BankAccountService {
     fun updateName(id: Long, user: User, newName: String): BankAccount
     fun deleteOne(id: Long, user: User)
     fun getSummary(
-        user: User, bankAccountId: Long?, maxDate: LocalDate?, categoriesId: List<Long>?
+        user: User, bankAccountId: Long?, minDate: LocalDate?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): BankAccountSummaryDto
 
     fun newBank(user: User, newBankAccountDto: NewBankAccountDto): BankAccount

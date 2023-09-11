@@ -118,6 +118,7 @@ export class BankAccountSingleComponent implements OnInit {
 
   public async getBankAccountSummary(): Promise<void> {
     const maxDate = this.getMaxDate();
+    const minDate = moment(maxDate).startOf("month");
 
     this.bankAccountSummaryState = {
       isLoading: true
@@ -126,6 +127,7 @@ export class BankAccountSingleComponent implements OnInit {
     this.bankAccountSummaryState = {
       summary: await this.bankAccountService.getBankAccountSummary({
         bankAccountId: this.bankAccount.id,
+        minDate: minDate,
         maxDate: maxDate,
         categoriesId: this.filterCategories
       }),

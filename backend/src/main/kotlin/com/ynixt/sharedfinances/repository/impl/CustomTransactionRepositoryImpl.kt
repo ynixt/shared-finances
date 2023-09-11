@@ -19,13 +19,15 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
     private lateinit var entityManager: EntityManager
 
     override fun getBankAccountSummary(
-        userId: Long, bankAccountId: Long?, maxDate: LocalDate?, categoriesId: List<Long>?
+        userId: Long, bankAccountId: Long?, minDate: LocalDate?, maxDate: LocalDate?, categoriesId: List<Long>?
     ): BankAccountSummaryDto {
+        val minDateFilter = if (minDate == null) "" else "AND t.date >= :minDate"
+
         var hql = """
             select new com.ynixt.sharedfinances.model.dto.bankAccount.BankAccountSummaryDto(
                 COALESCE(sum(t.value), 0),
-                COALESCE((sum(t.value) FILTER (WHERE t.value < 0))  * -1, 0),
-                COALESCE(sum(t.value) FILTER (WHERE t.value > 0), 0)
+                COALESCE((sum(t.value) FILTER (WHERE t.value < 0 ${minDateFilter}))  * -1, 0),
+                COALESCE(sum(t.value) FILTER (WHERE t.value > 0 ${minDateFilter}), 0)
             )
             from Transaction t
             where t.user.id = :userId
@@ -58,12 +60,19 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
         val query = entityManager.createQuery(hql, BankAccountSummaryDto::class.java)
 
         query.setParameter("userId", userId)
+
         if (bankAccountId != null) {
             query.setParameter("bankAccountId", bankAccountId)
         }
+
+        if (minDate != null) {
+            query.setParameter("minDate", minDate)
+        }
+
         if (maxDate != null) {
             query.setParameter("maxDate", maxDate)
         }
+
         if (categoriesId != null) {
             query.setParameter("categoriesId", categoriesId)
         }
@@ -170,10 +179,7 @@ class CustomTransactionRepositoryImpl : CustomTransactionRepository {
             left join t.categories c
         """.trimIndent()
 
-        if (
-            userId != null || groupId != null || bankAccountId != null || creditCardId != null || minDate != null ||
-            maxDate != null || creditCardBillDate != null
-        ) {
+        if (userId != null || groupId != null || bankAccountId != null || creditCardId != null || minDate != null || maxDate != null || creditCardBillDate != null) {
             hql += " where"
             countHql += " where"
         }

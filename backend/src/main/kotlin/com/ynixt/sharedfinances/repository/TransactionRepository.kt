@@ -17,6 +17,7 @@ interface CustomTransactionRepository {
     fun getBankAccountSummary(
         userId: Long,
         bankAccountId: Long?,
+        minDate: LocalDate?,
         maxDate: LocalDate?,
         categoriesId: List<Long>?
     ): BankAccountSummaryDto

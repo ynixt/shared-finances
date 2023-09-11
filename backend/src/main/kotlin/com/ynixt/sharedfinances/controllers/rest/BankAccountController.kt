@@ -48,11 +48,12 @@ class BankAccountController(
     fun getBankAccountSummary(
         authentication: Authentication,
         @RequestParam("bankAccountId", required = false) bankAccountId: Long?,
+        @RequestParam("minDate", required = false) minDate: LocalDate?,
         @RequestParam("maxDate", required = false) maxDate: LocalDate?,
         @RequestParam categoriesId: List<Long>?,
     ): BankAccountSummaryDto {
         val user = securityService.authenticationToUser(authentication)!!
-        return bankAccountService.getSummary(user, bankAccountId, maxDate, categoriesId)
+        return bankAccountService.getSummary(user, bankAccountId, minDate, maxDate, categoriesId)
     }
 
     @PostMapping

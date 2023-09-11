@@ -72,12 +72,14 @@ export class BankAccountService {
   }
 
   getBankAccountSummary(obj?: {
+    minDate?: Moment;
     maxDate?: Moment;
     bankAccountId?: string,
     categoriesId?: string[]
   }): Promise<BankAccountSummary> {
     const url = addHttpParamsIntoUrl("/api/bank-account/summary", {
       bankAccountId: obj?.bankAccountId,
+      minDate: obj?.minDate?.format(ISO_DATE_FORMAT),
       maxDate: obj?.maxDate?.format(ISO_DATE_FORMAT),
       categoriesId: obj?.categoriesId
     });
