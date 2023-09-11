@@ -138,15 +138,27 @@ export class GroupsService {
     charts.forEach(chart => {
       if (chart.series.length < minimumMonths) {
         const missing = minimumMonths - chart.series.length;
+
+        chart.series.sort((b1, b2) => {
+          const b1Str = moment(b1.name, dateFormat).toISOString();
+          const b2Str = moment(b2.name, dateFormat).toISOString();
+
+          return b1Str.localeCompare(b2Str);
+        });
+
         const firstDate = chart.series?.length > 0 ? chart.series[0].name : initialMonthIfNoChart;
 
         for (let i = 0; i < missing; i++) {
-          chart.series.splice(i, 0, {
-            name: moment(firstDate, dateFormat)
-              .subtract(missing - i, "month")
-              .format(dateFormat),
-            value: 0
-          });
+          const name = moment(firstDate, dateFormat)
+            .subtract(missing - i, "month")
+            .format(dateFormat);
+
+          if (!chart.series.find(s => s.name === name)) {
+            chart.series.splice(i, 0, {
+              name,
+              value: 0
+            });
+          }
         }
       }
     });
