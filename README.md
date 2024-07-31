@@ -1,5 +1,7 @@
 # Shared Finances
 
+⚠️ ⚠️ WARNING: THIS PROJECT IS NOT PRODUCTION READY. THERE ARE A LOT OF BUGS AND IDK WHEN I'LL FIX THEM. ⚠️ ⚠️
+
 > Control your family or individual finances.
 
 This is an open source project, under [MIT](/LICENSE), to help anyone with finances control.
