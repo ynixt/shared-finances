@@ -1,46 +1,26 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
-import { AuthDispatchers } from "./store";
-import { AuthSelectors } from "./store/services/selectors";
-import { StompService } from "./@core/services/stomp.service";
-import { UntilDestroy, untilDestroyed } from "@ngneat/until-destroy";
-import { TranslocoService } from "@ngneat/transloco";
-import { i18nLocalstorageKey } from "./@core/i18n";
+import { HttpClient } from '@angular/common/http';
+import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
+
+import { ButtonModule } from 'primeng/button';
+import { PrimeNG } from 'primeng/config';
+
+import { updatePrimeI18n } from './util/prime-i18n';
 
 @Component({
-  selector: "app-root",
-  templateUrl: "./app.component.html",
-  styleUrls: ["./app.component.scss"]
+  selector: 'app-root',
+  imports: [RouterOutlet, ButtonModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  template: ` <router-outlet />`,
+  styles: [],
 })
-@UntilDestroy()
-export class AppComponent implements OnInit, OnDestroy {
-  title = "shared-finances";
-  appDone: boolean;
-
-  constructor(private authDispatchers: AuthDispatchers, private authSelectors: AuthSelectors, private stompService: StompService, private translocoService: TranslocoService) {
-  }
-
-  ngOnInit(): void {
-    const savedLang = localStorage.getItem(i18nLocalstorageKey);
-
-    if (savedLang != null) {
-      this.translocoService.setActiveLang(savedLang);
-    }
-
-    this.authDispatchers.getCurrentUser();
-    this.authSelectors.done().then(done => (this.appDone = done));
-
-    this.authSelectors.state$.pipe(untilDestroyed(this)).subscribe(authState => {
-      if (authState.done) {
-        if (authState.user) {
-          this.stompService.start();
-        } else {
-          this.stompService.stop();
-        }
-      }
-    });
-  }
-
-  async ngOnDestroy() {
-    await this.stompService.ngOnDestroy();
+export class AppComponent {
+  constructor(
+    private primengConfig: PrimeNG,
+    private translateService: TranslateService,
+    private httpClient: HttpClient,
+  ) {
+    updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
   }
 }

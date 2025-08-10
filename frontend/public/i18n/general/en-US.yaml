@@ -1,0 +1,12 @@
+title: Shared Finances
+
+general:
+  email: Email
+  password: Password
+  passwordConfirm: Password confirmation
+  firstName: First name
+  lastName: Last name
+
+lang:
+  en-US: English
+  pt-BR: Portuguese

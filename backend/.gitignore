@@ -1,3 +1,4 @@
+HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
@@ -35,4 +36,5 @@ out/
 ### VS Code ###
 .vscode/
 
-src/main/resources/service-account.json
+### Kotlin ###
+.kotlin

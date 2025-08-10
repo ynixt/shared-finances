@@ -1,79 +1,58 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    id("org.springframework.boot") version "3.1.1"
-    id("io.spring.dependency-management") version "1.1.0"
-    kotlin("jvm") version "1.9.0"
-    kotlin("plugin.spring") version "1.9.0"
-    kotlin("plugin.jpa") version "1.9.0"
-    kotlin("plugin.allopen") version "1.9.0"
-    kotlin("kapt") version "1.9.0"
-}
-
-allOpen {
-    annotations(
-        "jakarta.persistence.Entity",
-        "jakarta.persistence.MappedSuperclass",
-        "jakarta.persistence.Embedabble"
-    )
+	kotlin("jvm") version "1.9.25"
+	kotlin("plugin.spring") version "1.9.25"
+	id("org.springframework.boot") version "3.5.0"
+	id("io.spring.dependency-management") version "1.1.7"
 }
 
 group = "com.ynixt"
-version = "0.6.2"
+version = "3.0.0"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_20
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.security:spring-security-oauth2-authorization-server")
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
-    // Spring
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-websocket")
-    implementation("org.springframework.boot:spring-boot-starter-quartz")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 
-    // Database
-    implementation("org.flywaydb:flyway-core")
-    runtimeOnly("org.postgresql:postgresql")
+	implementation("io.r2dbc:r2dbc-pool")
+	implementation("org.flywaydb:flyway-core")
+	implementation("org.flywaydb:flyway-database-postgresql")
 
-    // Others
-    implementation("org.mapstruct:mapstruct:1.5.5.Final")
-    kapt("org.mapstruct:mapstruct-processor:1.5.5.Final")
+	implementation("org.jetbrains.kotlin:kotlin-reflect")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("com.google.firebase:firebase-admin:9.2.0")
+	runtimeOnly("org.postgresql:postgresql") // flyway
+	runtimeOnly("org.postgresql:r2dbc-postgresql")
+	runtimeOnly("org.bouncycastle:bcprov-jdk18on:1.80")
 
-
-    // Tests
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("io.projectreactor:reactor-test")
+	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+	testImplementation("org.springframework.security:spring-security-test")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs += listOf("-Xjsr305=strict", "-Xjvm-default=all")
-        jvmTarget = "20"
-    }
+kotlin {
+	compilerOptions {
+		freeCompilerArgs.addAll("-Xjsr305=strict")
+	}
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform()
-}
-
-kapt {
-    arguments {
-        arg("mapstruct.defaultComponentModel", "spring")
-    }
-}
-
-tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
-    this.archiveFileName.set("shared-finances.${archiveExtension.get()}")
+	useJUnitPlatform()
 }

@@ -5,13 +5,13 @@
 /debug.log
 /e2e/reports
 /**/test-results.xml
-/ssl
 /.vscode
 /.DS_Store
-/$tf
 /.tfignore
 /package.json
-/projects/modulea
+/package-lock.json
 /src/assets
 *.md
-/angular.json
+/.angular
+/v1-schema.yaml
+/src/app/api

@@ -1,0 +1,8 @@
+registerPage:
+  register: Register
+  error:
+    title: Unable to register
+    genericMessage: An error occurred
+  success:
+    title: Successfully registered
+    message: Redirecting to login in 5 seconds.

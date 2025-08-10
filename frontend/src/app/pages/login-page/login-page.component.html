@@ -1,0 +1,19 @@
+@if (form) {
+  <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
+    <input type="hidden" formControlName="csrf_token" />
+
+    <label class="flex flex-col gap-2">
+      <span>Email</span>
+      <input class="border p-2 rounded" formControlName="identifier" />
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>Senha</span>
+      <input class="border p-2 rounded" type="password" formControlName="password" />
+    </label>
+
+    <button class="p-2 rounded bg-blue-600 text-white" type="submit">Entrar</button>
+  </form>
+}
+
+<p-toast />

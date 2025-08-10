@@ -1,0 +1,8 @@
+registerPage:
+  register: Cadastrar
+  error:
+    title: Não foi possível se cadastar
+    genericMessage: Um erro aconteceu
+  success:
+    title: Registrado com sucesso
+    message: Redirecionando para login em 5 segundos.

@@ -1,0 +1,12 @@
+title: Finanças Compartilhadas
+
+general:
+  email: Email
+  password: Senha
+  passwordConfirm: Confirmação de senha
+  firstName: Primeiro nome
+  lastName: Último nome
+
+lang:
+  en-US: Inglês
+  pt-BR: Português

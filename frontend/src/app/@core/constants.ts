@@ -1,2 +1,0 @@
-export const CHART_DEFAULT_MINIMUM_MONTHS = 4;
-export const DEFAULT_PAGE_SIZE = 40;

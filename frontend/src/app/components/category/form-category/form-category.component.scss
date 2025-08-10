@@ -1,9 +1,0 @@
-.color {
-  /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
-  ::ng-deep .mat-form-field-infix {
-    padding: 0;
-  }
-  input {
-    height: calc(15px + 2em);
-  }
-}

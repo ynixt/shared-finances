@@ -1,46 +1,40 @@
 server:
-    servlet:
-        contextPath: /api
-    logging:
-        enabled: false
-    port: ${PORT}
-    error:
-        include-message: always
+  port: ${PORT}
+  http2:
+    enabled: true
+  error:
+    include-message: always
 
 spring:
-    data:
-        web:
-            pageable:
-                max-page-size: 100
-                default-page-size: 40
-    jpa:
-        show-sql: true
-        open-in-view: false
-        properties:
-            hibernate:
-                dialect: org.hibernate.dialect.PostgreSQLDialect
-                globally_quoted_identifiers: true
-    datasource:
-        url: jdbc:postgresql://${POSTGRES_CONNECTION_STRING}/${POSTGRES_DB}
-        username: ${POSTGRES_USER}
-        password: ${POSTGRES_PASSWORD}
-    quartz:
-        job-store-type: jdbc
-        jdbc:
-            initialize-schema: always
-        properties:
-            org:
-                quartz:
-                    jobStore:
-                        driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+  application:
+    name: shared-finances
+  r2dbc:
+    url: r2dbc:${POSTGRES_APP_CONNECTION_STRING}
+    username: ${POSTGRES_APP_USER}
+    password: ${POSTGRES_APP_PASSWORD}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30s
+      max-create-connection-time: 5s
+      max-acquire-time: 10s
+      validation-query: SELECT 1
+      acquire-retry: 2
+  flyway:
+    url: jdbc:${POSTGRES_APP_CONNECTION_STRING}
+    user: ${POSTGRES_APP_USER}
+    password: ${POSTGRES_APP_PASSWORD}
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    fail-on-missing-locations: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${APP_ISSUER_URL}
+          jwk-set-uri: ${APP_JWK_URL}
 
-management:
-    endpoints:
-        web:
-            exposure:
-                include: info, health, flyway, loggers, loggers-name, quartz, quartz-jobsOrTriggers-group-name, quartz-jobsOrTriggers-group, quartz-jobsOrTriggers
 
-sf-app:
-    job-timezone: ${JOB_TIMEZONE}
-    expires-invite-after-min: 30
-    expires-invite-cron: 0 0/30 * ? * * *
+logging:
+  level:
+    org.springframework.security: TRACE
