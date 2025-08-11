@@ -54,7 +54,7 @@ export class LanguagePickerComponent implements ControlValueAccessor, OnInit {
 
     this.formGroup.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
       const lang = this.formGroup.value.lang ?? this.defaultLang;
-      this.langService.changeLanguage(lang);
+      this.langService.changeLanguage(lang, true);
     });
 
     await i18nIsReady(this.translateService);

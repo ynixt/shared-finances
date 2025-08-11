@@ -26,7 +26,7 @@ export class LangButtonComponent implements OnInit {
       label: ln.name,
       disabled: ln.current,
       command: () => {
-        this.langService.changeLanguage(ln.value);
+        this.langService.changeLanguage(ln.value, true);
       },
     }));
   }

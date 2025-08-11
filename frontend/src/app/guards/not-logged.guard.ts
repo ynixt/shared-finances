@@ -1,17 +1,17 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 
-import { KratosAuthService } from '../services/kratos-auth.service';
+import { UserService } from '../services/user.service';
 
 export const notLoggedGuard = (): CanActivateFn => {
   return async (route, state): Promise<boolean | UrlTree> => {
-    const authService = inject(KratosAuthService);
+    const userService = inject(UserService);
     const router = inject(Router);
 
     try {
-      const token = await authService.getToken();
+      const user = await userService.getUser();
 
-      if (token == null) {
+      if (user == null) {
         return true;
       } else {
         return router.createUrlTree(['dashboard']);

@@ -3,9 +3,12 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslateService } from '@ngx-translate/core';
 
+import { lastValueFrom, take } from 'rxjs';
+
 import { PrimeNG } from 'primeng/config';
 
 import { environment } from '../../environments/environment';
+import { User } from '../models/user';
 import { i18nIsReady } from '../util/i18n-util';
 import { updatePrimeI18n } from '../util/prime-i18n';
 import { UserService } from './user.service';
@@ -49,10 +52,16 @@ export class LangService {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  changeLanguage(newLanguage: string) {
+  async changeLanguage(newLanguage: string, sendToServer = false): Promise<void> {
     this._currentLang.set(newLanguage);
     this.translateService.use(newLanguage);
-    updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
+    await updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
+
+    const user = this.userService.user();
+
+    if (user != null && sendToServer) {
+      await lastValueFrom(this.httpClient.put(`/api/users/current/changeLanguage/${newLanguage}`, null).pipe(take(1)));
+    }
   }
 
   private async init() {

@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, effect, signal } from '@angular/core';
+import { Injectable, Injector, effect, signal } from '@angular/core';
 
-import { lastValueFrom, take } from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 
 import { User } from '../models/user';
 import { KratosAuthService } from './kratos-auth.service';
@@ -9,7 +10,7 @@ import { KratosAuthService } from './kratos-auth.service';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly _user = signal<User | null>(null);
-  private readonly _loading = signal(false);
+  private readonly _loading = signal(true);
 
   readonly user = this._user.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -17,6 +18,7 @@ export class UserService {
   constructor(
     private http: HttpClient,
     private auth: KratosAuthService,
+    private injector: Injector,
   ) {
     effect(() => {
       const token = this.auth.token();
@@ -38,8 +40,18 @@ export class UserService {
     });
   }
 
-  getUserFromHttp(): Promise<User> {
-    return lastValueFrom(this.http.get<User>('/api/users/current').pipe(take(1)));
+  async getUser(): Promise<User | null> {
+    if (this.auth.token() == null) {
+      await this.auth.getToken();
+    }
+
+    return firstValueFrom(
+      combineLatest([toObservable(this.user, { injector: this.injector }), toObservable(this.loading, { injector: this.injector })]).pipe(
+        filter(([user, loading]) => loading === false),
+        map(([user]) => user),
+        take(1),
+      ),
+    );
   }
 
   async refreshUser(): Promise<void> {
@@ -57,5 +69,9 @@ export class UserService {
     } finally {
       this._loading.set(false);
     }
+  }
+
+  private getUserFromHttp(): Promise<User> {
+    return lastValueFrom(this.http.get<User>('/api/users/current').pipe(take(1)));
   }
 }

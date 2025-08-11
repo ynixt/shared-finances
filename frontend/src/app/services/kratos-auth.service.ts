@@ -73,11 +73,11 @@ export class KratosAuthService {
   }
 
   async getToken(): Promise<string | null> {
-    const current = this.token(); // lê o valor atual do signal
+    const current = this.token();
     if (current != null) {
       return current;
     }
-    await this.refreshJwt(); // tenta atualizar o token a partir do cookie HttpOnly
+    await this.refreshJwt();
     return this.token();
   }
 }
