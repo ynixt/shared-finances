@@ -1,3 +1,41 @@
-<p>showcase-page works!</p>
-<a routerLink="/login">Login</a>
-<a routerLink="/register">Register</a>
+<div class="header w-full py-4 bg-gray-700 text-white mb-8">
+  <div class="navbar">
+    <div class="container mx-auto px-4 flex items-center">
+      <a class="logo flex items-center gap-3" routerLink="/">
+        <img class="h-9" src="/public/images/small-logo.png" />
+        <span class="title hidden md:inline text-2xl font-bold text-shadow-lg">Shared Finances</span>
+      </a>
+
+      <div class="mx-auto"></div>
+
+      <div class="menu gap-4 flex items-center">
+        <a routerLink="/login" pButton class="!text-white !hover:text-primary" [text]="true" [rounded]="true">
+          <span pButtonLabel>{{ 'general.login' | translate }}</span>
+        </a>
+
+        <a routerLink="/register" pButton [rounded]="true">
+          <span pButtonLabel>{{ 'general.register' | translate }}</span>
+        </a>
+
+        <app-lang-button buttonClass="text-white hover:text-primary"></app-lang-button>
+      </div>
+    </div>
+  </div>
+
+  <div class="header-section py-24">
+    <div class="container mx-auto px-4 flex flex-col items-center justify-center font-inter">
+      <img style="width: 320px" class="mb-8" src="/public/images/logo-landing.png" />
+
+      <h1 class="text-3xl font-bold line-height-2 text-shadow-lg text-center" [innerHTML]="'landing.title' | translate"></h1>
+
+      <p
+        class="secondary-text font-light text-lg line-height-3 mt-3 text-gray-100 text-center md:w-1/2"
+        [innerHTML]="'landing.subtitle' | translate"
+      ></p>
+
+      <a class="mt-6" routerLink="/register" pButton [rounded]="true">
+        <span pButtonLabel>{{ 'landing.startNow' | translate }}</span>
+      </a>
+    </div>
+  </div>
+</div>

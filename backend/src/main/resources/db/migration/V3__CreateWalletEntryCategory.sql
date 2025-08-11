@@ -1,12 +1,12 @@
 CREATE TABLE wallet_entry_category (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     name VARCHAR(255) NOT NULL,
     color VARCHAR(9) NOT NULL,
     icon VARCHAR(64) NOT NULL,
-    user_id TEXT,
-    group_id TEXT,
+    user_id UUID,
+    group_id UUID,
     CONSTRAINT fk_wallet_entry_category_user FOREIGN KEY (user_id) REFERENCES "users"(id),
     CONSTRAINT fk_wallet_entry_category_group FOREIGN KEY ("group_id") REFERENCES "group"(id)
 );

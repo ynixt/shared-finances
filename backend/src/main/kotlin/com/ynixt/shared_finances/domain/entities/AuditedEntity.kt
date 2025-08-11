@@ -8,7 +8,7 @@ import java.util.*
 
 abstract class AuditedEntity {
     @Id
-    val id: UUID = UUID.randomUUID()
+    var id: UUID? = null
 
     @CreatedDate
     var createdAt: OffsetDateTime? = null

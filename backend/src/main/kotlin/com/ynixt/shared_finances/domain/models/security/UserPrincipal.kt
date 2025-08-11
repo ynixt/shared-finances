@@ -16,7 +16,7 @@ class UserPrincipal(
     val authorities: List<GrantedAuthority>,
 ) : Principal {
     constructor(user: User, authorities: List<GrantedAuthority>) : this(
-        user.id,
+        user.id!!,
         user.externalId,
         user.email,
         user.firstName,

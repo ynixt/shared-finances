@@ -1,15 +1,13 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, forwardRef } from '@angular/core';
+import { Component, OnInit, effect, forwardRef } from '@angular/core';
 import { ControlValueAccessor, FormControl, FormGroup, NG_VALUE_ACCESSOR, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslateService } from '@ngx-translate/core';
 
-import { PrimeNG } from 'primeng/config';
 import { Select } from 'primeng/select';
 
 import { environment } from '../../../environments/environment';
+import { LangService } from '../../services/lang.service';
 import { i18nIsReady } from '../../util/i18n-util';
-import { updatePrimeI18n } from '../../util/prime-i18n';
 
 @Component({
   selector: 'app-language-picker',
@@ -40,24 +38,23 @@ export class LanguagePickerComponent implements ControlValueAccessor, OnInit {
   private onTouched: () => void = () => {};
 
   constructor(
-    private primengConfig: PrimeNG,
     private translateService: TranslateService,
-    private httpClient: HttpClient,
-  ) {}
+    private langService: LangService,
+  ) {
+    effect(() => {
+      const lang = this.langService.currentLang();
+
+      this.writeValue(lang);
+      this.onChange(lang);
+    });
+  }
 
   async ngOnInit() {
-    this.loadOptions();
+    this.options = await this.langService.getAllLanguages();
 
     this.formGroup.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
       const lang = this.formGroup.value.lang ?? this.defaultLang;
-      this.translateService.use(lang);
-    });
-
-    this.translateService.onLangChange.pipe(untilDestroyed(this)).subscribe(e => {
-      updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
-      this.loadOptions();
-      this.value = lang;
-      this.onChange(this.value);
+      this.langService.changeLanguage(lang);
     });
 
     await i18nIsReady(this.translateService);
@@ -76,14 +73,5 @@ export class LanguagePickerComponent implements ControlValueAccessor, OnInit {
 
   registerOnTouched(fn: any): void {
     this.onTouched = fn;
-  }
-
-  private loadOptions() {
-    this.options = this.languages
-      .map(langCode => ({
-        value: langCode,
-        name: this.translateService.instant('lang.' + langCode),
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
   }
 }

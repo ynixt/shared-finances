@@ -1,8 +1,8 @@
 CREATE TABLE credit_card_bill (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    credit_card_id TEXT NOT NULL,
+    credit_card_id UUID NOT NULL,
     due_date DATE NOT NULL,
     closing_date DATE NOT NULL,
     payed BOOLEAN NOT NULL,

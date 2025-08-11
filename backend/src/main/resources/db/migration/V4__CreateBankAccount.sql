@@ -1,8 +1,8 @@
 CREATE TABLE bank_account (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    user_id  TEXT NOT NULL,
+    user_id  UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
     enabled BOOLEAN NOT NULL,
     balance NUMERIC(12,2) NOT NULL,

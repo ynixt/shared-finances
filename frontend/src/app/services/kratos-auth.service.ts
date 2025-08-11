@@ -1,38 +1,47 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
-import { BehaviorSubject, Observable, firstValueFrom, lastValueFrom, take, tap } from 'rxjs';
+import { lastValueFrom, take, tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class KratosAuthService {
   private readonly kratos = environment.kratosPublicUrl;
-  readonly token$ = new BehaviorSubject<string | null>(null);
+
+  readonly token = signal<string | null>(null);
 
   constructor(private http: HttpClient) {}
 
   // ---------- FLOW ----------
   async getLoginFlow(returnTo = '/'): Promise<any> {
     return lastValueFrom(
-      this.http.get(`${this.kratos}/self-service/login/browser?return_to=${returnTo}`, { withCredentials: true }).pipe(take(1)),
+      this.http
+        .get(`${this.kratos}/self-service/login/browser?return_to=${encodeURIComponent(returnTo)}`, { withCredentials: true })
+        .pipe(take(1)),
     );
   }
 
   async getRegistrationFlow(returnTo = '/login'): Promise<any> {
     return lastValueFrom(
-      this.http.get(`${this.kratos}/self-service/registration/browser?return_to=${returnTo}`, { withCredentials: true }).pipe(take(1)),
+      this.http
+        .get(`${this.kratos}/self-service/registration/browser?return_to=${encodeURIComponent(returnTo)}`, { withCredentials: true })
+        .pipe(take(1)),
     );
   }
 
   // ---------- SUBMIT FORMS ----------
   submitLoginFlow(flowId: string, body: any): Promise<any> {
-    return lastValueFrom(this.http.post(`${this.kratos}/self-service/login?flow=${flowId}`, body, { withCredentials: true }).pipe(take(1)));
+    return lastValueFrom(
+      this.http.post(`${this.kratos}/self-service/login?flow=${encodeURIComponent(flowId)}`, body, { withCredentials: true }).pipe(take(1)),
+    );
   }
 
   submitRegistrationFlow(flowId: string, body: any): Promise<object> {
     return lastValueFrom(
-      this.http.post(`${this.kratos}/self-service/registration?flow=${flowId}`, body, { withCredentials: true }).pipe(take(1)),
+      this.http
+        .post(`${this.kratos}/self-service/registration?flow=${encodeURIComponent(flowId)}`, body, { withCredentials: true })
+        .pipe(take(1)),
     );
   }
 
@@ -53,29 +62,22 @@ export class KratosAuthService {
     const params = new HttpParams().set('tokenize_as', 'default_jwt');
 
     await lastValueFrom(
-      this.http
-        .get<{ tokenized: string }>(
-          `${this.kratos}/sessions/whoami`,
-          { params, withCredentials: true }, // envia o cookie HttpOnly
-        )
-        .pipe(
-          tap({
-            next: ({ tokenized }) => this.token$.next(tokenized),
-            error: () => this.token$.next(null),
-          }),
-          take(1),
-        ),
+      this.http.get<{ tokenized: string }>(`${this.kratos}/sessions/whoami`, { params, withCredentials: true }).pipe(
+        tap({
+          next: ({ tokenized }) => this.token.set(tokenized),
+          error: () => this.token.set(null),
+        }),
+        take(1),
+      ),
     );
   }
 
   async getToken(): Promise<string | null> {
-    const token = await lastValueFrom(this.token$.pipe(take(1)));
-
-    if (token != null) {
-      return token;
+    const current = this.token(); // lê o valor atual do signal
+    if (current != null) {
+      return current;
     }
-
-    await this.refreshJwt();
-    return this.getToken();
+    await this.refreshJwt(); // tenta atualizar o token a partir do cookie HttpOnly
+    return this.token();
   }
 }

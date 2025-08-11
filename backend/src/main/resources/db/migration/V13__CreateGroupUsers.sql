@@ -1,7 +1,7 @@
 CREATE TABLE group_users
 (
-    group_id TEXT NOT NULL,
-    user_id  TEXT NOT NULL,
+    group_id UUID NOT NULL,
+    user_id  UUID NOT NULL,
 
     PRIMARY KEY (group_id, user_id),
 

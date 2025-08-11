@@ -6,7 +6,6 @@ general:
   passwordConfirm: Confirmação de senha
   firstName: Primeiro nome
   lastName: Último nome
-
-lang:
-  en-US: Inglês
-  pt-BR: Português
+  login: Entrar
+  logout: Sair
+  register: Cadastrar

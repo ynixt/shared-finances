@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,10 +10,9 @@ import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 
 import { LanguagePickerComponent } from '../../components/language-picker/language-picker.component';
-import { KratosNode } from '../../models/kratos/kratos-node';
 import { KratosAuthService } from '../../services/kratos-auth.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
-import { translateKratosError, translateKratosMessages, translateKratosNodeMessages } from '../../util/kratos-i18n';
+import { translateKratosError } from '../../util/kratos-i18n';
 import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 import { promiseTimeout } from '../../util/timeout-util';
 import { confirmPasswordValidator } from './confirm-password.validator';
@@ -105,8 +103,8 @@ export class RegistrationPageComponent implements OnInit {
       {
         email: ['', [Validators.required, Validators.email]],
         name: this.fb.group({
-          first: ['', [Validators.required]],
-          last: ['', [Validators.required]],
+          first: ['', [Validators.required, Validators.minLength(2)]],
+          last: ['', [Validators.required, Validators.minLength(2)]],
         }),
         password: ['', [Validators.required, Validators.minLength(3)]],
         confirmPassword: ['', [Validators.required]],

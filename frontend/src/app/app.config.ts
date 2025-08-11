@@ -9,12 +9,18 @@ import Aura from '@primeng/themes/aura';
 import { providePrimeNG } from 'primeng/config';
 
 import { environment } from '../environments/environment';
+import { SharedFinancesPreset } from '../theme-preset';
 import { routes } from './app.routes';
 import { CustomTranslateHttpLoader } from './custom-translate-http-loader';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateHttpLoader =>
-  new CustomTranslateHttpLoader('.yaml', httpBackend, ['./public/i18n/general/', './public/i18n/register-page/', './public/i18n/kratos/']);
+  new CustomTranslateHttpLoader('.yaml', httpBackend, [
+    './public/i18n/general/',
+    './public/i18n/register-page/',
+    './public/i18n/landing-page/',
+    './public/i18n/kratos/',
+  ]);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,7 +29,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {
-        preset: Aura,
+        preset: SharedFinancesPreset,
         options: {
           darkModeSelector: '.dark-mode',
           cssLayer: {

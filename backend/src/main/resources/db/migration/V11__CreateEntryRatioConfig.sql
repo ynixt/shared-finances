@@ -1,9 +1,9 @@
 CREATE TABLE entry_ratio_config (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    entry_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
+    entry_id UUID NOT NULL,
+    user_id UUID NOT NULL,
     ratio DOUBLE PRECISION NOT NULL,
     paid BOOLEAN NOT NULL,
     CONSTRAINT fk_entry_ratio_user FOREIGN KEY (user_id) REFERENCES "users"(id)

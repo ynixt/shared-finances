@@ -1,8 +1,8 @@
 CREATE TABLE credit_card (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    user_id  TEXT NOT NULL,
+    user_id  UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
     enabled BOOLEAN NOT NULL,
     total_limit NUMERIC(12,2) NOT NULL,

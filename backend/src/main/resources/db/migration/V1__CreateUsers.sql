@@ -1,6 +1,6 @@
 CREATE TABLE "users"
 (
-    id         TEXT PRIMARY KEY,
+    id         UUID PRIMARY KEY,
     created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     external_id TEXT NOT NULL UNIQUE,
