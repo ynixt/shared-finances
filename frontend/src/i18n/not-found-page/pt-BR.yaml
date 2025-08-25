@@ -1,0 +1,5 @@
+notFoundPage:
+  title: Página não encontrada
+  subtitle: A página que você estava buscando não existe. Erro 404.
+  actions:
+    backToHome: Voltar para a página inicial

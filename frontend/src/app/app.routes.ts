@@ -23,5 +23,20 @@ export const routes: Routes = [
     'path': 'dashboard',
     canActivate: [authGuard()],
     loadComponent: () => import('./pages/finances/finances-home-page/finances-home-page.component').then(m => m.FinancesHomePageComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/finances/finances-overview-page/finances-overview-page.component').then(m => m.FinancesOverviewPageComponent),
+      },
+    ],
+  },
+  {
+    'path': 'not-found',
+    loadComponent: () => import('./pages/not-found-page/not-found-page.component').then(m => m.NotFoundPageComponent),
+  },
+  {
+    path: '**',
+    redirectTo: 'not-found',
   },
 ];

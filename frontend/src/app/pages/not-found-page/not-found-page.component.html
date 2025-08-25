@@ -1,0 +1,14 @@
+<app-navbar></app-navbar>
+
+<div class="flex flex-col gap-4 mx-auto w-xs sm:w-sm md:w-md p-4 items-center text-center">
+  <picture class="image-404 w-auto h-auto mb-10">
+    <source srcset="/public/images/not-found.webp" type="image/webp" />
+    <source srcset="/public/images/not-found.png" type="image/png" />
+    <img src="/public/images/not-found.png" alt="404 error" />
+  </picture>
+
+  <h1 class="text-900 font-bold text-2xl md:text-3xl">{{ 'notFoundPage.title' | translate }}</h1>
+  <div class="text-600">{{ 'notFoundPage.subtitle' | translate }}</div>
+
+  <a class="mt-10" pButton [routerLink]="['/']">{{ 'notFoundPage.actions.backToHome' | translate }} </a>
+</div>
