@@ -10,7 +10,7 @@ export const SharedFinancesPreset = definePreset(Lara, {
       300: '#d2e4b3',
       400: '#c3da99',
       500: '#91bd45',
-      600: '#9bc255',
+      600: 'oklch(26.2% 0.051 172.552)',
       700: '#81a93c',
       800: '#64832e',
       900: '#485d21',

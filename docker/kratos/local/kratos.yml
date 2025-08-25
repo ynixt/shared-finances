@@ -46,6 +46,9 @@ selfservice:
       lifespan: 1h
       after:
         default_browser_return_url: http://localhost:4200/dashboard
+    logout:
+      after:
+        default_browser_return_url: http://localhost:4200/login
 
     # ---------- REGISTRO ----------
     registration:

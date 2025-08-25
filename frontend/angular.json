@@ -38,7 +38,7 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-builders/custom-esbuild:application",
           "options": {
             "outputPath": "dist/shared-finances",
             "index": "src/index.html",
@@ -54,7 +54,8 @@
               }
             ],
             "styles": ["src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "plugins": ["./esbuild/i18n-plugin.mjs"]
           },
           "configurations": {
             "production": {
@@ -87,7 +88,7 @@
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular/build:dev-server",
+          "builder": "@angular-builders/custom-esbuild:dev-server",
           "options": {
             "proxyConfig": "proxy.conf.json"
           },

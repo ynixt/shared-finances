@@ -1,0 +1,6 @@
+loginPage:
+  email: Email
+  password: Senha
+  login: Entrar
+  error:
+    title: Erro ao efetuar o login

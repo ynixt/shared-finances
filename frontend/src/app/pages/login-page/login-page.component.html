@@ -1,18 +1,20 @@
+<app-navbar></app-navbar>
+
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
     <input type="hidden" formControlName="csrf_token" />
 
     <label class="flex flex-col gap-2">
-      <span>Email</span>
+      <span>{{ 'loginPage.email' | translate }}</span>
       <input class="border p-2 rounded" formControlName="identifier" />
     </label>
 
     <label class="flex flex-col gap-2">
-      <span>Senha</span>
+      <span>{{ 'loginPage.password' | translate }}</span>
       <input class="border p-2 rounded" type="password" formControlName="password" />
     </label>
 
-    <button class="p-2 rounded bg-blue-600 text-white" type="submit">Entrar</button>
+    <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>
   </form>
 }
 

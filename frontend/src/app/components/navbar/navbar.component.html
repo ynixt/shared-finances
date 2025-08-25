@@ -8,17 +8,27 @@
     <div class="mx-auto"></div>
 
     <div class="menu gap-4 flex items-center">
-      <a routerLink="/login" pButton class="!text-white !hover:text-primary" [text]="true" [rounded]="true">
-        @let user = userService.user();
+      @let user = userService.user();
 
-        @if (user) {
+      @if (userService.loading()) {
+        <p-progress-spinner ariaLabel="loading" class="w-4 h-4" />
+      } @else if (user) {
+        <button pButton class="text-white hover:text-primary" [text]="true" [rounded]="true" (click)="userMenu.toggle($event)">
           <span pButtonLabel>{{ user.firstName }}</span>
-        } @else {
-          <p-progress-spinner ariaLabel="loading" class="w-4 h-4" />
-        }
-      </a>
+        </button>
+      } @else {
+        <a routerLink="/login" pButton class="text-white hover:text-primary" [text]="true" [rounded]="true">
+          <span pButtonLabel>{{ 'general.login' | translate }}</span>
+        </a>
+
+        <a routerLink="/register" pButton [rounded]="true">
+          <span pButtonLabel>{{ 'general.register' | translate }}</span>
+        </a>
+      }
 
       <app-lang-button buttonClass="text-white hover:text-primary"></app-lang-button>
     </div>
   </div>
 </div>
+
+<p-menu #userMenu [model]="items" [popup]="true" />

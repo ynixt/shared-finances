@@ -1,26 +1,5 @@
-<div class="header w-full py-4 bg-gray-700 text-white mb-8">
-  <div class="navbar">
-    <div class="container mx-auto px-4 flex items-center">
-      <a class="logo flex items-center gap-3" routerLink="/">
-        <img class="h-9" src="/public/images/small-logo.png" />
-        <span class="title hidden md:inline text-2xl font-bold text-shadow-lg">Shared Finances</span>
-      </a>
-
-      <div class="mx-auto"></div>
-
-      <div class="menu gap-4 flex items-center">
-        <a routerLink="/login" pButton class="!text-white !hover:text-primary" [text]="true" [rounded]="true">
-          <span pButtonLabel>{{ 'general.login' | translate }}</span>
-        </a>
-
-        <a routerLink="/register" pButton [rounded]="true">
-          <span pButtonLabel>{{ 'general.register' | translate }}</span>
-        </a>
-
-        <app-lang-button buttonClass="text-white hover:text-primary"></app-lang-button>
-      </div>
-    </div>
-  </div>
+<div class="header w-full bg-gray-700 text-white mb-8">
+  <app-navbar></app-navbar>
 
   <div class="header-section py-24">
     <div class="container mx-auto px-4 flex flex-col items-center justify-center font-inter">

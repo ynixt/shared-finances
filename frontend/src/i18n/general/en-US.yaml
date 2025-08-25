@@ -9,3 +9,9 @@ general:
   login: Login
   logout: Logout
   register: Register
+
+error:
+  genericMessage: An error occurred
+  
+navbar:
+  logout: Logout

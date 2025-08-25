@@ -4,23 +4,16 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
-import Aura from '@primeng/themes/aura';
 
 import { providePrimeNG } from 'primeng/config';
 
 import { environment } from '../environments/environment';
 import { SharedFinancesPreset } from '../theme-preset';
 import { routes } from './app.routes';
-import { CustomTranslateHttpLoader } from './custom-translate-http-loader';
+import { CustomTranslateYamlLoader } from './custom-translate-yaml-loader';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 
-const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateHttpLoader =>
-  new CustomTranslateHttpLoader('.yaml', httpBackend, [
-    './public/i18n/general/',
-    './public/i18n/register-page/',
-    './public/i18n/landing-page/',
-    './public/i18n/kratos/',
-  ]);
+const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateYamlLoader => new CustomTranslateYamlLoader();
 
 export const appConfig: ApplicationConfig = {
   providers: [

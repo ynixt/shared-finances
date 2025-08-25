@@ -1,7 +1,6 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, signal } from '@angular/core';
-
-import { lastValueFrom, take, tap } from 'rxjs';
+import { Router } from '@angular/router';
+import { Configuration, FrontendApi } from '@ory/client';
 
 import { environment } from '../../environments/environment';
 
@@ -11,65 +10,77 @@ export class KratosAuthService {
 
   readonly token = signal<string | null>(null);
 
-  constructor(private http: HttpClient) {}
+  readonly kratosApi = new FrontendApi(
+    new Configuration({
+      basePath: this.kratos,
+      baseOptions: {
+        withCredentials: true,
+      },
+    }),
+  );
 
-  // ---------- FLOW ----------
+  constructor(private router: Router) {}
+
   async getLoginFlow(returnTo = '/'): Promise<any> {
-    return lastValueFrom(
-      this.http
-        .get(`${this.kratos}/self-service/login/browser?return_to=${encodeURIComponent(returnTo)}`, { withCredentials: true })
-        .pipe(take(1)),
-    );
+    const response = await this.kratosApi.createBrowserLoginFlow({
+      returnTo,
+    });
+
+    return response.data;
   }
 
   async getRegistrationFlow(returnTo = '/login'): Promise<any> {
-    return lastValueFrom(
-      this.http
-        .get(`${this.kratos}/self-service/registration/browser?return_to=${encodeURIComponent(returnTo)}`, { withCredentials: true })
-        .pipe(take(1)),
-    );
+    return (
+      await this.kratosApi.createBrowserRegistrationFlow({
+        returnTo,
+      })
+    ).data;
   }
 
-  // ---------- SUBMIT FORMS ----------
-  submitLoginFlow(flowId: string, body: any): Promise<any> {
-    return lastValueFrom(
-      this.http.post(`${this.kratos}/self-service/login?flow=${encodeURIComponent(flowId)}`, body, { withCredentials: true }).pipe(take(1)),
-    );
+  async submitLoginFlow(flowId: string, body: any): Promise<any> {
+    const response = await this.kratosApi.updateLoginFlow({
+      flow: flowId,
+      updateLoginFlowBody: {
+        method: 'password',
+        ...body,
+      },
+    });
+
+    return response.data;
   }
 
-  submitRegistrationFlow(flowId: string, body: any): Promise<object> {
-    return lastValueFrom(
-      this.http
-        .post(`${this.kratos}/self-service/registration?flow=${encodeURIComponent(flowId)}`, body, { withCredentials: true })
-        .pipe(take(1)),
-    );
+  async submitRegistrationFlow(flowId: string, body: any): Promise<object> {
+    return (
+      await this.kratosApi.updateRegistrationFlow({
+        flow: flowId,
+        ...body,
+      })
+    ).data;
   }
 
-  // ---------- LOGOUT ----------
-  logout(): void {
-    window.location.href = `${this.kratos}/self-service/logout/browser`;
-  }
-
-  // ---------- SESSÃO / WHOAMI ----------
-  /**
-   * Retorna os dados da sessão atual ou lança 401/403 se não autenticado.
-   */
-  getSession(): Promise<any> {
-    return lastValueFrom(this.http.get<any>(`${this.kratos}/sessions/whoami`, { withCredentials: true }).pipe(take(1)));
+  async logout(): Promise<void> {
+    const { data: flow } = await this.kratosApi.createBrowserLogoutFlow();
+    await this.kratosApi.updateLogoutFlow({
+      token: flow.logout_token,
+    });
+    this.token.set(null);
+    await this.router.navigateByUrl('/login', {
+      onSameUrlNavigation: 'reload',
+    });
   }
 
   async refreshJwt(): Promise<void> {
-    const params = new HttpParams().set('tokenize_as', 'default_jwt');
+    try {
+      const { tokenized } = (
+        await this.kratosApi.toSession({
+          tokenizeAs: 'default_jwt',
+        })
+      ).data;
 
-    await lastValueFrom(
-      this.http.get<{ tokenized: string }>(`${this.kratos}/sessions/whoami`, { params, withCredentials: true }).pipe(
-        tap({
-          next: ({ tokenized }) => this.token.set(tokenized),
-          error: () => this.token.set(null),
-        }),
-        take(1),
-      ),
-    );
+      this.token.set(tokenized ?? null);
+    } catch (err) {
+      this.token.set(null);
+    }
   }
 
   async getToken(): Promise<string | null> {

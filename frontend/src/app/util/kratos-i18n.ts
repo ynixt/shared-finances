@@ -1,27 +1,36 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateService } from '@ngx-translate/core';
 
+import { AxiosError } from 'axios';
+
 import { KratosMessage } from '../models/kratos/kratos-message';
 import { KratosNode } from '../models/kratos/kratos-node';
 
 export function translateKratosError(error: unknown, translateService: TranslateService): string | null {
+  const ui = extractKratosUi(error);
+  if (!ui) return null;
+
+  const messages: string[] = [];
+
+  if (ui?.messages) {
+    messages.push(...translateKratosMessages(ui.messages, translateService));
+  }
+
+  const nodes: KratosNode[] | undefined = ui?.nodes;
+  if (nodes && nodes.length > 0) {
+    messages.push(...translateKratosNodeMessages(nodes, translateService));
+  }
+
+  return messages.length > 0 ? messages.join('\n') : null;
+}
+
+function extractKratosUi(error: unknown): any | undefined {
   if (error instanceof HttpErrorResponse) {
-    const ui = (error as any)?.error?.ui;
-    let messages: string[] = [];
+    return (error as any)?.error?.ui;
+  }
 
-    if (ui?.messages) {
-      messages = [...messages, ...translateKratosMessages(ui.messages, translateService)];
-    }
-
-    const nodes: KratosNode[] | undefined = (error as any)?.error?.ui?.nodes;
-
-    if (nodes && nodes.length > 0) {
-      messages = [...messages, ...translateKratosNodeMessages(nodes, translateService)];
-    }
-
-    if (messages.length > 0) {
-      return messages.join('\n');
-    }
+  if (error instanceof AxiosError) {
+    return error?.response?.data?.ui;
   }
 
   return null;

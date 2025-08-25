@@ -1,0 +1,6 @@
+loginPage:
+  email: Email
+  password: Password
+  login: Login
+  error:
+    title: Error logging in

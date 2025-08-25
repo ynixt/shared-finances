@@ -9,3 +9,9 @@ general:
   login: Entrar
   logout: Sair
   register: Cadastrar
+
+error:
+  genericMessage: Um erro aconteceu
+
+navbar:
+  logout: Sair

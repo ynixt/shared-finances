@@ -1,19 +1,22 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, Injector, effect, signal } from '@angular/core';
+import { Injectable, Injector, WritableSignal, effect, signal } from '@angular/core';
 
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 
 import { User } from '../models/user';
+import { DEFAULT_ERROR_LIFE } from '../util/error-util';
 import { KratosAuthService } from './kratos-auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly _user = signal<User | null>(null);
   private readonly _loading = signal(true);
+  private readonly _error: WritableSignal<any> = signal(null);
 
   readonly user = this._user.asReadonly();
   readonly loading = this._loading.asReadonly();
+  readonly error = this._error.asReadonly();
 
   constructor(
     private http: HttpClient,
@@ -26,14 +29,19 @@ export class UserService {
       if (token == null) {
         this._user.set(null);
         this._loading.set(false);
+        this._error.set(null);
         return;
       }
 
+      this._error.set(null);
       this._loading.set(true);
       this.getUserFromHttp()
-        .then(u => this._user.set(u))
-        .catch(() => {
+        .then(u => {
+          this._user.set(u);
+        })
+        .catch(err => {
           this._user.set(null);
+          this._error.set(err);
           this.auth.logout();
         })
         .finally(() => this._loading.set(false));
