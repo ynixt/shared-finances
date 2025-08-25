@@ -45,7 +45,7 @@ selfservice:
       ui_url: http://localhost:4200/login
       lifespan: 1h
       after:
-        default_browser_return_url: http://localhost:4200/dashboard
+        default_browser_return_url: http://localhost:4200/app
     logout:
       after:
         default_browser_return_url: http://localhost:4200/login

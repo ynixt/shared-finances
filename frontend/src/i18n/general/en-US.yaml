@@ -12,6 +12,6 @@ general:
 
 error:
   genericMessage: An error occurred
-  
+
 navbar:
   logout: Logout

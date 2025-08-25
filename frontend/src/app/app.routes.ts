@@ -20,7 +20,7 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/registration-page/registration-page.component').then(m => m.RegistrationPageComponent),
   },
   {
-    'path': 'dashboard',
+    'path': 'app',
     canActivate: [authGuard()],
     loadComponent: () => import('./pages/finances/finances-home-page/finances-home-page.component').then(m => m.FinancesHomePageComponent),
     children: [

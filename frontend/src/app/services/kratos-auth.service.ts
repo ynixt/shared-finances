@@ -80,6 +80,7 @@ export class KratosAuthService {
       this.token.set(tokenized ?? null);
     } catch (err) {
       this.token.set(null);
+      throw err;
     }
   }
 

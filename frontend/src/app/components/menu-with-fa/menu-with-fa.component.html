@@ -1,0 +1,17 @@
+<p-menu [model]="items">
+  <ng-template pTemplate="item" let-item>
+    <a
+      [routerLink]="item.routerLink"
+      routerLinkActive="p-menu-item-link-active"
+      [routerLinkActiveOptions]="item.routerLinkActiveOptions"
+      class="p-menu-item-link"
+      [class.p-menu-item-link-active]="item.active"
+    >
+      @if (item.fa) {
+        <fa-icon [icon]="item.fa" class="mr-2"></fa-icon>
+      }
+
+      <span class="p-menuitem-text">{{ item.label }}</span>
+    </a>
+  </ng-template>
+</p-menu>

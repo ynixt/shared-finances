@@ -1,0 +1,8 @@
+finances:
+  menu:
+    overview: Overview
+    registrations: Registrations
+    bankAccounts: Bank Accounts
+    creditCards: Credit Cards
+    categories: Categories
+    tags: Tags

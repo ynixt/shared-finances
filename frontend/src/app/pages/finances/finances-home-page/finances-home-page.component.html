@@ -1,3 +1,10 @@
 <app-navbar></app-navbar>
 
-<p>finances-home-page works!</p>
+<div class="container mx-auto flex flex-row gap-10">
+  <div class="menu">
+    <app-menu-with-fa [items]="items" />
+  </div>
+  <div class="content">
+    <router-outlet />
+  </div>
+</div>

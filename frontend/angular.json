@@ -53,6 +53,7 @@
                 "output": "public"
               }
             ],
+            "externalDependencies": [],
             "styles": ["src/styles.scss"],
             "scripts": [],
             "plugins": ["./esbuild/i18n-plugin.mjs"]

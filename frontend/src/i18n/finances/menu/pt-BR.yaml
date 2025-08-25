@@ -1,0 +1,8 @@
+finances:
+  menu:
+    overview: Visão Geral
+    registrations: Cadastros
+    bankAccounts: Contas bancárias
+    creditCards: Cartões de crédito
+    categories: Categorias
+    tags: Tags

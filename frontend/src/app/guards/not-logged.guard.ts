@@ -14,7 +14,7 @@ export const notLoggedGuard = (): CanActivateFn => {
       if (user == null) {
         return true;
       } else {
-        return router.createUrlTree(['dashboard']);
+        return router.createUrlTree(['app']);
       }
     } catch (err) {
       return true;
