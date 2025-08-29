@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, effect, signal } from '@angular/core';
-import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
+import { Injectable, effect, signal } from '@angular/core';
+import { UntilDestroy } from '@ngneat/until-destroy';
 import { TranslateService } from '@ngx-translate/core';
 
 import { lastValueFrom, take } from 'rxjs';
@@ -8,7 +8,6 @@ import { lastValueFrom, take } from 'rxjs';
 import { PrimeNG } from 'primeng/config';
 
 import { environment } from '../../environments/environment';
-import { User } from '../models/user';
 import { i18nIsReady } from '../util/i18n-util';
 import { updatePrimeI18n } from '../util/prime-i18n';
 import { UserService } from './user.service';

@@ -4,13 +4,12 @@ import { Injectable, Injector, WritableSignal, effect, signal } from '@angular/c
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 
-import { User } from '../models/user';
-import { DEFAULT_ERROR_LIFE } from '../util/error-util';
+import { UserResponseDto } from '../models/generated';
 import { KratosAuthService } from './kratos-auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private readonly _user = signal<User | null>(null);
+  private readonly _user = signal<UserResponseDto | null>(null);
   private readonly _loading = signal(true);
   private readonly _error: WritableSignal<any> = signal(null);
 
@@ -48,7 +47,7 @@ export class UserService {
     });
   }
 
-  async getUser(): Promise<User | null> {
+  async getUser(): Promise<UserResponseDto | null> {
     if (this.auth.token() == null) {
       await this.auth.getToken();
     }
@@ -79,7 +78,7 @@ export class UserService {
     }
   }
 
-  private getUserFromHttp(): Promise<User> {
-    return lastValueFrom(this.http.get<User>('/api/users/current').pipe(take(1)));
+  private getUserFromHttp(): Promise<UserResponseDto> {
+    return lastValueFrom(this.http.get<UserResponseDto>('/api/users/current').pipe(take(1)));
   }
 }

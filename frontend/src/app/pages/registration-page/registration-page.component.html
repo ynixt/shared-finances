@@ -1,99 +1,88 @@
-<div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-[100vw] overflow-hidden">
+<app-navbar></app-navbar>
+
+<div class="flex items-center justify-center mt-12 min-w-[100vw] overflow-hidden">
   <div class="flex flex-col items-center justify-center">
-    <div
-      style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)"
-    >
-      <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20" style="border-radius: 53px">
-        @if (form) {
-          <form [formGroup]="form" (ngSubmit)="submit()">
-            <div class="flex mb-8 gap-2" formGroupName="name">
-              <div>
-                <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
-                  'general.firstName' | translate
-                }}</label>
-                <input
-                  pInputText
-                  id="firstName"
-                  type="text"
-                  [placeholder]="'general.firstName' | translate"
-                  class="w-full md:w-[30rem]"
-                  formControlName="first"
-                />
-              </div>
-
-              <div>
-                <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
-                  'general.lastName' | translate
-                }}</label>
-                <input
-                  pInputText
-                  id="lastName"
-                  type="text"
-                  [placeholder]="'general.lastName' | translate"
-                  class="w-full md:w-[30rem]"
-                  formControlName="last"
-                />
-              </div>
-            </div>
-
-            <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
-              'general.email' | translate
+    @if (form) {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="flex mb-8 gap-2" formGroupName="name">
+          <div>
+            <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
+              'general.firstName' | translate
             }}</label>
             <input
               pInputText
-              id="email"
+              id="firstName"
               type="text"
-              [placeholder]="'general.email' | translate"
-              class="w-full mb-8"
-              formControlName="email"
+              [placeholder]="'general.firstName' | translate"
+              class="w-full md:w-[30rem]"
+              formControlName="first"
             />
+          </div>
 
-            <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
-              'general.password' | translate
+          <div>
+            <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
+              'general.lastName' | translate
             }}</label>
-            <p-password
-              id="password"
-              formControlName="password"
-              [placeholder]="'general.password' | translate"
-              [toggleMask]="true"
-              styleClass="mb-8"
-              [fluid]="true"
-              [feedback]="true"
-              class="w-full mb-8"
-            ></p-password>
+            <input
+              pInputText
+              id="lastName"
+              type="text"
+              [placeholder]="'general.lastName' | translate"
+              class="w-full md:w-[30rem]"
+              formControlName="last"
+            />
+          </div>
+        </div>
 
-            <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
-              'general.passwordConfirm' | translate
-            }}</label>
-            <p-password
-              id="confirmPassword"
-              formControlName="confirmPassword"
-              [placeholder]="'general.passwordConfirm' | translate"
-              [toggleMask]="true"
-              styleClass="mb-8"
-              [fluid]="true"
-              [feedback]="false"
-              class="w-full mb-8"
-              [class.ng-invalid]="form.hasError('PasswordNoMatch')"
-            ></p-password>
+        <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
+          'general.email' | translate
+        }}</label>
+        <input pInputText id="email" type="text" [placeholder]="'general.email' | translate" class="w-full mb-8" formControlName="email" />
 
-            <div class="w-full mb-8">
-              <app-language-picker formControlName="language"></app-language-picker>
-            </div>
+        <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
+          'general.password' | translate
+        }}</label>
+        <p-password
+          id="password"
+          formControlName="password"
+          [placeholder]="'general.password' | translate"
+          [toggleMask]="true"
+          styleClass="mb-8"
+          [fluid]="true"
+          [feedback]="true"
+          class="w-full mb-8"
+        ></p-password>
 
-            <input type="hidden" formControlName="csrf_token" />
+        <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
+          'general.passwordConfirm' | translate
+        }}</label>
+        <p-password
+          id="confirmPassword"
+          formControlName="confirmPassword"
+          [placeholder]="'general.passwordConfirm' | translate"
+          [toggleMask]="true"
+          styleClass="mb-8"
+          [fluid]="true"
+          [feedback]="false"
+          class="w-full mb-8"
+          [class.ng-invalid]="form.hasError('PasswordNoMatch')"
+        ></p-password>
 
-            <p-button
-              [loading]="submitting"
-              [disabled]="form.invalid"
-              type="submit"
-              [label]="'registerPage.register' | translate"
-              styleClass="w-full"
-            ></p-button>
-          </form>
-        }
-      </div>
-    </div>
+        <div class="w-full mb-8">
+          <app-language-picker formControlName="language"></app-language-picker>
+        </div>
+
+        <input type="hidden" formControlName="csrf_token" />
+
+        <p-button
+          [loading]="submitting"
+          [disabled]="form.invalid"
+          type="submit"
+          [label]="'registerPage.register' | translate"
+          styleClass="w-full"
+        ></p-button>
+      </form>
+    }
   </div>
 </div>
 

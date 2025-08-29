@@ -27,6 +27,22 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     fail-on-missing-locations: false
+  data:
+    redis:
+      host: ${REDIS_APP_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      ssl:
+        enabled: false
+      timeout: 3s
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 16
+          max-idle: 16
+          min-idle: 0
+          max-wait: 5s
   security:
     oauth2:
       resourceserver:
@@ -37,4 +53,6 @@ spring:
 
 logging:
   level:
+#    org.springframework.web: TRACE
     org.springframework.security: TRACE
+#    reactor.netty.http.server: DEBUG

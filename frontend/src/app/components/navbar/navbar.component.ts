@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { startWith } from 'rxjs';
+
 import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { ButtonDirective, ButtonLabel } from 'primeng/button';
 import { Menu } from 'primeng/menu';
@@ -27,7 +29,7 @@ export class NavbarComponent {
     private translateService: TranslateService,
     private kratosAuthService: KratosAuthService,
   ) {
-    this.translateService.onLangChange.pipe(untilDestroyed(this)).subscribe(lang => {
+    this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(lang => {
       this.loadItems();
     });
   }

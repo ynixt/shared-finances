@@ -9,8 +9,11 @@ general:
   login: Entrar
   logout: Sair
   register: Cadastrar
+  save: Salvar
+  success: Sucesso
 
 error:
+  genericTitle: Erro
   genericMessage: Um erro aconteceu
 
 navbar:

@@ -13,3 +13,4 @@ CREATE TABLE bank_account (
 );
 
 CREATE INDEX idx_bank_account_user_id ON bank_account (user_id);
+CREATE UNIQUE INDEX idx_bank_account_user_id_name ON bank_account (user_id, name);

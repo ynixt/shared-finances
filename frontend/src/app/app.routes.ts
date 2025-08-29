@@ -8,32 +8,72 @@ export const routes: Routes = [
     'path': '',
     canActivate: [notLoggedGuard()],
     loadComponent: () => import('./pages/showcase-page/showcase-page.component').then(m => m.ShowcasePageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.home',
+    },
   },
   {
     'path': 'login',
     canActivate: [notLoggedGuard()],
     loadComponent: () => import('./pages/login-page/login-page.component').then(m => m.LoginPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.login',
+    },
   },
   {
     'path': 'register',
     canActivate: [notLoggedGuard()],
     loadComponent: () => import('./pages/registration-page/registration-page.component').then(m => m.RegistrationPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.register',
+    },
   },
   {
     'path': 'app',
     canActivate: [authGuard()],
-    loadComponent: () => import('./pages/finances/finances-home-page/finances-home-page.component').then(m => m.FinancesHomePageComponent),
+    loadComponent: () => import('./pages/finances/finances-home-page/finances-page.component').then(m => m.FinancesPageComponent),
     children: [
       {
         path: '',
         loadComponent: () =>
           import('./pages/finances/finances-overview-page/finances-overview-page.component').then(m => m.FinancesOverviewPageComponent),
+        data: {
+          pageTitleKey: 'pageTitle.app',
+        },
+      },
+      {
+        path: 'bankAccounts',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/finances/finances-bank-accounts-page/finances-bank-accounts-page.component').then(
+                m => m.FinancesBankAccountsPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.bankAccounts',
+            },
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./pages/finances/finances-bank-accounts-page/new-bank-account-page/new-bank-account-page.component').then(
+                m => m.NewBankAccountPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.newBankAccounts',
+            },
+          },
+        ],
       },
     ],
   },
   {
     'path': 'not-found',
     loadComponent: () => import('./pages/not-found-page/not-found-page.component').then(m => m.NotFoundPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.notFound',
+    },
   },
   {
     path: '**',

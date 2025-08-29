@@ -72,7 +72,7 @@ selfservice:
 
     # ---------- SETTINGS (ativa MFA) ----------
     settings:
-      ui_url: http://localhost:4200/settings/security
+      ui_url: http://localhost:4200/app/settings/security
       privileged_session_max_age: 1h
       required_aal: aal1
       after:

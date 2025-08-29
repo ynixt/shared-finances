@@ -1,0 +1,8 @@
+financesPage:
+  bankAccountsPage:
+    title: Bank Accounts
+    name: Account name
+    newBankAccountPage:
+      title: New bank account
+      initialBalance: Initial balance
+      successMessage: Bank account created successfully

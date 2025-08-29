@@ -53,7 +53,7 @@ export class KratosAuthService {
     return (
       await this.kratosApi.updateRegistrationFlow({
         flow: flowId,
-        ...body,
+        updateRegistrationFlowBody: body,
       })
     ).data;
   }

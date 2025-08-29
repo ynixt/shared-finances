@@ -91,7 +91,7 @@ export class LoginPageComponent implements OnInit {
       await this.auth.submitLoginFlow(this.flow.id, this.form.value);
       await this.auth.refreshJwt();
 
-      await this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('return_to') ?? '/dashboard');
+      await this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('return_to') ?? '/app');
     } catch (err) {
       this.loading = false;
       let errorMessage = translateKratosError(err, this.translateService);

@@ -1,0 +1,8 @@
+financesPage:
+  bankAccountsPage:
+    title: Contas Bancárias
+    name: Nome da conta
+    newBankAccountPage:
+      title: Nova conta bancária
+      initialBalance: Saldo inicial
+      successMessage: A conta bancária foi criada com sucesso

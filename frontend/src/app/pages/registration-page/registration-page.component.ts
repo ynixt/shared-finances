@@ -10,6 +10,7 @@ import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 
 import { LanguagePickerComponent } from '../../components/language-picker/language-picker.component';
+import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { KratosAuthService } from '../../services/kratos-auth.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
 import { translateKratosError } from '../../util/kratos-i18n';
@@ -19,7 +20,7 @@ import { confirmPasswordValidator } from './confirm-password.validator';
 
 @Component({
   selector: 'app-registration-page',
-  imports: [ReactiveFormsModule, Button, Password, InputText, TranslatePipe, Toast, LanguagePickerComponent],
+  imports: [ReactiveFormsModule, Button, Password, InputText, TranslatePipe, Toast, LanguagePickerComponent, NavbarComponent],
   templateUrl: './registration-page.component.html',
   styleUrl: './registration-page.component.scss',
   providers: [MessageService],
@@ -76,6 +77,8 @@ export class RegistrationPageComponent implements OnInit {
       await this.router.navigateByUrl('/login');
     } catch (error) {
       this.submitting = false;
+
+      console.error(error);
 
       let errorMessage = translateKratosError(error, this.translateService);
 
