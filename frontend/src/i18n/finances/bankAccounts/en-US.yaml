@@ -2,7 +2,12 @@ financesPage:
   bankAccountsPage:
     title: Bank Accounts
     name: Account name
+    currency: Currency
+    balance: Balance
     newBankAccountPage:
       title: New bank account
       initialBalance: Initial balance
       successMessage: Bank account created successfully
+    editBankAccountPage:
+      title: 'Edit bank account: {{name}}'
+      successMessage: Bank account modified successfully

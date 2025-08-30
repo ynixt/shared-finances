@@ -6,6 +6,7 @@ pageTitle:
   app: Overview
   bankAccounts: Bank accounts
   newBankAccount: New bank account
+  editBankAccount: Edit bank account
   creditCards: Credit Cards
   categories: Categories
   tags: Tags

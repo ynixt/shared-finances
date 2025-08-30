@@ -4,6 +4,7 @@ CREATE TABLE credit_card (
     updated_at TIMESTAMPTZ,
     user_id  UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     enabled BOOLEAN NOT NULL,
     total_limit NUMERIC(12,2) NOT NULL,
     available_limit NUMERIC(12,2) NOT NULL,

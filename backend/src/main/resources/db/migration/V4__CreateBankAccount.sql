@@ -4,6 +4,7 @@ CREATE TABLE bank_account (
     updated_at TIMESTAMPTZ,
     user_id  UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
     enabled BOOLEAN NOT NULL,
     balance NUMERIC(12,2) NOT NULL,
 
@@ -12,5 +13,4 @@ CREATE TABLE bank_account (
             ON DELETE CASCADE
 );
 
-CREATE INDEX idx_bank_account_user_id ON bank_account (user_id);
 CREATE UNIQUE INDEX idx_bank_account_user_id_name ON bank_account (user_id, name);

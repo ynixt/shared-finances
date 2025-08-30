@@ -1,0 +1,29 @@
+<p-select
+  class="w-full"
+  [(ngModel)]="value"
+  [options]="currencies"
+  (onChange)="onSelectCurrency($event)"
+  (onClear)="clearSelection()"
+  [placeholder]="placeholder"
+  [inputId]="'currency-autocomplete-' + (placeholder || '')"
+  [disabled]="disabled"
+  optionValue="code"
+  optionLabel="code"
+  [filter]="true"
+  filterBy="name"
+  [virtualScroll]="true"
+  [virtualScrollItemSize]="65"
+  [virtualScrollOptions]="scrollerOptions"
+>
+  <ng-template #selectedItem let-selectedOption>
+    <div class="flex items-center gap-2">
+      <div>{{ selectedOption ? `${selectedOption.symbol} (${selectedOption.name})` : '' }}</div>
+    </div>
+  </ng-template>
+  <ng-template #item let-item>
+    <div class="p-clearfix">
+      <div style="font-weight: 600">{{ item.code }} - {{ item.symbol }}</div>
+      <div style="font-size: 0.9em; color: var(--text-secondary)">{{ item.name }}</div>
+    </div>
+  </ng-template>
+</p-select>

@@ -2,7 +2,12 @@ financesPage:
   bankAccountsPage:
     title: Contas Bancárias
     name: Nome da conta
+    currency: Moeda
+    balance: Saldo
     newBankAccountPage:
       title: Nova conta bancária
       initialBalance: Saldo inicial
       successMessage: A conta bancária foi criada com sucesso
+    editBankAccountPage:
+      title: 'Editar conta bancária: {{name}}'
+      successMessage: A conta bancária foi modificada com sucesso

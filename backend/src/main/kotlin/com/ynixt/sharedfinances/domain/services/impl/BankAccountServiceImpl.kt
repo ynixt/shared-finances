@@ -39,13 +39,14 @@ class BankAccountServiceImpl(
                 balance = newBankAccountRequest.balance,
                 enabled = true,
                 name = newBankAccountRequest.name,
+                currency = newBankAccountRequest.currency,
             ),
         )
 
-    fun getBankAccount(
+    override fun findBankAccount(
         userId: UUID,
         id: UUID,
-    ): Mono<BankAccount?> =
+    ): Mono<BankAccount> =
         bankAccountRepository.findOneByIdAndUserId(
             id = id,
             userId = userId,
@@ -56,14 +57,15 @@ class BankAccountServiceImpl(
         userId: UUID,
         id: UUID,
         editBankAccount: EditBankAccountRequest,
-    ): Mono<BankAccount?> =
+    ): Mono<BankAccount> =
         bankAccountRepository
             .update(
                 id = id,
                 userId = userId,
                 newName = editBankAccount.newName,
                 newEnabled = editBankAccount.newEnabled,
-            ).flatMap { if (it > 0) getBankAccount(id, userId) else Mono.empty<BankAccount>() }
+                newCurrency = editBankAccount.newCurrency,
+            ).flatMap { if (it > 0) findBankAccount(id = id, userId = userId) else Mono.empty() }
 
     @Transactional
     override fun deleteBankAccount(

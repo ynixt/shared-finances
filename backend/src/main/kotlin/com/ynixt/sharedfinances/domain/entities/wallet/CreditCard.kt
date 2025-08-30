@@ -9,6 +9,7 @@ class CreditCard(
     name: String,
     enabled: Boolean,
     userId: UUID,
+    currency: String,
     val totalLimit: BigDecimal,
     val availableLimit: BigDecimal,
     val dueDay: Int,
@@ -18,4 +19,5 @@ class CreditCard(
         name = name,
         enabled = enabled,
         userId = userId,
+        currency = currency,
     )

@@ -9,10 +9,12 @@ class BankAccountDto(
     name: String,
     enabled: Boolean,
     userId: UUID,
+    currency: String,
     val balance: BigDecimal,
 ) : WalletItemDto(
         id = id,
         name = name,
         enabled = enabled,
         userId = userId,
+        currency = currency,
     )

@@ -9,9 +9,11 @@ class BankAccount(
     name: String,
     enabled: Boolean,
     userId: UUID,
+    currency: String,
     val balance: BigDecimal,
 ) : WalletItem(
         name = name,
         enabled = enabled,
         userId = userId,
+        currency = currency,
     )

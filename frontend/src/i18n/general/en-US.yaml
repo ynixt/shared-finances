@@ -11,6 +11,10 @@ general:
   register: Register
   save: Save
   success: Success
+  new: New
+  edit: Edit
+  open: Open
+  enabled: Enabled
 
 error:
   genericTitle: Error

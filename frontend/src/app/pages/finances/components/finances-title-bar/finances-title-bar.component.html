@@ -14,7 +14,7 @@
 
     @if (newRouterLink != null) {
       <div class="ml-auto">
-        <a [routerLink]="newRouterLink" pButton [rounded]="true" size="small">
+        <a [routerLink]="newRouterLink" pButton [rounded]="true" size="small" [pTooltip]="'general.new' | translate">
           <fa-icon [icon]="newButtonIcon"></fa-icon>
         </a>
       </div>

@@ -19,7 +19,7 @@ interface BankAccountRepository {
     fun findOneByIdAndUserId(
         id: UUID,
         userId: UUID,
-    ): Mono<BankAccount?>
+    ): Mono<BankAccount>
 
     fun deleteByIdAndUserId(
         id: UUID,
@@ -31,5 +31,6 @@ interface BankAccountRepository {
         userId: UUID,
         newName: String,
         newEnabled: Boolean,
+        newCurrency: String,
     ): Mono<Long>
 }

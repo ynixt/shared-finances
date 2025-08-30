@@ -11,6 +11,10 @@ general:
   register: Cadastrar
   save: Salvar
   success: Sucesso
+  new: Novo
+  edit: Editar
+  open: Abrir
+  enabled: Ativo
 
 error:
   genericTitle: Erro

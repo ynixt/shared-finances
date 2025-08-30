@@ -7,4 +7,5 @@ abstract class WalletItemDto(
     val name: String,
     val enabled: Boolean,
     val userId: UUID,
+    val currency: String,
 )

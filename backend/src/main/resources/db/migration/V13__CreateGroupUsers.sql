@@ -14,5 +14,4 @@ CREATE TABLE group_users
             ON DELETE CASCADE
 );
 
-CREATE INDEX idx_group_users_group_id ON group_users (group_id);
 CREATE INDEX idx_group_users_user_id ON group_users (user_id);

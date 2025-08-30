@@ -3,5 +3,6 @@
 
 export interface NewBankAccountDto {
   balance?: number | null;
+  currency: string;
   name: string;
 }

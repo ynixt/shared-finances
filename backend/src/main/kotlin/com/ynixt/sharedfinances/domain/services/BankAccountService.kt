@@ -14,6 +14,11 @@ interface BankAccountService {
         pageable: Pageable,
     ): Mono<Page<BankAccount>>
 
+    fun findBankAccount(
+        userId: UUID,
+        id: UUID,
+    ): Mono<BankAccount>
+
     fun newBankAccount(
         userId: UUID,
         newBankAccountRequest: NewBankAccountRequest,
@@ -23,7 +28,7 @@ interface BankAccountService {
         userId: UUID,
         id: UUID,
         editBankAccount: EditBankAccountRequest,
-    ): Mono<BankAccount?>
+    ): Mono<BankAccount>
 
     fun deleteBankAccount(
         userId: UUID,

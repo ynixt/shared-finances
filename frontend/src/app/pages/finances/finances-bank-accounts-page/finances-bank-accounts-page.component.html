@@ -4,4 +4,69 @@
     closeRouterLink=".."
     newRouterLink="new"
   ></app-finances-title-bar>
+
+  <p-data-view
+    [value]="bankAccounts.content"
+    [loading]="loading"
+    [rows]="pageSize"
+    [paginator]="true"
+    [lazy]="true"
+    [totalRecords]="bankAccounts.totalElements"
+    layout="grid"
+    (onLazyLoad)="onLazyLoad($event)"
+  >
+    <ng-template #grid let-items>
+      <div class="grid grid-cols-12 gap-4">
+        @for (bankAccount of items; track bankAccount) {
+          <div class="col-span-12 lg:col-span-6 2xl:col-span-4 p-2">
+            <p-card>
+              <ng-template #title>
+                <div class="flex gap-2 items-center">
+                  <span class="mr-auto">{{ bankAccount.name }}</span>
+                  <div class="flex items-center">
+                    <a
+                      [routerLink]="['edit', bankAccount.id]"
+                      pButton
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      size="small"
+                      [pTooltip]="'general.edit' | translate"
+                      tooltipPosition="top"
+                    >
+                      <fa-icon [icon]="editFinanceIcon"></fa-icon>
+                    </a>
+                    <a
+                      [routerLink]="[bankAccount.id]"
+                      pButton
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      size="small"
+                      [pTooltip]="'general.open' | translate"
+                      tooltipPosition="top"
+                    >
+                      <fa-icon [icon]="openFinanceIcon"></fa-icon>
+                    </a>
+                  </div>
+                </div>
+              </ng-template>
+              <table class="w-full">
+                <tbody>
+                  <tr>
+                    <td>{{ 'financesPage.bankAccountsPage.currency' | translate }}</td>
+                    <td>{{ bankAccount.currency }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ 'financesPage.bankAccountsPage.balance' | translate }}</td>
+                    <td>{{ bankAccount.balance | localCurrency: bankAccount.currency }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </p-card>
+          </div>
+        }
+      </div>
+    </ng-template>
+  </p-data-view>
 </div>

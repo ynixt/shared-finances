@@ -64,6 +64,16 @@ export const routes: Routes = [
               pageTitleKey: 'pageTitle.newBankAccounts',
             },
           },
+          {
+            path: 'edit/:id',
+            loadComponent: () =>
+              import('./pages/finances/finances-bank-accounts-page/edit-bank-account-page/edit-bank-account-page.component').then(
+                m => m.EditBankAccountPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.editBankAccounts',
+            },
+          },
         ],
       },
     ],

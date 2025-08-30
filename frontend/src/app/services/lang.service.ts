@@ -10,6 +10,7 @@ import { PrimeNG } from 'primeng/config';
 import { environment } from '../../environments/environment';
 import { i18nIsReady } from '../util/i18n-util';
 import { updatePrimeI18n } from '../util/prime-i18n';
+import { LocaleService } from './locale.service';
 import { UserService } from './user.service';
 
 @Injectable({
@@ -32,6 +33,7 @@ export class LangService {
     private translateService: TranslateService,
     private httpClient: HttpClient,
     private userService: UserService,
+    private localeService: LocaleService,
   ) {
     this.init();
     effect(() => {
@@ -55,6 +57,7 @@ export class LangService {
     this._currentLang.set(newLanguage);
     this.translateService.use(newLanguage);
     await updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
+    await this.localeService.setLocale(newLanguage);
 
     const user = this.userService.user();
 

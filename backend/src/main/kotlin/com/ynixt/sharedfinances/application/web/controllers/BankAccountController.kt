@@ -39,6 +39,19 @@ class BankAccountController(
                 pageable,
             ).mapPage(bankAccountDtoMapper::toDto)
 
+    @GetMapping("/{id}")
+    fun findBankAccount(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+    ): Mono<ResponseEntity<BankAccountDto>> =
+        bankAccountService
+            .findBankAccount(
+                userId = principalToken.principal.id,
+                id = id,
+            ).map {
+                ResponseEntity.ofNullable(bankAccountDtoMapper.toDto(it))
+            }.defaultIfEmpty(ResponseEntity.notFound().build())
+
     @PostMapping
     fun newBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -62,10 +75,8 @@ class BankAccountController(
                 id = id,
                 bankAccountDtoMapper.fromEditDtoToEditRequest(body),
             ).map {
-                ResponseEntity.ofNullable(
-                    if (it == null) null else bankAccountDtoMapper.toDto(it),
-                )
-            }
+                ResponseEntity.ofNullable(bankAccountDtoMapper.toDto(it))
+            }.defaultIfEmpty(ResponseEntity.notFound().build())
 
     @DeleteMapping("/{id}")
     fun deleteBankAccount(

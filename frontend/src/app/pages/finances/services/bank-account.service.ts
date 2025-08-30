@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
-import { BankAccountDto, NewBankAccountDto } from '../../../models/generated';
+import { BankAccountDto, EditBankAccountDto, NewBankAccountDto } from '../../../models/generated';
 import { Page, PageRequest, Pageable } from '../../../models/pagination';
 import { PaginationService } from '../../../services/pagination.service';
 import { UserService } from '../../../services/user.service';
@@ -34,6 +34,26 @@ export class BankAccountService {
 
     if (user != null) {
       return lastValueFrom(this.paginationService.get<BankAccountDto>('/api/bank-accounts', request).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async getBankAccount(id: string): Promise<BankAccountDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.httpClient.get<BankAccountDto>(`/api/bank-accounts/${id}`).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async editBankAccount(id: string, editBankAccountDto: EditBankAccountDto): Promise<BankAccountDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.httpClient.put<BankAccountDto>(`/api/bank-accounts/${id}`, editBankAccountDto).pipe(take(1)));
     }
 
     throw new UserMissingError();

@@ -7,4 +7,5 @@ abstract class WalletItem(
     val name: String,
     val enabled: Boolean,
     val userId: UUID,
+    val currency: String,
 ) : AuditedEntity()
