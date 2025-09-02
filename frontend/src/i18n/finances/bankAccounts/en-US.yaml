@@ -11,3 +11,4 @@ financesPage:
     editBankAccountPage:
       title: 'Edit bank account: {{name}}'
       successMessage: Bank account modified successfully
+      successDeleteMessage: Bank account deleted successfully

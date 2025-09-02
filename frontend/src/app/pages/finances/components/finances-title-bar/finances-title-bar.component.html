@@ -12,11 +12,27 @@
 
     <h2 class="text-2xl">{{ title }}</h2>
 
-    @if (newRouterLink != null) {
+    @if (newRouterLink != null || showDeleteButton) {
       <div class="ml-auto">
-        <a [routerLink]="newRouterLink" pButton [rounded]="true" size="small" [pTooltip]="'general.new' | translate">
-          <fa-icon [icon]="newButtonIcon"></fa-icon>
-        </a>
+        @if (newRouterLink != null) {
+          <a [routerLink]="newRouterLink" pButton [rounded]="true" size="small" [pTooltip]="'general.new' | translate">
+            <fa-icon [icon]="newButtonIcon"></fa-icon>
+          </a>
+        }
+
+        @if (showDeleteButton) {
+          <p-button
+            (click)="deleteButtonClicked.next()"
+            [rounded]="true"
+            size="small"
+            [pTooltip]="'general.delete' | translate"
+            [loading]="deleteButtonLoading"
+          >
+            <ng-template pTemplate="iconTemplate">
+              <fa-icon [icon]="deleteButtonIcon"></fa-icon>
+            </ng-template>
+          </p-button>
+        }
       </div>
     }
   </div>

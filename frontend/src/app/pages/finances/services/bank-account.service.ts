@@ -58,4 +58,15 @@ export class BankAccountService {
 
     throw new UserMissingError();
   }
+
+  async deleteBankAccount(id: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.httpClient.delete(`/api/bank-accounts/${id}`).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
 }

@@ -11,3 +11,4 @@ financesPage:
     editBankAccountPage:
       title: 'Editar conta bancária: {{name}}'
       successMessage: A conta bancária foi modificada com sucesso
+      successDeleteMessage: A conta bancária foi deletada com sucesso

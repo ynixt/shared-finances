@@ -15,6 +15,10 @@ general:
   edit: Edit
   open: Open
   enabled: Enabled
+  delete: Delete
+  genericConfirmation: Are you sure that you want to proceed?
+  confirmation: Confirmation
+  cancel: Cancel
 
 error:
   genericTitle: Error

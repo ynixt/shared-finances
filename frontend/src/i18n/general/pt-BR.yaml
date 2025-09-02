@@ -15,6 +15,10 @@ general:
   edit: Editar
   open: Abrir
   enabled: Ativo
+  delete: Apagar
+  genericConfirmation: Você tem deseja que deseja continuar?
+  confirmation: Confirmação
+  cancel: Cancelar
 
 error:
   genericTitle: Erro

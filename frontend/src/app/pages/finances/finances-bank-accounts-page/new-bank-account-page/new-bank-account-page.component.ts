@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -44,6 +44,7 @@ export class NewBankAccountPageComponent {
     private messageService: MessageService,
     private translateService: TranslateService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {
     this.formGroup = fb.group({
       name: ['', [Validators.required]],
@@ -82,7 +83,7 @@ export class NewBankAccountPageComponent {
         life: DEFAULT_SUCCESS_LIFE,
       });
 
-      await this.router.navigate(['..']);
+      await this.router.navigate(['..'], { relativeTo: this.route });
     } catch (err) {
       this.submitting = false;
 

@@ -70,6 +70,7 @@ tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
     classPackages =
         listOf(
             "com.ynixt.sharedfinances.application.web.dto",
+            "com.ynixt.sharedfinances.domain.enums",
         )
     excludeClassPackages =
         listOf(

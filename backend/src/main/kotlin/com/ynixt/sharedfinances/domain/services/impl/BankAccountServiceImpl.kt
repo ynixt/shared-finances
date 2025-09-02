@@ -1,9 +1,12 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
+import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.models.EditBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.NewBankAccountRequest
 import com.ynixt.sharedfinances.domain.repositories.BankAccountRepository
+import com.ynixt.sharedfinances.domain.services.ActionEventService
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import org.springframework.data.domain.Page
@@ -16,6 +19,7 @@ import java.util.UUID
 @Service
 class BankAccountServiceImpl(
     private val bankAccountRepository: BankAccountRepository,
+    private val actionEventService: ActionEventService
 ) : BankAccountService {
     override fun findAllBanks(
         userId: UUID,
@@ -41,7 +45,14 @@ class BankAccountServiceImpl(
                 name = newBankAccountRequest.name,
                 currency = newBankAccountRequest.currency,
             ),
-        )
+        ).flatMap { saved ->
+            actionEventService.newEvent(
+                data = saved,
+                userId = userId,
+                type = ActionEventType.INSERT,
+                category = ActionEventCategory.BANK_ACCOUNT,
+            ).thenReturn(saved)
+        }
 
     override fun findBankAccount(
         userId: UUID,
@@ -65,7 +76,18 @@ class BankAccountServiceImpl(
                 newName = editBankAccount.newName,
                 newEnabled = editBankAccount.newEnabled,
                 newCurrency = editBankAccount.newCurrency,
-            ).flatMap { if (it > 0) findBankAccount(id = id, userId = userId) else Mono.empty() }
+            ).flatMap {
+                if (it > 0) {
+                    findBankAccount(id = id, userId = userId).flatMap { saved ->
+                        actionEventService.newEvent(
+                            data = saved,
+                            userId = userId,
+                            type = ActionEventType.UPDATE,
+                            category = ActionEventCategory.BANK_ACCOUNT,
+                        ).thenReturn(saved)
+                    }
+                } else Mono.empty()
+            }
 
     @Transactional
     override fun deleteBankAccount(
@@ -76,7 +98,14 @@ class BankAccountServiceImpl(
             .deleteByIdAndUserId(
                 id = id,
                 userId = userId,
-            ).map { it > 0 }
-
-    // TODO: criar uma rota para eventos SSE, essa rota deve ser um controller separado, pois qualquer mudança do usuário vai pra ela. Criar uma rota também para mudança do grupo
+            ).flatMap { modifiedLines ->
+                if (modifiedLines > 0)
+                    actionEventService.newEvent(
+                        data = id,
+                        userId = userId,
+                        type = ActionEventType.DELETE,
+                        category = ActionEventCategory.BANK_ACCOUNT,
+                    ).thenReturn(true)
+                else Mono.just(false)
+            }
 }

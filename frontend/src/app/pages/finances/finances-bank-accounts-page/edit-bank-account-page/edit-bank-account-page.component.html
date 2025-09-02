@@ -5,6 +5,9 @@
     <app-finances-title-bar
       [title]="'financesPage.bankAccountsPage.editBankAccountPage.title' | translate: { name: bankAccount.name }"
       closeRouterLink="../.."
+      [showDeleteButton]="true"
+      (deleteButtonClicked)="askForConfirmationToDelete()"
+      [deleteButtonLoading]="submitting"
     ></app-finances-title-bar>
 
     <form class="flex flex-col gap-4" [formGroup]="formGroup" (ngSubmit)="submit()">
@@ -27,3 +30,5 @@
     </form>
   </div>
 }
+
+<p-confirm-dialog />

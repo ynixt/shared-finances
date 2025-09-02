@@ -5,15 +5,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
 import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
-import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
@@ -31,9 +31,11 @@ import { BankAccountService } from '../../services/bank-account.service';
     InputText,
     ReactiveFormsModule,
     ToggleSwitch,
+    ConfirmDialog,
   ],
   templateUrl: './edit-bank-account-page.component.html',
   styleUrl: './edit-bank-account-page.component.scss',
+  providers: [ConfirmationService],
 })
 @UntilDestroy()
 export class EditBankAccountPageComponent {
@@ -48,9 +50,9 @@ export class EditBankAccountPageComponent {
     private bankAccountService: BankAccountService,
     private router: Router,
     private fb: FormBuilder,
-    public userService: UserService,
     private messageService: MessageService,
     private translateService: TranslateService,
+    private confirmationService: ConfirmationService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -94,6 +96,57 @@ export class EditBankAccountPageComponent {
         detail: this.translateService.instant('error.genericMessage'),
         life: DEFAULT_ERROR_LIFE,
       });
+    }
+  }
+
+  async askForConfirmationToDelete() {
+    this.confirmationService.confirm({
+      message: this.translateService.instant('general.genericConfirmation'),
+      header: this.translateService.instant('general.confirmation'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translateService.instant('general.delete'),
+      rejectLabel: this.translateService.instant('general.cancel'),
+      acceptButtonProps: {
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        severity: 'secondary',
+      },
+      accept: () => {
+        this.deleteBankAccount();
+      },
+    });
+  }
+
+  private async deleteBankAccount() {
+    if (this.bankAccount == null || this.submitting) return;
+
+    this.submitting = true;
+
+    try {
+      await this.bankAccountService.deleteBankAccount(this.bankAccount.id);
+
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('financesPage.bankAccountsPage.editBankAccountPage.successDeleteMessage'),
+        life: DEFAULT_SUCCESS_LIFE,
+      });
+
+      await this.router.navigate(['../..'], { relativeTo: this.route });
+    } catch (err) {
+      this.submitting = false;
+
+      this.messageService.add({
+        severity: 'error',
+        summary: this.translateService.instant('error.genericTitle'),
+        detail: this.translateService.instant('error.genericMessage'),
+        life: DEFAULT_ERROR_LIFE,
+      });
+
+      console.error(err);
     }
   }
 

@@ -1,0 +1,44 @@
+package com.ynixt.sharedfinances.application.web.controllers
+
+import com.ynixt.sharedfinances.application.web.dto.events.UserActionEventDto
+import com.ynixt.sharedfinances.application.web.mapper.UserActionEventDtoMapper
+import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
+import com.ynixt.sharedfinances.domain.services.ActionEventListenerService
+import org.springframework.http.MediaType
+import org.springframework.http.codec.ServerSentEvent
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Flux
+import java.time.Duration
+
+@RestController
+@RequestMapping("/sse")
+class EventsStreamControlle(
+    private val actionEventListenerService: ActionEventListenerService,
+    private val userActionEventDtoMapper: UserActionEventDtoMapper
+) {
+    @GetMapping("/user", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun userEvents(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+    ): Flux<ServerSentEvent<UserActionEventDto>> {
+        val data = actionEventListenerService.listenUserActions(principalToken.principal.id)
+            .map { p ->
+                ServerSentEvent.builder(userActionEventDtoMapper.toDto(p))
+                    .event(p.category.toString())
+                    .id(p.id.toString())
+                    .retry(Duration.ofSeconds(3))
+                    .build()
+            }
+
+        val keepalive = Flux.interval(Duration.ZERO, Duration.ofSeconds(15))
+            .map {
+                ServerSentEvent.builder<UserActionEventDto>()
+                    .comment("keepalive")
+                    .build()
+            }
+
+        return data.mergeWith(keepalive)
+    }
+}
