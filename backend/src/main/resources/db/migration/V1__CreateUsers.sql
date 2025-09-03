@@ -9,5 +9,5 @@ CREATE TABLE "users"
     last_name       VARCHAR(255) NOT NULL,
     photo_url  VARCHAR(255),
     lang       VARCHAR(8)  NOT NULL,
-    default_currency VARCHAR(3),
+    default_currency VARCHAR(3)
 );

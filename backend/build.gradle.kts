@@ -31,6 +31,8 @@ dependencies {
     implementation("org.springframework.security:spring-security-oauth2-authorization-server")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
+    implementation("com.fasterxml.uuid:java-uuid-generator:5.1.0")
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 

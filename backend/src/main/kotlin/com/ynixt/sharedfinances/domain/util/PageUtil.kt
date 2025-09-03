@@ -14,7 +14,7 @@ object PageUtil {
     ): Mono<Page<T>> =
         countFn().flatMap { count ->
             if (count == 0L) {
-                Mono.just(Page.empty())
+                Mono.just(Page.empty(pageable))
             } else {
                 getPageFn().collectList().map { items ->
                     PageImpl(items, pageable, count)

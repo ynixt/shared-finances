@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.application.config
 
+import com.fasterxml.uuid.Generators
 import com.ynixt.sharedfinances.domain.entities.AuditedEntity
 import org.reactivestreams.Publisher
 import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback
@@ -15,7 +16,7 @@ class AuditedEntityUuidBeforeConvertCallback : BeforeConvertCallback<AuditedEnti
         table: SqlIdentifier,
     ): Publisher<AuditedEntity> {
         if (entity.id == null) {
-            entity.id = UUID.randomUUID()
+            entity.id = Generators.timeBasedEpochRandomGenerator().generate()
         }
         return Mono.just(entity)
     }

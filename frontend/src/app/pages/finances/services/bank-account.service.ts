@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { lastValueFrom, take } from 'rxjs';
 
 import { BankAccountDto, EditBankAccountDto, NewBankAccountDto } from '../../../models/generated';
-import { Page, PageRequest, Pageable } from '../../../models/pagination';
+import { Page, PageRequest } from '../../../models/pagination';
 import { PaginationService } from '../../../services/pagination.service';
 import { UserService } from '../../../services/user.service';
 import { UserMissingError } from '../errors/user-missing.error';
