@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faBars, faBarsStaggered } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -16,12 +18,16 @@ import { LangButtonComponent } from '../lang-button/lang-button.component';
 
 @Component({
   selector: 'app-navbar',
-  imports: [ButtonDirective, TranslatePipe, ButtonLabel, RouterLink, LangButtonComponent, ProgressSpinner, Menu],
+  imports: [ButtonDirective, TranslatePipe, ButtonLabel, RouterLink, LangButtonComponent, ProgressSpinner, Menu, FaIconComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })
 @UntilDestroy()
 export class NavbarComponent {
+  @Input() showDrawerMenu = false;
+  @Input() drawerOpen = false;
+  @Output() drawerOpenChange = new EventEmitter();
+
   items: MenuItem[] | undefined;
 
   constructor(
@@ -38,6 +44,11 @@ export class NavbarComponent {
     return this.kratosAuthService.logout();
   }
 
+  toggleDrawer() {
+    this.drawerOpen = !this.drawerOpen;
+    this.drawerOpenChange.emit(this.drawerOpen);
+  }
+
   private loadItems() {
     this.items = [
       {
@@ -49,4 +60,7 @@ export class NavbarComponent {
       },
     ];
   }
+
+  protected readonly faBars = faBars;
+  protected readonly faBarsStaggered = faBarsStaggered;
 }

@@ -1,8 +1,8 @@
-<app-navbar></app-navbar>
+<app-navbar [showDrawerMenu]="true" [(drawerOpen)]="drawerOpen"></app-navbar>
 
-<div class="container mx-auto flex flex-row gap-10">
+<div class="container mx-auto flex flex-col md:flex-row gap-10">
   <div class="menu">
-    <app-menu-with-fa [items]="items" />
+    <app-advanced-menu [items]="items" [drawerOpen]="drawerOpen" />
   </div>
   <div class="content w-full">
     <router-outlet />

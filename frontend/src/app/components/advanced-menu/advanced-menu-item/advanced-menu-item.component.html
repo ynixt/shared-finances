@@ -1,0 +1,95 @@
+<div class="advanced-menu-item">
+  @if (item.routerLink == null && item.command == null && item.expanded == null) {
+    <div class="advanced-menu-item-simple flex gap-2">
+      <span>{{ item.label }}</span>
+
+      @if (item.rightButtons != null && item.rightButtons!!.length > 0) {
+        <div class="ml-auto advanced-menu-item-right-buttons flex gap-2 items-center">
+          @for (btn of item.rightButtons; track item.rightButtons) {
+            @if (btn.command != null) {
+              <p-button
+                (click)="btn.command()"
+                [rounded]="true"
+                [text]="true"
+                size="small"
+                [pTooltip]="btn.tooltip"
+                class="p-0"
+                severity="secondary"
+              >
+                <ng-template pTemplate="iconTemplate">
+                  <fa-icon [icon]="btn.fa"></fa-icon>
+                </ng-template>
+              </p-button>
+            } @else if (btn.routerLink != null) {
+              <a
+                pButton
+                [routerLink]="btn.routerLink"
+                severity="secondary"
+                [rounded]="true"
+                [text]="true"
+                size="small"
+                [pTooltip]="btn.tooltip"
+                class="p-0"
+              >
+                <fa-icon [icon]="btn.fa"></fa-icon>
+              </a>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (item.expanded == undefined) {
+    @if (item.routerLink) {
+      <a
+        [routerLink]="item.routerLink"
+        routerLinkActive="advanced-menu-item-link-active"
+        [routerLinkActiveOptions]="item.routerLinkActiveOptions"
+        class="advanced-menu-item-link"
+      >
+        @if (item.fa) {
+          <fa-icon [icon]="item.fa" class="mr-4"></fa-icon>
+        }
+
+        <span class="p-menuitem-text">{{ item.label }}</span>
+      </a>
+    }
+  } @else {
+    <p-panel [toggleable]="true" [collapsed]="!item.expanded" toggler="header">
+      <ng-template pTemplate="header">
+        @if (item.fa) {
+          <fa-icon [icon]="item.fa" class="mr-4"></fa-icon>
+        }
+
+        <span class="p-menuitem-text">{{ item.label }}</span>
+      </ng-template>
+
+      <ng-template pTemplate="headericons" let-collapsed>
+        @if (item.showCollapseIcon) {
+          <fa-icon [icon]="collapsed ? collapsedIcon : expandedIcon"></fa-icon>
+        }
+      </ng-template>
+
+      <ng-container *ngTemplateOutlet="childTemplate"></ng-container>
+    </p-panel>
+  }
+
+  @if ((item.routerLink == null || item.command == null) && item.expanded == undefined) {
+    <ng-container *ngTemplateOutlet="childTemplate"></ng-container>
+  }
+
+  @if (item.separator) {
+    <div class="advanced-menu-item-separator"></div>
+  }
+</div>
+
+<ng-template #childTemplate>
+  @if (item.items?.length != null && item.items!!.length > 0) {
+    <div class="advanced-menu-item-children ml-4">
+      @for (child of item.items; track child.id) {
+        <app-advanced-menu-item [item]="child"></app-advanced-menu-item>
+      }
+    </div>
+  }
+</ng-template>
