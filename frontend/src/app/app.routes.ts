@@ -69,7 +69,7 @@ export const routes: Routes = [
                 m => m.NewBankAccountPageComponent,
               ),
             data: {
-              pageTitleKey: 'pageTitle.newBankAccounts',
+              pageTitleKey: 'pageTitle.newBankAccount',
             },
           },
           {
@@ -79,7 +79,7 @@ export const routes: Routes = [
                 m => m.EditBankAccountPageComponent,
               ),
             data: {
-              pageTitleKey: 'pageTitle.editBankAccounts',
+              pageTitleKey: 'pageTitle.editBankAccount',
             },
           },
         ],
