@@ -35,4 +35,12 @@ class UserServiceImpl(
     ) {
         userRepository.changeLanguage(userId, newLang).awaitSingle()
     }
+
+    @Transactional
+    override suspend fun changeDefaultCurrency(
+        userId: UUID,
+        newDefaultCurrency: String,
+    ) {
+        userRepository.changeDefaultCurrency(userId, newDefaultCurrency).awaitSingle()
+    }
 }

@@ -18,4 +18,9 @@ interface UserRepository {
         userId: UUID,
         newLang: String,
     ): Mono<Int>
+
+    fun changeDefaultCurrency(
+        userId: UUID,
+        newDefaultCurrency: String,
+    ): Mono<Int>
 }

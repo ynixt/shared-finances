@@ -12,5 +12,5 @@ class UserActionEventDtoMapperImpl : UserActionEventDtoMapper {
         override fun map(from: UserActionEvent<Any>) = mapping {}
     }
 
-    override fun toDto(from: UserActionEvent<Any>): UserActionEventDto  = UserActionEventResponseMapper.map(from)
+    override fun toDto(from: UserActionEvent<Any>): UserActionEventDto = UserActionEventResponseMapper.map(from)
 }

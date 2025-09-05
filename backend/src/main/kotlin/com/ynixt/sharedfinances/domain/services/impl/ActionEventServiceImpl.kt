@@ -17,45 +17,44 @@ class ActionEventServiceImpl(
     private val redis: ReactiveRedisTemplate<String, String>,
     private val objectMapper: ObjectMapper,
 ) : ActionEventService {
-    override fun getDestinationForUser(userId: UUID): String {
-        return "evt:user_action:$userId"
-    }
+    override fun getDestinationForUser(userId: UUID): String = "evt:user_action:$userId"
 
-    override fun getDestinationForGroup(groupId: UUID): String {
-        return "evt:group_action:$groupId"
-    }
+    override fun getDestinationForGroup(groupId: UUID): String = "evt:group_action:$groupId"
 
     override fun <T> newEvent(
         userId: UUID,
         type: ActionEventType,
         category: ActionEventCategory,
         data: T,
-        groupsGetter: (() -> Flux<UUID>)?
+        groupsGetter: (() -> Flux<UUID>)?,
     ): Mono<Long> {
-        val userEventMono: Mono<Long> = newUserEvent(
-            UserActionEvent(
-                userId = userId,
-                type = type,
-                category = category,
-                data = data,
-            )
-        ).defaultIfEmpty(0L)
+        val userEventMono: Mono<Long> =
+            newUserEvent(
+                UserActionEvent(
+                    userId = userId,
+                    type = type,
+                    category = category,
+                    data = data,
+                ),
+            ).defaultIfEmpty(0L)
 
-        val groupsEventsFlux: Flux<Long> = groupsGetter
-            ?.invoke()
-            ?.flatMap { id ->
-                newGroupEvent(
-                    GroupActionEvent(
-                        modifiedByUserId = userId,
-                        groupId = id,
-                        type = type,
-                        category = category,
-                        data = data,
-                    )
-                ).defaultIfEmpty(0L)
-            } ?: Flux.empty()
+        val groupsEventsFlux: Flux<Long> =
+            groupsGetter
+                ?.invoke()
+                ?.flatMap { id ->
+                    newGroupEvent(
+                        GroupActionEvent(
+                            modifiedByUserId = userId,
+                            groupId = id,
+                            type = type,
+                            category = category,
+                            data = data,
+                        ),
+                    ).defaultIfEmpty(0L)
+                } ?: Flux.empty()
 
-        return Flux.concat(userEventMono.flux(), groupsEventsFlux)
+        return Flux
+            .concat(userEventMono.flux(), groupsEventsFlux)
             .reduce(0L) { acc, v -> acc + v }
     }
 

@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { faBuildingColumns, faCreditCard, faGrip, faHashtag, faPlus, faTag } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslateService } from '@ngx-translate/core';
@@ -11,6 +11,7 @@ import { Toast } from 'primeng/toast';
 
 import { AdvancedMenuComponent, AdvancedMenuItem } from '../../../components/advanced-menu/advanced-menu.component';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { UserService } from '../../../services/user.service';
 
 @Component({
   selector: 'app-finances-page',
@@ -26,7 +27,17 @@ export class FinancesPageComponent {
 
   items: AdvancedMenuItem[] | undefined;
 
-  constructor(private translateService: TranslateService) {
+  constructor(
+    private translateService: TranslateService,
+    private userService: UserService,
+    private router: Router,
+  ) {
+    this.userService.getUser().then(u => {
+      if (u && u.defaultCurrency == null) {
+        this.router.navigate(['/welcome']);
+      }
+    });
+
     this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(() => {
       this.loadItems();
     });

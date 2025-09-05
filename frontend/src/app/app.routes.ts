@@ -29,6 +29,14 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'welcome',
+    canActivate: [authGuard()],
+    loadComponent: () => import('./pages/onboarding-page/onboarding-page.component').then(m => m.OnboardingPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.onboarding',
+    },
+  },
+  {
     'path': 'app',
     canActivate: [authGuard()],
     loadComponent: () => import('./pages/finances/finances-home-page/finances-page.component').then(m => m.FinancesPageComponent),

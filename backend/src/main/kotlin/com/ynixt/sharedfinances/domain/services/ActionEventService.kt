@@ -8,12 +8,14 @@ import java.util.UUID
 
 interface ActionEventService {
     fun getDestinationForUser(userId: UUID): String
+
     fun getDestinationForGroup(groupId: UUID): String
+
     fun <T> newEvent(
         userId: UUID,
         type: ActionEventType,
         category: ActionEventCategory,
         data: T,
-        groupsGetter: (() -> Flux<UUID>)? = null
+        groupsGetter: (() -> Flux<UUID>)? = null,
     ): Mono<Long>
 }

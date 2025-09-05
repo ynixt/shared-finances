@@ -7,5 +7,6 @@ import java.util.UUID
 
 interface ActionEventListenerService {
     fun listenUserActions(userId: UUID): Flux<UserActionEvent<Any>>
+
     fun listenGroupActions(groupId: UUID): Flux<GroupActionEvent<Any>>
 }

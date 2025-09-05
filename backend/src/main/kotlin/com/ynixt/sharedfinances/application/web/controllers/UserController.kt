@@ -33,4 +33,13 @@ class UserController(
         mono {
             userService.changeLanguage(principalToken.principal.id, newLang)
         }.thenReturn(ResponseEntity.ok().build())
+
+    @PutMapping("/current/changeDefaultCurrency/{newDefaultCurrency}")
+    fun changeDefaultCurrency(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable("newDefaultCurrency") newDefaultCurrency: String,
+    ): Mono<ResponseEntity<Unit>> =
+        mono {
+            userService.changeDefaultCurrency(principalToken.principal.id, newDefaultCurrency)
+        }.thenReturn(ResponseEntity.ok().build())
 }

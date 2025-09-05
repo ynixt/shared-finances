@@ -15,29 +15,35 @@ import java.time.Duration
 
 @RestController
 @RequestMapping("/sse")
-class EventsStreamControlle(
+class EventsStreamController(
     private val actionEventListenerService: ActionEventListenerService,
-    private val userActionEventDtoMapper: UserActionEventDtoMapper
+    private val userActionEventDtoMapper: UserActionEventDtoMapper,
 ) {
     @GetMapping("/user", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun userEvents(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
     ): Flux<ServerSentEvent<UserActionEventDto>> {
-        val data = actionEventListenerService.listenUserActions(principalToken.principal.id)
-            .map { p ->
-                ServerSentEvent.builder(userActionEventDtoMapper.toDto(p))
-                    .event(p.category.toString())
-                    .id(p.id.toString())
-                    .retry(Duration.ofSeconds(3))
-                    .build()
-            }
+        val data =
+            actionEventListenerService
+                .listenUserActions(principalToken.principal.id)
+                .map { p ->
+                    ServerSentEvent
+                        .builder(userActionEventDtoMapper.toDto(p))
+                        .event(p.category.toString())
+                        .id(p.id.toString())
+                        .retry(Duration.ofSeconds(3))
+                        .build()
+                }
 
-        val keepalive = Flux.interval(Duration.ZERO, Duration.ofSeconds(15))
-            .map {
-                ServerSentEvent.builder<UserActionEventDto>()
-                    .comment("keepalive")
-                    .build()
-            }
+        val keepalive =
+            Flux
+                .interval(Duration.ZERO, Duration.ofSeconds(15))
+                .map {
+                    ServerSentEvent
+                        .builder<UserActionEventDto>()
+                        .comment("keepalive")
+                        .build()
+                }
 
         return data.mergeWith(keepalive)
     }

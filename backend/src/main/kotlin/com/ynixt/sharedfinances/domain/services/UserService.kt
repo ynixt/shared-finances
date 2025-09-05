@@ -11,4 +11,9 @@ interface UserService {
         userId: UUID,
         newLang: String,
     )
+
+    suspend fun changeDefaultCurrency(
+        userId: UUID,
+        newDefaultCurrency: String,
+    )
 }

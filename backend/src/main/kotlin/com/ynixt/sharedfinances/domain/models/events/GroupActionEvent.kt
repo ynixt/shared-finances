@@ -11,4 +11,4 @@ data class GroupActionEvent<T>(
     override val data: T,
     val modifiedByUserId: UUID,
     val groupId: UUID,
-): ActionEvent<T>()
+) : ActionEvent<T>()

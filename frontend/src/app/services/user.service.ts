@@ -78,6 +78,19 @@ export class UserService {
     }
   }
 
+  async changeDefaultCurrency(newDefaultCurrency: string): Promise<void> {
+    const currentUser = this.user();
+
+    if (currentUser == null) return;
+
+    await lastValueFrom(this.http.put(`/api/users/current/changeDefaultCurrency/${newDefaultCurrency}`, null).pipe(take(1)));
+
+    this._user.set({
+      ...currentUser,
+      defaultCurrency: newDefaultCurrency,
+    });
+  }
+
   private getUserFromHttp(): Promise<UserResponseDto> {
     return lastValueFrom(this.http.get<UserResponseDto>('/api/users/current').pipe(take(1)));
   }

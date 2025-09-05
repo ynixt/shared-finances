@@ -19,7 +19,7 @@ import java.util.UUID
 @Service
 class BankAccountServiceImpl(
     private val bankAccountRepository: BankAccountRepository,
-    private val actionEventService: ActionEventService
+    private val actionEventService: ActionEventService,
 ) : BankAccountService {
     override fun findAllBanks(
         userId: UUID,
@@ -37,22 +37,24 @@ class BankAccountServiceImpl(
         userId: UUID,
         newBankAccountRequest: NewBankAccountRequest,
     ): Mono<BankAccount> =
-        bankAccountRepository.save(
-            BankAccount(
-                userId = userId,
-                balance = newBankAccountRequest.balance,
-                enabled = true,
-                name = newBankAccountRequest.name,
-                currency = newBankAccountRequest.currency,
-            ),
-        ).flatMap { saved ->
-            actionEventService.newEvent(
-                data = saved,
-                userId = userId,
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.BANK_ACCOUNT,
-            ).thenReturn(saved)
-        }
+        bankAccountRepository
+            .save(
+                BankAccount(
+                    userId = userId,
+                    balance = newBankAccountRequest.balance,
+                    enabled = true,
+                    name = newBankAccountRequest.name,
+                    currency = newBankAccountRequest.currency,
+                ),
+            ).flatMap { saved ->
+                actionEventService
+                    .newEvent(
+                        data = saved,
+                        userId = userId,
+                        type = ActionEventType.INSERT,
+                        category = ActionEventCategory.BANK_ACCOUNT,
+                    ).thenReturn(saved)
+            }
 
     override fun findBankAccount(
         userId: UUID,
@@ -79,14 +81,17 @@ class BankAccountServiceImpl(
             ).flatMap {
                 if (it > 0) {
                     findBankAccount(id = id, userId = userId).flatMap { saved ->
-                        actionEventService.newEvent(
-                            data = saved,
-                            userId = userId,
-                            type = ActionEventType.UPDATE,
-                            category = ActionEventCategory.BANK_ACCOUNT,
-                        ).thenReturn(saved)
+                        actionEventService
+                            .newEvent(
+                                data = saved,
+                                userId = userId,
+                                type = ActionEventType.UPDATE,
+                                category = ActionEventCategory.BANK_ACCOUNT,
+                            ).thenReturn(saved)
                     }
-                } else Mono.empty()
+                } else {
+                    Mono.empty()
+                }
             }
 
     @Transactional
@@ -99,13 +104,16 @@ class BankAccountServiceImpl(
                 id = id,
                 userId = userId,
             ).flatMap { modifiedLines ->
-                if (modifiedLines > 0)
-                    actionEventService.newEvent(
-                        data = id,
-                        userId = userId,
-                        type = ActionEventType.DELETE,
-                        category = ActionEventCategory.BANK_ACCOUNT,
-                    ).thenReturn(true)
-                else Mono.just(false)
+                if (modifiedLines > 0) {
+                    actionEventService
+                        .newEvent(
+                            data = id,
+                            userId = userId,
+                            type = ActionEventType.DELETE,
+                            category = ActionEventCategory.BANK_ACCOUNT,
+                        ).thenReturn(true)
+                } else {
+                    Mono.just(false)
+                }
             }
 }

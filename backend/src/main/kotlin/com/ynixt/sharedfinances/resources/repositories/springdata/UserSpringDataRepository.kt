@@ -20,12 +20,27 @@ interface UserSpringDataRepository :
     @Query(
         """
         update users
-        set lang = :newLang
+        set lang = :newLang,
+        updated_at = CURRENT_TIMESTAMP
         where id = :userId
     """,
     )
     override fun changeLanguage(
         userId: UUID,
         newLang: String,
+    ): Mono<Int>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set default_currency = :newDefaultCurrency,
+        updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+    """,
+    )
+    override fun changeDefaultCurrency(
+        userId: UUID,
+        newDefaultCurrency: String,
     ): Mono<Int>
 }

@@ -10,4 +10,4 @@ data class UserActionEvent<T>(
     override val category: ActionEventCategory,
     override val data: T,
     val userId: UUID,
-): ActionEvent<T>()
+) : ActionEvent<T>()

@@ -66,6 +66,7 @@ export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
             code: it.AlphabeticCode!!.toUpperCase(),
             name: it.Currency,
             symbol: this.getIntlSymbol(it.AlphabeticCode!!.toUpperCase()),
+            all: it.AlphabeticCode!!.toUpperCase() + ' ' + it.Currency + ' ' + this.getIntlSymbol(it.AlphabeticCode!!.toUpperCase()), // for search
           }))
           .sort((a, b) => a.code.localeCompare(b.code));
       },
