@@ -1,6 +1,6 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 
-import { Observable, Subject, defer, filter, from, map, share, switchMap } from 'rxjs';
+import { Observable, Subject, defer, filter, from, lastValueFrom, map, share, switchMap, take } from 'rxjs';
 
 import { createEventSource } from 'eventsource-client';
 
@@ -21,7 +21,7 @@ export abstract class ActionEventService implements OnDestroy {
     private sseUrl: string,
   ) {
     this.wire$ = defer(() =>
-      from(this.authService.getToken()).pipe(
+      from(lastValueFrom(this.authService.token$.pipe(take(1)))).pipe(
         switchMap(token => {
           if (!token) throw new Error('Missing token');
 

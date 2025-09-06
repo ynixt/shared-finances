@@ -1,7 +1,7 @@
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { Observable, from, mergeMap } from 'rxjs';
+import { Observable, mergeMap, take } from 'rxjs';
 
 import { KratosAuthService } from '../services/kratos-auth.service';
 
@@ -14,7 +14,8 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    return from(this.auth.getToken()).pipe(
+    return this.auth.token$.pipe(
+      take(1),
       mergeMap(token => {
         if (!token) {
           return next.handle(req);

@@ -1,6 +1,8 @@
-import { Injectable, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Configuration, FrontendApi } from '@ory/client';
+
+import { BehaviorSubject, filter, lastValueFrom, take } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 
@@ -8,7 +10,8 @@ import { environment } from '../../environments/environment';
 export class KratosAuthService {
   private readonly kratos = environment.kratosPublicUrl;
 
-  readonly token = signal<string | null>(null);
+  readonly tokenSubject = new BehaviorSubject<string | null | undefined>(undefined);
+  readonly token$ = this.tokenSubject.pipe(filter(t => t !== undefined));
 
   readonly kratosApi = new FrontendApi(
     new Configuration({
@@ -19,7 +22,10 @@ export class KratosAuthService {
     }),
   );
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private activeRoute: ActivatedRoute,
+  ) {}
 
   async getLoginFlow(returnTo = '/'): Promise<any> {
     const response = await this.kratosApi.createBrowserLoginFlow({
@@ -58,18 +64,33 @@ export class KratosAuthService {
     ).data;
   }
 
-  async logout(): Promise<void> {
-    const { data: flow } = await this.kratosApi.createBrowserLogoutFlow();
-    await this.kratosApi.updateLogoutFlow({
-      token: flow.logout_token,
-    });
-    this.token.set(null);
-    await this.router.navigateByUrl('/login', {
+  async logout(args?: { alsoLogoutKratos?: boolean; returnTo?: string | undefined }): Promise<void> {
+    if (!args) args = {};
+    // console.log('ads')
+
+    args.alsoLogoutKratos ??= true;
+
+    if (args.alsoLogoutKratos) {
+      const { data: flow } = await this.kratosApi.createBrowserLogoutFlow();
+      await this.kratosApi.updateLogoutFlow({
+        token: flow.logout_token,
+      });
+    }
+
+    this.tokenSubject.next(null);
+    await this.router.navigate(['/login'], {
       onSameUrlNavigation: 'reload',
+      queryParams: {
+        return_to: args.returnTo,
+      },
     });
   }
 
-  async refreshJwt(): Promise<void> {
+  loginSuccess() {
+    return this.router.navigateByUrl(this.activeRoute.snapshot.queryParamMap.get('return_to') ?? '/app');
+  }
+
+  async refreshJwt(): Promise<string | null> {
     try {
       const { tokenized } = (
         await this.kratosApi.toSession({
@@ -77,19 +98,12 @@ export class KratosAuthService {
         })
       ).data;
 
-      this.token.set(tokenized ?? null);
+      this.tokenSubject.next(tokenized ?? null);
     } catch (err) {
-      this.token.set(null);
+      this.tokenSubject.next(null);
       throw err;
     }
-  }
 
-  async getToken(): Promise<string | null> {
-    const current = this.token();
-    if (current != null) {
-      return current;
-    }
-    await this.refreshJwt();
-    return this.token();
+    return await lastValueFrom(this.token$.pipe(take(1)));
   }
 }

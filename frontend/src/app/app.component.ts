@@ -4,12 +4,14 @@ import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
-import { filter } from 'rxjs';
+import { filter, interval } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { PrimeNG } from 'primeng/config';
 
+import { KratosAuthService } from './services/kratos-auth.service';
 import { TitleService } from './services/title.service';
+import { TokenSyncService } from './services/token-sync.service';
 import { UserService } from './services/user.service';
 import { i18nIsReady } from './util/i18n-util';
 import { updatePrimeI18n } from './util/prime-i18n';
@@ -22,14 +24,18 @@ import { updatePrimeI18n } from './util/prime-i18n';
   styles: [],
 })
 export class AppComponent {
+  private readonly timeToRefreshToken = 9 * 60 * 1000;
+
   constructor(
     private primengConfig: PrimeNG,
     private translateService: TranslateService,
     private httpClient: HttpClient,
-    private userService: UserService,
     private title: Title,
     private titleService: TitleService,
     private router: Router,
+    private tokenSyncService: TokenSyncService,
+    private userService: UserService,
+    private authService: KratosAuthService,
   ) {
     updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
 
@@ -38,6 +44,11 @@ export class AppComponent {
       this.title.setTitle(this.titleService.getTitle(this.router.routerState.snapshot.root, this.router.url));
     });
 
+    this.authService.refreshJwt();
     this.userService.getUser();
+
+    interval(this.timeToRefreshToken).subscribe(() => {
+      this.tokenSyncService.refreshOnce();
+    });
   }
 }

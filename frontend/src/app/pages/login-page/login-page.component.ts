@@ -1,11 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { filter } from 'rxjs';
+import { filter, lastValueFrom, take } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
@@ -13,6 +12,7 @@ import { Toast } from 'primeng/toast';
 
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { KratosAuthService } from '../../services/kratos-auth.service';
+import { TokenSyncService } from '../../services/token-sync.service';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
 import { translateKratosError } from '../../util/kratos-i18n';
@@ -37,7 +37,8 @@ export class LoginPageComponent implements OnInit {
     private router: Router,
     private translateService: TranslateService,
     private messageService: MessageService,
-    userService: UserService,
+    private userService: UserService,
+    private tokenSyncService: TokenSyncService,
   ) {
     effect(() => {
       const error = userService.error();
@@ -91,7 +92,13 @@ export class LoginPageComponent implements OnInit {
       await this.auth.submitLoginFlow(this.flow.id, this.form.value);
       await this.auth.refreshJwt();
 
-      await this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('return_to') ?? '/app');
+      await this.auth.loginSuccess();
+      this.userService.getUser().then(async u => {
+        if (u != null) {
+          const token = await lastValueFrom(this.auth.token$.pipe(take(1)));
+          this.tokenSyncService.newLogin(u, token!!);
+        }
+      });
     } catch (err) {
       this.loading = false;
       let errorMessage = translateKratosError(err, this.translateService);

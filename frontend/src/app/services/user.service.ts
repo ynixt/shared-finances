@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, Injector, WritableSignal, effect, signal } from '@angular/core';
+import { Injectable, Injector, WritableSignal, signal } from '@angular/core';
 
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
@@ -22,8 +22,8 @@ export class UserService {
     private auth: KratosAuthService,
     private injector: Injector,
   ) {
-    effect(() => {
-      const token = this.auth.token();
+    this.auth.token$.subscribe(token => {
+      const currentUser = this.user();
 
       if (token == null) {
         this._user.set(null);
@@ -32,25 +32,28 @@ export class UserService {
         return;
       }
 
-      this._error.set(null);
-      this._loading.set(true);
-      this.getUserFromHttp()
-        .then(u => {
-          this._user.set(u);
-        })
-        .catch(err => {
-          this._user.set(null);
-          this._error.set(err);
-          this.auth.logout();
-        })
-        .finally(() => this._loading.set(false));
+      if (currentUser) {
+        this._error.set(null);
+        this._loading.set(false);
+      } else {
+        this._error.set(null);
+        this._loading.set(true);
+        this.getUserFromHttp()
+          .then(u => {
+            this._user.set(u);
+          })
+          .catch(err => {
+            this._user.set(null);
+            this._error.set(err);
+            this.auth.logout();
+          })
+          .finally(() => this._loading.set(false));
+      }
     });
   }
 
   async getUser(): Promise<UserResponseDto | null> {
-    if (this.auth.token() == null) {
-      await this.auth.getToken();
-    }
+    await lastValueFrom(this.auth.token$.pipe(take(1)));
 
     return firstValueFrom(
       combineLatest([toObservable(this.user, { injector: this.injector }), toObservable(this.loading, { injector: this.injector })]).pipe(
@@ -61,21 +64,10 @@ export class UserService {
     );
   }
 
-  async refreshUser(): Promise<void> {
-    const token = this.auth.token();
-    if (token == null) {
-      this._user.set(null);
-      return;
-    }
-    this._loading.set(true);
-    try {
-      const u = await this.getUserFromHttp();
-      this._user.set(u);
-    } catch {
-      this._user.set(null);
-    } finally {
-      this._loading.set(false);
-    }
+  changeUser(user: UserResponseDto) {
+    this._user.set(user);
+    this._loading.set(false);
+    this._error.set(null);
   }
 
   async changeDefaultCurrency(newDefaultCurrency: string): Promise<void> {
