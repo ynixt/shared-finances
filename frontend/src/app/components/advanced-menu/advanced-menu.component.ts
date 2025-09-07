@@ -8,7 +8,7 @@ import { AdvancedMenuItemComponent } from './advanced-menu-item/advanced-menu-it
 export type AdvancedMenuItem = {
   fa?: IconDefinition;
   showCollapseIcon?: boolean;
-  routeToAutoExpand?: boolean;
+  routeToAutoExpand?: string;
   rightButtons?: {
     tooltip?: string;
     fa?: IconDefinition;
@@ -16,6 +16,9 @@ export type AdvancedMenuItem = {
     command?: () => void;
   }[];
   items?: AdvancedMenuItem & MenuItem[];
+  itemsLoading?: boolean;
+  messageIfEmptyItems?: string;
+  itemsMaxHeight?: string;
 } & MenuItem;
 
 @Component({

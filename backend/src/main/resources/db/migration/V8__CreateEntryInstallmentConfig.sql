@@ -2,7 +2,7 @@ CREATE TABLE entry_installment_config (
     id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    name VARCHAR(255),
+    name CITEXT NOT NULL CHECK (char_length(name) <= 255),
     description TEXT,
     value NUMERIC(12,2) NOT NULL,
     category_id UUID,

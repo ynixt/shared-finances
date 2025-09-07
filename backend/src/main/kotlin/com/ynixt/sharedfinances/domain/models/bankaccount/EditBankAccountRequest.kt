@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.models
+package com.ynixt.sharedfinances.domain.models.bankaccount
 
 data class EditBankAccountRequest(
     val newName: String,

@@ -159,7 +159,7 @@ export class EditBankAccountPageComponent {
       this.loading = false;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        if (error.status === 404) {
+        if (error.status === 404 || error.status === 400) {
           await this.goToNotFound();
           return;
         }

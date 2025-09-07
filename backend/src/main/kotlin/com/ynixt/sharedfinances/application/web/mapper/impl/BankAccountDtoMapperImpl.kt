@@ -5,8 +5,8 @@ import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.EditBankA
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.NewBankAccountDto
 import com.ynixt.sharedfinances.application.web.mapper.BankAccountDtoMapper
 import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
-import com.ynixt.sharedfinances.domain.models.EditBankAccountRequest
-import com.ynixt.sharedfinances.domain.models.NewBankAccountRequest
+import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
+import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
 import java.math.BigDecimal

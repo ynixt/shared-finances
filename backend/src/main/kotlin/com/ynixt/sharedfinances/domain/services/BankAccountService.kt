@@ -1,8 +1,8 @@
 package com.ynixt.sharedfinances.domain.services
 
 import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
-import com.ynixt.sharedfinances.domain.models.EditBankAccountRequest
-import com.ynixt.sharedfinances.domain.models.NewBankAccountRequest
+import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
+import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Mono

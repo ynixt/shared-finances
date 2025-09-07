@@ -1,13 +1,11 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
-import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
-import com.ynixt.sharedfinances.domain.enums.ActionEventType
-import com.ynixt.sharedfinances.domain.models.EditBankAccountRequest
-import com.ynixt.sharedfinances.domain.models.NewBankAccountRequest
+import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
+import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import com.ynixt.sharedfinances.domain.repositories.BankAccountRepository
-import com.ynixt.sharedfinances.domain.services.ActionEventService
 import com.ynixt.sharedfinances.domain.services.BankAccountService
+import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -19,7 +17,7 @@ import java.util.UUID
 @Service
 class BankAccountServiceImpl(
     private val bankAccountRepository: BankAccountRepository,
-    private val actionEventService: ActionEventService,
+    private val bankAccountActionEventService: BankAccountActionEventService,
 ) : BankAccountService {
     override fun findAllBanks(
         userId: UUID,
@@ -47,12 +45,10 @@ class BankAccountServiceImpl(
                     currency = newBankAccountRequest.currency,
                 ),
             ).flatMap { saved ->
-                actionEventService
-                    .newEvent(
-                        data = saved,
+                bankAccountActionEventService
+                    .sendInsertedBankAccount(
+                        bankAccount = saved,
                         userId = userId,
-                        type = ActionEventType.INSERT,
-                        category = ActionEventCategory.BANK_ACCOUNT,
                     ).thenReturn(saved)
             }
 
@@ -81,12 +77,10 @@ class BankAccountServiceImpl(
             ).flatMap {
                 if (it > 0) {
                     findBankAccount(id = id, userId = userId).flatMap { saved ->
-                        actionEventService
-                            .newEvent(
-                                data = saved,
+                        bankAccountActionEventService
+                            .sendInsertedBankAccount(
+                                bankAccount = saved,
                                 userId = userId,
-                                type = ActionEventType.UPDATE,
-                                category = ActionEventCategory.BANK_ACCOUNT,
                             ).thenReturn(saved)
                     }
                 } else {
@@ -105,12 +99,10 @@ class BankAccountServiceImpl(
                 userId = userId,
             ).flatMap { modifiedLines ->
                 if (modifiedLines > 0) {
-                    actionEventService
-                        .newEvent(
-                            data = id,
+                    bankAccountActionEventService
+                        .sendDeletedBankAccount(
+                            id = id,
                             userId = userId,
-                            type = ActionEventType.DELETE,
-                            category = ActionEventCategory.BANK_ACCOUNT,
                         ).thenReturn(true)
                 } else {
                     Mono.just(false)

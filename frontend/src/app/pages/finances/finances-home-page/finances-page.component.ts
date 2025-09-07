@@ -11,7 +11,10 @@ import { Toast } from 'primeng/toast';
 
 import { AdvancedMenuComponent, AdvancedMenuItem } from '../../../components/advanced-menu/advanced-menu.component';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserService } from '../../../services/user.service';
+import { GroupService } from '../services/group.service';
+import { UserActionEventService } from '../services/user-action-event.service';
 
 @Component({
   selector: 'app-finances-page',
@@ -27,10 +30,15 @@ export class FinancesPageComponent {
 
   items: AdvancedMenuItem[] | undefined;
 
+  private groups: GroupDto[] | undefined = undefined;
+  private groupMenuRoot: AdvancedMenuItem | undefined;
+
   constructor(
     private translateService: TranslateService,
     private userService: UserService,
     private router: Router,
+    private groupService: GroupService,
+    private userActionEventService: UserActionEventService,
   ) {
     this.userService.getUser().then(u => {
       if (u && u.defaultCurrency == null) {
@@ -41,6 +49,25 @@ export class FinancesPageComponent {
     this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(() => {
       this.loadItems();
     });
+
+    this.loadGroups().then(() => {
+      this.menuItemsNestedChange();
+    });
+
+    this.userActionEventService.groupInserted$.pipe(untilDestroyed(this)).subscribe(newGroup => {
+      if (this.groups == null) return;
+
+      this.groups!!.push(newGroup);
+      this.groups!! = this.groups!!.sort((a, b) => a.name.localeCompare(b.name));
+      this.convertGroupsIntoMenu();
+      this.menuItemsNestedChange();
+    });
+  }
+
+  private menuItemsNestedChange() {
+    if (this.items != null) {
+      this.items = [...this.items];
+    }
   }
 
   private loadItems() {
@@ -83,20 +110,10 @@ export class FinancesPageComponent {
       },
     ];
 
-    const groups = [
-      {
-        id: 'asd',
-        name: 'Grupo 1',
-      },
-      {
-        id: 'asd2',
-        name: 'Grupo 2',
-      },
-    ]; // TODO
-
-    this.items.push({
+    this.groupMenuRoot = {
       expanded: true,
       label: this.translateService.instant('financesPage.menu.groups'),
+      itemsMaxHeight: '510px',
       rightButtons: [
         {
           fa: faPlus,
@@ -104,50 +121,69 @@ export class FinancesPageComponent {
           routerLink: '/app/groups/new',
         },
       ],
-      items: groups.map(g => ({
-        label: g.name,
-        expanded: false,
-        routeToAutoExpand: ['/app/group', g.id],
-        showCollapseIcon: true,
-        items: [
-          {
-            fa: faGrip,
-            label: this.translateService.instant('financesPage.menu.overview'),
-            routerLink: ['/app/group', g.id],
-            routerLinkActiveOptions: { exact: true },
-          },
-          {
-            label: this.translateService.instant('financesPage.menu.links'),
-            expanded: true,
-            items: [
-              {
-                fa: faBuildingColumns,
-                label: this.translateService.instant('financesPage.menu.bankAccounts'),
-                routerLink: ['/app/group', g.id, 'bankAccounts'],
-                routerLinkActiveOptions: { exact: true },
-              },
-              {
-                fa: faCreditCard,
-                label: this.translateService.instant('financesPage.menu.creditCards'),
-                routerLink: ['/app/group', g.id, 'creditCards'],
-                routerLinkActiveOptions: { exact: true },
-              },
-              {
-                fa: faTag,
-                label: this.translateService.instant('financesPage.menu.categories'),
-                routerLink: ['/app/group', g.id, 'categories'],
-                routerLinkActiveOptions: { exact: true },
-              },
-              {
-                fa: faHashtag,
-                label: this.translateService.instant('financesPage.menu.tags'),
-                routerLink: ['/app/group', g.id, 'tags'],
-                routerLinkActiveOptions: { exact: true },
-              },
-            ],
-          },
-        ],
-      })),
-    });
+      itemsLoading: this.groups == undefined,
+      messageIfEmptyItems: this.translateService.instant('financesPage.groupsPage.noGroupYet'),
+    };
+
+    this.items.push(this.groupMenuRoot);
+    this.convertGroupsIntoMenu();
+  }
+
+  private async loadGroups() {
+    this.groups = await this.groupService.getAllGroups();
+    this.convertGroupsIntoMenu();
+  }
+
+  private convertGroupsIntoMenu() {
+    if (!this.groupMenuRoot || !this.groups) return;
+
+    const items: AdvancedMenuItem[] = this.groups.map(g => ({
+      id: 'group-' + g.id,
+      label: g.name,
+      expanded: false,
+      routeToAutoExpand: ['/app/groups', g.id].join('/'),
+      showCollapseIcon: true,
+      items: [
+        {
+          fa: faGrip,
+          label: this.translateService.instant('financesPage.menu.overview'),
+          routerLink: ['/app/groups', g.id],
+          routerLinkActiveOptions: { exact: true },
+        },
+        {
+          label: this.translateService.instant('financesPage.menu.links'),
+          expanded: true,
+          items: [
+            {
+              fa: faBuildingColumns,
+              label: this.translateService.instant('financesPage.menu.bankAccounts'),
+              routerLink: ['/app/groups', g.id, 'bankAccounts'],
+              routerLinkActiveOptions: { exact: true },
+            },
+            {
+              fa: faCreditCard,
+              label: this.translateService.instant('financesPage.menu.creditCards'),
+              routerLink: ['/app/groups', g.id, 'creditCards'],
+              routerLinkActiveOptions: { exact: true },
+            },
+            {
+              fa: faTag,
+              label: this.translateService.instant('financesPage.menu.categories'),
+              routerLink: ['/app/groups', g.id, 'categories'],
+              routerLinkActiveOptions: { exact: true },
+            },
+            {
+              fa: faHashtag,
+              label: this.translateService.instant('financesPage.menu.tags'),
+              routerLink: ['/app/groups', g.id, 'tags'],
+              routerLinkActiveOptions: { exact: true },
+            },
+          ],
+        },
+      ],
+    }));
+
+    this.groupMenuRoot!!.itemsLoading = false;
+    this.groupMenuRoot!!.items = items;
   }
 }

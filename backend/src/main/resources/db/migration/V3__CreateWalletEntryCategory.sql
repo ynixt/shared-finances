@@ -2,7 +2,7 @@ CREATE TABLE wallet_entry_category (
     id UUID PRIMARY KEY,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
-    name VARCHAR(255) NOT NULL,
+    name CITEXT NOT NULL CHECK (char_length(name) <= 255),
     color VARCHAR(9) NOT NULL,
     icon VARCHAR(64) NOT NULL,
     user_id UUID,

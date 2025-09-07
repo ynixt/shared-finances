@@ -1,0 +1,9 @@
+financesPage:
+  groupsPage:
+    name: Nome do grupo
+    noGroupYet: Você não está em nenhum grupo :(
+    newGroupPage:
+      title: Novo groupo
+      successMessage: O grupo foi criado com sucesso
+    overviewPage:
+      title: 'Visão geral do grupo: {{name}}'

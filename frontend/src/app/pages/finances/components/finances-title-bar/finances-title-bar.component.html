@@ -1,4 +1,4 @@
-<div class="finances-title-bar mb-4 h-11">
+<div class="finances-title-bar mb-5 h-11">
   <div class="flex gap-2 items-center h-full">
     @if (closeRouterLink != null) {
       <div class="flex">
@@ -26,6 +26,7 @@
             [rounded]="true"
             size="small"
             [pTooltip]="'general.delete' | translate"
+            tooltipPosition="bottom"
             [loading]="deleteButtonLoading"
           >
             <ng-template pTemplate="iconTemplate">

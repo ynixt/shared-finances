@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.ynixt.sharedfinances.domain.models.events.GroupActionEvent
 import com.ynixt.sharedfinances.domain.models.events.UserActionEvent
 import com.ynixt.sharedfinances.domain.services.ActionEventListenerService
-import com.ynixt.sharedfinances.domain.services.ActionEventService
+import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.ReactiveRedisMessageListenerContainer
 import org.springframework.stereotype.Service

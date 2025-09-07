@@ -44,6 +44,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("com.github.slugify:slugify:3.0.7")
 
     runtimeOnly("org.postgresql:postgresql") // flyway
     runtimeOnly("org.postgresql:r2dbc-postgresql")

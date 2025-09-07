@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.models
+package com.ynixt.sharedfinances.domain.models.bankaccount
 
 import java.math.BigDecimal
 

@@ -1,0 +1,13 @@
+@if (loading || group == null) {
+  <p-progress-spinner></p-progress-spinner>
+} @else {
+  <div class="finances-page overview-group-page">
+    <app-finances-title-bar
+      [title]="'financesPage.groupsPage.overviewPage.title' | translate: { name: group.name }"
+      closeRouterLink="../.."
+      [showDeleteButton]="true"
+      (deleteButtonClicked)="askForConfirmationToDelete()"
+      [deleteButtonLoading]="submitting"
+    ></app-finances-title-bar>
+  </div>
+}

@@ -84,6 +84,34 @@ export const routes: Routes = [
           },
         ],
       },
+      {
+        path: 'groups',
+        children: [
+          {
+            path: '',
+            redirectTo: '/app',
+            pathMatch: 'full',
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/new-group-page/new-group-page.component').then(m => m.NewGroupPageComponent),
+            data: {
+              pageTitleKey: 'pageTitle.newGroup',
+            },
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/overview-group-page/overview-group-page.component').then(
+                m => m.OverviewGroupPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.overviewGroup',
+            },
+          },
+        ],
+      },
     ],
   },
   {

@@ -56,3 +56,5 @@ logging:
 #    org.springframework.web: TRACE
     org.springframework.security: TRACE
 #    reactor.netty.http.server: DEBUG
+    io.r2dbc.postgresql.QUERY: DEBUG
+    io.r2dbc.postgresql.PARAM: DEBUG

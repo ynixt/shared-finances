@@ -1,42 +1,8 @@
 <div class="advanced-menu-item">
   @if (item.routerLink == null && item.command == null && item.expanded == null) {
     <div class="advanced-menu-item-simple flex gap-2">
-      <span>{{ item.label }}</span>
-
-      @if (item.rightButtons != null && item.rightButtons!!.length > 0) {
-        <div class="ml-auto advanced-menu-item-right-buttons flex gap-2 items-center">
-          @for (btn of item.rightButtons; track item.rightButtons) {
-            @if (btn.command != null) {
-              <p-button
-                (click)="btn.command()"
-                [rounded]="true"
-                [text]="true"
-                size="small"
-                [pTooltip]="btn.tooltip"
-                class="p-0"
-                severity="secondary"
-              >
-                <ng-template pTemplate="iconTemplate">
-                  <fa-icon [icon]="btn.fa"></fa-icon>
-                </ng-template>
-              </p-button>
-            } @else if (btn.routerLink != null) {
-              <a
-                pButton
-                [routerLink]="btn.routerLink"
-                severity="secondary"
-                [rounded]="true"
-                [text]="true"
-                size="small"
-                [pTooltip]="btn.tooltip"
-                class="p-0"
-              >
-                <fa-icon [icon]="btn.fa"></fa-icon>
-              </a>
-            }
-          }
-        </div>
-      }
+      <ng-container *ngTemplateOutlet="header"></ng-container>
+      <ng-container *ngTemplateOutlet="extraRightButtons"></ng-container>
     </div>
   }
 
@@ -56,16 +22,16 @@
       </a>
     }
   } @else {
-    <p-panel [toggleable]="true" [collapsed]="!item.expanded" toggler="header">
-      <ng-template pTemplate="header">
-        @if (item.fa) {
-          <fa-icon [icon]="item.fa" class="mr-4"></fa-icon>
-        }
+    @let expanded = item.expanded || (item.routeToAutoExpand != null && item.routeToAutoExpand === currentRoute);
 
-        <span class="p-menuitem-text">{{ item.label }}</span>
+    <p-panel [toggleable]="true" [collapsed]="!expanded" toggler="header">
+      <ng-template pTemplate="header">
+        <ng-container *ngTemplateOutlet="header"></ng-container>
       </ng-template>
 
       <ng-template pTemplate="headericons" let-collapsed>
+        <ng-container *ngTemplateOutlet="extraRightButtons"></ng-container>
+
         @if (item.showCollapseIcon) {
           <fa-icon [icon]="collapsed ? collapsedIcon : expandedIcon"></fa-icon>
         }
@@ -86,9 +52,69 @@
 
 <ng-template #childTemplate>
   @if (item.items?.length != null && item.items!!.length > 0) {
-    <div class="advanced-menu-item-children ml-4">
+    <div
+      class="advanced-menu-item-children ml-4"
+      style="{{item.itemsMaxHeight ? `max-height: ${item.itemsMaxHeight}; overflow-y: auto;` : '' }}"
+    >
       @for (child of item.items; track child.id) {
         <app-advanced-menu-item [item]="child"></app-advanced-menu-item>
+      }
+    </div>
+  } @else if (item.itemsLoading) {
+    <div class="advanced-menu-item-children ml-4 text-center flex flex-col gap-4">
+      <p-skeleton></p-skeleton>
+      <p-skeleton width="90%"></p-skeleton>
+      <p-skeleton></p-skeleton>
+    </div>
+  } @else if (item.messageIfEmptyItems != undefined) {
+    <div class="advanced-menu-item-children ml-4 text-center flex flex-col gap-4">
+      <span>{{ item.messageIfEmptyItems }}</span>
+    </div>
+  }
+</ng-template>
+
+<ng-template #header>
+  @if (item.fa) {
+    <fa-icon [icon]="item.fa" class="mr-4"></fa-icon>
+  }
+
+  <span>{{ item.label }}</span>
+</ng-template>
+
+<ng-template #extraRightButtons>
+  @if (item.rightButtons != null && item.rightButtons!!.length > 0) {
+    <div class="ml-auto advanced-menu-item-right-buttons flex gap-2 items-center">
+      @for (btn of item.rightButtons; track item.rightButtons) {
+        @if (btn.command != null) {
+          <p-button
+            (click)="btn.command()"
+            [rounded]="true"
+            [text]="true"
+            size="small"
+            [pTooltip]="btn.tooltip"
+            class="p-0"
+            severity="secondary"
+            (click)="$event.stopPropagation()"
+          >
+            <ng-template pTemplate="iconTemplate">
+              <fa-icon [icon]="btn.fa"></fa-icon>
+            </ng-template>
+          </p-button>
+        } @else if (btn.routerLink != null) {
+          <a
+            pButton
+            [routerLink]="btn.routerLink"
+            severity="secondary"
+            [rounded]="true"
+            [text]="true"
+            size="small"
+            [pTooltip]="btn.tooltip"
+            class="p-0"
+            (click)="$event.stopPropagation()"
+          >
+            <fa-icon [icon]="btn.fa"></fa-icon>
+          </a>
+        }
       }
     </div>
   }

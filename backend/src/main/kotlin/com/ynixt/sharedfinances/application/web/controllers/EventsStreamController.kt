@@ -19,7 +19,7 @@ class EventsStreamController(
     private val actionEventListenerService: ActionEventListenerService,
     private val userActionEventDtoMapper: UserActionEventDtoMapper,
 ) {
-    @GetMapping("/user", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @GetMapping("/user-events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun userEvents(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
     ): Flux<ServerSentEvent<UserActionEventDto>> {
