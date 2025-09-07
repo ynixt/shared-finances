@@ -1,13 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
-import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
+import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupService } from '../../services/group.service';
 
 @Component({
@@ -21,6 +22,15 @@ export class OverviewGroupPageComponent {
   group: GroupDto | null = null;
   loading = true;
   submitting = false;
+
+  extraButtons: FinancesTitleBarExtraButton[] = [
+    {
+      routerLink: 'team',
+      rounded: true,
+      tooltip: 'financesPage.groupsPage.overviewPage.team',
+      icon: faPeopleGroup,
+    },
+  ];
 
   constructor(
     private router: Router,

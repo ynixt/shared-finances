@@ -12,27 +12,38 @@
 
     <h2 class="text-2xl">{{ title }}</h2>
 
-    @if (newRouterLink != null || showDeleteButton) {
-      <div class="ml-auto">
-        @if (newRouterLink != null) {
-          <a [routerLink]="newRouterLink" pButton [rounded]="true" size="small" [pTooltip]="'general.new' | translate">
-            <fa-icon [icon]="newButtonIcon"></fa-icon>
-          </a>
-        }
+    @let buttons = rightButtons();
 
-        @if (showDeleteButton) {
-          <p-button
-            (click)="deleteButtonClicked.next()"
-            [rounded]="true"
-            size="small"
-            [pTooltip]="'general.delete' | translate"
-            tooltipPosition="bottom"
-            [loading]="deleteButtonLoading"
-          >
-            <ng-template pTemplate="iconTemplate">
-              <fa-icon [icon]="deleteButtonIcon"></fa-icon>
-            </ng-template>
-          </p-button>
+    @if (buttons.length > 0) {
+      <div class="ml-auto flex gap-2">
+        @for (rightButton of buttons; track rightButton) {
+          @if (rightButton.routerLink != null) {
+            <a
+              [routerLink]="rightButton.routerLink"
+              pButton
+              [rounded]="rightButton.rounded"
+              size="small"
+              [pTooltip]="rightButton.tooltip != null ? (rightButton.tooltip | translate) : undefined"
+              [tooltipPosition]="rightButton.tooltipPosition ?? 'bottom'"
+            >
+              @if (rightButton.icon != null) {
+                <fa-icon [icon]="rightButton.icon"></fa-icon>
+              }
+            </a>
+          } @else if (rightButton.click != null) {
+            <p-button
+              (click)="rightButton.click()"
+              [rounded]="rightButton.rounded"
+              size="small"
+              [pTooltip]="rightButton.tooltip != null ? (rightButton.tooltip | translate) : undefined"
+              [tooltipPosition]="rightButton.tooltipPosition ?? 'bottom'"
+              [loading]="rightButton.loading"
+            >
+              <ng-template pTemplate="iconTemplate">
+                <fa-icon [icon]="deleteButtonIcon"></fa-icon>
+              </ng-template>
+            </p-button>
+          }
         }
       </div>
     }

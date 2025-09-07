@@ -7,3 +7,4 @@ financesPage:
       successMessage: O grupo foi criado com sucesso
     overviewPage:
       title: 'Visão geral do grupo: {{name}}'
+      team: Pessoas do grupo
