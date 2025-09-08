@@ -1,0 +1,22 @@
+.group-user-list-items {
+  app-user-avatar + app-user-avatar,
+  app-user-avatar + .more-users {
+    .p-avatar {
+      margin-inline-start: var(--p-avatar-group-offset);
+    }
+
+    .p-avatar-lg {
+      margin-inline-start: var(--p-avatar-lg-group-offset);
+    }
+  }
+
+  .p-avatar {
+    border: 2px solid var(--p-avatar-group-border-color);
+  }
+}
+
+.group-user-list-items-loading {
+  .p-skeleton + .p-skeleton {
+    margin-inline-start: -1.5rem;
+  }
+}

@@ -35,10 +35,15 @@ export class LangService {
     private userService: UserService,
     private localeService: LocaleService,
   ) {
-    this.init();
+    this.changeLanguage(this.getBestLangForBrowser());
+
     effect(() => {
       this.changeLanguage(this.getBestLangForBrowser());
     });
+  }
+
+  init() {
+    // just for force injection of this service on app component
   }
 
   async getAllLanguages(): Promise<{ value: string; name: string; current: boolean }[]> {
@@ -64,12 +69,6 @@ export class LangService {
     if (user != null && sendToServer) {
       await lastValueFrom(this.httpClient.put(`/api/users/current/changeLanguage/${newLanguage}`, null).pipe(take(1)));
     }
-  }
-
-  private async init() {
-    this.changeLanguage(this.getBestLangForBrowser());
-
-    await i18nIsReady(this.translateService);
   }
 
   private getBestLangForBrowser(): string {

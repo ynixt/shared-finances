@@ -15,7 +15,7 @@ interface GroupSpringDataRepository :
         """
             select g.*
             from "group" g
-            join group_users gu on gu.group_id = g.id
+            join group_user gu on gu.group_id = g.id
             where gu.user_id = :userId
             order by g.name
         """,
@@ -26,7 +26,7 @@ interface GroupSpringDataRepository :
         """
             select g.*
             from "group" g
-            join group_users gu on gu.group_id = g.id
+            join group_user gu on gu.group_id = g.id
             where
                 g.id = :groupId
                 and gu.user_id = :userId

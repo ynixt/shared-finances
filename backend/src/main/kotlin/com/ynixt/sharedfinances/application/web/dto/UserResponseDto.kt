@@ -8,7 +8,6 @@ data class UserResponseDto(
     val email: String,
     val firstName: String,
     var lastName: String,
-    val photoUrl: String?,
     val lang: String,
     val defaultCurrency: String?,
 )

@@ -17,7 +17,7 @@ class CreditCardEntry(
     tags: List<String>?,
     observations: String?,
     confirmed: Boolean,
-    val billId: UUID,
+    val billId: UUID?,
     val installmentConfigId: UUID?,
     val installment: Int?,
     val recurrenceConfigId: UUID?,

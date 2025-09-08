@@ -9,11 +9,12 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
+import { GroupUserListComponent } from '../../components/group-user-list/group-user-list.component';
 import { GroupService } from '../../services/group.service';
 
 @Component({
   selector: 'app-overview-group-page',
-  imports: [ProgressSpinner, FinancesTitleBarComponent, TranslatePipe],
+  imports: [ProgressSpinner, FinancesTitleBarComponent, TranslatePipe, GroupUserListComponent],
   templateUrl: './overview-group-page.component.html',
   styleUrl: './overview-group-page.component.scss',
 })
@@ -27,7 +28,7 @@ export class OverviewGroupPageComponent {
     {
       routerLink: 'team',
       rounded: true,
-      tooltip: 'financesPage.groupsPage.overviewPage.team',
+      tooltip: 'financesPage.groupsPage.overviewPage.manageTeam',
       icon: faPeopleGroup,
     },
   ];
@@ -55,6 +56,7 @@ export class OverviewGroupPageComponent {
 
     try {
       this.group = await this.groupService.getGroup(id);
+
       this.loading = false;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {

@@ -1,0 +1,16 @@
+<div class="user-avatar" [style.height]="sizeInRem() + 'rem'">
+  @let avatarImageUrl = imageUrl();
+  @let u = user();
+
+  @if (u == null) {
+    <p-skeleton shape="circle" [size]="sizeInRem() + 'rem'" />
+  } @else {
+    @let tooltip = showTooltip() ? ('name.fullName' | translate: { firstName: u.firstName, lastName: u.lastName }) : undefined;
+
+    @if (avatarImageUrl != null) {
+      <p-avatar [image]="avatarImageUrl" [size]="size()" shape="circle" [pTooltip]="tooltip" [tooltipPosition]="tooltipPosition()" />
+    } @else {
+      <p-avatar [label]="label()" [size]="size()" shape="circle" [pTooltip]="tooltip" [tooltipPosition]="tooltipPosition()" />
+    }
+  }
+</div>

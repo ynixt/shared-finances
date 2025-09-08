@@ -44,7 +44,7 @@ export class NewGroupPageComponent {
     this.submitting = true;
 
     try {
-      await this.groupService.newGroup(this.formGroup.value);
+      const group = await this.groupService.newGroup(this.formGroup.value);
 
       this.messageService.add({
         severity: 'success',
@@ -53,7 +53,7 @@ export class NewGroupPageComponent {
         life: DEFAULT_SUCCESS_LIFE,
       });
 
-      await this.router.navigate(['..'], { relativeTo: this.route });
+      await this.router.navigate(['..', group.id], { relativeTo: this.route });
     } catch (err) {
       this.submitting = false;
 

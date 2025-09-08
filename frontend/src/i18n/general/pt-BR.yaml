@@ -1,5 +1,8 @@
 title: Finanças Compartilhadas
 
+name:
+  fullName: '{{firstName}} {{lastName}}'
+
 general:
   email: Email
   password: Senha
@@ -19,6 +22,7 @@ general:
   genericConfirmation: Você tem deseja que deseja continuar?
   confirmation: Confirmação
   cancel: Cancelar
+  greetings: 'Olá, {{name}}'
 
 error:
   genericTitle: Erro

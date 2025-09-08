@@ -10,5 +10,9 @@
       [deleteButtonLoading]="submitting"
       [extraButtons]="extraButtons"
     ></app-finances-title-bar>
+
+    <div class="flex">
+      <app-group-user-list [groupId]="group.id" [limitBeforeMoreMembers]="7"></app-group-user-list>
+    </div>
   </div>
 }

@@ -12,14 +12,14 @@ CREATE TABLE credit_card_entry (
     observations TEXT,
     date DATE NOT NULL,
     confirmed BOOLEAN NOT NULL,
-    bill_id UUID NOT NULL,
+    bill_id UUID,
     installment_config_id UUID,
     installment INT,
     recurrence_config_id UUID,
     CONSTRAINT fk_cc_entry_category FOREIGN KEY (category_id) REFERENCES wallet_entry_category(id) ON DELETE SET NULL,
     CONSTRAINT fk_cc_entry_user FOREIGN KEY (user_id) REFERENCES "users"(id) ON DELETE SET NULL,
     CONSTRAINT fk_cc_entry_group FOREIGN KEY ("group_id") REFERENCES "group"(id) ON DELETE SET NULL,
-    CONSTRAINT fk_cc_entry_bill FOREIGN KEY (bill_id) REFERENCES credit_card_bill(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cc_entry_bill FOREIGN KEY (bill_id) REFERENCES credit_card_bill(id) ON DELETE SET NULL,
     CONSTRAINT fk_cc_entry_installment FOREIGN KEY (installment_config_id) REFERENCES entry_installment_config(id),
     CONSTRAINT fk_cc_entry_recurrence FOREIGN KEY (recurrence_config_id) REFERENCES entry_recurrence_config(id)
 );

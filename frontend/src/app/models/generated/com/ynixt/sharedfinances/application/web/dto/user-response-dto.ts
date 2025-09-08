@@ -9,5 +9,4 @@ export interface UserResponseDto {
   id: string;
   lang: string;
   lastName: string;
-  photoUrl?: string | null;
 }

@@ -1,10 +1,14 @@
 package com.ynixt.sharedfinances.domain.entities
 
+import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 
-@Table("group_users")
-class GroupUsers(
+@Table("group_user")
+class GroupUser(
     val groupId: UUID,
     val userId: UUID,
-)
+    val role: UserGroupRole,
+) {
+    var user: User? = null
+}

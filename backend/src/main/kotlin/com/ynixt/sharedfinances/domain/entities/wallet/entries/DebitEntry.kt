@@ -17,7 +17,7 @@ class DebitEntry(
     tags: List<String>?,
     observations: String?,
     confirmed: Boolean,
-    val bankAccountId: UUID,
+    val bankAccountId: UUID?,
     val recurrenceConfigId: UUID?,
 ) : WalletEntry(
         name = name,

@@ -10,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { PrimeNG } from 'primeng/config';
 
 import { KratosAuthService } from './services/kratos-auth.service';
+import { LangService } from './services/lang.service';
 import { TitleService } from './services/title.service';
 import { TokenSyncService } from './services/token-sync.service';
 import { UserService } from './services/user.service';
@@ -36,7 +37,10 @@ export class AppComponent {
     private tokenSyncService: TokenSyncService,
     private userService: UserService,
     private authService: KratosAuthService,
+    private langService: LangService,
   ) {
+    this.langService.init();
+
     updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
 
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(async () => {

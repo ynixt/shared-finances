@@ -7,7 +7,6 @@ CREATE TABLE "users"
     email      CITEXT NOT NULL CHECK (char_length(email) <= 320),
     first_name       VARCHAR(255) NOT NULL,
     last_name       VARCHAR(255) NOT NULL,
-    photo_url  VARCHAR(255),
     lang       VARCHAR(8)  NOT NULL,
     default_currency VARCHAR(3)
 );

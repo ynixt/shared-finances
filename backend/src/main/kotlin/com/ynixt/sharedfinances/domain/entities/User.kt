@@ -8,7 +8,6 @@ class User(
     val email: String,
     val firstName: String,
     val lastName: String,
-    var photoUrl: String? = null,
     var lang: String,
     var defaultCurrency: String?,
 ) : AuditedEntity()

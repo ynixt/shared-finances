@@ -1,8 +1,17 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.GroupUsers
+import com.ynixt.sharedfinances.domain.entities.GroupUser
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.UUID
 
 interface GroupUsersRepository {
-    fun save(groupUsers: GroupUsers): Mono<GroupUsers>
+    fun countByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    fun save(groupUser: GroupUser): Mono<GroupUser>
+
+    fun findAllMembers(groupId: UUID): Flux<GroupUser>
 }

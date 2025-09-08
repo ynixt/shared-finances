@@ -32,6 +32,7 @@
     "broadcast-channel": "^7.1.0",
     "deepmerge-ts": "^7.1.5",
     "eventsource-client": "^1.1.4",
+    "js-md5": "^0.8.3",
     "primeicons": "^7.0.0",
     "primeng": "^20.0.0",
     "rxjs": "~7.8.0",

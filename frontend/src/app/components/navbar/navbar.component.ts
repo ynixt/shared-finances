@@ -9,16 +9,29 @@ import { startWith } from 'rxjs';
 
 import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { ButtonDirective, ButtonLabel } from 'primeng/button';
+import { Divider } from 'primeng/divider';
 import { Menu } from 'primeng/menu';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { KratosAuthService } from '../../services/kratos-auth.service';
 import { UserService } from '../../services/user.service';
 import { LangButtonComponent } from '../lang-button/lang-button.component';
+import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-navbar',
-  imports: [ButtonDirective, TranslatePipe, ButtonLabel, RouterLink, LangButtonComponent, ProgressSpinner, Menu, FaIconComponent],
+  imports: [
+    ButtonDirective,
+    TranslatePipe,
+    ButtonLabel,
+    RouterLink,
+    LangButtonComponent,
+    ProgressSpinner,
+    Menu,
+    FaIconComponent,
+    UserAvatarComponent,
+    Divider,
+  ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss',
 })

@@ -7,7 +7,7 @@ import java.util.UUID
 @Table("entry_ratio_config")
 class EntryRatioConfig(
     val entryId: UUID,
-    val userId: UUID,
+    val userId: UUID?,
     val ratio: Double,
     val paid: Boolean,
 ) : AuditedEntity()

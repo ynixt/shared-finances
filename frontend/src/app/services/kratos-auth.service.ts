@@ -78,12 +78,14 @@ export class KratosAuthService {
     }
 
     this.tokenSubject.next(null);
-    await this.router.navigate(['/login'], {
-      onSameUrlNavigation: 'reload',
-      queryParams: {
-        return_to: args.returnTo,
-      },
-    });
+    if (this.router.url != '/register') {
+      await this.router.navigate(['/login'], {
+        onSameUrlNavigation: 'reload',
+        queryParams: {
+          return_to: args.returnTo,
+        },
+      });
+    }
   }
 
   loginSuccess() {

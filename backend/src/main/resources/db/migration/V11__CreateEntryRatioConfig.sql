@@ -3,10 +3,10 @@ CREATE TABLE entry_ratio_config (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     entry_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    user_id UUID,
     ratio DOUBLE PRECISION NOT NULL,
     paid BOOLEAN NOT NULL,
-    CONSTRAINT fk_entry_ratio_user FOREIGN KEY (user_id) REFERENCES "users"(id)
+    CONSTRAINT fk_entry_ratio_user FOREIGN KEY (user_id) REFERENCES "users"(id) ON DELETE SET NULL
     -- entry_id can refer to either debit_entry or credit_card_entry; not enforcing FK here
 );
 

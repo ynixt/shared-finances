@@ -1,7 +1,8 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.domain.entities.Group
-import com.ynixt.sharedfinances.domain.entities.GroupUsers
+import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
@@ -42,9 +43,10 @@ class GroupServiceImpl(
             ).flatMap { g ->
                 groupUserRepository
                     .save(
-                        GroupUsers(
+                        GroupUser(
                             userId = userId,
                             groupId = g.id!!,
+                            role = UserGroupRole.ADMIN,
                         ),
                     ).thenReturn(g)
             }.flatMap { g ->
@@ -54,4 +56,29 @@ class GroupServiceImpl(
                         userId = userId,
                     ).thenReturn(g)
             }
+
+    override fun findAllMembers(
+        userId: UUID,
+        id: UUID,
+    ): Mono<List<GroupUser>> =
+        userIsInGroup(userId = userId, id = id).flatMap {
+            if (it) {
+                groupUserRepository
+                    .findAllMembers(
+                        id,
+                    ).collectList()
+            } else {
+                Mono.empty()
+            }
+        }
+
+    private fun userIsInGroup(
+        userId: UUID,
+        id: UUID,
+    ): Mono<Boolean> =
+        groupUserRepository
+            .countByGroupIdAndUserId(
+                userId = userId,
+                groupId = id,
+            ).map { it > 0 }
 }

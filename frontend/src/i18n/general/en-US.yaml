@@ -1,5 +1,8 @@
 title: Shared Finances
 
+name:
+  fullName: '{{lastName}} {{firstName}}'
+
 general:
   email: Email
   password: Password
@@ -19,6 +22,7 @@ general:
   genericConfirmation: Are you sure that you want to proceed?
   confirmation: Confirmation
   cancel: Cancel
+  greetings: 'Hello, {{name}}'
 
 error:
   genericTitle: Error

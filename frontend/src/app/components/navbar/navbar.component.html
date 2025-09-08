@@ -1,3 +1,5 @@
+@let user = userService.user();
+
 <div class="navbar py-4 bg-gray-700 text-white mb-8">
   <div class="container mx-auto flex items-center">
     @if (showDrawerMenu) {
@@ -8,19 +10,23 @@
 
     <a class="logo flex items-center gap-3" routerLink="/">
       <img class="h-9" src="/public/images/small-logo.png" />
-      <span class="title hidden md:inline text-2xl font-bold text-shadow-lg">Shared Finances</span>
+      <span [class.hidden]="user == null" class="title md:inline text-xl md:text-2xl font-bold text-shadow-lg">Shared Finances</span>
     </a>
 
     <div class="mx-auto"></div>
 
     <div class="menu gap-4 flex items-center justify-end">
-      @let user = userService.user();
-
       @if (userService.loading()) {
         <p-progress-spinner ariaLabel="loading" class="w-4 h-4" />
       } @else if (user) {
-        <button pButton class="text-white hover:text-primary" [text]="true" [rounded]="true" (click)="userMenu.toggle($event)">
-          <span pButtonLabel>{{ user.firstName }}</span>
+        <button
+          pButton
+          class="text-white hover:text-primary flex items-center justify-center p-0"
+          [text]="true"
+          [rounded]="true"
+          (click)="userMenu.toggle($event)"
+        >
+          <app-user-avatar [user]="user" [showTooltip]="false"></app-user-avatar>
         </button>
       } @else {
         <a routerLink="/login" pButton class="text-white hover:text-primary" [text]="true" [rounded]="true">
@@ -30,11 +36,32 @@
         <a routerLink="/register" pButton [rounded]="true">
           <span pButtonLabel>{{ 'general.register' | translate }}</span>
         </a>
-      }
 
-      <app-lang-button buttonClass="text-white hover:text-primary"></app-lang-button>
+        <app-lang-button buttonClass="text-white hover:text-primary"></app-lang-button>
+      }
     </div>
   </div>
 </div>
 
-<p-menu #userMenu [model]="items" [popup]="true" />
+<p-menu #userMenu [model]="items" [popup]="true">
+  <ng-template #start>
+    <div class="flex px-4 pt-5 items-center gap-8">
+      <span class="mr-auto">{{
+        'general.greetings'
+          | translate
+            : {
+                name:
+                  ('name.fullName'
+                  | translate
+                    : {
+                        firstName: user?.firstName,
+                        lastName: user?.lastName,
+                      }),
+              }
+      }}</span>
+
+      <app-lang-button buttonClass="text-gray-400 hover:text-primary"></app-lang-button>
+    </div>
+    <p-divider class=""></p-divider>
+  </ng-template>
+</p-menu>

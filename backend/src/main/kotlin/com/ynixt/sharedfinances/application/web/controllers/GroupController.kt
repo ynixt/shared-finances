@@ -1,8 +1,10 @@
 package com.ynixt.sharedfinances.application.web.controllers
 
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupDto
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
 import com.ynixt.sharedfinances.application.web.dto.groups.NewGroupDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
+import com.ynixt.sharedfinances.application.web.mapper.GroupUserDtoMapper
 import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapList
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.GroupService
@@ -22,6 +24,7 @@ import java.util.UUID
 class GroupController(
     private val groupDtoMapper: GroupDtoMapper,
     private val groupService: GroupService,
+    private val groupUserDtoMapper: GroupUserDtoMapper,
 ) {
     @GetMapping
     fun findAll(
@@ -55,4 +58,17 @@ class GroupController(
                 principalToken.principal.id,
                 groupDtoMapper.fromNewDtoToNewRequest(body),
             ).map(groupDtoMapper::toDto)
+
+    @GetMapping("/{id}/members")
+    fun findAllMembers(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+    ): Mono<ResponseEntity<List<GroupUserDto>>> =
+        groupService
+            .findAllMembers(
+                userId = principalToken.principal.id,
+                id = id,
+            ).map { list ->
+                ResponseEntity.ofNullable(list.map(groupUserDtoMapper::toDto))
+            }.defaultIfEmpty(ResponseEntity.notFound().build())
 }

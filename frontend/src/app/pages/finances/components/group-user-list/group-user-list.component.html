@@ -1,0 +1,21 @@
+<div class="group-user-list">
+  @if (loading) {
+    <div class="flex items-center group-user-list-items-loading">
+      <p-skeleton shape="circle" [size]="sizeInRem() + 'rem'" class="mr-2" />
+    </div>
+  } @else {
+    @let limit = limitBeforeMoreMembers();
+
+    <div class="flex items-center group-user-list-items">
+      @for (groupUser of members | slice: 0 : limit; track groupUser.user.id) {
+        <app-user-avatar [user]="groupUser.user" [size]="size()"></app-user-avatar>
+      }
+
+      @if (members.length > limit) {
+        <a class="more-users" routerLink="team">
+          <p-avatar [label]="'+' + (members.length - limit)" shape="circle" size="large" />
+        </a>
+      }
+    </div>
+  }
+</div>

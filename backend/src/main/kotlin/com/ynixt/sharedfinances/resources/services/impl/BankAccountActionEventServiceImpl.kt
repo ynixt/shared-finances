@@ -24,7 +24,7 @@ class BankAccountActionEventServiceImpl(
                 data = mapper.toDto(bankAccount),
                 userId = userId,
                 type = ActionEventType.INSERT,
-                category = ActionEventCategory.GROUP,
+                category = ActionEventCategory.BANK_ACCOUNT,
             )
 
     override fun sendUpdatedBankAccount(
@@ -36,7 +36,7 @@ class BankAccountActionEventServiceImpl(
                 data = mapper.toDto(bankAccount),
                 userId = userId,
                 type = ActionEventType.UPDATE,
-                category = ActionEventCategory.GROUP,
+                category = ActionEventCategory.BANK_ACCOUNT,
             )
 
     override fun sendDeletedBankAccount(
@@ -48,6 +48,6 @@ class BankAccountActionEventServiceImpl(
                 data = id.toString(),
                 userId = userId,
                 type = ActionEventType.DELETE,
-                category = ActionEventCategory.GROUP,
+                category = ActionEventCategory.BANK_ACCOUNT,
             )
 }

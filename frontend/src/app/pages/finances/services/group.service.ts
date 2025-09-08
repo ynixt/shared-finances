@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
-import { GroupDto, NewGroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { GroupDto, GroupUserDto, NewGroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserService } from '../../../services/user.service';
 import { UserMissingError } from '../errors/user-missing.error';
 
@@ -41,6 +41,18 @@ export class GroupService {
 
     if (user != null) {
       return lastValueFrom(this.http.post<GroupDto>('/api/groups', newGroupDto).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async findAllMembers(groupId: string): Promise<Array<GroupUserDto>> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return (await lastValueFrom(this.http.get<Array<GroupUserDto>>(`/api/groups/${groupId}/members`).pipe(take(1)))).sort((a, b) =>
+        a.user.firstName.localeCompare(b.user.firstName),
+      );
     }
 
     throw new UserMissingError();
