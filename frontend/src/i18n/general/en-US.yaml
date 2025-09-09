@@ -7,6 +7,7 @@ general:
   email: Email
   password: Password
   passwordConfirm: Password confirmation
+  name: Name
   firstName: First name
   lastName: Last name
   login: Login
@@ -23,6 +24,7 @@ general:
   confirmation: Confirmation
   cancel: Cancel
   greetings: 'Hello, {{name}}'
+  copy: Copy
 
 error:
   genericTitle: Error

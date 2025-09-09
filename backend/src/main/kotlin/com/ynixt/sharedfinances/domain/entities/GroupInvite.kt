@@ -8,4 +8,4 @@ import java.util.UUID
 class GroupInvite(
     val groupId: UUID,
     val expireAt: OffsetDateTime,
-)
+) : SimpleEntity()

@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
 import com.ynixt.sharedfinances.domain.entities.Group
+import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
@@ -13,18 +14,18 @@ interface GroupSpringDataRepository :
     ReactiveCrudRepository<Group, String> {
     @Query(
         """
-            select g.*
+            select g.*, gu.role as role
             from "group" g
             join group_user gu on gu.group_id = g.id
             where gu.user_id = :userId
             order by g.name
         """,
     )
-    override fun findAllByUserIdOrderByName(userId: UUID): Flux<Group>
+    override fun findAllByUserIdOrderByName(userId: UUID): Flux<GroupWithRole>
 
     @Query(
         """
-            select g.*
+            select g.*, gu.role as role
             from "group" g
             join group_user gu on gu.group_id = g.id
             where
@@ -35,5 +36,5 @@ interface GroupSpringDataRepository :
     override fun findOneByUserIdAndId(
         userId: UUID,
         id: UUID,
-    ): Mono<Group>
+    ): Mono<GroupWithRole>
 }

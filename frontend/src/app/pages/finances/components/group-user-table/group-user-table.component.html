@@ -1,0 +1,79 @@
+@let user = userService.user();
+
+<div class="group-user-table w-full">
+  <p-table [value]="members" class="w-full" [tableStyle]="{ 'width': '100%', 'table-layout': 'fixed' }" dataKey="id" editMode="row" #table>
+    <ng-template #header>
+      <tr>
+        <th style="width: 4rem"></th>
+        <th style="width: calc(50% - 10rem)">{{ 'general.name' | translate }}</th>
+        <th style="width: calc(50% - 10rem)">{{ 'financesPage.groupsPage.manageTeamPage.role' | translate }}</th>
+        <th style="width: 6rem"></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-groupUser let-editing="editing" let-ri="rowIndex">
+      <tr [pEditableRow]="groupUser" #editableRow>
+        <td>
+          <app-user-avatar [user]="groupUser.user"></app-user-avatar>
+        </td>
+        <td>
+          {{
+            'name.fullName'
+              | translate
+                : {
+                    firstName: groupUser.user.firstName,
+                    lastName: groupUser.user.lastName,
+                  }
+          }}
+        </td>
+        <td>
+          <p-cellEditor>
+            <ng-template #input>
+              <p-select class="w-full" [options]="roles" appendTo="body" [(ngModel)]="groupUser.role" [style]="{ 'width': '100%' }" />
+            </ng-template>
+            <ng-template #output>
+              <p-tag [value]="'enums.userGroupRole.' + groupUser.role | translate" [severity]="getSeverityForRole(groupUser.role)" />
+            </ng-template>
+          </p-cellEditor>
+        </td>
+
+        <td>
+          <div class="flex items-center justify-center gap-2">
+            @if (!editing && user?.id != groupUser.user.id && hasPermissionToModifyRoles()) {
+              <button pButton pRipple type="button" pInitEditableRow (click)="onRowEditInit(groupUser)" text rounded severity="secondary">
+                <fa-icon [icon]="faEdit"></fa-icon>
+              </button>
+            }
+            @if (editing) {
+              <button
+                pButton
+                pRipple
+                type="button"
+                (click)="onRowEditSave(groupUser, editableRow)"
+                [loading]="submitting"
+                text
+                rounded
+                severity="secondary"
+              >
+                <fa-icon [icon]="faCheck"></fa-icon>
+              </button>
+
+              <button
+                pButton
+                pRipple
+                type="button"
+                pCancelEditableRow
+                (click)="onRowEditCancel(groupUser, ri)"
+                [loading]="submitting"
+                text
+                rounded
+                severity="secondary"
+              >
+                <fa-icon [icon]="faTimes"></fa-icon>
+              </button>
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

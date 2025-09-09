@@ -3,7 +3,14 @@ import { Injectable } from '@angular/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
-import { GroupDto, GroupUserDto, NewGroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import {
+  ChangeRoleGroupUserRequestDto,
+  GroupDto,
+  GroupUserDto,
+  GroupWithRoleDto,
+  NewGroupDto,
+} from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { UserGroupRole } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { UserService } from '../../../services/user.service';
 import { UserMissingError } from '../errors/user-missing.error';
 
@@ -16,21 +23,21 @@ export class GroupService {
     private userService: UserService,
   ) {}
 
-  async getAllGroups(): Promise<Array<GroupDto>> {
+  async getAllGroups(): Promise<Array<GroupWithRoleDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.http.get<Array<GroupDto>>('/api/groups').pipe(take(1)));
+      return lastValueFrom(this.http.get<Array<GroupWithRoleDto>>('/api/groups').pipe(take(1)));
     }
 
     throw new UserMissingError();
   }
 
-  async getGroup(groupId: string): Promise<GroupDto> {
+  async getGroup(groupId: string): Promise<GroupWithRoleDto> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.http.get<GroupDto>(`/api/groups/${groupId}`).pipe(take(1)));
+      return lastValueFrom(this.http.get<GroupWithRoleDto>(`/api/groups/${groupId}`).pipe(take(1)));
     }
 
     throw new UserMissingError();
@@ -53,6 +60,22 @@ export class GroupService {
       return (await lastValueFrom(this.http.get<Array<GroupUserDto>>(`/api/groups/${groupId}/members`).pipe(take(1)))).sort((a, b) =>
         a.user.firstName.localeCompare(b.user.firstName),
       );
+    }
+
+    throw new UserMissingError();
+  }
+
+  async updateMemberRole(groupId: string, memberId: string, newRole: UserGroupRole): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      const request: ChangeRoleGroupUserRequestDto = {
+        memberId,
+        role: newRole,
+      };
+
+      await lastValueFrom(this.http.put<void>(`/api/groups/${groupId}/members/change-role`, request).pipe(take(1)));
+      return;
     }
 
     throw new UserMissingError();

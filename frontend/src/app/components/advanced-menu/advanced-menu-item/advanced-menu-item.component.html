@@ -22,7 +22,7 @@
       </a>
     }
   } @else {
-    @let expanded = item.expanded || (item.routeToAutoExpand != null && item.routeToAutoExpand === currentRoute);
+    @let expanded = item.expanded || (item.routeToAutoExpand != null && currentRoute.startsWith(item.routeToAutoExpand));
 
     <p-panel [toggleable]="true" [collapsed]="!expanded" toggler="header">
       <ng-template pTemplate="header">
@@ -56,7 +56,7 @@
       class="advanced-menu-item-children ml-4"
       style="{{item.itemsMaxHeight ? `max-height: ${item.itemsMaxHeight}; overflow-y: auto;` : '' }}"
     >
-      @for (child of item.items; track child.id) {
+      @for (child of item.items; track child.id ?? child) {
         <app-advanced-menu-item [item]="child"></app-advanced-menu-item>
       }
     </div>

@@ -8,3 +8,9 @@ financesPage:
     overviewPage:
       title: 'Visão geral do grupo: {{name}}'
       manageTeam: Gerenciar pessoas do grupo
+    manageTeamPage:
+      title: 'Gerenciar pessoas do grupo: {{name}}'
+      role: Permissão
+      successChangeMessage: Permissão alterada com sucesso
+      generateInvitation: Gerar convite
+      expiresOn: 'Expira em {{date}}'

@@ -8,3 +8,9 @@ financesPage:
     overviewPage:
       title: 'Group overview: {{name}}'
       manageTeam: Manage people in the group
+    manageTeamPage:
+      title: 'Manage team of group: {{name}}'
+      role: Role
+      successChangeMessage: Role changed successfully
+      generateInvitation: Generate invitation
+      expiresOn: 'Expires on {{date}}'

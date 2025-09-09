@@ -1,0 +1,5 @@
+enums:
+  userGroupRole:
+    VIEWER: Viewer
+    EDITOR: Editor
+    ADMIN: Administrator

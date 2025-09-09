@@ -1,15 +1,10 @@
 package com.ynixt.sharedfinances.domain.entities
 
 import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
 import java.time.OffsetDateTime
-import java.util.UUID
 
-abstract class AuditedEntity {
-    @Id
-    var id: UUID? = null
-
+abstract class AuditedEntity : SimpleEntity() {
     @CreatedDate
     var createdAt: OffsetDateTime? = null
 

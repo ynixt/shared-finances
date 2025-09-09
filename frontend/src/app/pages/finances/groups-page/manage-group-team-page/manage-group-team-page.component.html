@@ -1,0 +1,41 @@
+@if (loading || group == null) {
+  <p-progress-spinner></p-progress-spinner>
+} @else {
+  <div class="finances-page overview-group-page">
+    <app-finances-title-bar
+      [title]="'financesPage.groupsPage.manageTeamPage.title' | translate: { name: group.name }"
+      closeRouterLink=".."
+    ></app-finances-title-bar>
+
+    <div class="flex">
+      <app-group-user-table [groupId]="group.id" class="w-full"></app-group-user-table>
+    </div>
+
+    @if (group.role === 'ADMIN') {
+      <div class="flex mt-12 justify-center">
+        <button pButton class="w-full" (click)="generateInvitation()" size="small" [loading]="generatingInvitation">
+          {{ 'financesPage.groupsPage.manageTeamPage.generateInvitation' | translate }}
+        </button>
+      </div>
+
+      @let inv = invitation();
+      @let invUrl = invitationUrl();
+
+      @if (inv && invUrl) {
+        <div class="flex mt-4 flex-col gap-4 items-center justify-center">
+          <qrcode [qrdata]="invUrl" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+
+          <div class="flex flex-col gap-2 items-center justify-center">
+            <div class="flex gap-2 items-center justify-center">
+              <input readonly type="text" pInputText [value]="invUrl" />
+
+              <button pButton severity="secondary" (click)="copyLinkToClipboard()">{{ 'general.copy' | translate }}</button>
+            </div>
+
+            <span>{{ 'financesPage.groupsPage.manageTeamPage.expiresOn' | translate: { date: (inv.expireAt | localDate: 'long') } }}</span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+}

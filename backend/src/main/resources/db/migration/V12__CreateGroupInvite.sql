@@ -1,5 +1,6 @@
 CREATE TABLE group_invite (
-    group_id UUID NOT NULL,
+    id        UUID PRIMARY KEY,
+    group_id  UUID NOT NULL,
     expire_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_group_invite_group FOREIGN KEY (group_id) REFERENCES "group"(id) ON DELETE CASCADE
 );

@@ -1,9 +1,11 @@
 package com.ynixt.sharedfinances.application.web.mapper.impl
 
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupDto
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupWithRoleDto
 import com.ynixt.sharedfinances.application.web.dto.groups.NewGroupDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.domain.entities.Group
+import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
@@ -12,7 +14,9 @@ import tech.mappie.api.ObjectMappie
 class GroupDtoMapperImpl : GroupDtoMapper {
     override fun toDto(from: Group): GroupDto = GroupToDtoMapper.map(from)
 
-    override fun fromDto(from: GroupDto): Group = GroupFromDtoMapper.map(from)
+    override fun toDto(from: GroupWithRole): GroupWithRoleDto = GroupWithRoleToDtoMapper.map(from)
+
+    override fun fromDto(from: GroupWithRoleDto): Group = GroupFromDtoMapper.map(from)
 
     override fun fromNewDtoToNewRequest(from: NewGroupDto): NewGroupRequest = GroupFromNewDtoMapper.map(from)
 
@@ -25,8 +29,15 @@ class GroupDtoMapperImpl : GroupDtoMapper {
             }
     }
 
-    private object GroupFromDtoMapper : ObjectMappie<GroupDto, Group>() {
-        override fun map(from: GroupDto) = mapping {}
+    private object GroupWithRoleToDtoMapper : ObjectMappie<GroupWithRole, GroupWithRoleDto>() {
+        override fun map(from: GroupWithRole) =
+            mapping {
+                to::id fromPropertyNotNull from::id
+            }
+    }
+
+    private object GroupFromDtoMapper : ObjectMappie<GroupWithRoleDto, Group>() {
+        override fun map(from: GroupWithRoleDto) = mapping {}
     }
 
     private object GroupFromNewDtoMapper : ObjectMappie<NewGroupDto, NewGroupRequest>() {

@@ -110,6 +110,16 @@ export const routes: Routes = [
               pageTitleKey: 'pageTitle.overviewGroup',
             },
           },
+          {
+            path: ':id/team',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/manage-group-team-page/manage-group-team-page.component').then(
+                m => m.ManageGroupTeamPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.manageGroupTeam',
+            },
+          },
         ],
       },
     ],

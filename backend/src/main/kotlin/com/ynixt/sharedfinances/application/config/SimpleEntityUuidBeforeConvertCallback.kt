@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.application.config
 
 import com.fasterxml.uuid.Generators
-import com.ynixt.sharedfinances.domain.entities.AuditedEntity
+import com.ynixt.sharedfinances.domain.entities.SimpleEntity
 import org.reactivestreams.Publisher
 import org.springframework.data.r2dbc.mapping.event.BeforeConvertCallback
 import org.springframework.data.relational.core.sql.SqlIdentifier
@@ -9,11 +9,11 @@ import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
 @Component
-class AuditedEntityUuidBeforeConvertCallback : BeforeConvertCallback<AuditedEntity> {
+class SimpleEntityUuidBeforeConvertCallback : BeforeConvertCallback<SimpleEntity> {
     override fun onBeforeConvert(
-        entity: AuditedEntity,
+        entity: SimpleEntity,
         table: SqlIdentifier,
-    ): Publisher<AuditedEntity> {
+    ): Publisher<SimpleEntity> {
         if (entity.id == null) {
             entity.id = Generators.timeBasedEpochRandomGenerator().generate()
         }

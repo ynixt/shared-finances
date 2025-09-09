@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.GroupUsersR2DBCRepository
 import com.ynixt.sharedfinances.resources.repositories.springdata.GroupUsersSpringDataRepository
@@ -19,7 +20,24 @@ class GroupUsersRepositoryImpl(
         userId: UUID,
     ): Mono<Long> = springDataRepository.countByGroupIdAndUserId(groupId, userId)
 
+    override fun countByGroupIdAndUserIdAndRole(
+        groupId: UUID,
+        userId: UUID,
+        role: UserGroupRole,
+    ): Mono<Long> = springDataRepository.countByGroupIdAndUserIdAndRole(groupId, userId, role)
+
     override fun save(groupUser: GroupUser): Mono<GroupUser> = springDataRepository.save(groupUser)
 
     override fun findAllMembers(groupId: UUID): Flux<GroupUser> = r2dbcRepository.findAllMembers(groupId)
+
+    override fun updateRole(
+        userId: UUID,
+        groupId: UUID,
+        newRole: UserGroupRole,
+    ): Mono<Long> =
+        springDataRepository.updateRole(
+            userId = userId,
+            groupId = groupId,
+            newRole = newRole,
+        )
 }

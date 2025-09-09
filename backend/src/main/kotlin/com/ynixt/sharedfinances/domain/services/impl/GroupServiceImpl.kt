@@ -3,9 +3,11 @@ package com.ynixt.sharedfinances.domain.services.impl
 import com.ynixt.sharedfinances.domain.entities.Group
 import com.ynixt.sharedfinances.domain.entities.GroupUser
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
+import com.ynixt.sharedfinances.domain.services.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.GroupService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import org.springframework.stereotype.Service
@@ -18,13 +20,14 @@ class GroupServiceImpl(
     private val groupRepository: GroupRepository,
     private val groupUserRepository: GroupUsersRepository,
     private val groupActionEventService: GroupActionEventService,
+    private val groupPermissionService: GroupPermissionService,
 ) : GroupService {
-    override fun findAllGroups(userId: UUID): Mono<List<Group>> = groupRepository.findAllByUserIdOrderByName(userId).collectList()
+    override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> = groupRepository.findAllByUserIdOrderByName(userId).collectList()
 
     override fun findGroup(
         userId: UUID,
         id: UUID,
-    ): Mono<Group> =
+    ): Mono<GroupWithRole> =
         groupRepository.findOneByUserIdAndId(
             userId = userId,
             id = id,
@@ -61,7 +64,7 @@ class GroupServiceImpl(
         userId: UUID,
         id: UUID,
     ): Mono<List<GroupUser>> =
-        userIsInGroup(userId = userId, id = id).flatMap {
+        groupPermissionService.hasPermission(userId = userId, groupId = id).flatMap {
             if (it) {
                 groupUserRepository
                     .findAllMembers(
@@ -72,13 +75,25 @@ class GroupServiceImpl(
             }
         }
 
-    private fun userIsInGroup(
+    override fun updateMemberRole(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean> =
-        groupUserRepository
-            .countByGroupIdAndUserId(
-                userId = userId,
-                groupId = id,
-            ).map { it > 0 }
+        memberId: UUID,
+        newRole: UserGroupRole,
+    ): Mono<Boolean> {
+        require(memberId != id) { "User cannot changed his own role." }
+
+        return groupPermissionService.hasPermission(userId = userId, groupId = id, roleNeeded = UserGroupRole.ADMIN).flatMap {
+            if (it) {
+                groupUserRepository
+                    .updateRole(
+                        userId = memberId,
+                        groupId = id,
+                        newRole = newRole,
+                    ).map { count -> count > 0 }
+            } else {
+                Mono.empty()
+            }
+        }
+    }
 }
