@@ -1,11 +1,13 @@
+
 import io.github.ynixt.anothertypescriptgenerator.GenerateTypescriptInterfacesTask
+
 
 plugins {
     kotlin("jvm") version "2.2.10"
     kotlin("plugin.spring") version "2.2.10"
     id("org.springframework.boot") version "3.5.0"
     id("io.spring.dependency-management") version "1.1.7"
-    id("io.github.ynixt.another-typescript-generator") version "1.1.0"
+    id("io.github.ynixt.another-typescript-generator") version "1.2.0"
     id("tech.mappie.plugin") version "2.2.10-1.4.2"
     id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
 }
@@ -79,4 +81,5 @@ tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
         listOf(
             "com.ynixt.sharedfinances.application.web.dto.kratos",
         )
+    generateEnumObject = true
 }

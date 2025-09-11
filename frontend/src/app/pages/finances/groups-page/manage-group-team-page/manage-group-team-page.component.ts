@@ -10,6 +10,7 @@ import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupInviteDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupUserTableComponent } from '../../components/group-user-table/group-user-table.component';
@@ -111,4 +112,6 @@ export class ManageGroupTeamPageComponent {
   private goToNotFound() {
     return this.router.navigateByUrl('/not-found');
   }
+
+  protected readonly GroupPermissions__Obj = GroupPermissions__Obj;
 }

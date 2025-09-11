@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.domain.services
 
+import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import org.springframework.stereotype.Service
@@ -13,9 +14,9 @@ class GroupPermissionServiceImpl(
     override fun hasPermission(
         userId: UUID,
         groupId: UUID,
-        roleNeeded: UserGroupRole?,
+        permission: GroupPermissions?,
     ): Mono<Boolean> =
-        if (roleNeeded == null) {
+        if (permission == null) {
             groupUserRepository
                 .countByGroupIdAndUserId(
                     userId = userId,
@@ -23,10 +24,20 @@ class GroupPermissionServiceImpl(
                 ).map { it > 0 }
         } else {
             groupUserRepository
-                .countByGroupIdAndUserIdAndRole(
+                .findOneByGroupIdAndUserId(
                     userId = userId,
                     groupId = groupId,
-                    role = roleNeeded,
-                ).map { it > 0 }
+                ).map { getAllPermissionsForRole(it.role).contains(permission) }
+        }
+
+    override fun getAllPermissionsForRole(role: UserGroupRole): Set<GroupPermissions> =
+        when (role) {
+            UserGroupRole.ADMIN -> GroupPermissions.entries.toSet()
+            UserGroupRole.EDITOR ->
+                setOf(
+                    GroupPermissions.SEND_ENTRIES,
+                )
+
+            else -> emptySet()
         }
 }

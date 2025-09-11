@@ -14,11 +14,10 @@ interface GroupUsersSpringDataRepository : CrudRepository<GroupUser, String> {
         userId: UUID,
     ): Mono<Long>
 
-    fun countByGroupIdAndUserIdAndRole(
+    fun findOneByGroupIdAndUserId(
         groupId: UUID,
         userId: UUID,
-        role: UserGroupRole,
-    ): Mono<Long>
+    ): Mono<GroupUser>
 
     @Modifying
     fun save(groupUser: GroupUser): Mono<GroupUser>

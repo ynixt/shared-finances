@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.domain.entities.Group
 import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
@@ -22,16 +23,28 @@ class GroupServiceImpl(
     private val groupActionEventService: GroupActionEventService,
     private val groupPermissionService: GroupPermissionService,
 ) : GroupService {
-    override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> = groupRepository.findAllByUserIdOrderByName(userId).collectList()
+    override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> =
+        groupRepository.findAllByUserIdOrderByName(userId).collectList().map { list ->
+            list.map { groupWithRole ->
+                groupWithRole.apply {
+                    this.permissions = groupPermissionService.getAllPermissionsForRole(groupWithRole.role)
+                }
+            }
+        }
 
     override fun findGroup(
         userId: UUID,
         id: UUID,
     ): Mono<GroupWithRole> =
-        groupRepository.findOneByUserIdAndId(
-            userId = userId,
-            id = id,
-        )
+        groupRepository
+            .findOneByUserIdAndId(
+                userId = userId,
+                id = id,
+            ).map { groupWithRole ->
+                groupWithRole.apply {
+                    this.permissions = groupPermissionService.getAllPermissionsForRole(groupWithRole.role)
+                }
+            }
 
     @Transactional
     override fun newGroup(
@@ -83,7 +96,7 @@ class GroupServiceImpl(
     ): Mono<Boolean> {
         require(memberId != id) { "User cannot changed his own role." }
 
-        return groupPermissionService.hasPermission(userId = userId, groupId = id, roleNeeded = UserGroupRole.ADMIN).flatMap {
+        return groupPermissionService.hasPermission(userId = userId, groupId = id, permission = GroupPermissions.CHANGE_ROLE).flatMap {
             if (it) {
                 groupUserRepository
                     .updateRole(

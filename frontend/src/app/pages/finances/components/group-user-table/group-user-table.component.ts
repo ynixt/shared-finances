@@ -12,8 +12,13 @@ import { Table, TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
 
 import { UserAvatarComponent } from '../../../../components/user-avatar/user-avatar.component';
-import { GroupUserDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
-import { UserGroupRole } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import {
+  GroupPermissions,
+  GroupPermissions__Obj,
+  UserGroupRole,
+  UserGroupRole__Options,
+} from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { I18nOption } from '../../../../models/i18n-option';
 import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
@@ -21,8 +26,6 @@ import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { GroupService } from '../../services/group.service';
 
 type GroupUserWithIdDto = GroupUserDto & { id: string };
-
-const ROLES: UserGroupRole[] = ['VIEWER', 'EDITOR', 'ADMIN'];
 
 @Component({
   selector: 'app-group-user-table',
@@ -37,9 +40,9 @@ export class GroupUserTableComponent {
   roles: I18nOption<UserGroupRole>[];
   submitting = false;
 
-  groupId = input<string | undefined>(undefined);
+  group = input<GroupWithRoleDto | undefined>(undefined);
   groupRole = signal<UserGroupRole>('VIEWER');
-  hasPermissionToModifyRoles = computed<boolean>(() => this.groupRole() === 'ADMIN');
+  hasPermissionToModifyRoles = computed<boolean>(() => this.group()?.permissions?.includes(GroupPermissions__Obj.CHANGE_ROLE) === true);
 
   @ViewChild('table') table: Table | undefined = undefined;
 
@@ -49,7 +52,7 @@ export class GroupUserTableComponent {
     private messageService: MessageService,
     public userService: UserService,
   ) {
-    this.roles = ROLES.map(value => ({
+    this.roles = UserGroupRole__Options.map(value => ({
       value,
       label: this.translateService.instant('enums.userGroupRole.' + value),
     }));
@@ -57,7 +60,7 @@ export class GroupUserTableComponent {
     effect(async () => {
       this.loading = true;
 
-      const groupId = this.groupId();
+      const groupId = this.group()?.id;
       const user = this.userService.user();
 
       if (groupId == null || user == null) {
@@ -90,7 +93,7 @@ export class GroupUserTableComponent {
 
     try {
       this.submitting = true;
-      await this.groupService.updateMemberRole(this.groupId()!!, groupUser.user.id, groupUser.role);
+      await this.groupService.updateMemberRole(this.group()!!.id, groupUser.user.id, groupUser.role);
 
       this.messageService.add({
         severity: 'success',

@@ -20,11 +20,10 @@ class GroupUsersRepositoryImpl(
         userId: UUID,
     ): Mono<Long> = springDataRepository.countByGroupIdAndUserId(groupId, userId)
 
-    override fun countByGroupIdAndUserIdAndRole(
+    override fun findOneByGroupIdAndUserId(
         groupId: UUID,
         userId: UUID,
-        role: UserGroupRole,
-    ): Mono<Long> = springDataRepository.countByGroupIdAndUserIdAndRole(groupId, userId, role)
+    ): Mono<GroupUser> = springDataRepository.findOneByGroupIdAndUserId(groupId, userId)
 
     override fun save(groupUser: GroupUser): Mono<GroupUser> = springDataRepository.save(groupUser)
 

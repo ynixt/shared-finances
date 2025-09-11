@@ -8,10 +8,10 @@
     ></app-finances-title-bar>
 
     <div class="flex">
-      <app-group-user-table [groupId]="group.id" class="w-full"></app-group-user-table>
+      <app-group-user-table [group]="group" class="w-full"></app-group-user-table>
     </div>
 
-    @if (group.role === 'ADMIN') {
+    @if (group.permissions.includes(GroupPermissions__Obj.ADD_MEMBER)) {
       <div class="flex mt-12 justify-center">
         <button pButton class="w-full" (click)="generateInvitation()" size="small" [loading]="generatingInvitation">
           {{ 'financesPage.groupsPage.manageTeamPage.generateInvitation' | translate }}

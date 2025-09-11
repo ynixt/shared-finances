@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.domain.entities.GroupInvite
-import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.repositories.GroupInviteRepository
 import com.ynixt.sharedfinances.domain.services.GroupInviteService
 import com.ynixt.sharedfinances.domain.services.GroupPermissionService
@@ -25,7 +25,7 @@ class GroupInviteServiceImpl(
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-                roleNeeded = UserGroupRole.ADMIN,
+                permission = GroupPermissions.ADD_MEMBER,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
                     repository.save(

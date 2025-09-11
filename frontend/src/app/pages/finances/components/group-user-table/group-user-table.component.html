@@ -13,7 +13,7 @@
     <ng-template #body let-groupUser let-editing="editing" let-ri="rowIndex">
       <tr [pEditableRow]="groupUser" #editableRow>
         <td>
-          <app-user-avatar [user]="groupUser.user"></app-user-avatar>
+          <app-user-avatar [user]="groupUser.user" [showTooltip]="false"></app-user-avatar>
         </td>
         <td>
           {{

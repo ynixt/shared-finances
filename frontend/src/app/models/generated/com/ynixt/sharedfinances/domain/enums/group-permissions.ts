@@ -1,0 +1,13 @@
+/* eslint-disable */
+/* tslint-disable */
+
+export type GroupPermissions = 'CHANGE_ROLE' | 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'SEND_ENTRIES';
+
+export const GroupPermissions__Options: GroupPermissions[] = ['CHANGE_ROLE', 'ADD_MEMBER', 'REMOVE_MEMBER', 'SEND_ENTRIES'];
+
+export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions } = {
+  'CHANGE_ROLE': 'CHANGE_ROLE',
+  'ADD_MEMBER': 'ADD_MEMBER',
+  'REMOVE_MEMBER': 'REMOVE_MEMBER',
+  'SEND_ENTRIES': 'SEND_ENTRIES',
+};
