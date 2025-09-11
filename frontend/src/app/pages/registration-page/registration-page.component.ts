@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
@@ -36,6 +36,7 @@ export class RegistrationPageComponent implements OnInit {
     private translateService: TranslateService,
     private messageService: MessageService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -74,7 +75,13 @@ export class RegistrationPageComponent implements OnInit {
       });
 
       await promiseTimeout(DEFAULT_SUCCESS_LIFE);
-      await this.router.navigateByUrl('/login');
+      const return_to = this.route.snapshot.queryParamMap.get('return_to');
+
+      if (return_to) {
+        await this.router.navigate(['/login'], { queryParams: { return_to } });
+      } else {
+        await this.router.navigateByUrl('/login');
+      }
     } catch (error) {
       this.submitting = false;
 
