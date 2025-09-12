@@ -15,4 +15,11 @@ interface GroupRepository {
     ): Mono<GroupWithRole>
 
     fun save(group: Group): Mono<Group>
+
+    fun edit(
+        id: UUID,
+        newName: String,
+    ): Mono<Long>
+
+    fun deleteById(id: UUID): Mono<Long>
 }

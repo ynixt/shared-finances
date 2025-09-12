@@ -5,11 +5,22 @@ import { Observable, filter, map } from 'rxjs';
 import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
+import { ActionEventCategory } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { KratosAuthService } from '../../../services/kratos-auth.service';
 import { ActionEventService } from './action-event.service';
 
+const notGroupFilter = filter((e: UserActionEventDto) => e.groupId == null);
+
+export type GroupActionEventDto = UserActionEventDto & {
+  event: ActionEventCategory;
+  groupId?: string;
+  modifiedByUserId?: string;
+};
+
 @Injectable({ providedIn: 'root' })
 export class UserActionEventService extends ActionEventService implements OnDestroy {
+  readonly groupEvents$: Observable<GroupActionEventDto>;
+
   readonly bankInserted$: Observable<BankAccountDto>;
   readonly bankUpdated$: Observable<BankAccountDto>;
   readonly bankDeleted$: Observable<string>;
@@ -19,8 +30,15 @@ export class UserActionEventService extends ActionEventService implements OnDest
   constructor(authService: KratosAuthService, zone: NgZone) {
     super(authService, zone, '/api/sse/user-events');
 
+    this.groupEvents$ = this.wire$.pipe(
+      map(msg => {
+        return { ...JSON.parse(msg.data as any as string), event: msg.event } as GroupActionEventDto;
+      }),
+      filter((e: GroupActionEventDto) => e.groupId != null),
+    );
+
     // --- Bank ---
-    const baseBank$ = this.streamOf<UserActionEventDto>('BANK_ACCOUNT');
+    const baseBank$ = this.streamOf<UserActionEventDto>('BANK_ACCOUNT').pipe(notGroupFilter);
 
     this.bankInserted$ = baseBank$.pipe(
       filter(e => e.type === 'INSERT'),
@@ -38,7 +56,7 @@ export class UserActionEventService extends ActionEventService implements OnDest
     );
 
     // --- Group ---
-    const baseGroup$ = this.streamOf<UserActionEventDto>('GROUP');
+    const baseGroup$ = this.streamOf<UserActionEventDto>('GROUP').pipe(notGroupFilter);
 
     this.groupInserted$ = baseGroup$.pipe(
       filter(e => e.type === 'INSERT'),

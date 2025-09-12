@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.repositories.springdata
 import com.ynixt.sharedfinances.domain.entities.Group
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
+import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import reactor.core.publisher.Flux
@@ -37,4 +38,19 @@ interface GroupSpringDataRepository :
         userId: UUID,
         id: UUID,
     ): Mono<GroupWithRole>
+
+    @Modifying
+    @Query(
+        """
+        update "group"
+        set
+            name = :newName,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :id
+    """,
+    )
+    override fun edit(
+        id: UUID,
+        newName: String,
+    ): Mono<Long>
 }

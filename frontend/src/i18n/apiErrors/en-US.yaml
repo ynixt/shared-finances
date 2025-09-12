@@ -1,0 +1,2 @@
+apiErrors:
+  memberAlreadyInGroup: 'User is already on this group.'

@@ -1,0 +1,22 @@
+<app-navbar></app-navbar>
+
+<div class="container mx-auto flex flex-col gap-10">
+  @if (loading) {
+    <p-progressSpinner></p-progressSpinner>
+  } @else if (inviteInfo != null) {
+    <div class="flex flex-col justify-center items-center gap-4">
+      <h1 class="text-2xl">{{ 'acceptInvitePage.title' | translate: { name: inviteInfo.groupName } }}</h1>
+
+      <h3 class="text-lg">{{ 'acceptInvitePage.expirationWarning' | translate: { date: inviteInfo.expireAt | localDate } }}</h3>
+
+      <div class="flex gap-2 mt-6">
+        <button pButton pRipple (click)="acceptInvite()" [loading]="acceptingInvite">{{ 'acceptInvitePage.accept' | translate }}</button>
+        <button pButton pRipple severity="danger" (click)="declineInvite()" [loading]="acceptingInvite">
+          {{ 'acceptInvitePage.decline' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+<p-toast />

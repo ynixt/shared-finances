@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Shared Finances",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

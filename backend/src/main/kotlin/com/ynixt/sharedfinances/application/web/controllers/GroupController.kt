@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.application.web.controllers
 
 import com.ynixt.sharedfinances.application.web.dto.groups.ChangeRoleGroupUserRequestDto
+import com.ynixt.sharedfinances.application.web.dto.groups.EditGroupDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupInviteDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
@@ -15,6 +16,7 @@ import com.ynixt.sharedfinances.domain.services.GroupInviteService
 import com.ynixt.sharedfinances.domain.services.GroupService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -55,6 +57,32 @@ class GroupController(
             ).map {
                 ResponseEntity.ofNullable(groupDtoMapper.toDto(it))
             }.defaultIfEmpty(ResponseEntity.notFound().build())
+
+    @PutMapping("/{id}")
+    fun edit(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+        @RequestBody body: EditGroupDto,
+    ): Mono<ResponseEntity<GroupWithRoleDto>> =
+        groupService
+            .editGroup(
+                userId = principalToken.principal.id,
+                id = id,
+                groupDtoMapper.fromEditDtoToEditRequest(body),
+            ).map {
+                ResponseEntity.ofNullable(groupDtoMapper.toDto(it))
+            }.defaultIfEmpty(ResponseEntity.notFound().build())
+
+    @DeleteMapping("/{id}")
+    fun delete(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+    ): Mono<ResponseEntity<Unit>> =
+        groupService
+            .deleteGroup(
+                userId = principalToken.principal.id,
+                id = id,
+            ).map { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 
     @PostMapping
     fun newBankAccount(

@@ -14,6 +14,7 @@ import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserService } from '../../../services/user.service';
 import { GroupService } from '../services/group.service';
+import { GroupsActionEventService } from '../services/groups-action-event.service';
 import { UserActionEventService } from '../services/user-action-event.service';
 
 @Component({
@@ -39,10 +40,39 @@ export class FinancesPageComponent {
     private router: Router,
     private groupService: GroupService,
     private userActionEventService: UserActionEventService,
+    groupsActionEventService: GroupsActionEventService,
   ) {
+    groupsActionEventService.groupDeleted$.pipe(untilDestroyed(this)).subscribe(event => {
+      const groupId = event.data;
+
+      const index = this.groups?.findIndex(g => g.id == groupId);
+
+      if (index != null && index !== -1) {
+        this.groups?.splice(index, 1);
+      }
+
+      this.convertGroupsIntoMenu();
+    });
+
+    groupsActionEventService.groupUpdated$.pipe(untilDestroyed(this)).subscribe(event => {
+      const group = event.data;
+
+      const index = this.groups?.findIndex(g => g.id == group.id);
+
+      if (this.groups != null && index != null && index !== -1) {
+        this.groups[index] = group;
+      }
+
+      this.convertGroupsIntoMenu();
+    });
+
     this.userService.getUser().then(u => {
       if (u && u.defaultCurrency == null) {
-        this.router.navigate(['/welcome']);
+        this.router.navigate(['/welcome'], {
+          queryParams: {
+            return_to: this.router.url,
+          },
+        });
       }
     });
 

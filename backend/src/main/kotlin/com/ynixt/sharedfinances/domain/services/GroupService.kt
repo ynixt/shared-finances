@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.domain.services
 import com.ynixt.sharedfinances.domain.entities.Group
 import com.ynixt.sharedfinances.domain.entities.GroupUser
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import reactor.core.publisher.Mono
@@ -15,6 +16,17 @@ interface GroupService {
         userId: UUID,
         id: UUID,
     ): Mono<GroupWithRole>
+
+    fun editGroup(
+        userId: UUID,
+        id: UUID,
+        request: EditGroupRequest,
+    ): Mono<GroupWithRole>
+
+    fun deleteGroup(
+        userId: UUID,
+        id: UUID,
+    ): Mono<Boolean>
 
     fun newGroup(
         userId: UUID,
@@ -32,4 +44,10 @@ interface GroupService {
         memberId: UUID,
         newRole: UserGroupRole,
     ): Mono<Boolean>
+
+    fun addNewMember(
+        userId: UUID,
+        id: UUID,
+        role: UserGroupRole = UserGroupRole.VIEWER,
+    ): Mono<Unit>
 }

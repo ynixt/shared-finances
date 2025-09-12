@@ -28,11 +28,11 @@ class ActionEventListenerServiceImpl(
                 objectMapper.readValue(it.message)
             }
 
-    override fun listenGroupActions(groupId: UUID): Flux<GroupActionEvent<Any>> =
+    override fun listenGroupActions(userId: UUID): Flux<GroupActionEvent<Any>> =
         container
             .receive(
                 ChannelTopic(
-                    actionEventService.getDestinationForGroup(groupId),
+                    actionEventService.getDestinationForGroup(userId),
                 ),
             ).map {
                 objectMapper.readValue(it.message)

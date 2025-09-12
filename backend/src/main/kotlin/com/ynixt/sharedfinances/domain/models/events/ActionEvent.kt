@@ -9,4 +9,5 @@ abstract class ActionEvent<T> {
     abstract val type: ActionEventType
     abstract val category: ActionEventCategory
     abstract val data: T
+    abstract val userId: UUID
 }

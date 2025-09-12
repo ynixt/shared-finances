@@ -23,9 +23,21 @@ class EventsStreamController(
     fun userEvents(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
     ): Flux<ServerSentEvent<UserActionEventDto>> {
-        val data =
+        val userData =
             actionEventListenerService
                 .listenUserActions(principalToken.principal.id)
+                .map { p ->
+                    ServerSentEvent
+                        .builder(userActionEventDtoMapper.toDto(p))
+                        .event(p.category.toString())
+                        .id(p.id.toString())
+                        .retry(Duration.ofSeconds(3))
+                        .build()
+                }
+
+        val groupData =
+            actionEventListenerService
+                .listenGroupActions(principalToken.principal.id)
                 .map { p ->
                     ServerSentEvent
                         .builder(userActionEventDtoMapper.toDto(p))
@@ -45,6 +57,6 @@ class EventsStreamController(
                         .build()
                 }
 
-        return data.mergeWith(keepalive)
+        return userData.mergeWith(groupData).mergeWith(keepalive)
     }
 }

@@ -32,6 +32,8 @@ import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
 import reactor.core.publisher.Mono
+import java.util.Optional
+import kotlin.jvm.optionals.getOrNull
 
 @PreAuthorize("hasRole('SERVICE_SECRET')")
 annotation class OnlyServiceSecretAllowed
@@ -53,9 +55,9 @@ class SecurityConfig(
                 SecurityWebFiltersOrder.AUTHENTICATION,
             ).authorizeExchange { exchanges ->
                 exchanges
-                    .pathMatchers("/")
-                    .permitAll()
                     .pathMatchers("/actuator/**")
+                    .permitAll()
+                    .pathMatchers("/open/**")
                     .permitAll()
                     .anyExchange()
                     .authenticated()
@@ -155,10 +157,13 @@ class ServiceSecretGateFilter(
                     } ?: false
 
                 exchange
-                    .getPrincipal<Authentication?>()
+                    .getPrincipal<Authentication>()
+                    .map { Optional.of(it) }
+                    .switchIfEmpty(Mono.just(Optional.empty()))
                     .flatMap { auth ->
                         val isService =
                             auth
+                                .getOrNull()
                                 ?.authorities
                                 ?.any { it.authority == "ROLE_SERVICE_SECRET" } ?: false
 

@@ -4,10 +4,13 @@ import com.ynixt.sharedfinances.domain.entities.Group
 import com.ynixt.sharedfinances.domain.entities.GroupUser
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.exceptions.MemberAlreadyInGroupException
+import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
+import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.GroupService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
@@ -22,6 +25,7 @@ class GroupServiceImpl(
     private val groupUserRepository: GroupUsersRepository,
     private val groupActionEventService: GroupActionEventService,
     private val groupPermissionService: GroupPermissionService,
+    private val databaseHelperService: DatabaseHelperService,
 ) : GroupService {
     override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> =
         groupRepository.findAllByUserIdOrderByName(userId).collectList().map { list ->
@@ -31,6 +35,69 @@ class GroupServiceImpl(
                 }
             }
         }
+
+    @Transactional
+    override fun editGroup(
+        userId: UUID,
+        id: UUID,
+        request: EditGroupRequest,
+    ): Mono<GroupWithRole> =
+        groupPermissionService
+            .hasPermission(
+                userId = userId,
+                groupId = id,
+                GroupPermissions.EDIT_GROUP,
+            ).flatMap { hasPermission ->
+                if (hasPermission) {
+                    groupRepository
+                        .edit(id, request.name)
+                        .flatMap {
+                            findGroup(
+                                userId = userId,
+                                id = id,
+                            )
+                        }.flatMap { g ->
+                            groupActionEventService
+                                .sendUpdatedGroup(
+                                    group = g,
+                                    userId = userId,
+                                ).thenReturn(g)
+                        }
+                } else {
+                    Mono.empty()
+                }
+            }
+
+    @Transactional
+    override fun deleteGroup(
+        userId: UUID,
+        id: UUID,
+    ): Mono<Boolean> =
+        groupPermissionService
+            .hasPermission(
+                userId = userId,
+                groupId = id,
+                GroupPermissions.EDIT_GROUP,
+            ).flatMap { hasPermission ->
+                if (hasPermission) {
+                    groupUserRepository.findAllMembers(id).map { it.userId }.collectList().flatMap { memberList ->
+                        groupRepository.deleteById(id).flatMap { modifiedLines ->
+                            if (modifiedLines > 0) {
+                                groupActionEventService
+                                    .sendDeletedGroup(
+                                        id = id,
+                                        userId = userId,
+                                        membersId = memberList.toList(),
+                                    ).thenReturn(true)
+                            } else {
+                                Mono.just(false)
+                            }
+                        }
+                    }
+                } else {
+                    Mono.empty()
+                }
+            }.switchIfEmpty(Mono.just(false))
 
     override fun findGroup(
         userId: UUID,
@@ -109,4 +176,27 @@ class GroupServiceImpl(
             }
         }
     }
+
+    override fun addNewMember(
+        userId: UUID,
+        id: UUID,
+        role: UserGroupRole,
+    ): Mono<Unit> =
+        groupUserRepository
+            .save(
+                GroupUser(
+                    userId = userId,
+                    groupId = id,
+                    role = role,
+                ),
+            ).onErrorMap { t ->
+                if (databaseHelperService.isUniqueViolation(t, "idx_group_user_group_id_user_id")) {
+                    MemberAlreadyInGroupException(
+                        userId = userId,
+                        groupId = id,
+                    )
+                } else {
+                    t
+                }
+            }.map { }
 }

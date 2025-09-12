@@ -5,6 +5,10 @@ financesPage:
     newGroupPage:
       title: Novo groupo
       successMessage: O grupo foi criado com sucesso
+    editGroupPage:
+      title: 'Editar grupo: {{name}}'
+      successMessage: O Grupo foi editado com sucesso
+      successDeleteMessage: O grupo foi deletado com sucesso
     overviewPage:
       title: 'Visão geral do grupo: {{name}}'
       manageTeam: Gerenciar pessoas do grupo

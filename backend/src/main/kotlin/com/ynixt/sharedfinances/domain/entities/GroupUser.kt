@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.entities
 
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 
@@ -9,6 +10,7 @@ class GroupUser(
     val groupId: UUID,
     val userId: UUID,
     val role: UserGroupRole,
-) {
+) : SimpleEntity() {
+    @Transient
     var user: User? = null
 }

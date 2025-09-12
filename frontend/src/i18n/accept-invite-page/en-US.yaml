@@ -1,0 +1,5 @@
+acceptInvitePage:
+  title: "You was invited to group '{{name}}'"
+  expirationWarning: 'This invitation will expire on {{date}}'
+  accept: Aceitar
+  decline: Recusar

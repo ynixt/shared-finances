@@ -101,6 +101,14 @@ export const routes: Routes = [
             },
           },
           {
+            path: ':id/edit',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/edit-group-page/edit-group-page.component').then(m => m.EditGroupPageComponent),
+            data: {
+              pageTitleKey: 'pageTitle.editGroup',
+            },
+          },
+          {
             path: ':id',
             loadComponent: () =>
               import('./pages/finances/groups-page/overview-group-page/overview-group-page.component').then(
@@ -123,6 +131,13 @@ export const routes: Routes = [
         ],
       },
     ],
+  },
+  {
+    path: 'invite/:id',
+    loadComponent: () => import('./pages/accept-invite-page/accept-invite-page.component').then(m => m.AcceptInvitePageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.acceptInvite',
+    },
   },
   {
     'path': 'not-found',

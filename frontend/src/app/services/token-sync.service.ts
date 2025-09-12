@@ -72,8 +72,6 @@ export class TokenSyncService {
       throw error;
     }
 
-    console.log('refreshing token');
-
     try {
       const token = await this.authService.refreshJwt();
 

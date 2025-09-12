@@ -1,10 +1,9 @@
 CREATE TABLE group_user
 (
+    id UUID PRIMARY KEY,
     group_id UUID NOT NULL,
     user_id  UUID NOT NULL,
     role     TEXT NOT NULL,
-
-    PRIMARY KEY (group_id, user_id),
 
     CONSTRAINT fk_group_user_group
         FOREIGN KEY (group_id) REFERENCES "group" (id)
@@ -16,4 +15,5 @@ CREATE TABLE group_user
 );
 
 CREATE INDEX idx_group_user_user_id ON group_user (user_id);
+CREATE UNIQUE INDEX idx_group_user_group_id_user_id ON group_user (group_id, user_id);
 CREATE INDEX idx_group_user_group_id_role ON group_user (group_id, role);

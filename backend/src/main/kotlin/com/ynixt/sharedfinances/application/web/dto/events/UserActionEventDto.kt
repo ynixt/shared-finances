@@ -7,4 +7,6 @@ data class UserActionEventDto(
     val id: UUID = UUID.randomUUID(),
     val type: ActionEventType,
     val data: Any,
+    val modifiedByUserId: UUID? = null,
+    val groupId: UUID? = null,
 )

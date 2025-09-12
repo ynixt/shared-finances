@@ -1,16 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
+import { faPencil, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe } from '@ngx-translate/core';
 
+import { filter } from 'rxjs';
+
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-import { GroupDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupUserListComponent } from '../../components/group-user-list/group-user-list.component';
 import { GroupService } from '../../services/group.service';
+import { GroupsActionEventService } from '../../services/groups-action-event.service';
 
 @Component({
   selector: 'app-overview-group-page',
@@ -20,23 +24,17 @@ import { GroupService } from '../../services/group.service';
 })
 @UntilDestroy()
 export class OverviewGroupPageComponent {
-  group: GroupDto | null = null;
+  group: GroupWithRoleDto | null = null;
   loading = true;
   submitting = false;
 
-  extraButtons: FinancesTitleBarExtraButton[] = [
-    {
-      routerLink: 'team',
-      rounded: true,
-      tooltip: 'financesPage.groupsPage.overviewPage.manageTeam',
-      icon: faPeopleGroup,
-    },
-  ];
+  extraButtons: FinancesTitleBarExtraButton[] = this.createExtraButtons();
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private groupService: GroupService,
+    private groupsActionEventService: GroupsActionEventService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -49,13 +47,14 @@ export class OverviewGroupPageComponent {
     });
   }
 
-  askForConfirmationToDelete() {}
-
   private async getGroup(id: string): Promise<void> {
     this.loading = true;
 
     try {
       this.group = await this.groupService.getGroup(id);
+      this.trackGroup(id);
+
+      this.extraButtons = this.createExtraButtons();
 
       this.loading = false;
     } catch (error) {
@@ -72,5 +71,51 @@ export class OverviewGroupPageComponent {
 
   private goToNotFound() {
     return this.router.navigateByUrl('/not-found');
+  }
+
+  private createExtraButtons(): FinancesTitleBarExtraButton[] {
+    const extraButtons: FinancesTitleBarExtraButton[] = [];
+
+    extraButtons.push({
+      routerLink: 'team',
+      rounded: true,
+      tooltip: 'financesPage.groupsPage.overviewPage.manageTeam',
+      icon: faPeopleGroup,
+    });
+
+    if (this.group?.permissions?.includes(GroupPermissions__Obj.EDIT_GROUP)) {
+      extraButtons.push({
+        routerLink: 'edit',
+        rounded: true,
+        tooltip: 'general.edit',
+        icon: faPencil,
+      });
+    }
+
+    return extraButtons;
+  }
+
+  private trackGroup(groupId: string) {
+    this.groupsActionEventService.groupUpdated$
+      .pipe(
+        untilDestroyed(this),
+        filter(e => e.groupId == groupId),
+      )
+      .subscribe(e => this.groupUpdated(e.data));
+
+    this.groupsActionEventService.groupDeleted$
+      .pipe(
+        untilDestroyed(this),
+        filter(e => e.groupId == groupId),
+      )
+      .subscribe(e => this.groupDeleted(e.data));
+  }
+
+  private groupUpdated(newGroup: GroupWithRoleDto) {
+    this.group = newGroup;
+  }
+
+  private groupDeleted(_: string) {
+    this.router.navigate(['/app']);
   }
 }

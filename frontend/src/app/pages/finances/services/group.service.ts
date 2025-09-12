@@ -5,6 +5,7 @@ import { lastValueFrom, take } from 'rxjs';
 
 import {
   ChangeRoleGroupUserRequestDto,
+  EditGroupDto,
   GroupDto,
   GroupUserDto,
   GroupWithRoleDto,
@@ -38,6 +39,26 @@ export class GroupService {
 
     if (user != null) {
       return lastValueFrom(this.http.get<GroupWithRoleDto>(`/api/groups/${groupId}`).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async editGroup(groupId: string, request: EditGroupDto): Promise<GroupWithRoleDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.http.put<GroupWithRoleDto>(`/api/groups/${groupId}`, request).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async deleteGroup(groupId: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.http.delete<void>(`/api/groups/${groupId}`).pipe(take(1)));
     }
 
     throw new UserMissingError();

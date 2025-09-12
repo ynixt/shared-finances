@@ -11,6 +11,8 @@ pageTitle:
   categories: Categories
   tags: Tags
   onboarding: Welcome
-  newGroup: Novo grupo
+  newGroup: New group
+  editGroup: Edit group
   overviewGroup: Group overview
   manageGroupTeam: Manage team
+  acceptInvite: Accept invite

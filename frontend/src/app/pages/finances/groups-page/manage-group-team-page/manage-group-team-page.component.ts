@@ -45,7 +45,7 @@ export class ManageGroupTeamPageComponent {
 
     if (invitation == null) return undefined;
 
-    return `${window.location.origin}/app/invite/${invitation.id}`;
+    return `${window.location.origin}/invite/${invitation.id}`;
   });
 
   private groupId: string | undefined;

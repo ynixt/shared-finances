@@ -5,8 +5,6 @@
     <app-finances-title-bar
       [title]="'financesPage.groupsPage.overviewPage.title' | translate: { name: group.name }"
       closeRouterLink="../.."
-      [showDeleteButton]="true"
-      (deleteButtonClicked)="askForConfirmationToDelete()"
       [deleteButtonLoading]="submitting"
       [extraButtons]="extraButtons"
     ></app-finances-title-bar>

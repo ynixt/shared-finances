@@ -5,5 +5,8 @@ enum class GroupPermissions {
     ADD_MEMBER,
     REMOVE_MEMBER,
 
+    EDIT_GROUP,
+    DELETE_GROUP,
+
     SEND_ENTRIES,
 }

@@ -1,0 +1,5 @@
+acceptInvitePage:
+  title: "Você foi convidado para o grupo '{{name}}'"
+  expirationWarning: 'Esse convite irá expirar em {{date}}'
+  accept: Aceitar
+  decline: Recusar

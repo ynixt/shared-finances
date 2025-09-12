@@ -1,0 +1,35 @@
+import { Injectable } from '@angular/core';
+
+import { Observable, filter, map } from 'rxjs';
+
+import { GroupWithRoleDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { ActionEventType } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { UserActionEventService } from './user-action-event.service';
+
+export interface GroupActionEvent<T> {
+  data: T;
+  groupId: string;
+  id: string;
+  modifiedByUserId: string;
+  type: ActionEventType;
+}
+
+@Injectable({ providedIn: 'root' })
+export class GroupsActionEventService {
+  readonly groupUpdated$: Observable<GroupActionEvent<GroupWithRoleDto>>;
+  readonly groupDeleted$: Observable<GroupActionEvent<string>>;
+
+  constructor(private userActionEventService: UserActionEventService) {
+    const baseGroup$ = this.userActionEventService.groupEvents$.pipe(filter(g => g.event === 'GROUP'));
+
+    this.groupUpdated$ = baseGroup$.pipe(
+      filter(e => e.type === 'UPDATE'),
+      map(e => e as GroupActionEvent<GroupWithRoleDto>),
+    );
+
+    this.groupDeleted$ = baseGroup$.pipe(
+      filter(e => e.type === 'DELETE'),
+      map(e => e as GroupActionEvent<string>),
+    );
+  }
+}

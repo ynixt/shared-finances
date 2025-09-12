@@ -28,6 +28,7 @@ class GroupPermissionServiceImpl(
                     userId = userId,
                     groupId = groupId,
                 ).map { getAllPermissionsForRole(it.role).contains(permission) }
+                .switchIfEmpty(Mono.just(false))
         }
 
     override fun getAllPermissionsForRole(role: UserGroupRole): Set<GroupPermissions> =

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
@@ -11,7 +11,6 @@ import { CurrencySelectorComponent } from '../../components/currency-selector/cu
 import { LangButtonComponent } from '../../components/lang-button/lang-button.component';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
-import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 
 @Component({
   selector: 'app-onboarding-page',
@@ -29,6 +28,7 @@ export class OnboardingPageComponent {
     private userService: UserService,
     private router: Router,
     private messageService: MessageService,
+    private route: ActivatedRoute,
     formBuilder: FormBuilder,
   ) {
     this.userService.getUser().then(u => {
@@ -51,6 +51,14 @@ export class OnboardingPageComponent {
       await this.userService.changeDefaultCurrency(this.form.value.currency);
 
       await this.router.navigate(['/app']);
+
+      const return_to = this.route.snapshot.queryParamMap.get('return_to');
+
+      if (return_to) {
+        await this.router.navigateByUrl(return_to);
+      } else {
+        await this.router.navigateByUrl('/app');
+      }
     } catch (err) {
       this.submitting = false;
 
