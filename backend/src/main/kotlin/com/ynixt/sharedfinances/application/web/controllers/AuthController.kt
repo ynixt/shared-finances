@@ -3,6 +3,9 @@ package com.ynixt.sharedfinances.application.web.controllers
 import com.ynixt.sharedfinances.application.config.OnlyServiceSecretAllowed
 import com.ynixt.sharedfinances.application.web.dto.kratos.CreateUserRequestDto
 import com.ynixt.sharedfinances.domain.services.UserService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import kotlinx.coroutines.reactor.mono
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -18,9 +21,17 @@ data class IdentityCreatedRequest(
 
 @RestController
 @RequestMapping("/auth")
+@Tag(
+    name = "Auth",
+    description = "Operations related to authentication",
+)
 class AuthController(
     private val userService: UserService,
 ) {
+    @Operation(
+        summary = "Web hook to notify that a new user was created",
+        security = [SecurityRequirement(name = "api-key")],
+    )
     @PostMapping("/identity-created")
     @OnlyServiceSecretAllowed
     fun onIdentityCreated(

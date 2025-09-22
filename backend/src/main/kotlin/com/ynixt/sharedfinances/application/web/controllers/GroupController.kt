@@ -14,6 +14,8 @@ import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapList
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.GroupInviteService
 import com.ynixt.sharedfinances.domain.services.GroupService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -29,6 +31,10 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/groups")
+@Tag(
+    name = "Groups",
+    description = "Operations related to all groups that logged user has access",
+)
 class GroupController(
     private val groupDtoMapper: GroupDtoMapper,
     private val groupService: GroupService,
@@ -36,6 +42,7 @@ class GroupController(
     private val groupInviteDtoMapper: GroupInviteDtoMapper,
     private val groupInviteService: GroupInviteService,
 ) {
+    @Operation(summary = "Get all groups")
     @GetMapping
     fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -45,6 +52,7 @@ class GroupController(
                 principalToken.principal.id,
             ).mapList(groupDtoMapper::toDto)
 
+    @Operation(summary = "Get a group by id")
     @GetMapping("/{id}")
     fun findOne(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -58,6 +66,7 @@ class GroupController(
                 ResponseEntity.ofNullable(groupDtoMapper.toDto(it))
             }.defaultIfEmpty(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Edit a group by id")
     @PutMapping("/{id}")
     fun edit(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -73,6 +82,7 @@ class GroupController(
                 ResponseEntity.ofNullable(groupDtoMapper.toDto(it))
             }.defaultIfEmpty(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Delete a group by id")
     @DeleteMapping("/{id}")
     fun delete(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -84,8 +94,9 @@ class GroupController(
                 id = id,
             ).map { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 
+    @Operation(summary = "Create a new group")
     @PostMapping
-    fun newBankAccount(
+    fun newGroup(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: NewGroupDto,
     ): Mono<GroupDto> =
@@ -95,6 +106,7 @@ class GroupController(
                 groupDtoMapper.fromNewDtoToNewRequest(body),
             ).map(groupDtoMapper::toDto)
 
+    @Operation(summary = "Change a role of a user inside group")
     @PutMapping("/{id}/members/change-role")
     fun changeMemberRole(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -111,6 +123,7 @@ class GroupController(
                 if (changed) ResponseEntity.noContent().build<Unit>() else ResponseEntity.unprocessableEntity().build()
             }.defaultIfEmpty(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Generate a invitation to allow a user to join a group by id")
     @PostMapping("/{id}/members/generate-invitation")
     fun generateInvitation(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -123,6 +136,7 @@ class GroupController(
             ).map { ResponseEntity.ofNullable(groupInviteDtoMapper.toDto(it)) }
             .defaultIfEmpty(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Get all users that are in a group, by id")
     @GetMapping("/{id}/members")
     fun findAllMembers(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,

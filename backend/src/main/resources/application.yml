@@ -50,6 +50,17 @@ spring:
           issuer-uri: ${APP_ISSUER_URL}
           jwk-set-uri: ${APP_JWK_URL}
 
+springdoc:
+  show-actuator: true
+  api-docs:
+    path: /open/docs/v3
+  swagger-ui:
+    path: /open/docs
+
+management:
+  endpoints:
+    web:
+      base-path: /open/actuator
 
 logging:
   level:

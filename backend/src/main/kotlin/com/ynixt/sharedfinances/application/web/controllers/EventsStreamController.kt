@@ -4,6 +4,8 @@ import com.ynixt.sharedfinances.application.web.dto.events.UserActionEventDto
 import com.ynixt.sharedfinances.application.web.mapper.UserActionEventDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.ActionEventListenerService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -15,11 +17,16 @@ import java.time.Duration
 
 @RestController
 @RequestMapping("/sse")
+@Tag(
+    name = "Events Stream",
+    description = "Events Stream for the logged user",
+)
 class EventsStreamController(
     private val actionEventListenerService: ActionEventListenerService,
     private val userActionEventDtoMapper: UserActionEventDtoMapper,
 ) {
     @GetMapping("/user-events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @Operation(summary = "Events stream for the logged user. This includes groups that user is member")
     fun userEvents(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
     ): Flux<ServerSentEvent<UserActionEventDto>> {

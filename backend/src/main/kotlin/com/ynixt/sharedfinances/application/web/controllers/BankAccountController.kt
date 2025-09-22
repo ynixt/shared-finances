@@ -7,6 +7,8 @@ import com.ynixt.sharedfinances.application.web.mapper.BankAccountDtoMapper
 import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapPage
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.BankAccountService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
@@ -24,10 +26,15 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/bank-accounts")
+@Tag(
+    name = "Bank Accounts",
+    description = "Operations related to all bank accounts that logged user has access",
+)
 class BankAccountController(
     private val bankAccountService: BankAccountService,
     private val bankAccountDtoMapper: BankAccountDtoMapper,
 ) {
+    @Operation(summary = "Get all bank accounts")
     @GetMapping
     fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -39,6 +46,7 @@ class BankAccountController(
                 pageable,
             ).mapPage(bankAccountDtoMapper::toDto)
 
+    @Operation(summary = "Get bank account by id")
     @GetMapping("/{id}")
     fun findBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -52,6 +60,7 @@ class BankAccountController(
                 ResponseEntity.ofNullable(bankAccountDtoMapper.toDto(it))
             }.defaultIfEmpty(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Create a new bank account")
     @PostMapping
     fun newBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -63,6 +72,7 @@ class BankAccountController(
                 bankAccountDtoMapper.fromNewDtoToNewRequest(body),
             ).map(bankAccountDtoMapper::toDto)
 
+    @Operation(summary = "Edit bank account by id")
     @PutMapping("/{id}")
     fun editBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -78,6 +88,7 @@ class BankAccountController(
                 ResponseEntity.ofNullable(bankAccountDtoMapper.toDto(it))
             }.defaultIfEmpty(ResponseEntity.notFound().build())
 
+    @Operation(summary = "Delete bank account by id")
     @DeleteMapping("/{id}")
     fun deleteBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
