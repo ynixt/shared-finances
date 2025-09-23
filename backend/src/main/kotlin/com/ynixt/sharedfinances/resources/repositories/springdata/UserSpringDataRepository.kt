@@ -4,14 +4,14 @@ import com.ynixt.sharedfinances.domain.entities.User
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
+import org.springframework.data.repository.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface UserSpringDataRepository :
     UserRepository,
-    ReactiveCrudRepository<User, String> {
+    Repository<User, String> {
     override fun findByEmail(email: String): Flux<User>
 
     override fun findByExternalId(externalId: String): Flux<User>

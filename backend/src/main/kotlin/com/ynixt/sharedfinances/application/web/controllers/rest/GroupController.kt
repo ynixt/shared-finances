@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.application.web.controllers
+package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.groups.ChangeRoleGroupUserRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.EditGroupDto

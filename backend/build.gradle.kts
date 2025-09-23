@@ -32,6 +32,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.security:spring-security-oauth2-authorization-server")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-graphql")
+
+    implementation("com.graphql-java:graphql-java-extended-scalars:24.0")
 
     implementation("org.springdoc:springdoc-openapi-starter-webflux-api:2.8.13")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.13")

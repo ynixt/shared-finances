@@ -49,6 +49,10 @@ spring:
         jwt:
           issuer-uri: ${APP_ISSUER_URL}
           jwk-set-uri: ${APP_JWK_URL}
+#  graphql:
+#    graphiql:
+#      enabled: true
+#      path: /open/graphiql
 
 springdoc:
   show-actuator: true
@@ -64,7 +68,7 @@ management:
 
 logging:
   level:
-    org.springframework.web: TRACE
+    #org.springframework.web: TRACE
 #    org.springframework.security: TRACE
 #    reactor.netty.http.server: DEBUG
     io.r2dbc.postgresql.QUERY: DEBUG

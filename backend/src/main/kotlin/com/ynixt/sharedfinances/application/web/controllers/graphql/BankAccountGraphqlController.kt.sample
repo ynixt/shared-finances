@@ -1,0 +1,44 @@
+// package com.ynixt.sharedfinances.application.web.controllers.graphql
+//
+// import com.ynixt.sharedfinances.domain.entities.User
+// import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+// import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
+// import com.ynixt.sharedfinances.domain.services.BankAccountService
+// import com.ynixt.sharedfinances.domain.services.UserService
+// import org.springframework.graphql.data.method.annotation.Argument
+// import org.springframework.graphql.data.method.annotation.BatchMapping
+// import org.springframework.graphql.data.method.annotation.QueryMapping
+// import org.springframework.stereotype.Controller
+// import reactor.core.publisher.Mono
+// import java.util.UUID
+//
+// @Controller
+// class BankAccountGraphqlController(
+//    private val bankAccountService: BankAccountService,
+//    private val userService: UserService
+// ) {
+//    @QueryMapping
+//    fun findBankAccount(
+//        principalToken: UserJwtAuthenticationToken,
+//        @Argument id: UUID
+//    ): Mono<BankAccount> =
+//        bankAccountService
+//            .findBankAccount(
+//                userId = principalToken.principal.id,
+//                id = id,
+//            )
+//
+//    @BatchMapping(typeName = "BankAccount", field = "user")
+//    fun users(bankAccounts: List<BankAccount>): Mono<Map<BankAccount, User>> {
+//        val ids = bankAccounts.map { it.userId }.toSet()
+//
+//        return userService.findAllById(ids)
+//            .map { list ->
+//                val usersById = list.associateBy { it.id!! }
+//                bankAccounts.associateWith { bankAccount ->
+//                    usersById[bankAccount.userId]
+//                        ?: error("User not found: ${bankAccount.userId}")
+//                }
+//            }
+//    }
+// }

@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.application.web.controllers
+package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.BankAccountDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.EditBankAccountDto
