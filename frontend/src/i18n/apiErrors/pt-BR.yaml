@@ -1,3 +1,4 @@
 apiErrors:
   memberAlreadyInGroup: Usuário já pertence a este grupo.
   bankAccountAlreadyInGroup: Conta bancária já associada a este grupo.
+  duplicatedCategory: Este nome já está em uso por outra categoria.

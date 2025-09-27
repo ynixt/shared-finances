@@ -73,15 +73,13 @@ class GroupWalletAssociationServiceImpl(
                                 groupId = groupId,
                                 bankAccountId = bankAccountId,
                             ),
-                        )
-                        .flatMap {
+                        ).flatMap {
                             groupActionEventService
                                 .sendBankAssociated(
                                     groupBankAccount = it,
                                     userId = userId,
                                 )
-                        }
-                        .map { }
+                        }.map { }
                         .onErrorMap { t ->
                             if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
                                 BankAccountAlreadyInGroupException(
@@ -114,16 +112,14 @@ class GroupWalletAssociationServiceImpl(
                         .deleteByGroupIdAndBankAccountId(
                             groupId = groupId,
                             bankAccountId = bankAccountId,
-                        )
-                        .flatMap {
+                        ).flatMap {
                             groupActionEventService
                                 .sendBankUnassociated(
                                     groupId = groupId,
                                     bankAccountId = bankAccountId,
                                     userId = userId,
                                 )
-                        }
-                        .map { }
+                        }.map { }
                 } else {
                     Mono.empty()
                 }

@@ -9,8 +9,10 @@ import { Toast } from 'primeng/toast';
 
 import { CurrencySelectorComponent } from '../../components/currency-selector/currency-selector.component';
 import { LangButtonComponent } from '../../components/lang-button/lang-button.component';
+import { ErrorMessageService } from '../../services/error-message.service';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
+import { OnboardingService } from './onboarding.service';
 
 @Component({
   selector: 'app-onboarding-page',
@@ -29,6 +31,8 @@ export class OnboardingPageComponent {
     private router: Router,
     private messageService: MessageService,
     private route: ActivatedRoute,
+    private onboardingService: OnboardingService,
+    private errorMessageService: ErrorMessageService,
     formBuilder: FormBuilder,
   ) {
     this.userService.getUser().then(u => {
@@ -49,6 +53,7 @@ export class OnboardingPageComponent {
 
     try {
       await this.userService.changeDefaultCurrency(this.form.value.currency);
+      await this.onboardingService.createDefaultCategories();
 
       await this.router.navigate(['/app']);
 
@@ -62,14 +67,7 @@ export class OnboardingPageComponent {
     } catch (err) {
       this.submitting = false;
 
-      console.error(err);
-
-      this.messageService.add({
-        severity: 'error',
-        summary: this.translateService.instant('error.genericTitle'),
-        detail: this.translateService.instant('error.genericMessage'),
-        life: DEFAULT_ERROR_LIFE,
-      });
+      this.errorMessageService.handleError(err, this.messageService);
     }
   }
 }

@@ -130,12 +130,6 @@ export class FinancesPageComponent {
             routerLink: '/app/categories',
             routerLinkActiveOptions: { exact: true },
           },
-          {
-            fa: faHashtag,
-            label: this.translateService.instant('financesPage.menu.tags'),
-            routerLink: '/app/tags',
-            routerLinkActiveOptions: { exact: true },
-          },
         ],
       },
     ];
@@ -200,12 +194,6 @@ export class FinancesPageComponent {
               fa: faTag,
               label: this.translateService.instant('financesPage.menu.categories'),
               routerLink: ['/app/groups', g.id, 'categories'],
-              routerLinkActiveOptions: { exact: true },
-            },
-            {
-              fa: faHashtag,
-              label: this.translateService.instant('financesPage.menu.tags'),
-              routerLink: ['/app/groups', g.id, 'tags'],
               routerLinkActiveOptions: { exact: true },
             },
           ],
