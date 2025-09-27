@@ -128,6 +128,31 @@ export const routes: Routes = [
               pageTitleKey: 'pageTitle.manageGroupTeam',
             },
           },
+          {
+            path: ':id/bankAccounts',
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/group-bank-accounts-page/group-bank-accounts-page.component').then(
+                    m => m.GroupBankAccountsPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.groupBankAccounts',
+                },
+              },
+              {
+                path: 'new',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/associate-bank-account-group-page/associate-bank-account-group-page.component').then(
+                    m => m.AssociateBankAccountGroupPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.associateBankAccountGroup',
+                },
+              },
+            ],
+          },
         ],
       },
     ],

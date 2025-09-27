@@ -18,3 +18,9 @@ financesPage:
       successChangeMessage: Permissão alterada com sucesso
       generateInvitation: Gerar convite
       expiresOn: 'Expira em {{date}}'
+    bankAccountsAssociatedPage:
+      title: 'Contas bancárias associadas ao grupo: {{name}}'
+      owner: Dono da conta
+      unassociateBankAccountSuccessMessage: A conta bancária foi desassociada do grupo com sucesso.
+    associateBankAccountsPage:
+      title: 'Associar conta bancária ao grupo: {{name}}'

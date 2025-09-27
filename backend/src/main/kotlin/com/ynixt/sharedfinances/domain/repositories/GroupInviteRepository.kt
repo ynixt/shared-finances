@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.GroupInvite
+import com.ynixt.sharedfinances.domain.entities.groups.GroupInvite
 import com.ynixt.sharedfinances.domain.models.groups.GroupInfoForInvite
 import reactor.core.publisher.Mono
 import java.time.OffsetDateTime

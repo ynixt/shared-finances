@@ -1,0 +1,52 @@
+@if (loading || group == null) {
+  <p-progress-spinner></p-progress-spinner>
+} @else {
+  <div class="finances-page group-bank-accounts-page">
+    <app-finances-title-bar
+      [title]="'financesPage.groupsPage.bankAccountsAssociatedPage.title' | translate: { name: group.name }"
+      closeRouterLink=".."
+      newRouterLink="new"
+    ></app-finances-title-bar>
+
+    <div class="group-bank-accounts-table w-full">
+      <p-table [value]="bankAccounts" class="w-full" [tableStyle]="{ 'width': '100%', 'table-layout': 'fixed' }" dataKey="id" #table>
+        <ng-template #header>
+          <tr>
+            <th style="width: calc(50% - 6rem)">{{ 'general.name' | translate }}</th>
+            <th style="width: calc(50% - 6rem)">{{ 'financesPage.groupsPage.bankAccountsAssociatedPage.owner' | translate }}</th>
+            <th style="width: 6rem"></th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-bankAccount let-ri="rowIndex">
+          <tr>
+            <td>{{ bankAccount.name }}</td>
+            <td>
+              <app-user-avatar [user]="bankAccount.user"></app-user-avatar>
+            </td>
+
+            <td>
+              <div class="flex items-center justify-center gap-2">
+                @if (group.permissions.includes(GroupPermissions__Obj.REMOVE_BANK_ACCOUNT)) {
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    (click)="showDeleteConfirmation(bankAccount)"
+                    text
+                    rounded
+                    severity="secondary"
+                    [loading]="submitting"
+                  >
+                    <fa-icon [icon]="faTrash"></fa-icon>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+}
+
+<p-confirm-dialog />

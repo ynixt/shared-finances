@@ -2,7 +2,7 @@ package com.ynixt.sharedfinances.domain.services.actionevents
 
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
-import com.ynixt.sharedfinances.domain.services.impl.NewEventGroupInfo
+import com.ynixt.sharedfinances.domain.services.actionevents.impl.NewEventGroupInfo
 import reactor.core.publisher.Mono
 import java.util.UUID
 

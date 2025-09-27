@@ -5,7 +5,7 @@ import com.ynixt.sharedfinances.application.web.dto.groups.invite.GroupInfoForIn
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupInviteDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
-import com.ynixt.sharedfinances.domain.services.GroupInviteService
+import com.ynixt.sharedfinances.domain.services.groups.GroupInviteService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity

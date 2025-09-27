@@ -1,9 +1,11 @@
 package com.ynixt.sharedfinances.application.web.mapper.impl
 
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.BankAccountDto
+import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.BankAccountForGroupAssociateDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.EditBankAccountDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.NewBankAccountDto
 import com.ynixt.sharedfinances.application.web.mapper.BankAccountDtoMapper
+import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
 import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
@@ -12,7 +14,11 @@ import tech.mappie.api.ObjectMappie
 import java.math.BigDecimal
 
 @Component
-class BankAccountDtoMapperImpl : BankAccountDtoMapper {
+class BankAccountDtoMapperImpl(
+    userDtoMapper: UserDtoMapper,
+) : BankAccountDtoMapper {
+    private val associateMapper = BankAccountToAssociateDtoMapper(userDtoMapper)
+
     override fun toDto(from: BankAccount): BankAccountDto = BankAccountToDtoMapper.map(from)
 
     override fun fromDto(from: BankAccountDto): BankAccount = BankAccountFromDtoMapper.map(from)
@@ -20,6 +26,8 @@ class BankAccountDtoMapperImpl : BankAccountDtoMapper {
     override fun fromNewDtoToNewRequest(from: NewBankAccountDto): NewBankAccountRequest = BankAccountFromNewDtoMapper.map(from)
 
     override fun fromEditDtoToEditRequest(from: EditBankAccountDto): EditBankAccountRequest = BankAccountFromEditDtoMapper.map(from)
+
+    override fun toAssociateDto(from: BankAccount): BankAccountForGroupAssociateDto = associateMapper.map(from)
 
     private object BankAccountToDtoMapper : ObjectMappie<BankAccount, BankAccountDto>() {
         override fun map(from: BankAccount) =
@@ -41,5 +49,15 @@ class BankAccountDtoMapperImpl : BankAccountDtoMapper {
 
     private object BankAccountFromEditDtoMapper : ObjectMappie<EditBankAccountDto, EditBankAccountRequest>() {
         override fun map(from: EditBankAccountDto) = mapping {}
+    }
+
+    private class BankAccountToAssociateDtoMapper(
+        private val userDtoMapper: UserDtoMapper,
+    ) : ObjectMappie<BankAccount, BankAccountForGroupAssociateDto>() {
+        override fun map(from: BankAccount) =
+            mapping {
+                to::id fromPropertyNotNull from::id
+                to::user fromPropertyNotNull from::user transform { userDtoMapper.tSimpleDto(it) }
+            }
     }
 }

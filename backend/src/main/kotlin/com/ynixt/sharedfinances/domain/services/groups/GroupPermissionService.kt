@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.services
+package com.ynixt.sharedfinances.domain.services.groups
 
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole

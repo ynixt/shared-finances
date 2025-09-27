@@ -1,5 +1,6 @@
-package com.ynixt.sharedfinances.domain.entities
+package com.ynixt.sharedfinances.domain.entities.groups
 
+import com.ynixt.sharedfinances.domain.entities.SimpleEntity
 import org.springframework.data.relational.core.mapping.Table
 import java.time.OffsetDateTime
 import java.util.UUID

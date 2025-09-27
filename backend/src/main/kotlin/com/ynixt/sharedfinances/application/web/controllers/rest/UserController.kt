@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
-import com.ynixt.sharedfinances.application.web.dto.UserResponseDto
+import com.ynixt.sharedfinances.application.web.dto.user.UserResponseDto
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.UserService

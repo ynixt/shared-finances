@@ -18,3 +18,9 @@ financesPage:
       successChangeMessage: Role changed successfully
       generateInvitation: Generate invitation
       expiresOn: 'Expires on {{date}}'
+    bankAccountsAssociatedPage:
+      title: 'Bank accounts associated in group: {{name}}'
+      owner: Account owner
+      unassociateBankAccountSuccessMessage: Bank account was successfully unassociated of the group.
+    associateBankAccountsPage:
+      title: 'Associate bank account to group: {{name}}'

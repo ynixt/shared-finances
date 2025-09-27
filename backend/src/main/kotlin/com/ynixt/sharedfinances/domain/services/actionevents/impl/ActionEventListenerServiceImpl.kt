@@ -1,10 +1,10 @@
-package com.ynixt.sharedfinances.domain.services.impl
+package com.ynixt.sharedfinances.domain.services.actionevents.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.ynixt.sharedfinances.domain.models.events.GroupActionEvent
 import com.ynixt.sharedfinances.domain.models.events.UserActionEvent
-import com.ynixt.sharedfinances.domain.services.ActionEventListenerService
+import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventListenerService
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.ReactiveRedisMessageListenerContainer

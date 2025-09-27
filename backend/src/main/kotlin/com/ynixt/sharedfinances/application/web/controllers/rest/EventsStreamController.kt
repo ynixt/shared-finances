@@ -3,7 +3,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 import com.ynixt.sharedfinances.application.web.dto.events.UserActionEventDto
 import com.ynixt.sharedfinances.application.web.mapper.UserActionEventDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
-import com.ynixt.sharedfinances.domain.services.ActionEventListenerService
+import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventListenerService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.MediaType

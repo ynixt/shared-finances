@@ -1,7 +1,7 @@
-package com.ynixt.sharedfinances.domain.services.impl
+package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.Group
-import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.Group
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.exceptions.MemberAlreadyInGroupException
@@ -11,9 +11,9 @@ import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
-import com.ynixt.sharedfinances.domain.services.GroupPermissionService
-import com.ynixt.sharedfinances.domain.services.GroupService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
+import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
@@ -194,6 +194,7 @@ class GroupServiceImpl(
                     MemberAlreadyInGroupException(
                         userId = userId,
                         groupId = id,
+                        cause = t,
                     )
                 } else {
                     t

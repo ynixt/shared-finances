@@ -1,2 +1,3 @@
 apiErrors:
-  memberAlreadyInGroup: 'User is already on this group.'
+  memberAlreadyInGroup: User is already on this group.
+  bankAccountAlreadyInGroup: Bank account is already associated to this group.

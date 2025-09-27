@@ -1,0 +1,43 @@
+@if (loading || group == null) {
+  <p-progress-spinner></p-progress-spinner>
+} @else {
+  <div class="finances-page associate-bank-account-group-page">
+    <app-finances-title-bar
+      [title]="'financesPage.groupsPage.associateBankAccountsPage.title' | translate: { name: group.name }"
+      closeRouterLink=".."
+    ></app-finances-title-bar>
+
+    <form class="flex flex-col gap-4" [formGroup]="formGroup" (ngSubmit)="submit()">
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.bankAccountsPage.name' | translate }}</span>
+
+        <p-select
+          class="w-full"
+          formControlName="bankAccount"
+          [options]="bankAccounts"
+          optionValue="id"
+          optionLabel="name"
+          [filter]="true"
+          filterBy="name"
+        >
+          <ng-template #item let-item>
+            <div class="p-clearfix">
+              <div style="font-weight: 600">{{ item.name }}</div>
+              <div style="font-size: 0.9em; color: var(--text-secondary)">
+                {{ 'name.fullName' | translate: { lastName: item.user.lastName, firstName: item.user.firstName } }}
+              </div>
+            </div>
+          </ng-template>
+        </p-select>
+      </label>
+
+      <p-button
+        [loading]="submitting"
+        [disabled]="formGroup.invalid"
+        type="submit"
+        [label]="'general.associate' | translate"
+        styleClass="w-full"
+      ></p-button>
+    </form>
+  </div>
+}

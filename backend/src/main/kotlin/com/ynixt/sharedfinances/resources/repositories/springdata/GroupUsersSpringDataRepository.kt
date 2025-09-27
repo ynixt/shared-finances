@@ -1,14 +1,14 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.CrudRepository
+import org.springframework.data.repository.Repository
 import reactor.core.publisher.Mono
 import java.util.UUID
 
-interface GroupUsersSpringDataRepository : CrudRepository<GroupUser, String> {
+interface GroupUsersSpringDataRepository : Repository<GroupUser, String> {
     fun countByGroupIdAndUserId(
         groupId: UUID,
         userId: UUID,

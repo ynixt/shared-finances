@@ -5,6 +5,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { QRCodeComponent } from 'angularx-qrcode';
+import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -12,6 +13,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { GroupInviteDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
+import { ErrorMessageService } from '../../../../services/error-message.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupUserTableComponent } from '../../components/group-user-table/group-user-table.component';
 import { GroupInvitationService } from '../../services/group-invitation.service';
@@ -55,6 +57,8 @@ export class ManageGroupTeamPageComponent {
     private route: ActivatedRoute,
     private groupService: GroupService,
     private groupInvitationService: GroupInvitationService,
+    private messageService: MessageService,
+    private errorMessageService: ErrorMessageService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -104,6 +108,8 @@ export class ManageGroupTeamPageComponent {
           return;
         }
       }
+
+      this.errorMessageService.handleError(error, this.messageService);
 
       throw error;
     }

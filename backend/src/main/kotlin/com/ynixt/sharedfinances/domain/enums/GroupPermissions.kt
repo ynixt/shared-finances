@@ -9,4 +9,7 @@ enum class GroupPermissions {
     DELETE_GROUP,
 
     SEND_ENTRIES,
+
+    ADD_BANK_ACCOUNT,
+    REMOVE_BANK_ACCOUNT,
 }

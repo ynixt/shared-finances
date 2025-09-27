@@ -20,6 +20,8 @@ general:
   open: Open
   enabled: Enabled
   delete: Delete
+  associate: Associate
+  unassociate: Unassociate
   genericConfirmation: Are you sure that you want to proceed?
   confirmation: Confirmation
   cancel: Cancel

@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.services.impl
+package com.ynixt.sharedfinances.domain.services.actionevents.impl
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory

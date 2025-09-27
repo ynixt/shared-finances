@@ -3,7 +3,7 @@ package com.ynixt.sharedfinances.application.web.mapper.impl
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupUserDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
-import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
 
@@ -20,7 +20,7 @@ class GroupUserDtoMapperImpl(
     ) : ObjectMappie<GroupUser, GroupUserDto>() {
         override fun map(from: GroupUser) =
             mapping {
-                to::user fromPropertyNotNull from::user transform { userDtoMapper.toDto(it) }
+                to::user fromPropertyNotNull from::user transform { userDtoMapper.tSimpleDto(it) }
             }
     }
 }

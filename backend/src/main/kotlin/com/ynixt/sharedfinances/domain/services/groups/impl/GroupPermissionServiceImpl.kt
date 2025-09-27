@@ -1,8 +1,9 @@
-package com.ynixt.sharedfinances.domain.services
+package com.ynixt.sharedfinances.domain.services.groups.impl
 
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
+import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import java.util.UUID
@@ -37,6 +38,7 @@ class GroupPermissionServiceImpl(
             UserGroupRole.EDITOR ->
                 setOf(
                     GroupPermissions.SEND_ENTRIES,
+                    GroupPermissions.ADD_BANK_ACCOUNT,
                 )
 
             else -> emptySet()

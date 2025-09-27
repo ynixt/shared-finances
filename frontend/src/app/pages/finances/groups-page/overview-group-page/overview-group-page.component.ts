@@ -7,10 +7,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { filter } from 'rxjs';
 
+import { MessageService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { ErrorMessageService } from '../../../../services/error-message.service';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupUserListComponent } from '../../components/group-user-list/group-user-list.component';
 import { GroupService } from '../../services/group.service';
@@ -35,6 +37,8 @@ export class OverviewGroupPageComponent {
     private route: ActivatedRoute,
     private groupService: GroupService,
     private groupsActionEventService: GroupsActionEventService,
+    private messageService: MessageService,
+    private errorMessageService: ErrorMessageService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -64,6 +68,8 @@ export class OverviewGroupPageComponent {
           return;
         }
       }
+
+      this.errorMessageService.handleError(error, this.messageService);
 
       throw error;
     }

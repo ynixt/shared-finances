@@ -1,13 +1,13 @@
 package com.ynixt.sharedfinances.resources.services.impl
 
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
-import com.ynixt.sharedfinances.domain.entities.Group
+import com.ynixt.sharedfinances.domain.entities.groups.Group
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
-import com.ynixt.sharedfinances.domain.services.impl.NewEventGroupInfo
+import com.ynixt.sharedfinances.domain.services.actionevents.impl.NewEventGroupInfo
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono

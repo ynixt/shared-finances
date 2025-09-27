@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.application.web.dto
+package com.ynixt.sharedfinances.application.web.dto.user
 
 import java.util.UUID
 

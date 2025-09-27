@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.application.web.jobs
 
-import com.ynixt.sharedfinances.domain.services.GroupInviteService
+import com.ynixt.sharedfinances.domain.services.groups.GroupInviteService
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component

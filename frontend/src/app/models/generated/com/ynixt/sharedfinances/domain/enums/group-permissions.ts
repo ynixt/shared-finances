@@ -1,7 +1,15 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export type GroupPermissions = 'CHANGE_ROLE' | 'ADD_MEMBER' | 'REMOVE_MEMBER' | 'EDIT_GROUP' | 'DELETE_GROUP' | 'SEND_ENTRIES';
+export type GroupPermissions =
+  | 'CHANGE_ROLE'
+  | 'ADD_MEMBER'
+  | 'REMOVE_MEMBER'
+  | 'EDIT_GROUP'
+  | 'DELETE_GROUP'
+  | 'SEND_ENTRIES'
+  | 'ADD_BANK_ACCOUNT'
+  | 'REMOVE_BANK_ACCOUNT';
 
 export const GroupPermissions__Options: GroupPermissions[] = [
   'CHANGE_ROLE',
@@ -10,6 +18,8 @@ export const GroupPermissions__Options: GroupPermissions[] = [
   'EDIT_GROUP',
   'DELETE_GROUP',
   'SEND_ENTRIES',
+  'ADD_BANK_ACCOUNT',
+  'REMOVE_BANK_ACCOUNT',
 ];
 
 export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions } = {
@@ -19,4 +29,6 @@ export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions 
   'EDIT_GROUP': 'EDIT_GROUP',
   'DELETE_GROUP': 'DELETE_GROUP',
   'SEND_ENTRIES': 'SEND_ENTRIES',
+  'ADD_BANK_ACCOUNT': 'ADD_BANK_ACCOUNT',
+  'REMOVE_BANK_ACCOUNT': 'REMOVE_BANK_ACCOUNT',
 };

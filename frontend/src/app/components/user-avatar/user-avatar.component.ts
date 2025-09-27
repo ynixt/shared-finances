@@ -6,7 +6,7 @@ import { Avatar } from 'primeng/avatar';
 import { Skeleton } from 'primeng/skeleton';
 import { Tooltip } from 'primeng/tooltip';
 
-import { UserResponseDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto';
+import { UserResponseDto, UserSimpleDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 
 export type UserAvatarSize = 'normal' | 'large' | 'xlarge';
 
@@ -31,7 +31,7 @@ export const convertUserAvatarSizeToRem: (size: UserAvatarSize) => number = (siz
 })
 export class UserAvatarComponent {
   tooltipPosition = input<'bottom' | 'left' | 'top' | 'right'>('bottom');
-  user = input<UserResponseDto | undefined>(undefined);
+  user = input<UserSimpleDto | undefined>(undefined);
   showTooltip = input<boolean>(true);
   size = input<UserAvatarSize>('normal');
 

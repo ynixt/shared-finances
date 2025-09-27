@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
-import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.GroupUsersR2DBCRepository

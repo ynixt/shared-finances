@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.application.web.mapper
 
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.BankAccountDto
+import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.BankAccountForGroupAssociateDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.EditBankAccountDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.NewBankAccountDto
 import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
@@ -15,4 +16,6 @@ interface BankAccountDtoMapper {
     fun fromNewDtoToNewRequest(from: NewBankAccountDto): NewBankAccountRequest
 
     fun fromEditDtoToEditRequest(from: EditBankAccountDto): EditBankAccountRequest
+
+    fun toAssociateDto(from: BankAccount): BankAccountForGroupAssociateDto
 }

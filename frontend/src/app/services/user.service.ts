@@ -4,7 +4,7 @@ import { Injectable, Injector, WritableSignal, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 
-import { UserResponseDto } from '../models/generated';
+import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { KratosAuthService } from './kratos-auth.service';
 
 @Injectable({ providedIn: 'root' })

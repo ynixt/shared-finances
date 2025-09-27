@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono

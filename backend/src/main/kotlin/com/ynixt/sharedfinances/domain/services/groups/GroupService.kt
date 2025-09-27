@@ -1,7 +1,7 @@
-package com.ynixt.sharedfinances.domain.services
+package com.ynixt.sharedfinances.domain.services.groups
 
-import com.ynixt.sharedfinances.domain.entities.Group
-import com.ynixt.sharedfinances.domain.entities.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.Group
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole

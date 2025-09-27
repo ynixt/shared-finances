@@ -14,6 +14,7 @@ import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { AppResponseErrorDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto';
 import { GroupInfoForInviteDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/invite';
 import { LocalDatePipe } from '../../pipes/local-date.pipe';
+import { ErrorMessageService } from '../../services/error-message.service';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
 import { GroupInvitationService } from '../finances/services/group-invitation.service';
@@ -38,6 +39,7 @@ export class AcceptInvitePageComponent {
     private userService: UserService,
     private translateService: TranslateService,
     private messageService: MessageService,
+    private errorMessageService: ErrorMessageService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -71,25 +73,7 @@ export class AcceptInvitePageComponent {
         console.error(error);
         this.acceptingInvite = false;
 
-        if (error instanceof HttpErrorResponse) {
-          const apiError = error.error as AppResponseErrorDto;
-
-          this.messageService.add({
-            severity: 'error',
-            summary: this.translateService.instant('error.genericTitle'),
-            detail: this.translateService.instant(apiError.messageI18n ?? 'error.genericMessage', apiError.argsI18n ?? {}),
-            life: DEFAULT_ERROR_LIFE,
-          });
-
-          return;
-        }
-
-        this.messageService.add({
-          severity: 'error',
-          summary: this.translateService.instant('error.genericTitle'),
-          detail: this.translateService.instant('error.genericMessage'),
-          life: DEFAULT_ERROR_LIFE,
-        });
+        this.errorMessageService.handleError(error, this.messageService);
       }
     }
   }

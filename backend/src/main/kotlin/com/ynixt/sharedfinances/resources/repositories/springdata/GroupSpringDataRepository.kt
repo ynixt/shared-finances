@@ -1,18 +1,18 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.Group
+import com.ynixt.sharedfinances.domain.entities.groups.Group
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
+import org.springframework.data.repository.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupSpringDataRepository :
     GroupRepository,
-    ReactiveCrudRepository<Group, String> {
+    Repository<Group, String> {
     @Query(
         """
             select g.*, gu.role as role

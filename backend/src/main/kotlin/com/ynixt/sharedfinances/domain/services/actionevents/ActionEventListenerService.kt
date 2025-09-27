@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.services
+package com.ynixt.sharedfinances.domain.services.actionevents
 
 import com.ynixt.sharedfinances.domain.models.events.GroupActionEvent
 import com.ynixt.sharedfinances.domain.models.events.UserActionEvent

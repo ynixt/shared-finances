@@ -5,7 +5,7 @@ import { filter } from 'rxjs';
 
 import { BroadcastChannel, createLeaderElection } from 'broadcast-channel';
 
-import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto';
+import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { KratosAuthService } from './kratos-auth.service';
 import { UserService } from './user.service';
 

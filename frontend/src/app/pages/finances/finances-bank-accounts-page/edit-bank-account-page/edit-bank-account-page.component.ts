@@ -14,6 +14,7 @@ import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
 import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
+import { ErrorMessageService } from '../../../../services/error-message.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
@@ -53,6 +54,7 @@ export class EditBankAccountPageComponent {
     private messageService: MessageService,
     private translateService: TranslateService,
     private confirmationService: ConfirmationService,
+    private errorMessageService: ErrorMessageService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -164,6 +166,8 @@ export class EditBankAccountPageComponent {
           return;
         }
       }
+
+      this.errorMessageService.handleError(error, this.messageService);
 
       throw error;
     }

@@ -12,8 +12,8 @@ import com.ynixt.sharedfinances.application.web.mapper.GroupInviteDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupUserDtoMapper
 import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapList
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
-import com.ynixt.sharedfinances.domain.services.GroupInviteService
-import com.ynixt.sharedfinances.domain.services.GroupService
+import com.ynixt.sharedfinances.domain.services.groups.GroupInviteService
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity

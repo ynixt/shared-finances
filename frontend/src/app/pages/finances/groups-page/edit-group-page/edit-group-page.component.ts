@@ -13,6 +13,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { ErrorMessageService } from '../../../../services/error-message.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
@@ -51,6 +52,7 @@ export class EditGroupPageComponent {
     private router: Router,
     private route: ActivatedRoute,
     private confirmationService: ConfirmationService,
+    private errorMessageService: ErrorMessageService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -136,6 +138,8 @@ export class EditGroupPageComponent {
           return;
         }
       }
+
+      this.errorMessageService.handleError(error, this.messageService);
 
       throw error;
     }

@@ -33,4 +33,8 @@ interface BankAccountRepository {
         newEnabled: Boolean,
         newCurrency: String,
     ): Mono<Long>
+
+    fun findAllAllowedForGroup(groupId: UUID): Flux<BankAccount>
+
+    fun findAllAssociatedToGroup(groupId: UUID): Flux<BankAccount>
 }

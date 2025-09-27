@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.actionevents
 
-import com.ynixt.sharedfinances.domain.entities.Group
+import com.ynixt.sharedfinances.domain.entities.groups.Group
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import reactor.core.publisher.Mono
 import java.util.UUID

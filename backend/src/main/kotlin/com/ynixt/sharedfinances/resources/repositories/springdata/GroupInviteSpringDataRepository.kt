@@ -1,16 +1,16 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.GroupInvite
+import com.ynixt.sharedfinances.domain.entities.groups.GroupInvite
 import com.ynixt.sharedfinances.domain.models.groups.GroupInfoForInvite
 import com.ynixt.sharedfinances.domain.repositories.GroupInviteRepository
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
+import org.springframework.data.repository.Repository
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupInviteSpringDataRepository :
     GroupInviteRepository,
-    ReactiveCrudRepository<GroupInvite, String> {
+    Repository<GroupInvite, String> {
     @Query(
         """
             select
