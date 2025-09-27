@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.services.impl
 
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.domain.entities.groups.Group
+import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
@@ -61,6 +62,39 @@ class GroupActionEventServiceImpl(
                     NewEventGroupInfo(
                         groupId = id,
                         groupMemberIdGetter = { Flux.fromIterable(membersId) },
+                    ),
+            )
+
+    override fun sendBankAssociated(
+        userId: UUID,
+        groupBankAccount: GroupBankAccount,
+    ): Mono<Long> =
+        actionEventService
+            .newEvent(
+                data = groupBankAccount.bankAccountId,
+                userId = userId,
+                type = ActionEventType.INSERT,
+                category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
+                groupInfo =
+                    NewEventGroupInfo(
+                        groupId = groupBankAccount.groupId,
+                    ),
+            )
+
+    override fun sendBankUnassociated(
+        userId: UUID,
+        groupId: UUID,
+        bankAccountId: UUID,
+    ): Mono<Long> =
+        actionEventService
+            .newEvent(
+                data = bankAccountId,
+                userId = userId,
+                type = ActionEventType.DELETE,
+                category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
+                groupInfo =
+                    NewEventGroupInfo(
+                        groupId = groupId,
                     ),
             )
 }

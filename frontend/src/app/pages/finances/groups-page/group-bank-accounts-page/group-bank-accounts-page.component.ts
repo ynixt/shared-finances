@@ -6,6 +6,8 @@ import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+import { filter } from 'rxjs';
+
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
@@ -23,6 +25,7 @@ import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupAssociationService } from '../../services/group-association.service';
 import { GroupService } from '../../services/group.service';
+import { GroupActionEvent, GroupsActionEventService } from '../../services/groups-action-event.service';
 
 @Component({
   selector: 'app-group-bank-accounts-page',
@@ -60,6 +63,7 @@ export class GroupBankAccountsPageComponent {
     private translateService: TranslateService,
     private messageService: MessageService,
     private errorMessageService: ErrorMessageService,
+    private groupsActionEventService: GroupsActionEventService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -70,6 +74,20 @@ export class GroupBankAccountsPageComponent {
         this.goToNotFound();
       }
     });
+
+    this.groupsActionEventService.bankAccountAssociated$
+      .pipe(
+        untilDestroyed(this),
+        filter(e => this.group != null && e.groupId == this.groupId),
+      )
+      .subscribe(async e => this.newBankWasAssociated(e));
+
+    this.groupsActionEventService.bankAccountUnassociated$
+      .pipe(
+        untilDestroyed(this),
+        filter(e => this.group != null && e.groupId == this.groupId),
+      )
+      .subscribe(async e => this.bankWasUnassociated(e));
   }
 
   async showDeleteConfirmation(bankAccount: BankAccountForGroupAssociateDto) {
@@ -109,8 +127,6 @@ export class GroupBankAccountsPageComponent {
       });
 
       this.submitting = false;
-
-      this.getBankAccounts();
     } catch (err) {
       this.submitting = false;
 
@@ -158,6 +174,22 @@ export class GroupBankAccountsPageComponent {
 
   private goToNotFound() {
     return this.router.navigateByUrl('/not-found');
+  }
+
+  private async newBankWasAssociated(_: GroupActionEvent<string>) {
+    // TODO improve this
+    this.bankAccounts = await this.groupAssociationService.findAllAssociatedBanks(this.group!!.id!!);
+  }
+
+  private async bankWasUnassociated(e: GroupActionEvent<string>) {
+    const index = this.bankAccounts.findIndex(b => b.id === e.data);
+
+    if (index != -1) {
+      const newItems = [...this.bankAccounts];
+      newItems.splice(index, 1);
+
+      this.bankAccounts = newItems;
+    }
   }
 
   protected readonly GroupPermissions__Obj = GroupPermissions__Obj;

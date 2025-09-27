@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.exceptions.BankAccountAlreadyInGroupExcep
 import com.ynixt.sharedfinances.domain.repositories.BankAccountRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupBankAccountRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
+import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupWalletAssociationService
 import org.springframework.stereotype.Service
@@ -19,6 +20,7 @@ class GroupWalletAssociationServiceImpl(
     private val bankAccountRepository: BankAccountRepository,
     private val groupBankAccountRepository: GroupBankAccountRepository,
     private val databaseHelperService: DatabaseHelperService,
+    private val groupActionEventService: GroupActionEventService,
 ) : GroupWalletAssociationService {
     override fun findAllAllowedBanksToAssociate(
         userId: UUID,
@@ -71,7 +73,15 @@ class GroupWalletAssociationServiceImpl(
                                 groupId = groupId,
                                 bankAccountId = bankAccountId,
                             ),
-                        ).map { }
+                        )
+                        .flatMap {
+                            groupActionEventService
+                                .sendBankAssociated(
+                                    groupBankAccount = it,
+                                    userId = userId,
+                                )
+                        }
+                        .map { }
                         .onErrorMap { t ->
                             if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
                                 BankAccountAlreadyInGroupException(
@@ -104,7 +114,16 @@ class GroupWalletAssociationServiceImpl(
                         .deleteByGroupIdAndBankAccountId(
                             groupId = groupId,
                             bankAccountId = bankAccountId,
-                        ).map { }
+                        )
+                        .flatMap {
+                            groupActionEventService
+                                .sendBankUnassociated(
+                                    groupId = groupId,
+                                    bankAccountId = bankAccountId,
+                                    userId = userId,
+                                )
+                        }
+                        .map { }
                 } else {
                     Mono.empty()
                 }

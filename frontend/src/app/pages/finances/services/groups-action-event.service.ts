@@ -19,6 +19,9 @@ export class GroupsActionEventService {
   readonly groupUpdated$: Observable<GroupActionEvent<GroupWithRoleDto>>;
   readonly groupDeleted$: Observable<GroupActionEvent<string>>;
 
+  readonly bankAccountAssociated$: Observable<GroupActionEvent<string>>;
+  readonly bankAccountUnassociated$: Observable<GroupActionEvent<string>>;
+
   constructor(private userActionEventService: UserActionEventService) {
     const baseGroup$ = this.userActionEventService.groupEvents$.pipe(filter(g => g.event === 'GROUP'));
 
@@ -28,6 +31,18 @@ export class GroupsActionEventService {
     );
 
     this.groupDeleted$ = baseGroup$.pipe(
+      filter(e => e.type === 'DELETE'),
+      map(e => e as GroupActionEvent<string>),
+    );
+
+    const baseBankAccountAssociate$ = this.userActionEventService.groupEvents$.pipe(filter(g => g.event === 'BANK_ACCOUNT_ASSOCIATE'));
+
+    this.bankAccountAssociated$ = baseBankAccountAssociate$.pipe(
+      filter(e => e.type === 'INSERT'),
+      map(e => e as GroupActionEvent<string>),
+    );
+
+    this.bankAccountUnassociated$ = baseBankAccountAssociate$.pipe(
       filter(e => e.type === 'DELETE'),
       map(e => e as GroupActionEvent<string>),
     );
