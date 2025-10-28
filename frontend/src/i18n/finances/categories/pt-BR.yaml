@@ -1,0 +1,7 @@
+financesPage:
+  categoriesPage:
+    title: Categorias
+    newCategoriesPage:
+      title: Nova categoria
+      color: Cor
+      parent: Categoria pai

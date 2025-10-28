@@ -11,12 +11,16 @@ import java.util.UUID
 interface UserCategoryService {
     fun findAllCategories(
         userId: UUID,
+        onlyRoot: Boolean,
+        mountChildren: Boolean,
+        query: String?,
         pageable: Pageable,
     ): Mono<Page<WalletEntryCategory>>
 
     fun findCategory(
         userId: UUID,
         id: UUID,
+        mountChildren: Boolean,
     ): Mono<WalletEntryCategory>
 
     fun newCategory(

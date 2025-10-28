@@ -21,6 +21,25 @@ interface WalletEntryCategoryRepository {
         pageable: Pageable,
     ): Flux<WalletEntryCategory>
 
+    fun findAllByUserIdAndNameStartsWith(
+        userId: UUID,
+        pageable: Pageable,
+        name: String,
+    ): Flux<WalletEntryCategory>
+
+    fun findAllByUserIdAndParentIdIsNull(
+        userId: UUID,
+        pageable: Pageable,
+    ): Flux<WalletEntryCategory>
+
+    fun findAllByUserIdAndParentIdIsNullAndNameStartsWith(
+        userId: UUID,
+        pageable: Pageable,
+        name: String,
+    ): Flux<WalletEntryCategory>
+
+    fun findAllByParentIdIn(parentId: Collection<UUID>): Flux<WalletEntryCategory>
+
     fun findAllByGroupId(groupId: UUID): Flux<WalletEntryCategory>
 
     fun findOneByIdAndUserId(

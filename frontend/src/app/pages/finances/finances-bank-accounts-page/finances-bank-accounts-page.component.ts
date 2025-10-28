@@ -75,7 +75,7 @@ export class FinancesBankAccountsPageComponent {
   }
 
   onLazyLoad(event: DataViewLazyLoadEvent) {
-    const newPage = this.bankAccounts.totalPages == 0 ? 0 : Math.floor(event.first / this.bankAccounts.totalPages);
+    const newPage = this.bankAccounts.totalPages == 0 ? 0 : Math.floor(event.first / this.bankAccounts.numberOfElements);
     this.loadPage(newPage);
   }
 

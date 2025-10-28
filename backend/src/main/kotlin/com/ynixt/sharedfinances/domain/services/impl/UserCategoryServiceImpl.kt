@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.util.UUID
 
 @Service
@@ -23,23 +24,64 @@ class UserCategoryServiceImpl(
 ) : UserCategoryService {
     override fun findAllCategories(
         userId: UUID,
+        onlyRoot: Boolean,
+        mountChildren: Boolean,
+        query: String?,
         pageable: Pageable,
     ): Mono<Page<WalletEntryCategory>> =
         createPage(pageable, countFn = { repository.countByUserId(userId) }) {
-            repository.findAllByUserId(
-                userId,
-                pageable,
-            )
+            val items =
+                if (onlyRoot) {
+                    if (query == null) {
+                        repository.findAllByUserIdAndParentIdIsNull(
+                            userId,
+                            pageable,
+                        )
+                    } else {
+                        repository.findAllByUserIdAndParentIdIsNullAndNameStartsWith(
+                            userId,
+                            pageable,
+                            name = query,
+                        )
+                    }
+                } else {
+                    if (query == null) {
+                        repository.findAllByUserId(
+                            userId,
+                            pageable,
+                        )
+                    } else {
+                        repository.findAllByUserIdAndNameStartsWith(
+                            userId,
+                            pageable,
+                            name = query,
+                        )
+                    }
+                }
+
+            if (mountChildren) {
+                mountChildren(items.collectList()).flatMapIterable { it }
+            } else {
+                items
+            }
         }
 
     override fun findCategory(
         userId: UUID,
         id: UUID,
+        mountChildren: Boolean,
     ): Mono<WalletEntryCategory> =
-        repository.findOneByIdAndUserId(
-            id = id,
-            userId = userId,
-        )
+        repository
+            .findOneByIdAndUserId(
+                id = id,
+                userId = userId,
+            ).flatMap {
+                if (mountChildren) {
+                    mountChildren(listOf(it).toMono()).flatMap { list -> Mono.just(list[0]) }
+                } else {
+                    Mono.just(it)
+                }
+            }
 
     override fun newCategory(
         userId: UUID,
@@ -101,4 +143,19 @@ class UserCategoryServiceImpl(
                 id = id,
                 userId = userId,
             ).map { it > 0 }
+
+    private fun mountChildren(categories: Mono<List<WalletEntryCategory>>): Mono<List<WalletEntryCategory>> =
+        categories.flatMap { categoriesList ->
+            repository
+                .findAllByParentIdIn(categoriesList.map { it.id!! })
+                .collectList()
+                .map { children ->
+                    val byParentId: Map<UUID?, List<WalletEntryCategory>> =
+                        children.groupBy { it.parentId }
+
+                    categoriesList.onEach { parent ->
+                        parent.children = byParentId[parent.id]
+                    }
+                }
+        }
 }

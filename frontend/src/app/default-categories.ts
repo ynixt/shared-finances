@@ -37,6 +37,11 @@ export const defaultCategories: NewCategoryDto[] = [
     parentId: null,
   },
   {
+    name: 'defaultCategories.wage',
+    color: '#2ca05f',
+    parentId: null,
+  },
+  {
     name: 'defaultCategories.fees',
     color: '#34495E',
     parentId: null,

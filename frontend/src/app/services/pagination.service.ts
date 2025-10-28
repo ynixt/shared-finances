@@ -11,8 +11,19 @@ export const DEFAULT_PAGE_SIZE = 20;
 export class PaginationService {
   constructor(private httpClient: HttpClient) {}
 
-  get<T>(url: string, pageRequest?: PageRequest, extraParams?: HttpParams): Observable<Page<T>> {
-    const params = this.joinHttpParams(this.convertPageRequestIntoHttpParams(pageRequest), extraParams);
+  get<T>(url: string, pageRequest?: PageRequest, extraParams?: HttpParams | { [key: string]: any }): Observable<Page<T>> {
+    let extraHttpParams = extraParams instanceof HttpParams ? extraParams : new HttpParams();
+
+    if (!(extraParams instanceof HttpParams) && extraParams) {
+      for (const key of Object.keys(extraParams)) {
+        const value = extraParams[key];
+        if (value !== undefined) {
+          extraHttpParams = extraHttpParams.set(key, String(value!!));
+        }
+      }
+    }
+
+    const params = this.joinHttpParams(this.convertPageRequestIntoHttpParams(pageRequest), extraHttpParams);
 
     return this.httpClient
       .get(url, {

@@ -6,4 +6,6 @@ data class CategoryDto(
     val id: UUID,
     val name: String,
     val color: String,
+    var children: List<CategoryDto>?,
+    val parentId: UUID?,
 )

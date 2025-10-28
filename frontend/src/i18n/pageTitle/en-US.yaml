@@ -9,6 +9,8 @@ pageTitle:
   editBankAccount: Edit bank account
   creditCards: Credit Cards
   categories: Categories
+  newCategory: New category
+  editCategory: Edit category
   tags: Tags
   onboarding: Welcome
   newGroup: New group

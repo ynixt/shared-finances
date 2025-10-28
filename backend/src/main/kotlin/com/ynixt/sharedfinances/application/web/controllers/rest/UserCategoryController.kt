@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import java.util.UUID
@@ -38,11 +39,17 @@ class UserCategoryController(
     @GetMapping
     fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @RequestParam onlyRoot: Boolean = true,
+        @RequestParam mountChildren: Boolean = true,
+        @RequestParam query: String? = null,
         pageable: Pageable,
     ): Mono<Page<CategoryDto>> =
         userCategoryService
             .findAllCategories(
                 principalToken.principal.id,
+                onlyRoot = onlyRoot,
+                mountChildren = mountChildren,
+                query = query,
                 pageable,
             ).mapPage(categoryDtoMapper::toDto)
 
@@ -51,11 +58,13 @@ class UserCategoryController(
     fun findCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
+        @RequestParam mountChildren: Boolean = true,
     ): Mono<ResponseEntity<CategoryDto>> =
         userCategoryService
             .findCategory(
                 userId = principalToken.principal.id,
                 id = id,
+                mountChildren = mountChildren,
             ).map {
                 ResponseEntity.ofNullable(categoryDtoMapper.toDto(it))
             }.defaultIfEmpty(ResponseEntity.notFound().build())

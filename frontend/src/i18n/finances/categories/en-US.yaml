@@ -1,0 +1,7 @@
+financesPage:
+  categoriesPage:
+    title: Categories
+    newCategoriesPage:
+      title: New category
+      color: Color
+      parent: Parent category

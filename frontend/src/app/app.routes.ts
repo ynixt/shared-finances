@@ -85,6 +85,38 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'categories',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./pages/finances/categories-page/categories-page.component').then(m => m.CategoriesPageComponent),
+            data: {
+              pageTitleKey: 'pageTitle.categories',
+            },
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./pages/finances/categories-page/new-category-page/new-category-page.component').then(
+                m => m.NewCategoryPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.newCategory',
+            },
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () =>
+              import('./pages/finances/finances-bank-accounts-page/edit-bank-account-page/edit-bank-account-page.component').then(
+                m => m.EditBankAccountPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.editBankAccount',
+            },
+          },
+        ],
+      },
+      {
         path: 'groups',
         children: [
           {
