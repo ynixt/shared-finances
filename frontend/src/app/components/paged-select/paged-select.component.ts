@@ -1,6 +1,5 @@
-import { Component, ViewChild, computed, effect, forwardRef, input, output, signal } from '@angular/core';
+import { Component, ViewChild, computed, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, FormControl, FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
-import { TranslatePipe } from '@ngx-translate/core';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
@@ -13,7 +12,7 @@ import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'app-paged-select',
-  imports: [ReactiveFormsModule, FormsModule, Select, Skeleton, InputText, TranslatePipe, IconField, InputIcon],
+  imports: [ReactiveFormsModule, FormsModule, Select, Skeleton, InputText, IconField, InputIcon],
   templateUrl: './paged-select.component.html',
   styleUrl: './paged-select.component.scss',
   providers: [
@@ -64,6 +63,8 @@ export class PagedSelectComponent implements ControlValueAccessor {
   }
 
   writeValue(obj: any): void {
+    this.putValueOnListIfListNotContainsValue(obj);
+
     this.value = obj;
     this.onChange(obj);
   }
@@ -104,6 +105,7 @@ export class PagedSelectComponent implements ControlValueAccessor {
 
       if (page == 0) {
         this.options = [...items];
+        this.putValueOnListIfListNotContainsValue(this.value);
       } else {
         this.options = [...this.options, ...items];
       }
@@ -153,5 +155,13 @@ export class PagedSelectComponent implements ControlValueAccessor {
     }
 
     this.select?.scroller?.scrollTo({ top: 0 });
+  }
+
+  private putValueOnListIfListNotContainsValue(value: any) {
+    const s = new Set(this.options);
+
+    if (!s.has(value)) {
+      this.options = [value, ...this.options];
+    }
   }
 }

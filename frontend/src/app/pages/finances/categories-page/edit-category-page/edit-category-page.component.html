@@ -1,0 +1,33 @@
+<div class="finances-page edit-category-page">
+  @if (category == null || formGroup == null || loading) {
+    <p-progress-spinner></p-progress-spinner>
+  } @else {
+    <app-finances-title-bar
+      [title]="'financesPage.categoriesPage.editCategoriesPage.title' | translate: { name: category.name }"
+      [showDeleteButton]="true"
+      (deleteButtonClicked)="askForConfirmationToDelete()"
+      closeRouterLink="../.."
+    ></app-finances-title-bar>
+
+    <form class="flex flex-col gap-4" [formGroup]="formGroup" (ngSubmit)="submit()">
+      <label class="flex flex-col gap-2">
+        <span>{{ 'general.name' | translate }}</span>
+        <input formControlName="name" pInputText type="text" />
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.categoriesPage.newCategoriesPage.color' | translate }}</span>
+        <p-color-picker formControlName="color"></p-color-picker>
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.categoriesPage.newCategoriesPage.parent' | translate }}</span>
+        <app-paged-select [optionsGetter]="loadCategoriesForParentPicker.bind(this)" formControlName="parent"></app-paged-select>
+      </label>
+
+      <button pButton type="submit" [loading]="submitting" [disabled]="formGroup.invalid">{{ 'general.save' | translate }}</button>
+    </form>
+  }
+</div>
+
+<p-confirm-dialog />

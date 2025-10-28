@@ -9,11 +9,13 @@
     class="w-full {{ componentClass() }}"
     [disabled]="disabled"
     (onChange)="onSelectionChange($event)"
+    [ngModel]="value"
     (onClear)="clearSelection()"
     [virtualScroll]="true"
     [virtualScrollItemSize]="44"
     [virtualScrollOptions]="scrollerOptions()"
     (onFilter)="onFilter($event)"
+    dataKey="id"
   >
     <ng-template #loader>
       <div class="p-2">

@@ -5,3 +5,6 @@ financesPage:
       title: Nova categoria
       color: Cor
       parent: Categoria pai
+    editCategoriesPage:
+      title: 'Editar categoria: {{name}}'
+      successDeleteMessage: A categoria foi deletada com sucesso

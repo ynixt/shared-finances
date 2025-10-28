@@ -126,12 +126,18 @@ class UserCategoryServiceImpl(
                 newName = editCategory.name,
                 newColor = editCategory.color,
                 newParentId = editCategory.parentId,
-            ).flatMap { saved ->
-                userCategoryActionEventService
-                    .sendUpdatedCategory(
-                        category = saved,
-                        userId = userId,
-                    ).thenReturn(saved)
+            ).flatMap {
+                if (it > 0) {
+                    findCategory(userId = userId, id = id, mountChildren = false).flatMap { saved ->
+                        userCategoryActionEventService
+                            .sendUpdatedCategory(
+                                category = saved,
+                                userId = userId,
+                            ).thenReturn(saved)
+                    }
+                } else {
+                    Mono.empty()
+                }
             }
 
     override fun deleteCategory(

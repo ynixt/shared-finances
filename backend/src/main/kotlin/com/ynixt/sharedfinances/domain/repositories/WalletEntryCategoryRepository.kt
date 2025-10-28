@@ -53,5 +53,5 @@ interface WalletEntryCategoryRepository {
         newName: String,
         newColor: String,
         newParentId: UUID?,
-    ): Mono<WalletEntryCategory>
+    ): Mono<Long>
 }

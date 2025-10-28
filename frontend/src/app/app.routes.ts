@@ -107,11 +107,11 @@ export const routes: Routes = [
           {
             path: 'edit/:id',
             loadComponent: () =>
-              import('./pages/finances/finances-bank-accounts-page/edit-bank-account-page/edit-bank-account-page.component').then(
-                m => m.EditBankAccountPageComponent,
+              import('./pages/finances/categories-page/edit-category-page/edit-category-page.component').then(
+                m => m.EditCategoryPageComponent,
               ),
             data: {
-              pageTitleKey: 'pageTitle.editBankAccount',
+              pageTitleKey: 'pageTitle.editCategory',
             },
           },
         ],

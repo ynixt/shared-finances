@@ -5,3 +5,6 @@ financesPage:
       title: New category
       color: Color
       parent: Parent category
+    editCategoriesPage:
+      title: 'Edit category: {{name}}'
+      successDeleteMessage: Category deleted successfully

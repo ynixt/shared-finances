@@ -30,5 +30,5 @@ interface WalletEntryCategorySpringDataRepository :
         newName: String,
         newColor: String,
         newParentId: UUID?,
-    ): Mono<WalletEntryCategory>
+    ): Mono<Long>
 }
