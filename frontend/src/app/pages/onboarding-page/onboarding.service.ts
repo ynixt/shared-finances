@@ -4,7 +4,7 @@ import { TranslateService } from '@ngx-translate/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
-import { defaultCategories } from '../../default-categories';
+import { getDefaultCategoriesTranslated } from '../../default-categories';
 
 @Injectable({ providedIn: 'root' })
 export class OnboardingService {
@@ -14,10 +14,7 @@ export class OnboardingService {
   ) {}
 
   createDefaultCategories() {
-    const translatedCategories = defaultCategories.map(cat => ({
-      ...cat,
-      name: this.translateService.instant(cat.name),
-    }));
+    const translatedCategories = getDefaultCategoriesTranslated(this.translateService);
 
     return lastValueFrom(this.http.post<void>('/api/categories/bulk', translatedCategories).pipe(take(1)));
   }

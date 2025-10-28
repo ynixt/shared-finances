@@ -1,3 +1,5 @@
+import { TranslateService } from '@ngx-translate/core';
+
 import { NewCategoryDto } from './models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
 
 export const defaultCategories: NewCategoryDto[] = [
@@ -72,3 +74,10 @@ export const defaultCategories: NewCategoryDto[] = [
     parentId: null,
   },
 ];
+
+export const getDefaultCategoriesTranslated = (translateService: TranslateService) => {
+  return defaultCategories.map(cat => ({
+    ...cat,
+    name: translateService.instant(cat.name),
+  }));
+};

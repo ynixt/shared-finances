@@ -1,8 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
+import { getDefaultCategoriesTranslated } from '../../../default-categories';
 import {
   ChangeRoleGroupUserRequestDto,
   EditGroupDto,
@@ -22,6 +24,7 @@ export class GroupService {
   constructor(
     private http: HttpClient,
     private userService: UserService,
+    private translateService: TranslateService,
   ) {}
 
   async getAllGroups(): Promise<Array<GroupWithRoleDto>> {
@@ -64,8 +67,12 @@ export class GroupService {
     throw new UserMissingError();
   }
 
-  async newGroup(newGroupDto: NewGroupDto): Promise<GroupDto> {
+  async newGroup(newGroupDto: NewGroupDto, useDefaultCategories = true): Promise<GroupDto> {
     const user = await this.userService.getUser();
+
+    if (useDefaultCategories) {
+      newGroupDto.categories = getDefaultCategoriesTranslated(this.translateService);
+    }
 
     if (user != null) {
       return lastValueFrom(this.http.post<GroupDto>('/api/groups', newGroupDto).pipe(take(1)));

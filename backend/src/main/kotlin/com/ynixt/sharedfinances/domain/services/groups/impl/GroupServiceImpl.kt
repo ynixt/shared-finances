@@ -11,6 +11,7 @@ import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
+import com.ynixt.sharedfinances.domain.services.GroupCategoryService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
@@ -26,6 +27,7 @@ class GroupServiceImpl(
     private val groupActionEventService: GroupActionEventService,
     private val groupPermissionService: GroupPermissionService,
     private val databaseHelperService: DatabaseHelperService,
+    private val groupCategoryService: GroupCategoryService,
 ) : GroupService {
     override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> =
         groupRepository.findAllByUserIdOrderByName(userId).collectList().map { list ->
@@ -132,6 +134,16 @@ class GroupServiceImpl(
                             role = UserGroupRole.ADMIN,
                         ),
                     ).thenReturn(g)
+            }.flatMap { g ->
+                if (newGroupRequest.categories != null) {
+                    groupCategoryService
+                        .newCategories(
+                            groupId = g.id!!,
+                            categories = newGroupRequest.categories,
+                        ).thenReturn(g)
+                } else {
+                    Mono.just(g)
+                }
             }.flatMap { g ->
                 groupActionEventService
                     .sendInsertedGroup(

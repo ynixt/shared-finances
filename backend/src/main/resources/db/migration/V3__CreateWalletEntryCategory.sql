@@ -6,8 +6,8 @@ CREATE TABLE wallet_entry_category (
     color VARCHAR(9) NOT NULL,
     user_id UUID,
     group_id UUID,
-    CONSTRAINT fk_wallet_entry_category_user FOREIGN KEY (user_id) REFERENCES "users"(id),
-    CONSTRAINT fk_wallet_entry_category_group FOREIGN KEY ("group_id") REFERENCES "group"(id)
+    CONSTRAINT fk_wallet_entry_category_user FOREIGN KEY (user_id) REFERENCES "users"(id) ON DELETE CASCADE,
+    CONSTRAINT fk_wallet_entry_category_group FOREIGN KEY ("group_id") REFERENCES "group"(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_wallet_entry_category_user ON wallet_entry_category(user_id) WHERE user_id IS NOT NULL;

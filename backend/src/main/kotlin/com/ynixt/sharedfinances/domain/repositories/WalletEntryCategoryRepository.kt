@@ -9,6 +9,8 @@ import java.util.UUID
 interface WalletEntryCategoryRepository {
     fun save(category: WalletEntryCategory): Mono<WalletEntryCategory>
 
+    fun saveAll(category: Iterable<WalletEntryCategory>): Flux<WalletEntryCategory>
+
     fun deleteByIdAndUserId(
         id: UUID,
         userId: UUID,
