@@ -24,9 +24,30 @@ interface WalletEntryCategorySpringDataRepository :
             and user_id = :userId
     """,
     )
-    override fun update(
+    override fun updateByUserId(
         id: UUID,
         userId: UUID,
+        newName: String,
+        newColor: String,
+        newParentId: UUID?,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        update wallet_entry_category
+        set
+            name = :newName,
+            color = :newColor,
+            parent_id = :newParentId
+        where
+            id = :id
+            and group_id = :groupId
+    """,
+    )
+    override fun updateByGroupId(
+        id: UUID,
+        groupId: UUID,
         newName: String,
         newColor: String,
         newParentId: UUID?,

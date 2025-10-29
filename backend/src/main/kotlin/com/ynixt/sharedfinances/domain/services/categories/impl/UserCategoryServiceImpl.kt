@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.services.impl
+package com.ynixt.sharedfinances.domain.services.categories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
 import com.ynixt.sharedfinances.domain.exceptions.DuplicatedCategoryException
@@ -6,8 +6,8 @@ import com.ynixt.sharedfinances.domain.models.category.EditCategoryRequest
 import com.ynixt.sharedfinances.domain.models.category.NewCategoryRequest
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryCategoryRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
-import com.ynixt.sharedfinances.domain.services.UserCategoryService
 import com.ynixt.sharedfinances.domain.services.actionevents.UserCategoryActionEventService
+import com.ynixt.sharedfinances.domain.services.categories.UserCategoryService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -18,10 +18,11 @@ import java.util.UUID
 
 @Service
 class UserCategoryServiceImpl(
-    private val repository: WalletEntryCategoryRepository,
+    repository: WalletEntryCategoryRepository,
     private val databaseHelperService: DatabaseHelperService,
     private val userCategoryActionEventService: UserCategoryActionEventService,
-) : UserCategoryService {
+) : CategoryService(repository),
+    UserCategoryService {
     override fun findAllCategories(
         userId: UUID,
         onlyRoot: Boolean,
@@ -120,7 +121,7 @@ class UserCategoryServiceImpl(
         editCategory: EditCategoryRequest,
     ): Mono<WalletEntryCategory> =
         repository
-            .update(
+            .updateByUserId(
                 id = id,
                 userId = userId,
                 newName = editCategory.name,
@@ -149,19 +150,4 @@ class UserCategoryServiceImpl(
                 id = id,
                 userId = userId,
             ).map { it > 0 }
-
-    private fun mountChildren(categories: Mono<List<WalletEntryCategory>>): Mono<List<WalletEntryCategory>> =
-        categories.flatMap { categoriesList ->
-            repository
-                .findAllByParentIdIn(categoriesList.map { it.id!! })
-                .collectList()
-                .map { children ->
-                    val byParentId: Map<UUID?, List<WalletEntryCategory>> =
-                        children.groupBy { it.parentId }
-
-                    categoriesList.onEach { parent ->
-                        parent.children = byParentId[parent.id]
-                    }
-                }
-        }
 }

@@ -12,4 +12,8 @@ enum class GroupPermissions {
 
     ADD_BANK_ACCOUNT,
     REMOVE_BANK_ACCOUNT,
+
+    NEW_CATEGORY,
+    EDIT_CATEGORY,
+    DELETE_CATEGORY,
 }

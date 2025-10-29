@@ -16,10 +16,22 @@ interface WalletEntryCategoryRepository {
         userId: UUID,
     ): Mono<Long>
 
+    fun deleteByIdAndGroupId(
+        id: UUID,
+        groupId: UUID,
+    ): Mono<Long>
+
     fun countByUserId(userId: UUID): Mono<Long>
+
+    fun countByGroupId(userId: UUID): Mono<Long>
 
     fun findAllByUserId(
         userId: UUID,
+        pageable: Pageable,
+    ): Flux<WalletEntryCategory>
+
+    fun findAllByGroupId(
+        groupId: UUID,
         pageable: Pageable,
     ): Flux<WalletEntryCategory>
 
@@ -29,8 +41,19 @@ interface WalletEntryCategoryRepository {
         name: String,
     ): Flux<WalletEntryCategory>
 
+    fun findAllByGroupIdAndNameStartsWith(
+        groupId: UUID,
+        pageable: Pageable,
+        name: String,
+    ): Flux<WalletEntryCategory>
+
     fun findAllByUserIdAndParentIdIsNull(
         userId: UUID,
+        pageable: Pageable,
+    ): Flux<WalletEntryCategory>
+
+    fun findAllByGroupIdAndParentIdIsNull(
+        groupId: UUID,
         pageable: Pageable,
     ): Flux<WalletEntryCategory>
 
@@ -40,18 +63,35 @@ interface WalletEntryCategoryRepository {
         name: String,
     ): Flux<WalletEntryCategory>
 
-    fun findAllByParentIdIn(parentId: Collection<UUID>): Flux<WalletEntryCategory>
+    fun findAllByGroupIdAndParentIdIsNullAndNameStartsWith(
+        groupId: UUID,
+        pageable: Pageable,
+        name: String,
+    ): Flux<WalletEntryCategory>
 
-    fun findAllByGroupId(groupId: UUID): Flux<WalletEntryCategory>
+    fun findAllByParentIdIn(parentId: Collection<UUID>): Flux<WalletEntryCategory>
 
     fun findOneByIdAndUserId(
         id: UUID,
         userId: UUID,
     ): Mono<WalletEntryCategory>
 
-    fun update(
+    fun findOneByIdAndGroupId(
+        id: UUID,
+        groupId: UUID,
+    ): Mono<WalletEntryCategory>
+
+    fun updateByUserId(
         id: UUID,
         userId: UUID,
+        newName: String,
+        newColor: String,
+        newParentId: UUID?,
+    ): Mono<Long>
+
+    fun updateByGroupId(
+        id: UUID,
+        groupId: UUID,
         newName: String,
         newColor: String,
         newParentId: UUID?,

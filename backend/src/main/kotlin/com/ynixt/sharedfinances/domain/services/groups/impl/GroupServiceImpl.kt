@@ -11,8 +11,8 @@ import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
-import com.ynixt.sharedfinances.domain.services.GroupCategoryService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
+import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import org.springframework.stereotype.Service
