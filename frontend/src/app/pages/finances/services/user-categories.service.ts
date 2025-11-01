@@ -24,7 +24,7 @@ export type GetCategoryParams = {
 };
 
 @Injectable({ providedIn: 'root' })
-export class CategoriesService {
+export class UserCategoriesService {
   constructor(
     private httpClient: HttpClient,
     private paginationService: PaginationService,

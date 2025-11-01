@@ -19,10 +19,10 @@ import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
-import { CategoriesService } from '../../services/categories.service';
+import { UserCategoriesService } from '../../services/user-categories.service';
 
 @Component({
-  selector: 'app-edit-category-page',
+  selector: 'app-edit-user-category-page',
   imports: [
     ButtonDirective,
     FinancesTitleBarComponent,
@@ -34,12 +34,12 @@ import { CategoriesService } from '../../services/categories.service';
     ProgressSpinner,
     ConfirmDialog,
   ],
-  templateUrl: './edit-category-page.component.html',
-  styleUrl: './edit-category-page.component.scss',
+  templateUrl: './edit-user-category-page.component.html',
+  styleUrl: './edit-user-category-page.component.scss',
   providers: [ConfirmationService],
 })
 @UntilDestroy()
-export class EditCategoryPageComponent {
+export class EditUserCategoryPageComponent {
   formGroup: FormGroup | undefined;
   category: CategoryDto | null = null;
   loading: boolean = true;
@@ -52,7 +52,7 @@ export class EditCategoryPageComponent {
     private messageService: MessageService,
     private router: Router,
     private route: ActivatedRoute,
-    private categoriesService: CategoriesService,
+    private categoriesService: UserCategoriesService,
     private errorMessageService: ErrorMessageService,
     private confirmationService: ConfirmationService,
     private translateService: TranslateService,
@@ -77,12 +77,12 @@ export class EditCategoryPageComponent {
           query,
         },
         {
-          size: 10,
+          size: 11,
           sort: 'name',
           page,
         },
       )
-    ).content;
+    ).content.filter(category => category.id !== this.category?.id);
   }
 
   async submit() {
@@ -165,6 +165,10 @@ export class EditCategoryPageComponent {
       parent: [parentCategory, []],
       color: [this.category.color, [Validators.required]],
     });
+
+    if (this.category.children && this.category.children.length > 0) {
+      this.formGroup.get('parent')?.disable();
+    }
   }
 
   private async deleteCategory() {

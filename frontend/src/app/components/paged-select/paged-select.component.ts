@@ -95,8 +95,6 @@ export class PagedSelectComponent implements ControlValueAccessor {
   private async loadItems(page: number, query?: string | undefined): Promise<void> {
     this.lastItemRequested = this.pageSize() * ++this.currentPage;
 
-    console.log(this.lastItemRequested);
-
     const fn = this.optionsGetter();
 
     if (fn) {
@@ -158,9 +156,12 @@ export class PagedSelectComponent implements ControlValueAccessor {
   }
 
   private putValueOnListIfListNotContainsValue(value: any) {
+    if (value == null) return;
+
     const s = new Set(this.options);
 
     if (!s.has(value)) {
+      console.log(value);
       this.options = [value, ...this.options];
     }
   }

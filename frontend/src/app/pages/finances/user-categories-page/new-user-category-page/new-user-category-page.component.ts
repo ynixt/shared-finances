@@ -14,16 +14,16 @@ import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinanc
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
-import { CategoriesService } from '../../services/categories.service';
+import { UserCategoriesService } from '../../services/user-categories.service';
 
 @Component({
-  selector: 'app-new-category-page',
+  selector: 'app-new-user-category-page',
   imports: [ButtonDirective, FinancesTitleBarComponent, InputText, ReactiveFormsModule, TranslatePipe, ColorPicker, PagedSelectComponent],
-  templateUrl: './new-category-page.component.html',
-  styleUrl: './new-category-page.component.scss',
+  templateUrl: './new-user-category-page.component.html',
+  styleUrl: './new-user-category-page.component.scss',
 })
 @UntilDestroy()
-export class NewCategoryPageComponent {
+export class NewUserCategoryPageComponent {
   readonly formGroup: FormGroup;
 
   submitting = false;
@@ -34,7 +34,7 @@ export class NewCategoryPageComponent {
     private messageService: MessageService,
     private router: Router,
     private route: ActivatedRoute,
-    private categoriesService: CategoriesService,
+    private categoriesService: UserCategoriesService,
     private errorMessageService: ErrorMessageService,
   ) {
     this.formGroup = fb.group({

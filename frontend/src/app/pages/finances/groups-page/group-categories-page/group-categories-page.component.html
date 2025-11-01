@@ -1,0 +1,67 @@
+<div class="finances-page group-categories-page">
+  <app-finances-title-bar
+    [title]="'financesPage.categoriesPage.title' | translate"
+    closeRouterLink=".."
+    newRouterLink="new"
+  ></app-finances-title-bar>
+
+  <p-tree-table
+    [value]="categoriesTree"
+    [loading]="loading"
+    [rows]="pageSize"
+    [paginator]="true"
+    [lazy]="true"
+    [totalRecords]="categories.totalElements"
+    [tableStyle]="{ 'width': '100%', 'table-layout': 'fixed' }"
+    (onLazyLoad)="onLazyLoad($event)"
+  >
+    <ng-template #header>
+      <tr>
+        <th style="width: 2rem"></th>
+        <th style="width: calc(100% - 6rem)">{{ 'general.name' | translate }}</th>
+        <th style="width: 4rem"></th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-rowNode let-rowData="rowData">
+      <tr [ttRow]="rowNode">
+        <td>
+          <p-treetable-toggler [rowNode]="rowNode" />
+        </td>
+        <td>
+          <div class="flex gap-2 items-center" [class.pl-6]="rowData.parentId != null">
+            <div class="w-3 h-3 rounded-full" [style.background-color]="rowData.color"></div>
+            {{ rowData.name }}
+          </div>
+        </td>
+        <td>
+          <div class="flex items-center">
+            <a
+              [routerLink]="['edit', rowData.id]"
+              pButton
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              [pTooltip]="'general.edit' | translate"
+              tooltipPosition="top"
+            >
+              <fa-icon [icon]="editFinanceIcon"></fa-icon>
+            </a>
+            <a
+              [routerLink]="[rowData.id]"
+              pButton
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              [pTooltip]="'general.open' | translate"
+              tooltipPosition="top"
+            >
+              <fa-icon [icon]="openFinanceIcon"></fa-icon>
+            </a>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-tree-table>
+</div>

@@ -13,15 +13,15 @@ import { CategoryDto } from '../../../models/generated/com/ynixt/sharedfinances/
 import { Page } from '../../../models/pagination';
 import { createEmptyPage } from '../../../services/pagination.service';
 import { FinancesTitleBarComponent } from '../components/finances-title-bar/finances-title-bar.component';
-import { CategoriesService } from '../services/categories.service';
+import { UserCategoriesService } from '../services/user-categories.service';
 
 @Component({
-  selector: 'app-categories-page',
+  selector: 'app-user-categories-page',
   imports: [FinancesTitleBarComponent, TranslatePipe, ButtonDirective, FaIconComponent, RouterLink, Tooltip, TreeTableModule],
-  templateUrl: './categories-page.component.html',
-  styleUrl: './categories-page.component.scss',
+  templateUrl: './user-categories-page.component.html',
+  styleUrl: './user-categories-page.component.scss',
 })
-export class CategoriesPageComponent {
+export class UserCategoriesPageComponent {
   readonly pageSize = 12;
 
   loading = true;
@@ -30,7 +30,7 @@ export class CategoriesPageComponent {
 
   private currentPage = 0;
 
-  constructor(private categoriesService: CategoriesService) {}
+  constructor(private categoriesService: UserCategoriesService) {}
 
   onLazyLoad(event: TreeTableLazyLoadEvent) {
     const newPage = this.categories.totalPages == 0 ? 0 : Math.floor(event.first / this.categories.numberOfElements);

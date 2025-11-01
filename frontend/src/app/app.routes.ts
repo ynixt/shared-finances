@@ -89,7 +89,8 @@ export const routes: Routes = [
         children: [
           {
             path: '',
-            loadComponent: () => import('./pages/finances/categories-page/categories-page.component').then(m => m.CategoriesPageComponent),
+            loadComponent: () =>
+              import('./pages/finances/user-categories-page/user-categories-page.component').then(m => m.UserCategoriesPageComponent),
             data: {
               pageTitleKey: 'pageTitle.categories',
             },
@@ -97,8 +98,8 @@ export const routes: Routes = [
           {
             path: 'new',
             loadComponent: () =>
-              import('./pages/finances/categories-page/new-category-page/new-category-page.component').then(
-                m => m.NewCategoryPageComponent,
+              import('./pages/finances/user-categories-page/new-user-category-page/new-user-category-page.component').then(
+                m => m.NewUserCategoryPageComponent,
               ),
             data: {
               pageTitleKey: 'pageTitle.newCategory',
@@ -107,8 +108,8 @@ export const routes: Routes = [
           {
             path: 'edit/:id',
             loadComponent: () =>
-              import('./pages/finances/categories-page/edit-category-page/edit-category-page.component').then(
-                m => m.EditCategoryPageComponent,
+              import('./pages/finances/user-categories-page/edit-user-category-page/edit-user-category-page.component').then(
+                m => m.EditUserCategoryPageComponent,
               ),
             data: {
               pageTitleKey: 'pageTitle.editCategory',
@@ -181,6 +182,41 @@ export const routes: Routes = [
                   ),
                 data: {
                   pageTitleKey: 'pageTitle.associateBankAccountGroup',
+                },
+              },
+            ],
+          },
+          {
+            path: ':id/categories',
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/group-categories-page/group-categories-page.component').then(
+                    m => m.GroupCategoriesPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.categories',
+                },
+              },
+              {
+                path: 'new',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/new-group-category-page/new-group-category-page.component').then(
+                    m => m.NewGroupCategoryPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.newCategory',
+                },
+              },
+              {
+                path: 'edit/:categoryId',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/edit-group-category-page/edit-group-category-page.component').then(
+                    m => m.EditGroupCategoryPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.editCategory',
                 },
               },
             ],
