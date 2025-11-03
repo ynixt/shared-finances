@@ -7,4 +7,7 @@
       <module name="Backend.test" options="-parameters" />
     </option>
   </component>
+  <component name="TypeScriptCompiler">
+    <option name="useTypesFromServer" value="true" />
+  </component>
 </project>

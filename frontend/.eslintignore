@@ -1,0 +1,6 @@
+node_modules
+.angular
+dist
+coverage
+public
+src/app/models/generated

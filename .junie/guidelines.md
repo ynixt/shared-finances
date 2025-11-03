@@ -5,10 +5,11 @@ This document captures project-specific practices that help advanced contributor
 
 ## Quickstart (Backend + Frontend)
 Backend
-- Build + test: `./gradlew -p backend build`
-- Run app (DB/Redis must be up): `./gradlew -p backend bootRun`
-- Style check/fix: `./gradlew -p backend ktlintCheck` | `ktlintFormat`
-- Generate TS models for frontend: `./gradlew -p backend generateTypescriptInterfaces`
+- Build + test: `cd backend && ./gradlew build`
+- Run app (DB/Redis must be up): `cd backend && ./gradlew bootRun`
+- Style check/fix: `cd backend && ./gradlew ktlintCheck` | `ktlintFormat`
+- Generate TS models for frontend: `cd backend && ./gradlew generateTypescriptInterfaces`
+- Note: the Gradle wrapper lives in the `backend/` folder. Always run Gradle commands from inside `backend/` (or use `backend/gradlew ...`).
 
 Frontend
 - Install deps (Node 20.x):

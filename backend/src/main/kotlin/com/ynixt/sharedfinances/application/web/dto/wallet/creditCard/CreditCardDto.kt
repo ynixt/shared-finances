@@ -1,0 +1,24 @@
+package com.ynixt.sharedfinances.application.web.dto.wallet.creditCard
+
+import com.ynixt.sharedfinances.application.web.dto.wallet.WalletItemDto
+import java.math.BigDecimal
+import java.util.UUID
+
+class CreditCardDto(
+    id: UUID,
+    name: String,
+    enabled: Boolean,
+    userId: UUID,
+    currency: String,
+    val totalLimit: BigDecimal,
+    val availableLimit: BigDecimal,
+    val dueDay: Int,
+    val daysBetweenDueAndClosing: Int,
+    val dueOnNextBusinessDay: Boolean,
+) : WalletItemDto(
+        id = id,
+        name = name,
+        enabled = enabled,
+        userId = userId,
+        currency = currency,
+    )

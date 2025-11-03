@@ -1,0 +1,17 @@
+financesPage:
+  creditCardsPage:
+    title: Credit Cards
+    name: Card name
+    currency: Currency
+    totalLimit: Total limit
+    availableLimit: Available limit
+    dueDay: Due day
+    daysBetweenDueAndClosing: Days between due and closing
+    dueOnNextBusinessDay: Due on next business day
+    newCreditCardPage:
+      title: New credit card
+      successMessage: Credit card created successfully
+    editCreditCardPage:
+      title: 'Edit credit card: {{name}}'
+      successMessage: Credit card updated successfully
+      successDeleteMessage: Credit card deleted successfully

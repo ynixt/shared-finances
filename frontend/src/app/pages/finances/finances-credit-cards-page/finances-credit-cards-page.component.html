@@ -1,0 +1,72 @@
+<div class="finances-page credit-cards-page">
+  <app-finances-title-bar
+    [title]="'financesPage.creditCardsPage.title' | translate"
+    closeRouterLink=".."
+    newRouterLink="new"
+  ></app-finances-title-bar>
+
+  <p-data-view
+    [value]="items.content"
+    [loading]="loading"
+    [rows]="pageSize"
+    [paginator]="true"
+    [lazy]="true"
+    [totalRecords]="items.totalElements"
+    layout="grid"
+    (onLazyLoad)="onLazyLoad($event)"
+  >
+    <ng-template #grid let-items>
+      <div class="grid grid-cols-12 gap-4">
+        @for (card of items; track card) {
+          <div class="col-span-12 lg:col-span-6 2xl:col-span-4 p-2">
+            <p-card>
+              <ng-template #title>
+                <div class="flex gap-2 items-center">
+                  <span class="mr-auto truncate">{{ card.name }}</span>
+                  <div class="flex items-center">
+                    <a
+                      [routerLink]="['edit', card.id]"
+                      pButton
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      size="small"
+                      [pTooltip]="'general.edit' | translate"
+                      tooltipPosition="top"
+                    >
+                      <fa-icon [icon]="editFinanceIcon"></fa-icon>
+                    </a>
+                  </div>
+                </div>
+              </ng-template>
+              <table class="w-full">
+                <tbody>
+                  <tr>
+                    <td>{{ 'financesPage.creditCardsPage.currency' | translate }}</td>
+                    <td>{{ card.currency }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ 'financesPage.creditCardsPage.totalLimit' | translate }}</td>
+                    <td>{{ card.totalLimit | localCurrency: card.currency }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ 'financesPage.creditCardsPage.availableLimit' | translate }}</td>
+                    <td>{{ card.availableLimit | localCurrency: card.currency }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ 'financesPage.creditCardsPage.dueDay' | translate }}</td>
+                    <td>{{ card.dueDay }}</td>
+                  </tr>
+                  <tr>
+                    <td>{{ 'financesPage.creditCardsPage.daysBetweenDueAndClosing' | translate }}</td>
+                    <td>{{ card.daysBetweenDueAndClosing }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </p-card>
+          </div>
+        }
+      </div>
+    </ng-template>
+  </p-data-view>
+</div>

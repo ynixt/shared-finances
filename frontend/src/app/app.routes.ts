@@ -85,6 +85,41 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'creditCards',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/finances/finances-credit-cards-page/finances-credit-cards-page.component').then(
+                m => m.FinancesCreditCardsPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.creditCards',
+            },
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./pages/finances/finances-credit-cards-page/new-credit-card-page/new-credit-card-page.component').then(
+                m => m.NewCreditCardPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.creditCards',
+            },
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () =>
+              import('./pages/finances/finances-credit-cards-page/edit-credit-card-page/edit-credit-card-page.component').then(
+                m => m.EditCreditCardPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.creditCards',
+            },
+          },
+        ],
+      },
+      {
         path: 'categories',
         children: [
           {

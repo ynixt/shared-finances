@@ -14,7 +14,7 @@ const compat = new FlatCompat({
 });
 
 export default defineConfig([
-  globalIgnores(['dist/**/*']),
+  globalIgnores(['dist/**/*', '.angular/**/*', 'public/**/*', 'coverage/**/*', 'src/app/models/generated/**/*']),
   {
     files: ['**/*.ts'],
 

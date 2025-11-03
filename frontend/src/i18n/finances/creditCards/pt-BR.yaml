@@ -1,0 +1,17 @@
+financesPage:
+  creditCardsPage:
+    title: Cartões de crédito
+    name: Nome do cartão
+    currency: Moeda
+    totalLimit: Limite total
+    availableLimit: Limite disponível
+    dueDay: Dia de vencimento
+    daysBetweenDueAndClosing: Dias entre fechamento e vencimento
+    dueOnNextBusinessDay: Vencimento no próximo dia útil
+    newCreditCardPage:
+      title: Novo cartão de crédito
+      successMessage: Cartão de crédito criado com sucesso
+    editCreditCardPage:
+      title: 'Editar cartão de crédito: {{name}}'
+      successMessage: Cartão de crédito atualizado com sucesso
+      successDeleteMessage: Cartão de crédito excluído com sucesso

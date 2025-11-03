@@ -9,7 +9,10 @@ export type GroupPermissions =
   | 'DELETE_GROUP'
   | 'SEND_ENTRIES'
   | 'ADD_BANK_ACCOUNT'
-  | 'REMOVE_BANK_ACCOUNT';
+  | 'REMOVE_BANK_ACCOUNT'
+  | 'NEW_CATEGORY'
+  | 'EDIT_CATEGORY'
+  | 'DELETE_CATEGORY';
 
 export const GroupPermissions__Options: GroupPermissions[] = [
   'CHANGE_ROLE',
@@ -20,6 +23,9 @@ export const GroupPermissions__Options: GroupPermissions[] = [
   'SEND_ENTRIES',
   'ADD_BANK_ACCOUNT',
   'REMOVE_BANK_ACCOUNT',
+  'NEW_CATEGORY',
+  'EDIT_CATEGORY',
+  'DELETE_CATEGORY',
 ];
 
 export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions } = {
@@ -31,4 +37,7 @@ export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions 
   'SEND_ENTRIES': 'SEND_ENTRIES',
   'ADD_BANK_ACCOUNT': 'ADD_BANK_ACCOUNT',
   'REMOVE_BANK_ACCOUNT': 'REMOVE_BANK_ACCOUNT',
+  'NEW_CATEGORY': 'NEW_CATEGORY',
+  'EDIT_CATEGORY': 'EDIT_CATEGORY',
+  'DELETE_CATEGORY': 'DELETE_CATEGORY',
 };

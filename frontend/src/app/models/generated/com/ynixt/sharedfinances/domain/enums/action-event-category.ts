@@ -1,7 +1,7 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export type ActionEventCategory = 'BANK_ACCOUNT' | 'GROUP' | 'CREDIT_CARD' | 'BANK_ACCOUNT_ASSOCIATE' | 'USER_CATEGORY';
+export type ActionEventCategory = 'BANK_ACCOUNT' | 'GROUP' | 'CREDIT_CARD' | 'BANK_ACCOUNT_ASSOCIATE' | 'USER_CATEGORY' | 'GROUP_CATEGORY';
 
 export const ActionEventCategory__Options: ActionEventCategory[] = [
   'BANK_ACCOUNT',
@@ -9,6 +9,7 @@ export const ActionEventCategory__Options: ActionEventCategory[] = [
   'CREDIT_CARD',
   'BANK_ACCOUNT_ASSOCIATE',
   'USER_CATEGORY',
+  'GROUP_CATEGORY',
 ];
 
 export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEventCategory } = {
@@ -17,4 +18,5 @@ export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEvent
   'CREDIT_CARD': 'CREDIT_CARD',
   'BANK_ACCOUNT_ASSOCIATE': 'BANK_ACCOUNT_ASSOCIATE',
   'USER_CATEGORY': 'USER_CATEGORY',
+  'GROUP_CATEGORY': 'GROUP_CATEGORY',
 };

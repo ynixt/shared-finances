@@ -5,6 +5,7 @@ import { Observable, filter, map } from 'rxjs';
 import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
+import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { ActionEventCategory } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { KratosAuthService } from '../../../services/kratos-auth.service';
 import { ActionEventService } from './action-event.service';
@@ -24,6 +25,10 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly bankInserted$: Observable<BankAccountDto>;
   readonly bankUpdated$: Observable<BankAccountDto>;
   readonly bankDeleted$: Observable<string>;
+
+  readonly creditCardInserted$: Observable<CreditCardDto>;
+  readonly creditCardUpdated$: Observable<CreditCardDto>;
+  readonly creditCardDeleted$: Observable<string>;
 
   readonly groupInserted$: Observable<GroupDto>;
 
@@ -51,6 +56,24 @@ export class UserActionEventService extends ActionEventService implements OnDest
     );
 
     this.bankDeleted$ = baseBank$.pipe(
+      filter(e => e.type === 'DELETE'),
+      map(e => e.data as string),
+    );
+
+    // --- CreditCard ---
+    const baseCreditCard$ = this.streamOf<UserActionEventDto>('CREDIT_CARD').pipe(notGroupFilter);
+
+    this.creditCardInserted$ = baseCreditCard$.pipe(
+      filter(e => e.type === 'INSERT'),
+      map(e => e.data as CreditCardDto),
+    );
+
+    this.creditCardUpdated$ = baseCreditCard$.pipe(
+      filter(e => e.type === 'UPDATE'),
+      map(e => e.data as CreditCardDto),
+    );
+
+    this.creditCardDeleted$ = baseCreditCard$.pipe(
       filter(e => e.type === 'DELETE'),
       map(e => e.data as string),
     );
