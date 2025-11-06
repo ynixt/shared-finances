@@ -24,3 +24,9 @@ financesPage:
       unassociateBankAccountSuccessMessage: Bank account was successfully unassociated of the group.
     associateBankAccountsPage:
       title: 'Associate bank account to group: {{name}}'
+    creditCardsAssociatedPage:
+      title: 'Credit cards associated in group: {{name}}'
+      owner: Card owner
+      unassociateCreditCardSuccessMessage: Credit card was successfully unassociated of the group.
+    associateCreditCardsPage:
+      title: 'Associate credit card to group: {{name}}'

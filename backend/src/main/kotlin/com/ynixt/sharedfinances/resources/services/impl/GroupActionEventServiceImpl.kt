@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.services.impl
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.domain.entities.groups.Group
 import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
+import com.ynixt.sharedfinances.domain.entities.groups.GroupCreditCard
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
@@ -92,6 +93,39 @@ class GroupActionEventServiceImpl(
                 userId = userId,
                 type = ActionEventType.DELETE,
                 category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
+                groupInfo =
+                    NewEventGroupInfo(
+                        groupId = groupId,
+                    ),
+            )
+
+    override fun sendCreditCardAssociated(
+        userId: UUID,
+        groupCreditCard: GroupCreditCard,
+    ): Mono<Long> =
+        actionEventService
+            .newEvent(
+                data = groupCreditCard.creditCardId,
+                userId = userId,
+                type = ActionEventType.INSERT,
+                category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,
+                groupInfo =
+                    NewEventGroupInfo(
+                        groupId = groupCreditCard.groupId,
+                    ),
+            )
+
+    override fun sendCreditCardUnassociated(
+        userId: UUID,
+        groupId: UUID,
+        creditCardId: UUID,
+    ): Mono<Long> =
+        actionEventService
+            .newEvent(
+                data = creditCardId,
+                userId = userId,
+                type = ActionEventType.DELETE,
+                category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,
                 groupInfo =
                     NewEventGroupInfo(
                         groupId = groupId,

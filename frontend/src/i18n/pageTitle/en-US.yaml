@@ -20,3 +20,5 @@ pageTitle:
   acceptInvite: Accept invite
   groupBankAccounts: Group bank accounts
   associateBankAccountGroup: Associate bank account to group
+  groupCreditCards: Group credit cards
+  associateCreditCardGroup: Associate credit card to group

@@ -7,6 +7,7 @@ import { OnlyIdDto } from '../../../models/generated/com/ynixt/sharedfinances/ap
 import { GroupInviteDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { GroupInfoForInviteDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/invite';
 import { BankAccountForGroupAssociateDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
+import { CreditCardForGroupAssociateDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { UserService } from '../../../services/user.service';
 import { UserMissingError } from '../errors/user-missing.error';
 
@@ -56,6 +57,52 @@ export class GroupAssociationService {
 
     if (user != null) {
       await lastValueFrom(this.http.delete<void>(`/api/groups/${groupId}/associations/banks/${bankAccountId}`).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async findAllAssociatedCreditCards(groupId: string): Promise<CreditCardForGroupAssociateDto[]> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(
+        this.http.get<CreditCardForGroupAssociateDto[]>(`/api/groups/${groupId}/associations/creditCards`).pipe(take(1)),
+      );
+    }
+
+    throw new UserMissingError();
+  }
+
+  async findAllAllowedCreditCardsToAssociate(groupId: string): Promise<CreditCardForGroupAssociateDto[]> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(
+        this.http.get<CreditCardForGroupAssociateDto[]>(`/api/groups/${groupId}/associations/creditCards/allowed`).pipe(take(1)),
+      );
+    }
+
+    throw new UserMissingError();
+  }
+
+  async associateCreditCard(groupId: string, creditCardId: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.put<void>(`/api/groups/${groupId}/associations/creditCards/${creditCardId}`, undefined).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async unassociateCreditCard(groupId: string, creditCardId: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.delete<void>(`/api/groups/${groupId}/associations/creditCards/${creditCardId}`).pipe(take(1)));
       return;
     }
 

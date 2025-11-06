@@ -1,82 +1,82 @@
 package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
-import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+import com.ynixt.sharedfinances.domain.entities.groups.GroupCreditCard
+import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.exceptions.BankAccountAlreadyInGroupException
-import com.ynixt.sharedfinances.domain.repositories.BankAccountRepository
-import com.ynixt.sharedfinances.domain.repositories.GroupBankAccountRepository
+import com.ynixt.sharedfinances.domain.repositories.CreditCardRepository
+import com.ynixt.sharedfinances.domain.repositories.GroupCreditCardRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
+import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
-import com.ynixt.sharedfinances.domain.services.groups.GroupWalletAssociationService
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
-class GroupWalletAssociationServiceImpl(
+class GroupCreditCardAssociationServiceImpl(
     private val groupPermissionService: GroupPermissionService,
-    private val bankAccountRepository: BankAccountRepository,
-    private val groupBankAccountRepository: GroupBankAccountRepository,
+    private val creditCardRepository: CreditCardRepository,
+    private val groupCreditCardRepository: GroupCreditCardRepository,
     private val databaseHelperService: DatabaseHelperService,
     private val groupActionEventService: GroupActionEventService,
-) : GroupWalletAssociationService {
-    override fun findAllAllowedBanksToAssociate(
+) : GroupCreditCardAssociationService {
+    override fun findAllAllowedCreditCardsToAssociate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<BankAccount>> =
+    ): Mono<List<CreditCard>> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-                GroupPermissions.ADD_BANK_ACCOUNT,
+                GroupPermissions.ADD_CREDIT_CARD,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    bankAccountRepository.findAllAllowedForGroup(groupId).collectList()
+                    creditCardRepository.findAllAllowedForGroup(groupId).collectList()
                 } else {
                     Mono.empty()
                 }
             }
 
-    override fun findAllAssociatedBanks(
+    override fun findAllAssociatedCreditCards(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<BankAccount>> =
+    ): Mono<List<CreditCard>> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    bankAccountRepository.findAllAssociatedToGroup(groupId).collectList()
+                    creditCardRepository.findAllAssociatedToGroup(groupId).collectList()
                 } else {
                     Mono.empty()
                 }
             }
 
-    override fun associate(
+    override fun associateCreditCard(
         userId: UUID,
         groupId: UUID,
-        bankAccountId: UUID,
+        creditCardId: UUID,
     ): Mono<Unit> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-                GroupPermissions.ADD_BANK_ACCOUNT,
+                GroupPermissions.ADD_CREDIT_CARD,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupBankAccountRepository
+                    groupCreditCardRepository
                         .save(
-                            GroupBankAccount(
+                            GroupCreditCard(
                                 groupId = groupId,
-                                bankAccountId = bankAccountId,
+                                creditCardId = creditCardId,
                             ),
                         ).flatMap {
                             groupActionEventService
-                                .sendBankAssociated(
-                                    groupBankAccount = it,
+                                .sendCreditCardAssociated(
+                                    groupCreditCard = it,
                                     userId = userId,
                                 )
                         }.map { }
@@ -84,7 +84,7 @@ class GroupWalletAssociationServiceImpl(
                             if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
                                 BankAccountAlreadyInGroupException(
                                     groupId = groupId,
-                                    bankAccountId = bankAccountId,
+                                    bankAccountId = creditCardId,
                                     cause = t,
                                 )
                             } else {
@@ -96,27 +96,27 @@ class GroupWalletAssociationServiceImpl(
                 }
             }
 
-    override fun unassociateBank(
+    override fun unassociateCreditCard(
         userId: UUID,
         groupId: UUID,
-        bankAccountId: UUID,
+        creditCardId: UUID,
     ): Mono<Unit> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-                GroupPermissions.REMOVE_BANK_ACCOUNT,
+                GroupPermissions.REMOVE_CREDIT_CARD,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupBankAccountRepository
-                        .deleteByGroupIdAndBankAccountId(
+                    groupCreditCardRepository
+                        .deleteByGroupIdAndCreditCardId(
                             groupId = groupId,
-                            bankAccountId = bankAccountId,
+                            creditCardId = creditCardId,
                         ).flatMap {
                             groupActionEventService
-                                .sendBankUnassociated(
+                                .sendCreditCardUnassociated(
                                     groupId = groupId,
-                                    bankAccountId = bankAccountId,
+                                    creditCardId = creditCardId,
                                     userId = userId,
                                 )
                         }.map { }

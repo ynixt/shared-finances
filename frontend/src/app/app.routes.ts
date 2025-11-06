@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './guards/auth.guard';
 import { notLoggedGuard } from './guards/not-logged.guard';
+import { AssociateCreditCardGroupPageComponent } from './pages/finances/groups-page/associate-credit-card-group-page/associate-credit-card-group-page.component';
+import { GroupCreditCardsPageComponent } from './pages/finances/groups-page/group-credit-cards-page/group-credit-cards-page.component';
 
 export const routes: Routes = [
   {
@@ -217,6 +219,31 @@ export const routes: Routes = [
                   ),
                 data: {
                   pageTitleKey: 'pageTitle.associateBankAccountGroup',
+                },
+              },
+            ],
+          },
+          {
+            path: ':id/creditCards',
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/group-credit-cards-page/group-credit-cards-page.component').then(
+                    m => m.GroupCreditCardsPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.groupCreditCards',
+                },
+              },
+              {
+                path: 'new',
+                loadComponent: () =>
+                  import('./pages/finances/groups-page/associate-credit-card-group-page/associate-credit-card-group-page.component').then(
+                    m => m.AssociateCreditCardGroupPageComponent,
+                  ),
+                data: {
+                  pageTitleKey: 'pageTitle.associateCreditCardGroup',
                 },
               },
             ],

@@ -37,4 +37,8 @@ interface CreditCardRepository {
         newDaysBetweenDueAndClosing: Int,
         newDueOnNextBusinessDay: Boolean,
     ): Mono<Long>
+
+    fun findAllAllowedForGroup(groupId: UUID): Flux<CreditCard>
+
+    fun findAllAssociatedToGroup(groupId: UUID): Flux<CreditCard>
 }

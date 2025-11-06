@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.services.actionevents
 
 import com.ynixt.sharedfinances.domain.entities.groups.Group
 import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
+import com.ynixt.sharedfinances.domain.entities.groups.GroupCreditCard
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import reactor.core.publisher.Mono
 import java.util.UUID
@@ -32,5 +33,16 @@ interface GroupActionEventService {
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,
+    ): Mono<Long>
+
+    fun sendCreditCardAssociated(
+        userId: UUID,
+        groupCreditCard: GroupCreditCard,
+    ): Mono<Long>
+
+    fun sendCreditCardUnassociated(
+        userId: UUID,
+        groupId: UUID,
+        creditCardId: UUID,
     ): Mono<Long>
 }

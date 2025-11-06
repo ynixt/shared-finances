@@ -24,3 +24,9 @@ financesPage:
       unassociateBankAccountSuccessMessage: A conta bancária foi desassociada do grupo com sucesso.
     associateBankAccountsPage:
       title: 'Associar conta bancária ao grupo: {{name}}'
+    creditCardsAssociatedPage:
+      title: 'Cartões de crédito associadas ao grupo: {{name}}'
+      owner: Dono do cartão
+      unassociateCreditCardSuccessMessage: O cartão de crédito foi desassociada do grupo com sucesso.
+    associateCreditCardsPage:
+      title: 'Associar cartão de crédito ao grupo: {{name}}'

@@ -4,7 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
 import reactor.core.publisher.Mono
 import java.util.UUID
 
-interface GroupWalletAssociationService {
+interface GroupBankAssociationService {
     fun findAllAllowedBanksToAssociate(
         userId: UUID,
         groupId: UUID,
@@ -15,7 +15,7 @@ interface GroupWalletAssociationService {
         groupId: UUID,
     ): Mono<List<BankAccount>>
 
-    fun associate(
+    fun associateBank(
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,

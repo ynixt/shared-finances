@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
 import com.ynixt.sharedfinances.domain.repositories.CreditCardRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.GroupCreditCardR2DBCRepository
 import com.ynixt.sharedfinances.resources.repositories.springdata.CreditCardSpringDataRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
@@ -12,6 +13,7 @@ import java.util.UUID
 @Repository
 class CreditCardRepositoryImpl(
     private val springDataRepository: CreditCardSpringDataRepository,
+    private val r2DBCRepository: GroupCreditCardR2DBCRepository,
 ) : CreditCardRepository {
     override fun findAllByUserId(
         userId: UUID,
@@ -54,4 +56,8 @@ class CreditCardRepositoryImpl(
             newDaysBetweenDueAndClosing = newDaysBetweenDueAndClosing,
             newDueOnNextBusinessDay = newDueOnNextBusinessDay,
         )
+
+    override fun findAllAllowedForGroup(groupId: UUID): Flux<CreditCard> = r2DBCRepository.findAllAllowedForGroup(groupId)
+
+    override fun findAllAssociatedToGroup(groupId: UUID): Flux<CreditCard> = r2DBCRepository.findAllAssociatedToGroup(groupId)
 }

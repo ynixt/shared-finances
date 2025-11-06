@@ -22,6 +22,9 @@ export class GroupsActionEventService {
   readonly bankAccountAssociated$: Observable<GroupActionEvent<string>>;
   readonly bankAccountUnassociated$: Observable<GroupActionEvent<string>>;
 
+  readonly creditCardAssociated$: Observable<GroupActionEvent<string>>;
+  readonly creditCardUnassociated$: Observable<GroupActionEvent<string>>;
+
   constructor(private userActionEventService: UserActionEventService) {
     const baseGroup$ = this.userActionEventService.groupEvents$.pipe(filter(g => g.event === 'GROUP'));
 
@@ -43,6 +46,18 @@ export class GroupsActionEventService {
     );
 
     this.bankAccountUnassociated$ = baseBankAccountAssociate$.pipe(
+      filter(e => e.type === 'DELETE'),
+      map(e => e as GroupActionEvent<string>),
+    );
+
+    const baseCreditCardAssociate$ = this.userActionEventService.groupEvents$.pipe(filter(g => g.event === 'CREDIT_CARD_ASSOCIATE'));
+
+    this.creditCardAssociated$ = baseCreditCardAssociate$.pipe(
+      filter(e => e.type === 'INSERT'),
+      map(e => e as GroupActionEvent<string>),
+    );
+
+    this.creditCardUnassociated$ = baseCreditCardAssociate$.pipe(
       filter(e => e.type === 'DELETE'),
       map(e => e as GroupActionEvent<string>),
     );
