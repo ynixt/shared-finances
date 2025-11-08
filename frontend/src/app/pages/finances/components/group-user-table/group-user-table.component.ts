@@ -117,12 +117,12 @@ export class GroupUserTableComponent {
     }
   }
 
-  getSeverityForRole(role: UserGroupRole): 'success' | 'warning' | 'danger' {
+  getSeverityForRole(role: UserGroupRole): 'success' | 'warn' | 'danger' {
     switch (role) {
       case 'ADMIN':
         return 'danger';
       case 'EDITOR':
-        return 'warning';
+        return 'warn';
       case 'VIEWER':
         return 'success';
     }
