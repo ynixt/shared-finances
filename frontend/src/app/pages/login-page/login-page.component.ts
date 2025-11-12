@@ -8,6 +8,8 @@ import { filter, lastValueFrom, take } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 
 import { NavbarComponent } from '../../components/navbar/navbar.component';
@@ -19,7 +21,7 @@ import { translateKratosError } from '../../util/kratos-i18n';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, Toast, TranslatePipe, NavbarComponent, ButtonDirective],
+  imports: [ReactiveFormsModule, Toast, TranslatePipe, NavbarComponent, ButtonDirective, Password, InputText],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
   providers: [MessageService],
