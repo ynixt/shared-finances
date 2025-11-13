@@ -1,0 +1,54 @@
+<div class="finances-page new-transaction-page">
+  <app-finances-title-bar
+    [title]="'financesPage.transactionsPage.newTransactionPage.title' | translate"
+    closeRouterLink=".."
+  ></app-finances-title-bar>
+
+  <form [formGroup]="form()" class="flex flex-col gap-4" (ngSubmit)="submit()">
+    @let isTransfer = typeControl.value === TransactionType.TRANSFER;
+
+    <div class="flex justify-center">
+      <div class="transaction-type-buttons mb-4 grid w-full lg:w-5/6 xl:w-3/4 grid-cols-3">
+        @for (typeButton of transactionTypeOptions; track typeButton) {
+          @let controlSelected = typeControl.value == typeButton.value;
+
+          <button
+            (click)="typeControl.setValue(typeButton.value)"
+            pButton
+            [severity]="typeButton.severity"
+            [class]="typeButton.styleClass"
+            [class.font-semibold]="controlSelected"
+            [class.inset-shadow-sm]="controlSelected"
+            [class.text-shadow-lg]="controlSelected"
+          >
+            @if (controlSelected) {
+              <i class="pi pi-check"></i>
+            } @else {
+              <i class="pi" style="width: 16px"></i>
+            }
+            {{ typeButton.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.group' | translate }}</span>
+      <app-paged-select [optionsGetter]="loadGroups.bind(this)" formControlName="group" [filterInMemory]="true"></app-paged-select>
+    </label>
+
+    <div class="grid grid-cols-{{ isTransfer ? 2 : 1 }} gap-2">
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.origin' | translate }} *</span>
+        <app-wallet-item-picker [group]="selectedGroup" formControlName="origin"></app-wallet-item-picker>
+      </label>
+
+      @if (isTransfer) {
+        <label class="flex flex-col gap-2">
+          <span>{{ 'financesPage.transactionsPage.target' | translate }} *</span>
+          <app-wallet-item-picker [group]="selectedGroup" formControlName="target"></app-wallet-item-picker>
+        </label>
+      }
+    </div>
+  </form>
+</div>

@@ -11,7 +11,7 @@ import java.util.UUID
 @Repository
 class GroupBankAccountR2DBCRepository(
     private val dbClient: DatabaseClient,
-) {
+) : R2BDCGenericRepository() {
     fun findAllAllowedForGroup(groupId: UUID): Flux<BankAccount> {
         val sql =
             """

@@ -1,6 +1,7 @@
 financesPage:
   menu:
     overview: Visão Geral
+    newTransaction: Nova Transação
     registrations: Cadastros
     bankAccounts: Contas bancárias
     creditCards: Cartões de crédito

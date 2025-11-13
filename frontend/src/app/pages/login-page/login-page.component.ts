@@ -6,6 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { filter, lastValueFrom, take } from 'rxjs';
 
+import { AxiosError } from 'axios';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
@@ -102,6 +103,13 @@ export class LoginPageComponent implements OnInit {
         }
       });
     } catch (err) {
+      if (err instanceof AxiosError) {
+        if (err.response?.data.error.id === 'security_csrf_violation') {
+          await this.getFlow();
+          return this.submit();
+        }
+      }
+
       this.loading = false;
       let errorMessage = translateKratosError(err, this.translateService);
 

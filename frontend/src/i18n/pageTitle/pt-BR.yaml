@@ -22,3 +22,5 @@ pageTitle:
   associateBankAccountGroup: Associar conta bancária ao grupo
   groupCreditCards: Cartões de crédito do grupo
   associateCreditCardGroup: Associar cartão de crédito ao grupo
+  transactions: Transações
+  newTransaction: Nova transação

@@ -1,6 +1,7 @@
 financesPage:
   menu:
     overview: Overview
+    newTransaction: New Transaction
     registrations: Registrations
     bankAccounts: Bank Accounts
     creditCards: Credit Cards

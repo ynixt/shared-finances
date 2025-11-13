@@ -11,7 +11,7 @@ import java.util.UUID
 @Repository
 class GroupUsersR2DBCRepository(
     private val dbClient: DatabaseClient,
-) {
+) : R2BDCGenericRepository() {
     fun findAllMembers(groupId: UUID): Flux<GroupUser> {
         val sql =
             """

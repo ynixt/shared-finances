@@ -1,4 +1,5 @@
-import { Component, ViewChild, computed, forwardRef, input, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, ContentChild, TemplateRef, ViewChild, computed, forwardRef, input, signal } from '@angular/core';
 import { ControlValueAccessor, FormControl, FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -7,12 +8,12 @@ import { ScrollerOptions } from 'primeng/api';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
-import { Select, SelectChangeEvent, SelectFilterEvent, SelectLazyLoadEvent } from 'primeng/select';
+import { Select, SelectChangeEvent, SelectLazyLoadEvent } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 
 @Component({
   selector: 'app-paged-select',
-  imports: [ReactiveFormsModule, FormsModule, Select, Skeleton, InputText, IconField, InputIcon],
+  imports: [ReactiveFormsModule, FormsModule, Select, Skeleton, InputText, IconField, InputIcon, NgTemplateOutlet],
   templateUrl: './paged-select.component.html',
   styleUrl: './paged-select.component.scss',
   providers: [
@@ -29,6 +30,12 @@ export class PagedSelectComponent implements ControlValueAccessor {
   componentClass = input<string>();
   pageSize = input<number>(10);
   allowFilter = input<boolean>(true);
+  filterInMemory = input<boolean>(false);
+  optionLabel = input<string>('name');
+  dataKey = input<string>('id');
+
+  @ContentChild('item', { read: TemplateRef }) externalItemTemplate?: TemplateRef<any>;
+  @ContentChild('selectedItem', { read: TemplateRef }) externalSelectedItemTemplate?: TemplateRef<any>;
 
   loading = signal<boolean>(true);
 
@@ -60,6 +67,17 @@ export class PagedSelectComponent implements ControlValueAccessor {
     this.searchControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value => {
       this.onFilterChange(value ?? '');
     });
+  }
+
+  resetComponent() {
+    this.loading.set(true);
+    this.selectLoaded = false;
+    this.currentPage = 0;
+    this.lastItemRequested = -1;
+    this.currentPageBeforeFilter = 0;
+    this.lastItemRequestedBeforeFilter = -1;
+    this.options = [];
+    this.optionsBeforeFilter = [];
   }
 
   writeValue(obj: any): void {
@@ -120,14 +138,13 @@ export class PagedSelectComponent implements ControlValueAccessor {
         this.select?._filterValue.set('loading');
         setTimeout(() => {
           this.select?._filterValue.set('');
+          if (this.select?.scroller) {
+            this.select.scroller.autoSize = false;
+          }
           this.selectLoaded = true;
         }, 0);
       }
     }
-  }
-
-  onFilter($event: SelectFilterEvent) {
-    console.log($event);
   }
 
   async onFilterChange(query: string) {

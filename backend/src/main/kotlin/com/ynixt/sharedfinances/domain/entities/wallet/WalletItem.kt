@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.entities.wallet
 
 import com.ynixt.sharedfinances.domain.entities.AuditedEntity
 import com.ynixt.sharedfinances.domain.entities.User
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import org.springframework.data.annotation.Transient
 import java.util.UUID
 
@@ -13,4 +14,7 @@ abstract class WalletItem(
 ) : AuditedEntity() {
     @Transient
     var user: User? = null
+
+    @get:Transient
+    abstract val type: WalletItemType
 }

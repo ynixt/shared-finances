@@ -52,6 +52,21 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'transactions',
+        children: [
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./pages/finances/transactions-page/new-transaction-page/new-transaction-page.component').then(
+                m => m.NewTransactionPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.newTransaction',
+            },
+          },
+        ],
+      },
+      {
         path: 'bankAccounts',
         children: [
           {

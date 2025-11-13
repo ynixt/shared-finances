@@ -1,0 +1,10 @@
+financesPage:
+  transactionsPage:
+    group: Group
+    origin: Origin
+    target: Target
+    types:
+      CREDIT_CARD: Credit card
+      BANK_ACCOUNT: Bank Account
+    newTransactionPage:
+      title: New transaction

@@ -2,7 +2,7 @@
   <p-select
     #select
     [options]="options"
-    optionLabel="name"
+    [optionLabel]="optionLabel()"
     [filter]="allowFilter()"
     [showClear]="true"
     [placeholder]="placeholder()"
@@ -14,8 +14,7 @@
     [virtualScroll]="true"
     [virtualScrollItemSize]="44"
     [virtualScrollOptions]="scrollerOptions()"
-    (onFilter)="onFilter($event)"
-    dataKey="id"
+    [dataKey]="dataKey()"
   >
     <ng-template #loader>
       <div class="p-2">
@@ -23,13 +22,32 @@
       </div>
     </ng-template>
 
-    <ng-template #filter>
-      <div class="w-full p-2 bg-surface-0">
-        <p-iconfield>
-          <input pInputText type="text" class="w-full" autofocus [formControl]="searchControl" role="searchbox" autocomplete="off" />
-          <p-inputicon class="pi pi-search" />
-        </p-iconfield>
-      </div>
-    </ng-template>
+    @if (externalItemTemplate) {
+      <ng-template let-item #item>
+        <ng-container [ngTemplateOutlet]="externalItemTemplate" [ngTemplateOutletContext]="{ $implicit: item, optionLabel: optionLabel() }">
+        </ng-container>
+      </ng-template>
+    }
+
+    @if (externalSelectedItemTemplate) {
+      <ng-template let-selectedOption #selectedItem>
+        <ng-container
+          [ngTemplateOutlet]="externalSelectedItemTemplate"
+          [ngTemplateOutletContext]="{ $implicit: selectedOption, optionLabel: optionLabel() }"
+        >
+        </ng-container>
+      </ng-template>
+    }
+
+    @if (!filterInMemory()) {
+      <ng-template #filter>
+        <div class="w-full p-2 bg-surface-0">
+          <p-iconfield>
+            <input pInputText type="text" class="w-full" autofocus [formControl]="searchControl" role="searchbox" autocomplete="off" />
+            <p-inputicon class="pi pi-search" />
+          </p-iconfield>
+        </div>
+      </ng-template>
+    }
   </p-select>
 </div>

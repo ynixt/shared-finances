@@ -54,7 +54,7 @@
   @if (item.items?.length != null && item.items!!.length > 0) {
     <div
       class="advanced-menu-item-children ml-4"
-      style="{{item.itemsMaxHeight ? `max-height: ${item.itemsMaxHeight}; overflow-y: auto;` : '' }}"
+      style="{{ item.itemsMaxHeight ? `max-height: ${item.itemsMaxHeight}; overflow-y: auto;` : '' }}"
     >
       @for (child of item.items; track child.id ?? child) {
         <app-advanced-menu-item [item]="child"></app-advanced-menu-item>

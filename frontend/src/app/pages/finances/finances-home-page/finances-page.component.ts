@@ -1,13 +1,16 @@
 import { Component, ViewEncapsulation } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { faBuildingColumns, faCreditCard, faGrip, faHashtag, faPlus, faTag } from '@fortawesome/free-solid-svg-icons';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faBuildingColumns, faCreditCard, faDollarSign, faGrip, faPlus, faTag } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { startWith } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
+import { ButtonDirective } from 'primeng/button';
 import { Toast } from 'primeng/toast';
+import { Tooltip } from 'primeng/tooltip';
 
 import { AdvancedMenuComponent, AdvancedMenuItem } from '../../../components/advanced-menu/advanced-menu.component';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
@@ -19,7 +22,17 @@ import { UserActionEventService } from '../services/user-action-event.service';
 
 @Component({
   selector: 'app-finances-page',
-  imports: [NavbarComponent, RouterOutlet, Toast, AdvancedMenuComponent],
+  imports: [
+    NavbarComponent,
+    RouterOutlet,
+    Toast,
+    AdvancedMenuComponent,
+    ButtonDirective,
+    FaIconComponent,
+    RouterLink,
+    Tooltip,
+    TranslatePipe,
+  ],
   templateUrl: './finances-page.component.html',
   styleUrl: './finances-page.component.scss',
   encapsulation: ViewEncapsulation.None,
@@ -106,6 +119,12 @@ export class FinancesPageComponent {
         fa: faGrip,
         label: this.translateService.instant('financesPage.menu.overview'),
         routerLink: ['/app'],
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
+        fa: this.newTransactionButtonIcon,
+        label: this.translateService.instant('financesPage.menu.newTransaction'),
+        routerLink: ['/app/transactions/new'],
         routerLinkActiveOptions: { exact: true },
       },
       {
@@ -204,4 +223,6 @@ export class FinancesPageComponent {
     this.groupMenuRoot!!.itemsLoading = false;
     this.groupMenuRoot!!.items = items;
   }
+
+  protected readonly newTransactionButtonIcon = faDollarSign;
 }

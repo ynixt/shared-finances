@@ -22,3 +22,5 @@ pageTitle:
   associateBankAccountGroup: Associate bank account to group
   groupCreditCards: Group credit cards
   associateCreditCardGroup: Associate credit card to group
+  transactions: Transactions
+  newTransaction: New transaction

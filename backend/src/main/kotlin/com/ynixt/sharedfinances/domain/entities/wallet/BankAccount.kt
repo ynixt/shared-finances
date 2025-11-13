@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.domain.entities.wallet
 
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
 import java.util.UUID
@@ -16,4 +17,6 @@ class BankAccount(
         enabled = enabled,
         userId = userId,
         currency = currency,
-    )
+    ) {
+    override val type: WalletItemType = WalletItemType.BANK_ACCOUNT
+}
