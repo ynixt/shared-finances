@@ -11,18 +11,26 @@
 
     <form class="flex flex-col gap-4" [formGroup]="formGroup" (ngSubmit)="submit()">
       <label class="flex flex-col gap-2">
-        <span>{{ 'general.name' | translate }}</span>
+        <span>{{ 'general.name' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
         <input formControlName="name" pInputText type="text" />
       </label>
 
       <label class="flex flex-col gap-2">
-        <span>{{ 'financesPage.categoriesPage.newCategoriesPage.color' | translate }}</span>
+        <span
+          >{{ 'financesPage.categoriesPage.newCategoriesPage.color' | translate }}
+          <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
         <p-color-picker formControlName="color"></p-color-picker>
       </label>
 
       <label class="flex flex-col gap-2">
         <span>{{ 'financesPage.categoriesPage.newCategoriesPage.parent' | translate }}</span>
-        <app-paged-select [optionsGetter]="loadCategoriesForParentPicker.bind(this)" formControlName="parent"></app-paged-select>
+        <app-category-picker
+          formControlName="parent"
+          [groupId]="groupId"
+          [getAllCategoriesParams]="getAllCategoriesParams"
+          [filterCategoriesAfterLoad]="filterCategoriesForParentPicker.bind(this)"
+        ></app-category-picker>
       </label>
 
       <button pButton type="submit" [loading]="submitting" [disabled]="formGroup.invalid">{{ 'general.save' | translate }}</button>

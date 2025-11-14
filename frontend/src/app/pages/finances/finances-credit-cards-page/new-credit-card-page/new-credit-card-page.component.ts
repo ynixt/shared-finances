@@ -11,6 +11,7 @@ import { InputText } from 'primeng/inputtext';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
@@ -28,6 +29,7 @@ import { CreditCardService } from '../../services/credit-card.service';
     InputNumber,
     ToggleSwitch,
     CurrencySelectorComponent,
+    RequiredFieldAsteriskComponent,
   ],
   templateUrl: './new-credit-card-page.component.html',
   styleUrl: './new-credit-card-page.component.scss',

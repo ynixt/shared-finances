@@ -12,14 +12,15 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
-import { PagedSelectComponent } from '../../../../components/paged-select/paged-select.component';
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
-import { UserCategoriesService } from '../../services/user-categories.service';
+import { CategoryPickerComponent } from '../../components/item-picker/category-picker/category-picker.component';
+import { GetAllCategoriesParams, UserCategoriesService } from '../../services/user-categories.service';
 
 @Component({
   selector: 'app-edit-user-category-page',
@@ -30,9 +31,10 @@ import { UserCategoriesService } from '../../services/user-categories.service';
     ReactiveFormsModule,
     TranslatePipe,
     ColorPicker,
-    PagedSelectComponent,
     ProgressSpinner,
     ConfirmDialog,
+    CategoryPickerComponent,
+    RequiredFieldAsteriskComponent,
   ],
   templateUrl: './edit-user-category-page.component.html',
   styleUrl: './edit-user-category-page.component.scss',
@@ -40,6 +42,11 @@ import { UserCategoriesService } from '../../services/user-categories.service';
 })
 @UntilDestroy()
 export class EditUserCategoryPageComponent {
+  readonly getAllCategoriesParams: GetAllCategoriesParams = {
+    onlyRoot: true,
+    mountChildren: false,
+  };
+
   formGroup: FormGroup | undefined;
   category: CategoryDto | null = null;
   loading: boolean = true;
@@ -68,21 +75,8 @@ export class EditUserCategoryPageComponent {
     });
   }
 
-  async loadCategoriesForParentPicker(page = 0, query: string | undefined): Promise<CategoryDto[]> {
-    return (
-      await this.categoriesService.getAllCategories(
-        {
-          onlyRoot: true,
-          mountChildren: false,
-          query,
-        },
-        {
-          size: 11,
-          sort: 'name',
-          page,
-        },
-      )
-    ).content.filter(category => category.id !== this.category?.id);
+  filterCategoriesForParentPicker(categories: CategoryDto[]): CategoryDto[] {
+    return categories.filter(category => category.id !== this.category?.id);
   }
 
   async submit() {

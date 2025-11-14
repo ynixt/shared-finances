@@ -16,6 +16,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { CreditCardDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
@@ -37,6 +38,7 @@ import { CreditCardService } from '../../services/credit-card.service';
     ReactiveFormsModule,
     ToggleSwitch,
     ConfirmDialog,
+    RequiredFieldAsteriskComponent,
   ],
   templateUrl: './edit-credit-card-page.component.html',
   styleUrl: './edit-credit-card-page.component.scss',

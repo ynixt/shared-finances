@@ -17,7 +17,11 @@
 
     <label class="flex flex-col gap-2">
       <span>{{ 'financesPage.categoriesPage.newCategoriesPage.parent' | translate }}</span>
-      <app-paged-select [optionsGetter]="loadCategoriesForParentPicker.bind(this)" formControlName="parent"> </app-paged-select>
+      <app-category-picker
+        formControlName="parent"
+        [groupId]="groupId"
+        [getAllCategoriesParams]="getAllCategoriesParams"
+      ></app-category-picker>
     </label>
 
     <button pButton type="submit" [loading]="submitting" [disabled]="formGroup.invalid">{{ 'general.save' | translate }}</button>

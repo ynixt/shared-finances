@@ -27,6 +27,8 @@ general:
   cancel: Cancel
   greetings: 'Hello, {{name}}'
   copy: Copy
+  language: Language
+  date: Date
 
 error:
   genericTitle: Error

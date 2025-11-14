@@ -4,11 +4,11 @@
     closeRouterLink=".."
   ></app-finances-title-bar>
 
-  <form [formGroup]="form()" class="flex flex-col gap-4" (ngSubmit)="submit()">
+  <form [formGroup]="form" class="flex flex-col gap-4" (ngSubmit)="submit()">
     @let isTransfer = typeControl.value === TransactionType.TRANSFER;
 
     <div class="flex justify-center">
-      <div class="transaction-type-buttons mb-4 grid w-full lg:w-5/6 xl:w-3/4 grid-cols-3">
+      <div class="transaction-type-buttons mb-4 grid w-full lg:w-5/6 xl:w-3/4 md:grid-cols-3">
         @for (typeButton of transactionTypeOptions; track typeButton) {
           @let controlSelected = typeControl.value == typeButton.value;
 
@@ -26,7 +26,7 @@
             } @else {
               <i class="pi" style="width: 16px"></i>
             }
-            {{ typeButton.label }}
+            {{ typeButton.label | translate }}
           </button>
         }
       </div>
@@ -37,18 +37,61 @@
       <app-paged-select [optionsGetter]="loadGroups.bind(this)" formControlName="group" [filterInMemory]="true"></app-paged-select>
     </label>
 
-    <div class="grid grid-cols-{{ isTransfer ? 2 : 1 }} gap-2">
+    <div class="grid md:grid-cols-{{ isTransfer ? 2 : 1 }} gap-2">
       <label class="flex flex-col gap-2">
-        <span>{{ 'financesPage.transactionsPage.origin' | translate }} *</span>
+        <span>{{ 'financesPage.transactionsPage.origin' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
         <app-wallet-item-picker [group]="selectedGroup" formControlName="origin"></app-wallet-item-picker>
       </label>
 
       @if (isTransfer) {
         <label class="flex flex-col gap-2">
-          <span>{{ 'financesPage.transactionsPage.target' | translate }} *</span>
+          <span>{{ 'financesPage.transactionsPage.target' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
           <app-wallet-item-picker [group]="selectedGroup" formControlName="target"></app-wallet-item-picker>
         </label>
       }
     </div>
+
+    <div class="grid md:grid-cols-2 gap-2">
+      <label class="flex flex-col gap-2">
+        <span>{{ 'general.name' | translate }}</span>
+        <input pInputText formControlName="name" />
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.category' | translate }}</span>
+        <app-category-picker formControlName="category" [groupId]="selectedGroup?.id"></app-category-picker>
+      </label>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-2">
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.value' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <p-input-number
+          mode="currency"
+          [currency]="currentOrigin?.currency ?? user()?.defaultCurrency ?? 'USD'"
+          formControlName="value"
+          [showButtons]="true"
+          [min]="0.01"
+          [step]="10"
+        ></p-input-number>
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span>{{ 'general.date' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <app-date-picker formControlName="date"></app-date-picker>
+      </label>
+    </div>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.confirmed' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+      <p-toggleswitch formControlName="confirmed"></p-toggleswitch>
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.observations' | translate }}</span>
+      <textarea rows="2" pInputTextarea [autoResize]="true" formControlName="observations"></textarea>
+    </label>
+
+    <button class="mt-4" pButton type="submit" [loading]="submitting" [disabled]="form.invalid">{{ 'general.save' | translate }}</button>
   </form>
 </div>

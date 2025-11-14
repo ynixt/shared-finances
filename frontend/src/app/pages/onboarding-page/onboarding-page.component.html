@@ -8,7 +8,7 @@
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 mt-8">
     <label class="flex flex-col gap-2">
-      <span>{{ 'onboardingPage.defaultCurrency' | translate }}</span>
+      <span>{{ 'onboardingPage.defaultCurrency' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
       <app-currency-selector formControlName="currency"></app-currency-selector>
     </label>
 

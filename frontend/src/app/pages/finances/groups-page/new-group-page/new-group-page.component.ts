@@ -7,6 +7,7 @@ import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
@@ -14,7 +15,15 @@ import { GroupService } from '../../services/group.service';
 
 @Component({
   selector: 'app-new-group-page',
-  imports: [FinancesTitleBarComponent, TranslatePipe, ButtonDirective, FormsModule, InputText, ReactiveFormsModule],
+  imports: [
+    FinancesTitleBarComponent,
+    TranslatePipe,
+    ButtonDirective,
+    FormsModule,
+    InputText,
+    ReactiveFormsModule,
+    RequiredFieldAsteriskComponent,
+  ],
   templateUrl: './new-group-page.component.html',
   styleUrl: './new-group-page.component.scss',
 })

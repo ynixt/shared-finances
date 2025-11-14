@@ -9,7 +9,7 @@
 
     <form class="flex flex-col gap-4" [formGroup]="formGroup" (ngSubmit)="submit()">
       <label class="flex flex-col gap-2">
-        <span>{{ 'financesPage.creditCardsPage.name' | translate }}</span>
+        <span>{{ 'financesPage.creditCardsPage.name' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
 
         <p-select
           class="w-full"

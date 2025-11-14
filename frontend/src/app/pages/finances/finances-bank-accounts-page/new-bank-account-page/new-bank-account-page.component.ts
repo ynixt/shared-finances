@@ -10,6 +10,7 @@ import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
@@ -26,6 +27,7 @@ import { BankAccountService } from '../../services/bank-account.service';
     InputText,
     InputNumber,
     CurrencySelectorComponent,
+    RequiredFieldAsteriskComponent,
   ],
   templateUrl: './new-bank-account-page.component.html',
   styleUrl: './new-bank-account-page.component.scss',

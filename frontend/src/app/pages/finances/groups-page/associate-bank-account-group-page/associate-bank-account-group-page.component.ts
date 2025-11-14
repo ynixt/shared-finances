@@ -11,6 +11,7 @@ import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { BankAccountForGroupAssociateDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { ErrorMessageService } from '../../../../services/error-message.service';
@@ -20,7 +21,7 @@ import { GroupService } from '../../services/group.service';
 
 @Component({
   selector: 'app-associate-bank-account-group-page',
-  imports: [FinancesTitleBarComponent, ProgressSpinner, TranslatePipe, ReactiveFormsModule, Button, Select],
+  imports: [FinancesTitleBarComponent, ProgressSpinner, TranslatePipe, ReactiveFormsModule, Button, Select, RequiredFieldAsteriskComponent],
   templateUrl: './associate-bank-account-group-page.component.html',
   styleUrl: './associate-bank-account-group-page.component.scss',
 })

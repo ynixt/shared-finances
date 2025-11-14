@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ContentChild, TemplateRef, ViewChild, computed, forwardRef, input, signal } from '@angular/core';
-import { ControlValueAccessor, FormControl, FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
@@ -10,6 +10,8 @@ import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Select, SelectChangeEvent, SelectLazyLoadEvent } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
+
+import { SimpleControlValueAccessor } from '../simple-control-value-accessor';
 
 @Component({
   selector: 'app-paged-select',
@@ -24,7 +26,7 @@ import { Skeleton } from 'primeng/skeleton';
     },
   ],
 })
-export class PagedSelectComponent implements ControlValueAccessor {
+export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
   optionsGetter = input<(page: number, query?: string | undefined) => Promise<any[]>>();
   placeholder = input<string>();
   componentClass = input<string>();
@@ -41,8 +43,6 @@ export class PagedSelectComponent implements ControlValueAccessor {
 
   @ViewChild('select') select: Select | undefined;
 
-  value: any;
-  disabled = false;
   currentPage = 0;
   lastItemRequested = -1;
   currentPageBeforeFilter = 0;
@@ -60,10 +60,8 @@ export class PagedSelectComponent implements ControlValueAccessor {
 
   searchControl = new FormControl('');
 
-  private onChange = (_: any) => {};
-  private onTouched = () => {};
-
   constructor() {
+    super();
     this.searchControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value => {
       this.onFilterChange(value ?? '');
     });
@@ -80,23 +78,11 @@ export class PagedSelectComponent implements ControlValueAccessor {
     this.optionsBeforeFilter = [];
   }
 
-  writeValue(obj: any): void {
+  override writeValue(obj: any): void {
     this.putValueOnListIfListNotContainsValue(obj);
 
     this.value = obj;
     this.onChange(obj);
-  }
-
-  registerOnChange(fn: any): void {
-    this.onChange = fn;
-  }
-
-  registerOnTouched(fn: any): void {
-    this.onTouched = fn;
-  }
-
-  setDisabledState?(isDisabled: boolean): void {
-    this.disabled = isDisabled;
   }
 
   clearSelection() {

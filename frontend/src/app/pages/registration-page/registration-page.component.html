@@ -6,9 +6,9 @@
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="flex mb-8 gap-2" formGroupName="name">
           <div>
-            <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
-              'general.firstName' | translate
-            }}</label>
+            <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
+              >{{ 'general.firstName' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+            ></label>
             <input
               pInputText
               id="firstName"
@@ -20,9 +20,9 @@
           </div>
 
           <div>
-            <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
-              'general.lastName' | translate
-            }}</label>
+            <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
+              >{{ 'general.lastName' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+            ></label>
             <input
               pInputText
               id="lastName"
@@ -34,14 +34,14 @@
           </div>
         </div>
 
-        <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{
-          'general.email' | translate
-        }}</label>
+        <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
+          >{{ 'general.email' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></label>
         <input pInputText id="email" type="text" [placeholder]="'general.email' | translate" class="w-full mb-8" formControlName="email" />
 
-        <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
-          'general.password' | translate
-        }}</label>
+        <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+          >{{ 'general.password' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></label>
         <p-password
           id="password"
           formControlName="password"
@@ -53,9 +53,9 @@
           class="w-full mb-8"
         ></p-password>
 
-        <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
-          'general.passwordConfirm' | translate
-        }}</label>
+        <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+          >{{ 'general.passwordConfirm' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></label>
         <p-password
           id="confirmPassword"
           formControlName="confirmPassword"
@@ -69,7 +69,10 @@
         ></p-password>
 
         <div class="w-full mb-8">
-          <app-language-picker formControlName="language"></app-language-picker>
+          <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+            >{{ 'general.language' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></label>
+          <app-language-picker id="languagePicker" formControlName="language"></app-language-picker>
         </div>
 
         <input type="hidden" formControlName="csrf_token" />

@@ -4,6 +4,14 @@ financesPage:
     origin: Origem
     target: Destino
     types:
+      revenue: Receita
+      expense: Despesa
+      transfer: Transferência
+    category: Categoria
+    value: Valor
+    confirmed: Confirmado
+    observations: Observações
+    walletItemTypes:
       CREDIT_CARD: Cartão de crédito
       BANK_ACCOUNT: Conta bancária
     newTransactionPage:

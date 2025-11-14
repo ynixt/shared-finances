@@ -11,6 +11,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { ErrorMessageService } from '../../../../services/error-message.service';
@@ -30,6 +31,7 @@ import { GroupService } from '../../services/group.service';
     TranslatePipe,
     ProgressSpinner,
     ConfirmDialog,
+    RequiredFieldAsteriskComponent,
   ],
   templateUrl: './edit-group-page.component.html',
   styleUrl: './edit-group-page.component.scss',

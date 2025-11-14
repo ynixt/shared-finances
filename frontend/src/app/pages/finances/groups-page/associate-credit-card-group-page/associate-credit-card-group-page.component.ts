@@ -10,6 +10,7 @@ import { Button } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { CreditCardForGroupAssociateDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { ErrorMessageService } from '../../../../services/error-message.service';
@@ -19,7 +20,7 @@ import { GroupService } from '../../services/group.service';
 
 @Component({
   selector: 'app-associate-credit-card-group-page',
-  imports: [FinancesTitleBarComponent, ProgressSpinner, TranslatePipe, ReactiveFormsModule, Button, Select],
+  imports: [FinancesTitleBarComponent, ProgressSpinner, TranslatePipe, ReactiveFormsModule, Button, Select, RequiredFieldAsteriskComponent],
   templateUrl: './associate-credit-card-group-page.component.html',
   styleUrl: './associate-credit-card-group-page.component.scss',
 })

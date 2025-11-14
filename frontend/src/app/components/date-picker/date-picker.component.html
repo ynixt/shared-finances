@@ -1,0 +1,14 @@
+<div class="date-picker">
+  <p-date-picker
+    [ngModel]="value"
+    (ngModelChange)="onValueChange($event)"
+    fluid
+    [showIcon]="true"
+    [iconDisplay]="'input'"
+    [showButtonBar]="showButtonBar()"
+  >
+    <ng-template #inputicon let-clickCallBack="clickCallBack">
+      <fa-icon [icon]="clockIcon" (click)="clickCallBack($event)"></fa-icon>
+    </ng-template>
+  </p-date-picker>
+</div>

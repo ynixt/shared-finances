@@ -9,6 +9,7 @@ import { Toast } from 'primeng/toast';
 
 import { CurrencySelectorComponent } from '../../components/currency-selector/currency-selector.component';
 import { LangButtonComponent } from '../../components/lang-button/lang-button.component';
+import { RequiredFieldAsteriskComponent } from '../../components/required-field-asterisk/required-field-asterisk.component';
 import { ErrorMessageService } from '../../services/error-message.service';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
@@ -16,7 +17,15 @@ import { OnboardingService } from './onboarding.service';
 
 @Component({
   selector: 'app-onboarding-page',
-  imports: [TranslatePipe, ReactiveFormsModule, CurrencySelectorComponent, ButtonDirective, LangButtonComponent, Toast],
+  imports: [
+    TranslatePipe,
+    ReactiveFormsModule,
+    CurrencySelectorComponent,
+    ButtonDirective,
+    LangButtonComponent,
+    Toast,
+    RequiredFieldAsteriskComponent,
+  ],
   templateUrl: './onboarding-page.component.html',
   styleUrl: './onboarding-page.component.scss',
   providers: [MessageService],

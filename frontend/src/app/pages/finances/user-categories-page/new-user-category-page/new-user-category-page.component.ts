@@ -9,22 +9,35 @@ import { ButtonDirective } from 'primeng/button';
 import { ColorPicker } from 'primeng/colorpicker';
 import { InputText } from 'primeng/inputtext';
 
-import { PagedSelectComponent } from '../../../../components/paged-select/paged-select.component';
-import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
-import { UserCategoriesService } from '../../services/user-categories.service';
+import { CategoryPickerComponent } from '../../components/item-picker/category-picker/category-picker.component';
+import { GetAllCategoriesParams, UserCategoriesService } from '../../services/user-categories.service';
 
 @Component({
   selector: 'app-new-user-category-page',
-  imports: [ButtonDirective, FinancesTitleBarComponent, InputText, ReactiveFormsModule, TranslatePipe, ColorPicker, PagedSelectComponent],
+  imports: [
+    ButtonDirective,
+    FinancesTitleBarComponent,
+    InputText,
+    ReactiveFormsModule,
+    TranslatePipe,
+    ColorPicker,
+    CategoryPickerComponent,
+    RequiredFieldAsteriskComponent,
+  ],
   templateUrl: './new-user-category-page.component.html',
   styleUrl: './new-user-category-page.component.scss',
 })
 @UntilDestroy()
 export class NewUserCategoryPageComponent {
   readonly formGroup: FormGroup;
+  readonly getAllCategoriesParams: GetAllCategoriesParams = {
+    onlyRoot: true,
+    mountChildren: false,
+  };
 
   submitting = false;
 
@@ -42,23 +55,6 @@ export class NewUserCategoryPageComponent {
       parent: [undefined, []],
       color: ['#000000', [Validators.required]],
     });
-  }
-
-  async loadCategoriesForParentPicker(page = 0, query: string | undefined): Promise<CategoryDto[]> {
-    return (
-      await this.categoriesService.getAllCategories(
-        {
-          onlyRoot: true,
-          mountChildren: false,
-          query,
-        },
-        {
-          size: 10,
-          sort: 'name',
-          page,
-        },
-      )
-    ).content;
   }
 
   async submit() {

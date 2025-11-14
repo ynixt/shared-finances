@@ -13,6 +13,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
+import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
 import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
@@ -33,6 +34,7 @@ import { BankAccountService } from '../../services/bank-account.service';
     ReactiveFormsModule,
     ToggleSwitch,
     ConfirmDialog,
+    RequiredFieldAsteriskComponent,
   ],
   templateUrl: './edit-bank-account-page.component.html',
   styleUrl: './edit-bank-account-page.component.scss',

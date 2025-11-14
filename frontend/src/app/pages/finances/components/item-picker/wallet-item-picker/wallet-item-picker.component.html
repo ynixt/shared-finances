@@ -6,7 +6,7 @@
       <div class="flex gap-1 flex-col">
         <span>{{ item[optionLabel] }}</span>
         <div class="flex gap-2 items-center text-gray-400 text-xs">
-          <span>{{ 'financesPage.transactionsPage.types.' + item.type | translate }}</span>
+          <span>{{ 'financesPage.transactionsPage.walletItemTypes.' + item.type | translate }}</span>
           @if (item.user != null) {
             <fa-icon size="xs" [icon]="iconUser"></fa-icon>
             <span>{{ 'name.fullName' | translate: { lastName: item.user.lastName, firstName: item.user.firstName } }}</span>
@@ -20,7 +20,7 @@
     <div class="flex gap-4">
       <span>{{ item[optionLabel] }}</span>
       <div class="flex gap-2 items-center text-gray-400 text-xs">
-        <span>{{ 'financesPage.transactionsPage.types.' + item.type | translate }}</span>
+        <span>{{ 'financesPage.transactionsPage.walletItemTypes.' + item.type | translate }}</span>
         @if (item.user != null) {
           <fa-icon size="xs" [icon]="iconUser"></fa-icon>
           <span>{{ 'name.fullName' | translate: { lastName: item.user.lastName, firstName: item.user.firstName } }}</span>
