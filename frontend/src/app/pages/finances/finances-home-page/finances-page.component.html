@@ -7,11 +7,13 @@
   <div class="content w-full">
     <router-outlet />
   </div>
-  <div class="div fixed z-10 bottom-7 right-7">
-    <a routerLink="transactions/new" pButton [rounded]="true" [pTooltip]="'financesPage.menu.newTransaction' | translate">
-      <fa-icon [icon]="newTransactionButtonIcon"></fa-icon>
-    </a>
-  </div>
+  @if (shouldShowNewTransactionButton) {
+    <div class="div fixed z-10 bottom-7 right-7">
+      <a routerLink="transactions/new" pButton [rounded]="true" [pTooltip]="'financesPage.menu.newTransaction' | translate">
+        <fa-icon [icon]="newTransactionButtonIcon"></fa-icon>
+      </a>
+    </div>
+  }
 </div>
 
 <p-toast />

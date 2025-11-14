@@ -47,6 +47,10 @@ export class FinancesPageComponent {
   private groups: GroupDto[] | undefined = undefined;
   private groupMenuRoot: AdvancedMenuItem | undefined;
 
+  get shouldShowNewTransactionButton() {
+    return this.router.url.indexOf('/app/transactions/new') === -1;
+  }
+
   constructor(
     private translateService: TranslateService,
     private userService: UserService,
