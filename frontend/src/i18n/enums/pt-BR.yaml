@@ -3,3 +3,11 @@ enums:
     VIEWER: Apenas leitura
     EDITOR: Editor
     ADMIN: Administrador
+  walletItemType:
+    CREDIT_CARD: Cartão de crédito
+    BANK_ACCOUNT: Conta bancária
+  recurrenceType:
+    DAILY: Diário
+    WEEKLY: Semanal
+    MONTHLY: Mensal
+    YEARLY: Anual

@@ -1,0 +1,8 @@
+<p-select [options]="options()" optionValue="value" [ngModel]="value" (ngModelChange)="onValueChange($event)" fluid>
+  <ng-template #item let-option>
+    <span>{{ option.label | translate }}</span>
+  </ng-template>
+  <ng-template #selectedItem let-option>
+    <span>{{ option.label | translate }}</span>
+  </ng-template>
+</p-select>

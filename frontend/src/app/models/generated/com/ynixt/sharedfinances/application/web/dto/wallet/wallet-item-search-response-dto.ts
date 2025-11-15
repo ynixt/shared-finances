@@ -1,8 +1,7 @@
 /* eslint-disable */
 /* tslint-disable */
-
-import { UserSimpleDto } from '../user/user-simple-dto';
 import { WalletItemType } from '../../../../domain/enums/wallet-item-type';
+import { UserSimpleDto } from '../user/user-simple-dto';
 
 export interface WalletItemSearchResponseDto {
   currency: string;

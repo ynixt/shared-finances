@@ -32,14 +32,18 @@ CREATE TABLE wallet_entry (
     CONSTRAINT chk_payment_type_fields CHECK (
         (
             type = 'CREDIT_CARD'
-                AND bill_id IS NOT NULL
-                AND target_id IS NULL
-            )
-            OR (
-            type = 'TRANSFER'
-                AND target_id IS NOT NULL
-            )
+            AND bill_id IS NOT NULL
+            AND target_id IS NULL
         )
+        OR (
+            type = 'TRANSFER'
+            AND target_id IS NOT NULL
+        )
+        OR (
+            type = 'DEBIT'
+            AND target_id IS NULL
+        )
+    )
 );
 
 CREATE INDEX idx_wallet_entry_user ON wallet_entry(user_id) WHERE user_id IS NOT NULL;

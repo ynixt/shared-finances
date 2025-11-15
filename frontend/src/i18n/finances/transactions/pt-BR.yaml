@@ -7,12 +7,20 @@ financesPage:
       revenue: Receita
       expense: Despesa
       transfer: Transferência
+    paymentType: Tipo de pagamento
+    paymentTypes:
+      unique: Único
+      recurring: Recorrente
+      installments: Parcelado
+    valueType: Tipo de valor
+    valueTypes:
+      TOTAL: Total
+      INSTALLMENT: Parcela
     category: Categoria
     value: Valor
     confirmed: Confirmado
+    installments: Parcelas
     observations: Observações
-    walletItemTypes:
-      CREDIT_CARD: Cartão de crédito
-      BANK_ACCOUNT: Conta bancária
+    periodicity: Periodicidade
     newTransactionPage:
       title: Nova transação

@@ -1,6 +1,5 @@
 /* eslint-disable */
 /* tslint-disable */
-
 import { GroupPermissions } from '../../../../domain/enums/group-permissions';
 import { UserGroupRole } from '../../../../domain/enums/user-group-role';
 

@@ -7,12 +7,20 @@ financesPage:
       revenue: Revenue
       expense: Expense
       transfer: Transfer
+    paymentType: Tipo de pagamento
+    paymentTypes:
+      unique: Unique
+      recurring: Recurring
+      installments: Installments
+    valueType: Tipo de valor
+    valueTypes:
+      TOTAL: Total
+      INSTALLMENT: Installment
     category: Category
     value: Value
     confirmed: Confirmed
+    installments: Parcelas
+    periodicity: Periodicity
     observations: Observations
-    walletItemTypes:
-      CREDIT_CARD: Credit card
-      BANK_ACCOUNT: Bank Account
     newTransactionPage:
       title: New transaction

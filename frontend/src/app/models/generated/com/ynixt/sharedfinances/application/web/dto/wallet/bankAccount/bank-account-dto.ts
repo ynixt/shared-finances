@@ -1,6 +1,5 @@
 /* eslint-disable */
 /* tslint-disable */
-
 import { WalletItemDto } from '../wallet-item-dto';
 
 export interface BankAccountDto extends WalletItemDto {

@@ -33,6 +33,11 @@
     </div>
 
     <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.confirmed' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+      <p-toggleswitch formControlName="confirmed"></p-toggleswitch>
+    </label>
+
+    <label class="flex flex-col gap-2">
       <span>{{ 'financesPage.transactionsPage.group' | translate }}</span>
       <app-paged-select [optionsGetter]="loadGroups.bind(this)" formControlName="group" [filterInMemory]="true"></app-paged-select>
     </label>
@@ -65,7 +70,16 @@
 
     <div class="grid md:grid-cols-2 gap-2">
       <label class="flex flex-col gap-2">
-        <span>{{ 'financesPage.transactionsPage.value' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <span
+          >{{ 'financesPage.transactionsPage.value' | translate }}
+
+          @let sublabel = valueSublabel;
+          @if (sublabel.length > 0) {
+            <span class="mr-1">({{ sublabel | translate }})</span>
+          }
+
+          <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
         <p-input-number
           mode="currency"
           [currency]="currentOrigin?.currency ?? user()?.defaultCurrency ?? 'USD'"
@@ -73,6 +87,7 @@
           [showButtons]="true"
           [min]="0.01"
           [step]="10"
+          fluid
         ></p-input-number>
       </label>
 
@@ -82,10 +97,67 @@
       </label>
     </div>
 
-    <label class="flex flex-col gap-2">
-      <span>{{ 'financesPage.transactionsPage.confirmed' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
-      <p-toggleswitch formControlName="confirmed"></p-toggleswitch>
-    </label>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+      <div class="flex gap-2">
+        <label class="flex flex-col gap-2 w-full">
+          <span
+            >{{ 'financesPage.transactionsPage.paymentType' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <p-select-button
+            [options]="paymentTypeOptions"
+            optionValue="value"
+            optionDisabled="disabled"
+            formControlName="paymentType"
+            [allowEmpty]="false"
+            fluid
+          >
+            <ng-template #item let-item>
+              <span>{{ item.label | translate }}</span>
+            </ng-template>
+          </p-select-button>
+        </label>
+      </div>
+
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.valueType' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <app-i18n-select formControlName="valueType" [options]="valueTypeOptions"></app-i18n-select>
+      </label>
+    </div>
+
+    @if (currentPaymentType === PaymentType.INSTALLMENTS) {
+      <div class="grid md:grid-cols-3 gap-2">
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.installments' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <p-input-number formControlName="installments" [min]="2" [max]="720" [showButtons]="true" fluid></p-input-number>
+        </label>
+
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.periodicity' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-i18n-select formControlName="periodicity" [options]="recurrenceTypeOptions"></app-i18n-select>
+        </label>
+
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.valueTypes.' + calculatedValueType | translate }}
+
+            @let sublabel = calculatedValueSublabel;
+            @if (sublabel.length > 0) {
+              <span class="mr">({{ sublabel | translate }})</span>
+            }
+          </span>
+          <p-input-number
+            mode="currency"
+            [currency]="currentOrigin?.currency ?? user()?.defaultCurrency ?? 'USD'"
+            formControlName="calculatedValue"
+            fluid
+          ></p-input-number>
+        </label>
+      </div>
+    }
 
     <label class="flex flex-col gap-2">
       <span>{{ 'financesPage.transactionsPage.observations' | translate }}</span>

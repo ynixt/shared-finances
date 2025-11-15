@@ -1,16 +1,10 @@
 package com.ynixt.sharedfinances.domain.entities.wallet.entries
 
+import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
-
-enum class RecurrenceType {
-    DAILY,
-    WEEKLY,
-    MONTHLY,
-    YEARLY,
-}
 
 @Table("entry_recurrence_config")
 class EntryRecurrenceConfigEntity(
