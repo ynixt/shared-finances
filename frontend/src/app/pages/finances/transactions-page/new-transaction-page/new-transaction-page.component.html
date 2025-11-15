@@ -118,10 +118,14 @@
         </label>
       </div>
 
-      <label class="flex flex-col gap-2">
-        <span>{{ 'financesPage.transactionsPage.valueType' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
-        <app-i18n-select formControlName="valueType" [options]="valueTypeOptions"></app-i18n-select>
-      </label>
+      @if (currentPaymentType === PaymentType.INSTALLMENTS) {
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.valueType' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-i18n-select formControlName="valueType" [options]="valueTypeOptions"></app-i18n-select>
+        </label>
+      }
     </div>
 
     @if (currentPaymentType === PaymentType.INSTALLMENTS) {
