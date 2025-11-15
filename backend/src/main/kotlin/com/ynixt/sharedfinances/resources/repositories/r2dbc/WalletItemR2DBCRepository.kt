@@ -1,83 +1,79 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc
 
+import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
-import com.ynixt.sharedfinances.domain.models.WalletItemSearchResponse
-import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
-import org.springframework.data.domain.Pageable
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.UserR2DBCMapping
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.WalletItemR2DBCMapping
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Repository
 class WalletItemR2DBCRepository(
     private val dbClient: DatabaseClient,
-) : R2BDCGenericRepository(),
-    WalletItemRepository {
-    override fun findAllByUserIdAndEnabled(
-        userId: UUID,
-        enabled: Boolean,
-        pageable: Pageable,
-    ): Flux<WalletItemSearchResponse> {
-        val sort = pageableToSortQuery(pageable, setOf("name"))
-
+) : R2BDCGenericRepository() {
+    fun findAllAllowedForGroup(
+        groupId: UUID,
+        type: WalletItemType,
+    ): Flux<WalletItemEntity> {
         val sql =
             """
-            select
-                b.id, b.name, b.currency, 'BANK_ACCOUNT' type
-            from bank_account b
-            where 
-                b.user_id = :userId 
-                and b.enabled = :enabled
-
-            union
-
-            select
-                cc.id, cc.name, cc.currency, 'CREDIT_CARD' type
-            from credit_card cc
-            where 
-                cc.user_id = :userId 
-                and cc.enabled = :enabled
-            $sort
-            LIMIT :limit OFFSET :offset
+            SELECT
+              wa.*,
+              ${UserR2DBCMapping.createSelectForUser("u")}
+            FROM group_user gu
+            JOIN users u
+              ON u.id = gu.user_id
+            JOIN bank_account wa
+              ON wa.user_id = u.id
+            LEFT JOIN group_wallet_item gwa
+              ON gwa.group_id = gu.group_id AND type = :type
+             AND gwa.bank_account_id = wa.id
+            WHERE
+              gu.group_id = :groupId
+              AND gwa.bank_account_id IS NULL
+            ORDER BY wa.name
             """.trimIndent()
 
         return dbClient
             .sql(sql)
-            .bind("userId", userId)
-            .bind("enabled", enabled)
-            .bind("limit", pageable.pageSize)
-            .bind("offset", pageable.offset)
+            .bind("groupId", groupId)
+            .bind("type", type)
             .map { row, _ ->
-                WalletItemSearchResponse(
-                    id = row.get("id", UUID::class.java)!!,
-                    user = null,
-                    name = row.get("name", String::class.java)!!,
-                    currency = row.get("currency", String::class.java)!!,
-                    type = WalletItemType.valueOf(row.get("type", String::class.java)!!),
-                )
+                WalletItemR2DBCMapping.walletItemFromRow(row, "").also { wa ->
+                    wa.user = UserR2DBCMapping.userFromRow(row)
+                }
             }.all()
     }
 
-    override fun countByUserId(
-        userId: UUID,
-        enabled: Boolean,
-    ): Mono<Long> {
+    fun findAllAssociatedToGroup(
+        groupId: UUID,
+        type: WalletItemType,
+    ): Flux<WalletItemEntity> {
         val sql =
             """
-            SELECT (
-                (SELECT COUNT(*) FROM bank_account WHERE user_id = :userId AND enabled = :enabled)
-                +
-                (SELECT COUNT(*) FROM credit_card WHERE user_id = :userId AND enabled = :enabled)
-            ) AS total
+            SELECT
+              walletItemFromRow.*,
+              ${UserR2DBCMapping.createSelectForUser("u")}
+            FROM group_bank_account gwa
+            JOIN group_wallet_item wa
+              ON wa.id = gwa.bank_account_id AND type = :type
+            JOIN users u
+              ON u.id = wa.user_id
+            WHERE
+              gwa.group_id = :groupId
+            ORDER BY wa.name
             """.trimIndent()
 
         return dbClient
             .sql(sql)
-            .bind("userId", userId)
-            .bind("enabled", enabled)
-            .map { row, _ -> row.get("total", java.lang.Long::class.java)!!.toLong() }
-            .one()
+            .bind("groupId", groupId)
+            .bind("type", type)
+            .map { row, _ ->
+                WalletItemR2DBCMapping.walletItemFromRow(row, "").also { wa ->
+                    wa.user = UserR2DBCMapping.userFromRow(row)
+                }
+            }.all()
     }
 }

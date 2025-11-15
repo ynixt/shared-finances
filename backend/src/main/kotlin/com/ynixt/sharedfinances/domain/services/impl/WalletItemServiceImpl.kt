@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
-import com.ynixt.sharedfinances.domain.models.WalletItemSearchResponse
+import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
+import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
@@ -13,16 +14,18 @@ import java.util.UUID
 @Service
 class WalletItemServiceImpl(
     private val walletItemRepository: WalletItemRepository,
+    private val walletItemMapper: WalletItemMapper,
 ) : WalletItemService {
     override fun findAllItems(
         userId: UUID,
         pageable: Pageable,
-    ): Mono<Page<WalletItemSearchResponse>> =
-        createPage(pageable, countFn = { walletItemRepository.countByUserId(userId, enabled = true) }) {
-            walletItemRepository.findAllByUserIdAndEnabled(
-                userId = userId,
-                enabled = true,
-                pageable = pageable,
-            )
+    ): Mono<Page<WalletItem>> =
+        createPage(pageable, countFn = { walletItemRepository.countByUserIdAndEnabled(userId, enabled = true) }) {
+            walletItemRepository
+                .findAllByUserIdAndEnabled(
+                    userId = userId,
+                    enabled = true,
+                    pageable = pageable,
+                ).map(walletItemMapper::toModel)
         }
 }

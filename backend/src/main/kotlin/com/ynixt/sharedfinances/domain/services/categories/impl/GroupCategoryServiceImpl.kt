@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.categories.impl
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.exceptions.DuplicatedCategoryException
 import com.ynixt.sharedfinances.domain.models.category.EditCategoryRequest
@@ -29,11 +29,11 @@ class GroupCategoryServiceImpl(
     override fun newCategories(
         groupId: UUID,
         categories: List<NewCategoryRequest>,
-    ): Mono<List<WalletEntryCategory>> =
+    ): Mono<List<WalletEntryCategoryEntity>> =
         repository
             .saveAll(
                 categories.map {
-                    WalletEntryCategory(
+                    WalletEntryCategoryEntity(
                         name = it.name,
                         parentId = it.parentId,
                         color = it.color,
@@ -50,7 +50,7 @@ class GroupCategoryServiceImpl(
         mountChildren: Boolean,
         query: String?,
         pageable: Pageable,
-    ): Mono<Page<WalletEntryCategory>> =
+    ): Mono<Page<WalletEntryCategoryEntity>> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
@@ -103,7 +103,7 @@ class GroupCategoryServiceImpl(
         groupId: UUID,
         id: UUID,
         mountChildren: Boolean,
-    ): Mono<WalletEntryCategory> =
+    ): Mono<WalletEntryCategoryEntity> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
@@ -130,7 +130,7 @@ class GroupCategoryServiceImpl(
         userId: UUID,
         groupId: UUID,
         newCategoryRequest: NewCategoryRequest,
-    ): Mono<WalletEntryCategory> =
+    ): Mono<WalletEntryCategoryEntity> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
@@ -140,7 +140,7 @@ class GroupCategoryServiceImpl(
                 if (hasPermission) {
                     repository
                         .save(
-                            WalletEntryCategory(
+                            WalletEntryCategoryEntity(
                                 userId = null,
                                 name = newCategoryRequest.name,
                                 color = newCategoryRequest.color,
@@ -174,7 +174,7 @@ class GroupCategoryServiceImpl(
         groupId: UUID,
         id: UUID,
         editCategory: EditCategoryRequest,
-    ): Mono<WalletEntryCategory> =
+    ): Mono<WalletEntryCategoryEntity> =
         groupPermissionService
             .hasPermission(
                 userId = userId,

@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.User
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
@@ -11,10 +11,10 @@ import java.util.UUID
 
 interface UserSpringDataRepository :
     UserRepository,
-    Repository<User, String> {
-    override fun findByEmail(email: String): Flux<User>
+    Repository<UserEntity, String> {
+    override fun findByEmail(email: String): Flux<UserEntity>
 
-    override fun findByExternalId(externalId: String): Flux<User>
+    override fun findByExternalId(externalId: String): Flux<UserEntity>
 
     @Modifying
     @Query(

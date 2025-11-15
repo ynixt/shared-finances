@@ -2,8 +2,7 @@ package com.ynixt.sharedfinances.resources.services.impl
 
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.domain.entities.groups.Group
-import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
-import com.ynixt.sharedfinances.domain.entities.groups.GroupCreditCard
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
@@ -68,11 +67,11 @@ class GroupActionEventServiceImpl(
 
     override fun sendBankAssociated(
         userId: UUID,
-        groupBankAccount: GroupBankAccount,
+        groupBankAccount: GroupWalletItem,
     ): Mono<Long> =
         actionEventService
             .newEvent(
-                data = groupBankAccount.bankAccountId,
+                data = groupBankAccount.walletItemId,
                 userId = userId,
                 type = ActionEventType.INSERT,
                 category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
@@ -101,11 +100,11 @@ class GroupActionEventServiceImpl(
 
     override fun sendCreditCardAssociated(
         userId: UUID,
-        groupCreditCard: GroupCreditCard,
+        groupCreditCard: GroupWalletItem,
     ): Mono<Long> =
         actionEventService
             .newEvent(
-                data = groupCreditCard.creditCardId,
+                data = groupCreditCard.walletItemId,
                 userId = userId,
                 type = ActionEventType.INSERT,
                 category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,

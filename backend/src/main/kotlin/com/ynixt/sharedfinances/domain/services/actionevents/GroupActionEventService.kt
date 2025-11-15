@@ -1,8 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.actionevents
 
 import com.ynixt.sharedfinances.domain.entities.groups.Group
-import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
-import com.ynixt.sharedfinances.domain.entities.groups.GroupCreditCard
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import reactor.core.publisher.Mono
 import java.util.UUID
@@ -26,7 +25,7 @@ interface GroupActionEventService {
 
     fun sendBankAssociated(
         userId: UUID,
-        groupBankAccount: GroupBankAccount,
+        groupBankAccount: GroupWalletItem,
     ): Mono<Long>
 
     fun sendBankUnassociated(
@@ -37,7 +36,7 @@ interface GroupActionEventService {
 
     fun sendCreditCardAssociated(
         userId: UUID,
-        groupCreditCard: GroupCreditCard,
+        groupCreditCard: GroupWalletItem,
     ): Mono<Long>
 
     fun sendCreditCardUnassociated(

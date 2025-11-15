@@ -1,1 +1,1 @@
-export * from './user-action-event-dto';
+export * from './user-action-event-dto'

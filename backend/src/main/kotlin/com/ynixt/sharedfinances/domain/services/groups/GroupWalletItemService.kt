@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
-import com.ynixt.sharedfinances.domain.models.WalletItemSearchResponse
+import com.ynixt.sharedfinances.domain.models.WalletItem
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Mono
@@ -11,5 +11,5 @@ interface GroupWalletItemService {
         userId: UUID,
         groupId: UUID,
         pageable: Pageable,
-    ): Mono<Page<WalletItemSearchResponse>>
+    ): Mono<Page<WalletItem>>
 }

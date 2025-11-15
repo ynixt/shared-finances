@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.application.web.dto.kratos.CreateUserRequestDto
-import com.ynixt.sharedfinances.domain.entities.User
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.UserService
 import kotlinx.coroutines.reactor.awaitSingle
@@ -14,9 +14,9 @@ class UserServiceImpl(
     private val userRepository: UserRepository,
 ) : UserService {
     @Transactional
-    override suspend fun createUser(request: CreateUserRequestDto): User {
+    override suspend fun createUser(request: CreateUserRequestDto): UserEntity {
         val user =
-            User(
+            UserEntity(
                 externalId = request.uid,
                 email = request.email,
                 firstName = request.firstName,

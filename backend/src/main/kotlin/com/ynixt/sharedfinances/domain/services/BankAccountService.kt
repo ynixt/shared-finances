@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services
 
-import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import org.springframework.data.domain.Page

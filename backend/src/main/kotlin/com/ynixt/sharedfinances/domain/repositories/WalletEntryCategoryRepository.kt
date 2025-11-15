@@ -1,15 +1,15 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface WalletEntryCategoryRepository {
-    fun save(category: WalletEntryCategory): Mono<WalletEntryCategory>
+    fun save(category: WalletEntryCategoryEntity): Mono<WalletEntryCategoryEntity>
 
-    fun saveAll(category: Iterable<WalletEntryCategory>): Flux<WalletEntryCategory>
+    fun saveAll(category: Iterable<WalletEntryCategoryEntity>): Flux<WalletEntryCategoryEntity>
 
     fun deleteByIdAndUserId(
         id: UUID,
@@ -28,58 +28,58 @@ interface WalletEntryCategoryRepository {
     fun findAllByUserId(
         userId: UUID,
         pageable: Pageable,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByGroupId(
         groupId: UUID,
         pageable: Pageable,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByUserIdAndNameStartsWith(
         userId: UUID,
         pageable: Pageable,
         name: String,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByGroupIdAndNameStartsWith(
         groupId: UUID,
         pageable: Pageable,
         name: String,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByUserIdAndParentIdIsNull(
         userId: UUID,
         pageable: Pageable,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByGroupIdAndParentIdIsNull(
         groupId: UUID,
         pageable: Pageable,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByUserIdAndParentIdIsNullAndNameStartsWith(
         userId: UUID,
         pageable: Pageable,
         name: String,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
     fun findAllByGroupIdAndParentIdIsNullAndNameStartsWith(
         groupId: UUID,
         pageable: Pageable,
         name: String,
-    ): Flux<WalletEntryCategory>
+    ): Flux<WalletEntryCategoryEntity>
 
-    fun findAllByParentIdIn(parentId: Collection<UUID>): Flux<WalletEntryCategory>
+    fun findAllByParentIdIn(parentId: Collection<UUID>): Flux<WalletEntryCategoryEntity>
 
     fun findOneByIdAndUserId(
         id: UUID,
         userId: UUID,
-    ): Mono<WalletEntryCategory>
+    ): Mono<WalletEntryCategoryEntity>
 
     fun findOneByIdAndGroupId(
         id: UUID,
         groupId: UUID,
-    ): Mono<WalletEntryCategory>
+    ): Mono<WalletEntryCategoryEntity>
 
     fun updateByUserId(
         id: UUID,

@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.resources.services.impl
 
 import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
@@ -18,7 +18,7 @@ class GroupCategoryActionEventServiceImpl(
 ) : GroupCategoryActionEventService {
     override fun sendInsertedCategory(
         userId: UUID,
-        category: WalletEntryCategory,
+        category: WalletEntryCategoryEntity,
     ): Mono<Long> =
         actionEventService
             .newEvent(
@@ -34,7 +34,7 @@ class GroupCategoryActionEventServiceImpl(
 
     override fun sendUpdatedCategory(
         userId: UUID,
-        category: WalletEntryCategory,
+        category: WalletEntryCategoryEntity,
     ): Mono<Long> =
         actionEventService
             .newEvent(

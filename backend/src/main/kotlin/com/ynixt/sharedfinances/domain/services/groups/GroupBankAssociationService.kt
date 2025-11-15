@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
-import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import reactor.core.publisher.Mono
 import java.util.UUID
 

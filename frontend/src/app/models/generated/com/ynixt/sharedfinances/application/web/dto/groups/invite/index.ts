@@ -1,1 +1,1 @@
-export * from './group-info-for-invite-dto';
+export * from './group-info-for-invite-dto'

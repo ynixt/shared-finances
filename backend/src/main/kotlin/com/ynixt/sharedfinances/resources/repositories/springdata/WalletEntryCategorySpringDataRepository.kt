@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryCategoryRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
@@ -10,7 +10,7 @@ import java.util.UUID
 
 interface WalletEntryCategorySpringDataRepository :
     WalletEntryCategoryRepository,
-    Repository<WalletEntryCategory, String> {
+    Repository<WalletEntryCategoryEntity, String> {
     @Modifying
     @Query(
         """

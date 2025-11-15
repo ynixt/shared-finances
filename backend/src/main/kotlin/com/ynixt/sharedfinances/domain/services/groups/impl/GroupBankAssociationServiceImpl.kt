@@ -1,11 +1,13 @@
 package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupBankAccount
-import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.BankAccountAlreadyInGroupException
-import com.ynixt.sharedfinances.domain.repositories.BankAccountRepository
-import com.ynixt.sharedfinances.domain.repositories.GroupBankAccountRepository
+import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
+import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
+import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationService
@@ -17,10 +19,11 @@ import java.util.UUID
 @Service
 class GroupBankAssociationServiceImpl(
     private val groupPermissionService: GroupPermissionService,
-    private val bankAccountRepository: BankAccountRepository,
-    private val groupBankAccountRepository: GroupBankAccountRepository,
+    private val walletItemRepository: WalletItemRepository,
+    private val groupWalletItemRepository: GroupWalletItemRepository,
     private val databaseHelperService: DatabaseHelperService,
     private val groupActionEventService: GroupActionEventService,
+    private val bankAccountMapper: BankAccountMapper,
 ) : GroupBankAssociationService {
     override fun findAllAllowedBanksToAssociate(
         userId: UUID,
@@ -33,7 +36,12 @@ class GroupBankAssociationServiceImpl(
                 GroupPermissions.ADD_BANK_ACCOUNT,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    bankAccountRepository.findAllAllowedForGroup(groupId).collectList()
+                    groupWalletItemRepository
+                        .findAllAllowedForGroup(
+                            groupId,
+                            WalletItemType.BANK_ACCOUNT,
+                        ).map(bankAccountMapper::toModel)
+                        .collectList()
                 } else {
                     Mono.empty()
                 }
@@ -49,7 +57,12 @@ class GroupBankAssociationServiceImpl(
                 groupId = groupId,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    bankAccountRepository.findAllAssociatedToGroup(groupId).collectList()
+                    groupWalletItemRepository
+                        .findAllAssociatedToGroup(
+                            groupId,
+                            WalletItemType.BANK_ACCOUNT,
+                        ).map(bankAccountMapper::toModel)
+                        .collectList()
                 } else {
                     Mono.empty()
                 }
@@ -67,11 +80,11 @@ class GroupBankAssociationServiceImpl(
                 GroupPermissions.ADD_BANK_ACCOUNT,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupBankAccountRepository
+                    groupWalletItemRepository
                         .save(
-                            GroupBankAccount(
+                            GroupWalletItem(
                                 groupId = groupId,
-                                bankAccountId = bankAccountId,
+                                walletItemId = bankAccountId,
                             ),
                         ).flatMap {
                             groupActionEventService
@@ -108,10 +121,10 @@ class GroupBankAssociationServiceImpl(
                 GroupPermissions.REMOVE_BANK_ACCOUNT,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupBankAccountRepository
-                        .deleteByGroupIdAndBankAccountId(
+                    groupWalletItemRepository
+                        .deleteByGroupIdAndWalletItemId(
                             groupId = groupId,
-                            bankAccountId = bankAccountId,
+                            walletItemId = bankAccountId,
                         ).flatMap {
                             groupActionEventService
                                 .sendBankUnassociated(

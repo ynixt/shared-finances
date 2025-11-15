@@ -1,9 +1,9 @@
 package com.ynixt.sharedfinances.resources.services.impl
 
 import com.ynixt.sharedfinances.application.web.mapper.BankAccountDtoMapper
-import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
+import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import org.springframework.stereotype.Service

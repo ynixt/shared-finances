@@ -1,9 +1,11 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
-import com.ynixt.sharedfinances.domain.entities.wallet.BankAccount
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
+import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
-import com.ynixt.sharedfinances.domain.repositories.BankAccountRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
@@ -16,18 +18,21 @@ import java.util.UUID
 
 @Service
 class BankAccountServiceImpl(
-    private val bankAccountRepository: BankAccountRepository,
+    private val walletItemRepository: WalletItemRepository,
     private val bankAccountActionEventService: BankAccountActionEventService,
+    private val bankAccountMapper: BankAccountMapper,
 ) : BankAccountService {
     override fun findAllBanks(
         userId: UUID,
         pageable: Pageable,
     ): Mono<Page<BankAccount>> =
-        createPage(pageable, countFn = { bankAccountRepository.countByUserId(userId) }) {
-            bankAccountRepository.findAllByUserId(
-                userId,
-                pageable,
-            )
+        createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.BANK_ACCOUNT) }) {
+            walletItemRepository
+                .findAllByUserIdAndType(
+                    userId,
+                    WalletItemType.BANK_ACCOUNT,
+                    pageable,
+                ).map(bankAccountMapper::toModel)
         }
 
     @Transactional
@@ -35,31 +40,36 @@ class BankAccountServiceImpl(
         userId: UUID,
         newBankAccountRequest: NewBankAccountRequest,
     ): Mono<BankAccount> =
-        bankAccountRepository
+        walletItemRepository
             .save(
-                BankAccount(
-                    userId = userId,
-                    balance = newBankAccountRequest.balance,
-                    enabled = true,
-                    name = newBankAccountRequest.name,
-                    currency = newBankAccountRequest.currency,
+                bankAccountMapper.toEntity(
+                    BankAccount(
+                        userId = userId,
+                        balance = newBankAccountRequest.balance,
+                        enabled = true,
+                        name = newBankAccountRequest.name,
+                        currency = newBankAccountRequest.currency,
+                    ),
                 ),
             ).flatMap { saved ->
-                bankAccountActionEventService
-                    .sendInsertedBankAccount(
-                        bankAccount = saved,
-                        userId = userId,
-                    ).thenReturn(saved)
+                bankAccountMapper.toModel(saved).let { savedModel ->
+                    bankAccountActionEventService
+                        .sendInsertedBankAccount(
+                            bankAccount = savedModel,
+                            userId = userId,
+                        ).thenReturn(savedModel)
+                }
             }
 
     override fun findBankAccount(
         userId: UUID,
         id: UUID,
     ): Mono<BankAccount> =
-        bankAccountRepository.findOneByIdAndUserId(
-            id = id,
-            userId = userId,
-        )
+        walletItemRepository
+            .findOneByIdAndUserId(
+                id = id,
+                userId = userId,
+            ).map(bankAccountMapper::toModel)
 
     @Transactional
     override fun editBankAccount(
@@ -67,8 +77,8 @@ class BankAccountServiceImpl(
         id: UUID,
         editBankAccount: EditBankAccountRequest,
     ): Mono<BankAccount> =
-        bankAccountRepository
-            .update(
+        walletItemRepository
+            .updateBankAccount(
                 id = id,
                 userId = userId,
                 newName = editBankAccount.newName,
@@ -93,7 +103,7 @@ class BankAccountServiceImpl(
         userId: UUID,
         id: UUID,
     ): Mono<Boolean> =
-        bankAccountRepository
+        walletItemRepository
             .deleteByIdAndUserId(
                 id = id,
                 userId = userId,

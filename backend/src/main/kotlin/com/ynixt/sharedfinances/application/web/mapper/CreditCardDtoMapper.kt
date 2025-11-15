@@ -4,7 +4,7 @@ import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.CreditCard
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.CreditCardForGroupAssociateDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.EditCreditCardDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.NewCreditCardDto
-import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.EditCreditCardRequest
 import com.ynixt.sharedfinances.domain.models.creditcard.NewCreditCardRequest
 

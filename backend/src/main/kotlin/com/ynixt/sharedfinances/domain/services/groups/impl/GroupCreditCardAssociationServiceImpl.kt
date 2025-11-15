@@ -1,11 +1,13 @@
 package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupCreditCard
-import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.BankAccountAlreadyInGroupException
-import com.ynixt.sharedfinances.domain.repositories.CreditCardRepository
-import com.ynixt.sharedfinances.domain.repositories.GroupCreditCardRepository
+import com.ynixt.sharedfinances.domain.mapper.CreditCardMapper
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
+import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
@@ -17,10 +19,11 @@ import java.util.UUID
 @Service
 class GroupCreditCardAssociationServiceImpl(
     private val groupPermissionService: GroupPermissionService,
-    private val creditCardRepository: CreditCardRepository,
-    private val groupCreditCardRepository: GroupCreditCardRepository,
+    private val walletItemRepository: WalletItemRepository,
+    private val groupWalletItemRepository: GroupWalletItemRepository,
     private val databaseHelperService: DatabaseHelperService,
     private val groupActionEventService: GroupActionEventService,
+    private val creditCardMapper: CreditCardMapper,
 ) : GroupCreditCardAssociationService {
     override fun findAllAllowedCreditCardsToAssociate(
         userId: UUID,
@@ -33,7 +36,12 @@ class GroupCreditCardAssociationServiceImpl(
                 GroupPermissions.ADD_CREDIT_CARD,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    creditCardRepository.findAllAllowedForGroup(groupId).collectList()
+                    groupWalletItemRepository
+                        .findAllAllowedForGroup(
+                            groupId,
+                            WalletItemType.CREDIT_CARD,
+                        ).map(creditCardMapper::toModel)
+                        .collectList()
                 } else {
                     Mono.empty()
                 }
@@ -49,7 +57,12 @@ class GroupCreditCardAssociationServiceImpl(
                 groupId = groupId,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    creditCardRepository.findAllAssociatedToGroup(groupId).collectList()
+                    groupWalletItemRepository
+                        .findAllAssociatedToGroup(
+                            groupId,
+                            WalletItemType.CREDIT_CARD,
+                        ).map(creditCardMapper::toModel)
+                        .collectList()
                 } else {
                     Mono.empty()
                 }
@@ -67,11 +80,11 @@ class GroupCreditCardAssociationServiceImpl(
                 GroupPermissions.ADD_CREDIT_CARD,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupCreditCardRepository
+                    groupWalletItemRepository
                         .save(
-                            GroupCreditCard(
+                            GroupWalletItem(
                                 groupId = groupId,
-                                creditCardId = creditCardId,
+                                walletItemId = creditCardId,
                             ),
                         ).flatMap {
                             groupActionEventService
@@ -108,10 +121,10 @@ class GroupCreditCardAssociationServiceImpl(
                 GroupPermissions.REMOVE_CREDIT_CARD,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupCreditCardRepository
-                        .deleteByGroupIdAndCreditCardId(
+                    groupWalletItemRepository
+                        .deleteByGroupIdAndWalletItemId(
                             groupId = groupId,
-                            creditCardId = creditCardId,
+                            walletItemId = creditCardId,
                         ).flatMap {
                             groupActionEventService
                                 .sendCreditCardUnassociated(

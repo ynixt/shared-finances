@@ -1,9 +1,9 @@
 package com.ynixt.sharedfinances.resources.services.impl
 
 import com.ynixt.sharedfinances.application.web.mapper.CreditCardDtoMapper
-import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
 import org.springframework.stereotype.Service

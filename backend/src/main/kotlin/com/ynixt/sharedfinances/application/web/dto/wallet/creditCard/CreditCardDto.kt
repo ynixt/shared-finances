@@ -11,7 +11,7 @@ class CreditCardDto(
     userId: UUID,
     currency: String,
     val totalLimit: BigDecimal,
-    val availableLimit: BigDecimal,
+    val balance: BigDecimal,
     val dueDay: Int,
     val daysBetweenDueAndClosing: Int,
     val dueOnNextBusinessDay: Boolean,

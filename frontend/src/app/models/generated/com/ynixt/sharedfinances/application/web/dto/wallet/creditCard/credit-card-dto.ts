@@ -1,9 +1,10 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { WalletItemDto } from '../wallet-item-dto';
 
 export interface CreditCardDto extends WalletItemDto {
-  availableLimit: number;
+  balance: number;
   daysBetweenDueAndClosing: number;
   dueDay: number;
   dueOnNextBusinessDay: boolean;

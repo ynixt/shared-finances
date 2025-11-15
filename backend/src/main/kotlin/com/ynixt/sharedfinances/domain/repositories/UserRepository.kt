@@ -1,18 +1,18 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.User
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface UserRepository {
-    fun save(user: User): Mono<User>
+    fun save(user: UserEntity): Mono<UserEntity>
 
-    fun findByEmail(email: String): Flux<User>
+    fun findByEmail(email: String): Flux<UserEntity>
 
-    fun findAll(): Flux<User>
+    fun findAll(): Flux<UserEntity>
 
-    fun findByExternalId(externalId: String): Flux<User>
+    fun findByExternalId(externalId: String): Flux<UserEntity>
 
     fun changeLanguage(
         userId: UUID,

@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.categories.impl
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.exceptions.DuplicatedCategoryException
 import com.ynixt.sharedfinances.domain.models.category.EditCategoryRequest
 import com.ynixt.sharedfinances.domain.models.category.NewCategoryRequest
@@ -29,7 +29,7 @@ class UserCategoryServiceImpl(
         mountChildren: Boolean,
         query: String?,
         pageable: Pageable,
-    ): Mono<Page<WalletEntryCategory>> =
+    ): Mono<Page<WalletEntryCategoryEntity>> =
         createPage(pageable, countFn = { repository.countByUserId(userId) }) {
             val items =
                 if (onlyRoot) {
@@ -71,7 +71,7 @@ class UserCategoryServiceImpl(
         userId: UUID,
         id: UUID,
         mountChildren: Boolean,
-    ): Mono<WalletEntryCategory> =
+    ): Mono<WalletEntryCategoryEntity> =
         repository
             .findOneByIdAndUserId(
                 id = id,
@@ -87,10 +87,10 @@ class UserCategoryServiceImpl(
     override fun newCategory(
         userId: UUID,
         newCategoryRequest: NewCategoryRequest,
-    ): Mono<WalletEntryCategory> =
+    ): Mono<WalletEntryCategoryEntity> =
         repository
             .save(
-                WalletEntryCategory(
+                WalletEntryCategoryEntity(
                     userId = userId,
                     name = newCategoryRequest.name,
                     color = newCategoryRequest.color,
@@ -119,7 +119,7 @@ class UserCategoryServiceImpl(
         userId: UUID,
         id: UUID,
         editCategory: EditCategoryRequest,
-    ): Mono<WalletEntryCategory> =
+    ): Mono<WalletEntryCategoryEntity> =
         repository
             .updateByUserId(
                 id = id,

@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
-import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import reactor.core.publisher.Mono
 import java.util.UUID
 

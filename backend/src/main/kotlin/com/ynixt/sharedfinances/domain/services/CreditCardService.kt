@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services
 
-import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.EditCreditCardRequest
 import com.ynixt.sharedfinances.domain.models.creditcard.NewCreditCardRequest
 import org.springframework.data.domain.Page

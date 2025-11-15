@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.categories
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategory
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.models.category.EditCategoryRequest
 import com.ynixt.sharedfinances.domain.models.category.NewCategoryRequest
 import org.springframework.data.domain.Page
@@ -15,24 +15,24 @@ interface UserCategoryService {
         mountChildren: Boolean,
         query: String?,
         pageable: Pageable,
-    ): Mono<Page<WalletEntryCategory>>
+    ): Mono<Page<WalletEntryCategoryEntity>>
 
     fun findCategory(
         userId: UUID,
         id: UUID,
         mountChildren: Boolean,
-    ): Mono<WalletEntryCategory>
+    ): Mono<WalletEntryCategoryEntity>
 
     fun newCategory(
         userId: UUID,
         newCategoryRequest: NewCategoryRequest,
-    ): Mono<WalletEntryCategory>
+    ): Mono<WalletEntryCategoryEntity>
 
     fun editCategory(
         userId: UUID,
         id: UUID,
         editCategory: EditCategoryRequest,
-    ): Mono<WalletEntryCategory>
+    ): Mono<WalletEntryCategoryEntity>
 
     fun deleteCategory(
         userId: UUID,

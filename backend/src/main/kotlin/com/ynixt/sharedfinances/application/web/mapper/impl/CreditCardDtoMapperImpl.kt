@@ -6,7 +6,7 @@ import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.EditCredit
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.NewCreditCardDto
 import com.ynixt.sharedfinances.application.web.mapper.CreditCardDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
-import com.ynixt.sharedfinances.domain.entities.wallet.CreditCard
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.EditCreditCardRequest
 import com.ynixt.sharedfinances.domain.models.creditcard.NewCreditCardRequest
 import org.springframework.stereotype.Component

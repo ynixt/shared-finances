@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping
 
-import com.ynixt.sharedfinances.domain.entities.User
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import io.r2dbc.spi.Row
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -26,8 +26,8 @@ class UserR2DBCMapping {
         fun userFromRow(
             row: Row,
             columnPrefix: String = "u_",
-        ): User =
-            User(
+        ): UserEntity =
+            UserEntity(
                 externalId = row.get("${columnPrefix}external_id", String::class.java)!!,
                 email = row.get("${columnPrefix}email", String::class.java)!!,
                 firstName = row.get("${columnPrefix}first_name", String::class.java)!!,

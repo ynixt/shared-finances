@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.models.security
 
-import com.ynixt.sharedfinances.domain.entities.User
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import org.springframework.security.core.GrantedAuthority
 import java.security.Principal
 import java.util.UUID
@@ -15,7 +15,7 @@ class UserPrincipal(
     var defaultCurrency: String?,
     val authorities: List<GrantedAuthority>,
 ) : Principal {
-    constructor(user: User, authorities: List<GrantedAuthority>) : this(
+    constructor(user: UserEntity, authorities: List<GrantedAuthority>) : this(
         user.id!!,
         user.externalId,
         user.email,
