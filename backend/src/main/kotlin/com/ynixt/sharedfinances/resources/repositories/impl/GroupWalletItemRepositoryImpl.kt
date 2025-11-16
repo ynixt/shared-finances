@@ -21,7 +21,7 @@ class GroupWalletItemRepositoryImpl(
         groupId: UUID,
         enabled: Boolean,
         pageable: Pageable,
-    ): Flux<WalletItemEntity> = springDataRepository.findAllByGroupIdAndEnabled(groupId, enabled, pageable)
+    ): Flux<WalletItemEntity> = r2DBCRepository.findAllByGroupIdAndEnabled(groupId, enabled, pageable)
 
     override fun countByGroupId(
         groupId: UUID,

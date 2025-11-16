@@ -1,30 +1,11 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
 import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
-import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
-import org.springframework.data.domain.Pageable
-import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.Repository
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupWalletItemSpringDataRepository : Repository<GroupWalletItem, String> {
-    @Query(
-        """
-        select wi.*
-        from group_wallet_item gwi
-        join wallet_item wi on wi.id = gwi.wallet_item_id
-        where gwi.group_id = :groupId 
-        and wi.enabled = :enabled
-    """,
-    )
-    fun findAllByGroupIdAndEnabled(
-        groupId: UUID,
-        enabled: Boolean,
-        pageable: Pageable,
-    ): Flux<WalletItemEntity>
-
     fun countByGroupId(
         groupId: UUID,
         enabled: Boolean,
