@@ -97,21 +97,29 @@ export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
   selectLoaded = false;
 
   private async loadItems(page: number, query?: string | undefined): Promise<void> {
-    this.lastItemRequested = this.pageSize() * ++this.currentPage;
+    const oldLastItemRequested = this.lastItemRequested;
 
-    const fn = this.optionsGetter();
+    try {
+      this.lastItemRequested = this.pageSize() * ++this.currentPage;
 
-    if (fn) {
-      this.loading.set(true);
-      const items = await fn(page, query);
+      const fn = this.optionsGetter();
 
-      if (page == 0) {
-        this.options = [...items];
-        this.putValueOnListIfListNotContainsValue(this.value);
-      } else {
-        this.options = [...this.options, ...items];
+      if (fn) {
+        this.loading.set(true);
+        const items = await fn(page, query);
+
+        if (page == 0) {
+          this.options = [...items];
+          this.putValueOnListIfListNotContainsValue(this.value);
+        } else {
+          this.options = [...this.options, ...items];
+        }
+        this.loading.set(false);
       }
-      this.loading.set(false);
+    } catch (error) {
+      this.lastItemRequested = oldLastItemRequested;
+      this.selectLoaded = false;
+      throw error;
     }
   }
 
