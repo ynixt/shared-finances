@@ -1,0 +1,21 @@
+<div class="chip-editor flex flex-col gap-4">
+  <form class="flex gap-2" (ngSubmit)="addCurrentChip()">
+    <input
+      pInputText
+      type="text"
+      [(ngModel)]="currentChipOnInput"
+      [ngModelOptions]="{ standalone: true }"
+      fluid
+      [maxlength]="maxLength() ?? null"
+    />
+    <button pButton type="submit" size="small">
+      <fa-icon [icon]="faPlus"></fa-icon>
+    </button>
+  </form>
+
+  <div class="chips flex gap-2 flex-wrap">
+    @for (chip of value; track chip) {
+      <p-chip [label]="chip" [removable]="true" (onRemove)="chipRemoved(chip)" />
+    }
+  </div>
+</div>

@@ -6,6 +6,9 @@
     [showIcon]="true"
     [iconDisplay]="'input'"
     [showButtonBar]="showButtonBar()"
+    [readonlyInput]="readonlyInput()"
+    [view]="view()"
+    [dateFormat]="dateFormat()"
   >
     <ng-template #inputicon let-clickCallBack="clickCallBack">
       <fa-icon [icon]="clockIcon" (click)="clickCallBack($event)"></fa-icon>

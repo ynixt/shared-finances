@@ -4,14 +4,14 @@ export abstract class SimpleControlValueAccessor<T> implements ControlValueAcces
   value: T | undefined;
   disabled = false;
 
-  protected onChange = (_: T) => {};
+  protected onChange = (_: T | undefined) => {};
   protected onTouched = () => {};
 
-  writeValue(obj: any): void {
+  writeValue(obj: T | undefined): void {
     this.value = obj;
   }
 
-  onValueChange(value: any) {
+  onValueChange(value: T | undefined) {
     this.value = value;
     this.onChange(value);
     this.onTouched();

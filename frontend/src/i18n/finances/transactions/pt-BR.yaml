@@ -22,5 +22,11 @@ financesPage:
     installments: Parcelas
     observations: Observações
     periodicity: Periodicidade
+    startDate: Data inicial
+    endDate: Data final
+    bill: Fatura
+    originBill: Fatura da origem
+    targetBill: Fatura do destino
+    tags: Tags
     newTransactionPage:
       title: Nova transação

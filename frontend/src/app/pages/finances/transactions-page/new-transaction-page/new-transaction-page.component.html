@@ -95,6 +95,25 @@
         <span>{{ 'general.date' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
         <app-date-picker formControlName="date"></app-date-picker>
       </label>
+
+      @if (currentOriginIsCreditCard) {
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.' + (isTransfer ? 'originBill' : 'bill') | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-date-picker formControlName="originBill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
+        </label>
+      }
+
+      @if (currentTargetIsCreditCard) {
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.targetBill' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-date-picker formControlName="targetBill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
+        </label>
+      }
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
@@ -124,6 +143,15 @@
             >{{ 'financesPage.transactionsPage.valueType' | translate }} <app-required-field-asterisk></app-required-field-asterisk
           ></span>
           <app-i18n-select formControlName="valueType" [options]="valueTypeOptions"></app-i18n-select>
+        </label>
+      }
+
+      @if (currentPaymentType === PaymentType.RECURRING) {
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.periodicity' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-i18n-select formControlName="periodicity" [options]="recurrenceTypeOptions"></app-i18n-select>
         </label>
       }
     </div>
@@ -163,9 +191,30 @@
       </div>
     }
 
+    @if (currentPaymentType === PaymentType.RECURRING) {
+      <div class="grid md:grid-cols-2 gap-2">
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.startDate' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-date-picker formControlName="startDate"></app-date-picker>
+        </label>
+
+        <label class="flex flex-col gap-2">
+          <span>{{ 'financesPage.transactionsPage.endDate' | translate }}</span>
+          <app-date-picker formControlName="endDate"></app-date-picker>
+        </label>
+      </div>
+    }
+
     <label class="flex flex-col gap-2">
       <span>{{ 'financesPage.transactionsPage.observations' | translate }}</span>
-      <textarea rows="2" pInputTextarea [autoResize]="true" formControlName="observations"></textarea>
+      <app-textarea [rows]="2" [autoResize]="true" formControlName="observations" [maxLength]="512"></app-textarea>
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.tags' | translate }}</span>
+      <app-chip-editor formControlName="tags" [maxLength]="50"></app-chip-editor>
     </label>
 
     <button class="mt-4" pButton type="submit" [loading]="submitting" [disabled]="form.invalid">{{ 'general.save' | translate }}</button>

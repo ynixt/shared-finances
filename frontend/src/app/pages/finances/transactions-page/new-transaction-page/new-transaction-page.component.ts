@@ -9,13 +9,14 @@ import { ButtonDirective } from 'primeng/button';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
 import { SelectButton } from 'primeng/selectbutton';
-import { Textarea } from 'primeng/textarea';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 
+import { ChipEditorComponent } from '../../../../components/chip-editor/chip-editor.component';
 import { DatePickerComponent } from '../../../../components/date-picker/date-picker.component';
 import { I18nSelectComponent } from '../../../../components/i18n-select/i18n-select.component';
 import { PagedSelectComponent } from '../../../../components/paged-select/paged-select.component';
 import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
+import { TextareaComponent } from '../../../../components/textarea/textarea.component';
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { WalletItemSearchResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
@@ -30,6 +31,7 @@ import { UserService } from '../../../../services/user.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { CategoryPickerComponent } from '../../components/item-picker/category-picker/category-picker.component';
 import { WalletItemPickerComponent } from '../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
+import { CreditCardBillService } from '../../services/credit-card-bill.service';
 import { GroupService } from '../../services/group.service';
 
 enum TransactionType {
@@ -65,6 +67,11 @@ type NewTransactionForm = FormGroup<{
   periodicity: FormControl<RecurrenceType | undefined>;
   valueType: FormControl<ValueType | undefined>;
   calculatedValue: FormControl<number | undefined>;
+  startDate: FormControl<Date | undefined>;
+  endDate: FormControl<Date | undefined>;
+  originBill: FormControl<Date | undefined>;
+  targetBill: FormControl<Date | undefined>;
+  tags: FormControl<string[] | undefined>;
 }>;
 
 @Component({
@@ -78,13 +85,14 @@ type NewTransactionForm = FormGroup<{
     WalletItemPickerComponent,
     InputText,
     CategoryPickerComponent,
-    Textarea,
     InputNumber,
     RequiredFieldAsteriskComponent,
     DatePickerComponent,
     ToggleSwitch,
     SelectButton,
     I18nSelectComponent,
+    TextareaComponent,
+    ChipEditorComponent,
   ],
   templateUrl: './new-transaction-page.component.html',
   styleUrl: './new-transaction-page.component.scss',
@@ -97,6 +105,7 @@ export class NewTransactionPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly groupService = inject(GroupService);
   private readonly userService = inject(UserService);
+  private readonly creditCardBillService = inject(CreditCardBillService);
 
   readonly form: NewTransactionForm;
 
@@ -115,8 +124,32 @@ export class NewTransactionPageComponent {
     return this.form.get('type')!!;
   }
 
+  get originControl() {
+    return this.form.get('origin')!!;
+  }
+
+  get targetControl() {
+    return this.form.get('target')!!;
+  }
+
+  get dateControl() {
+    return this.form.get('date')!!;
+  }
+
   get currentOrigin() {
-    return this.form.get('origin')!!.value;
+    return this.originControl.value;
+  }
+
+  get currentTarget() {
+    return this.targetControl.value;
+  }
+
+  get currentOriginIsCreditCard(): boolean {
+    return this.currentOrigin?.type === 'CREDIT_CARD';
+  }
+
+  get currentTargetIsCreditCard(): boolean {
+    return this.currentTarget?.type === 'CREDIT_CARD';
   }
 
   get currentPaymentType() {
@@ -195,8 +228,20 @@ export class NewTransactionPageComponent {
         periodicity: [RecurrenceType__Obj.MONTHLY, []],
         valueType: [ValueType.TOTAL, []],
         calculatedValue: [0, []],
+        startDate: [new Date(), [Validators.required]],
+        endDate: [undefined, []],
+        originBill: [undefined, []],
+        targetBill: [undefined, []],
+        tags: [undefined, []],
       },
-      { validators: [this.requiredOnlyOnTransfer, this.requiredOnlyIfInstallment] },
+      {
+        validators: [
+          this.requiredOnlyOnTransfer,
+          this.requiredOnlyIfInstallment,
+          this.requiredOnlyOnOriginCreditCard,
+          this.requiredOnlyOnTargetCreditCard,
+        ],
+      },
     ) as NewTransactionForm;
 
     this.calculatedValueControl.disable();
@@ -218,6 +263,11 @@ export class NewTransactionPageComponent {
       if (newPaymentType !== PaymentType.INSTALLMENTS && newPaymentType !== PaymentType.RECURRING) {
         this.periodicityControl.reset();
       }
+
+      if (newPaymentType !== PaymentType.RECURRING) {
+        this.form.get('startDate')?.reset();
+        this.form.get('endDate')?.reset();
+      }
     });
 
     combineLatest([
@@ -234,6 +284,36 @@ export class NewTransactionPageComponent {
           this.calculatedValueControl.setValue(currentValueSafe / currentInstallmentsSafe);
         } else {
           this.calculatedValueControl.setValue(currentValueSafe * currentInstallmentsSafe);
+        }
+      });
+
+    combineLatest([
+      this.dateControl.valueChanges.pipe(startWith(this.dateControl.value)),
+      this.originControl.valueChanges.pipe(startWith(this.originControl.value)),
+    ])
+      .pipe(untilDestroyed(this))
+      .subscribe(([date, origin]) => {
+        if (origin?.type === 'CREDIT_CARD') {
+          this.form
+            .get('originBill')!!
+            .setValue(this.creditCardBillService.getBestBill(date ?? new Date(), origin.dueDay!!, origin.dueOnNextBusinessDay!!));
+        } else {
+          this.form.get('originBill')?.reset();
+        }
+      });
+
+    combineLatest([
+      this.dateControl.valueChanges.pipe(startWith(this.dateControl.value)),
+      this.targetControl.valueChanges.pipe(startWith(this.targetControl.value)),
+    ])
+      .pipe(untilDestroyed(this))
+      .subscribe(([date, target]) => {
+        if (target?.type === 'CREDIT_CARD') {
+          this.form
+            .get('targetBill')!!
+            .setValue(this.creditCardBillService.getBestBill(date ?? new Date(), target.dueDay!!, target.dueOnNextBusinessDay!!));
+        } else {
+          this.form.get('targetBill')?.reset();
         }
       });
   }
@@ -318,6 +398,22 @@ export class NewTransactionPageComponent {
     if (errors.length == 0) return null;
 
     return errors.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  };
+
+  private requiredOnlyOnOriginCreditCard = (group: NewTransactionForm): ValidationErrors | null => {
+    const origin = group.get('origin')?.value;
+    const originBillControl = group.get('originBill')!!;
+
+    const isCreditCard = origin?.type === 'CREDIT_CARD';
+    return this.requireFieldsIf(originBillControl, isCreditCard);
+  };
+
+  private requiredOnlyOnTargetCreditCard = (group: NewTransactionForm): ValidationErrors | null => {
+    const target = group.get('target')?.value;
+    const targetBillControl = group.get('targetBill')!!;
+
+    const isCreditCard = target?.type === 'CREDIT_CARD';
+    return this.requireFieldsIf(targetBillControl, isCreditCard);
   };
 
   private requireFieldsIf(control: AbstractControl, required: boolean): ValidationErrors | null {

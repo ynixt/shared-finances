@@ -4,11 +4,11 @@
   <div class="menu">
     <app-advanced-menu [items]="items" [drawerOpen]="drawerOpen" />
   </div>
-  <div class="content w-full">
+  <div class="content w-full pb-4">
     <router-outlet />
   </div>
   @if (shouldShowNewTransactionButton) {
-    <div class="div fixed z-10 bottom-7 right-7">
+    <div class="div fixed z-20 bottom-7 right-7">
       <a routerLink="transactions/new" pButton [rounded]="true" [pTooltip]="'financesPage.menu.newTransaction' | translate">
         <fa-icon [icon]="newTransactionButtonIcon"></fa-icon>
       </a>

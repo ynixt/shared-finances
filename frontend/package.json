@@ -33,6 +33,7 @@
     "angularx-qrcode": "^20.0.0",
     "apollo-angular": "^12.1.0",
     "broadcast-channel": "^7.2.0",
+    "dayjs": "^1.11.19",
     "deepmerge-ts": "^7.1.5",
     "eventsource-client": "^1.2.0",
     "graphql": "^16.12.0",

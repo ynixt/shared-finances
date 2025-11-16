@@ -20,7 +20,13 @@ financesPage:
     value: Value
     confirmed: Confirmed
     installments: Parcelas
-    periodicity: Periodicity
     observations: Observations
+    periodicity: Periodicity
+    startDate: Start date
+    endDate: End date
+    bill: Bill
+    originBill: Origin bill
+    targetBill: Target bill
+    tags: Tags
     newTransactionPage:
       title: New transaction

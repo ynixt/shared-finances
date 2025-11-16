@@ -1,0 +1,18 @@
+<div class="textarea relative">
+  <textarea
+    [rows]="rows()"
+    pInputTextarea
+    [autoResize]="autoResize()"
+    [ngModel]="value"
+    (ngModelChange)="onValueChange($event)"
+    [maxlength]="maxLength() ?? null"
+    fluid
+  ></textarea>
+  @if (showLength()) {
+    <div class="absolute bottom-3 right-2 z-10 text-xs text-gray-500">
+      <span>{{ currentLength() }}</span>
+      <span>/</span>
+      <span>{{ maxLength() }}</span>
+    </div>
+  }
+</div>

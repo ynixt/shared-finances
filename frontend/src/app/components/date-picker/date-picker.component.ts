@@ -4,6 +4,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faCalendar } from '@fortawesome/free-solid-svg-icons';
 
 import { DatePicker } from 'primeng/datepicker';
+import { DatePickerTypeView } from 'primeng/types/datepicker';
 
 import { SimpleControlValueAccessor } from '../simple-control-value-accessor';
 
@@ -24,4 +25,7 @@ export class DatePickerComponent extends SimpleControlValueAccessor<Date> {
   readonly clockIcon = faCalendar;
 
   showButtonBar = input<boolean>(true);
+  readonlyInput = input<boolean>(false);
+  view = input<DatePickerTypeView>('date');
+  dateFormat = input<string | undefined>(undefined);
 }
