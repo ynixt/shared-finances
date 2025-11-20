@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
-import com.ynixt.sharedfinances.domain.entities.groups.Group
-import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
@@ -13,6 +13,11 @@ interface GroupService {
     fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>>
 
     fun findGroup(
+        userId: UUID,
+        id: UUID,
+    ): Mono<GroupWithRole>
+
+    fun findGroupWithAssociatedItems(
         userId: UUID,
         id: UUID,
     ): Mono<GroupWithRole>
@@ -31,12 +36,12 @@ interface GroupService {
     fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
-    ): Mono<Group>
+    ): Mono<GroupEntity>
 
     fun findAllMembers(
         userId: UUID,
         id: UUID,
-    ): Mono<List<GroupUser>>
+    ): Mono<List<GroupUserEntity>>
 
     fun updateMemberRole(
         userId: UUID,

@@ -3,15 +3,7 @@ financesPage:
     group: Grupo
     origin: Origem
     target: Destino
-    types:
-      revenue: Receita
-      expense: Despesa
-      transfer: Transferência
     paymentType: Tipo de pagamento
-    paymentTypes:
-      unique: Único
-      recurring: Recorrente
-      installments: Parcelado
     valueType: Tipo de valor
     valueTypes:
       TOTAL: Total
@@ -22,8 +14,7 @@ financesPage:
     installments: Parcelas
     observations: Observações
     periodicity: Periodicidade
-    startDate: Data inicial
-    endDate: Data final
+    periodicityQtyLimit: Repetir n vezes
     bill: Fatura
     originBill: Fatura da origem
     targetBill: Fatura do destino

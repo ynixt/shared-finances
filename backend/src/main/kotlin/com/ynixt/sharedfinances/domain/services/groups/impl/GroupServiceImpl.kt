@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.Group
-import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.exceptions.MemberAlreadyInGroupException
@@ -13,6 +13,8 @@ import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
+import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationService
+import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import org.springframework.stereotype.Service
@@ -28,6 +30,8 @@ class GroupServiceImpl(
     private val groupPermissionService: GroupPermissionService,
     private val databaseHelperService: DatabaseHelperService,
     private val groupCategoryService: GroupCategoryService,
+    private val groupBankAssociationService: GroupBankAssociationService,
+    private val creditCardAssociationService: GroupCreditCardAssociationService,
 ) : GroupService {
     override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> =
         groupRepository.findAllByUserIdOrderByName(userId).collectList().map { list ->
@@ -115,20 +119,52 @@ class GroupServiceImpl(
                 }
             }
 
+    override fun findGroupWithAssociatedItems(
+        userId: UUID,
+        id: UUID,
+    ): Mono<GroupWithRole> =
+        findGroup(userId, id)
+            .flatMap { group ->
+                groupBankAssociationService
+                    .findAllAssociatedBanks(
+                        userId = userId,
+                        groupId = id,
+                    ).map { associatedBanks ->
+                        group.copy(itemsAssociated = associatedBanks)
+                    }.switchIfEmpty(Mono.just(group))
+            }.flatMap { group ->
+                creditCardAssociationService
+                    .findAllAssociatedCreditCards(
+                        userId = userId,
+                        groupId = id,
+                    ).map { associatedCreditCards ->
+                        group.copy(
+                            itemsAssociated =
+                                if (group.itemsAssociated ==
+                                    null
+                                ) {
+                                    associatedCreditCards
+                                } else {
+                                    group.itemsAssociated + associatedCreditCards
+                                },
+                        )
+                    }.switchIfEmpty(Mono.just(group))
+            }
+
     @Transactional
     override fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
-    ): Mono<Group> =
+    ): Mono<GroupEntity> =
         groupRepository
             .save(
-                Group(
+                GroupEntity(
                     name = newGroupRequest.name,
                 ),
             ).flatMap { g ->
                 groupUserRepository
                     .save(
-                        GroupUser(
+                        GroupUserEntity(
                             userId = userId,
                             groupId = g.id!!,
                             role = UserGroupRole.ADMIN,
@@ -155,7 +191,7 @@ class GroupServiceImpl(
     override fun findAllMembers(
         userId: UUID,
         id: UUID,
-    ): Mono<List<GroupUser>> =
+    ): Mono<List<GroupUserEntity>> =
         groupPermissionService.hasPermission(userId = userId, groupId = id).flatMap {
             if (it) {
                 groupUserRepository
@@ -196,7 +232,7 @@ class GroupServiceImpl(
     ): Mono<Unit> =
         groupUserRepository
             .save(
-                GroupUser(
+                GroupUserEntity(
                     userId = userId,
                     groupId = id,
                     role = role,

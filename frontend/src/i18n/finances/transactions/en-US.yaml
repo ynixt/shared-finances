@@ -3,15 +3,7 @@ financesPage:
     group: Group
     origin: Origin
     target: Target
-    types:
-      revenue: Revenue
-      expense: Expense
-      transfer: Transfer
     paymentType: Tipo de pagamento
-    paymentTypes:
-      unique: Unique
-      recurring: Recurring
-      installments: Installments
     valueType: Tipo de valor
     valueTypes:
       TOTAL: Total
@@ -22,8 +14,7 @@ financesPage:
     installments: Parcelas
     observations: Observations
     periodicity: Periodicity
-    startDate: Start date
-    endDate: End date
+    periodicityQtyLimit: Repeat n times
     bill: Bill
     originBill: Origin bill
     targetBill: Target bill

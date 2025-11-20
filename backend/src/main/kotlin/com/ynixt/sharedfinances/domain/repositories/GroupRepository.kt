@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.groups.Group
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -14,7 +14,7 @@ interface GroupRepository {
         id: UUID,
     ): Mono<GroupWithRole>
 
-    fun save(group: Group): Mono<Group>
+    fun save(group: GroupEntity): Mono<GroupEntity>
 
     fun edit(
         id: UUID,

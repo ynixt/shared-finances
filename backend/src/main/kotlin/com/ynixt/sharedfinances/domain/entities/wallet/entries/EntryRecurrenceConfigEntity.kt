@@ -1,6 +1,8 @@
 package com.ynixt.sharedfinances.domain.entities.wallet.entries
 
+import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -9,22 +11,26 @@ import java.util.UUID
 @Table("entry_recurrence_config")
 class EntryRecurrenceConfigEntity(
     name: String?,
-    description: String?,
     value: BigDecimal,
     categoryId: UUID?,
     userId: UUID?,
     groupId: UUID?,
     tags: List<String>?,
     observations: String?,
-    val startDate: LocalDate,
-    val endDate: LocalDate?,
-    val type: RecurrenceType,
-    val recurrenceQty: Int,
+    type: WalletEntryType,
+    originId: UUID,
+    targetId: UUID?,
+    val periodicity: RecurrenceType,
+    val paymentType: PaymentType,
+    val qtyExecuted: Int,
+    val qtyLimit: Int?,
     val lastExecution: LocalDate,
-    val nextExecution: LocalDate,
+    val nextExecution: LocalDate?,
 ) : MinimumWalletEntry(
+        type = type,
+        originId = originId,
+        targetId = targetId,
         name = name,
-        description = description,
         value = value,
         categoryId = categoryId,
         userId = userId,

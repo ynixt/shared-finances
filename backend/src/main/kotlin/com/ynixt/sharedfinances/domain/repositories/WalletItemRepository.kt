@@ -33,6 +33,8 @@ interface WalletItemRepository {
 
     fun save(walletItem: WalletItemEntity): Mono<WalletItemEntity>
 
+    fun findOneById(id: UUID): Mono<WalletItemEntity>
+
     fun findOneByIdAndUserId(
         id: UUID,
         userId: UUID,
@@ -61,5 +63,10 @@ interface WalletItemRepository {
         newDueDay: Int,
         newDaysBetweenDueAndClosing: Int,
         newDueOnNextBusinessDay: Boolean,
+    ): Mono<Long>
+
+    fun addBalanceById(
+        id: UUID,
+        balance: BigDecimal,
     ): Mono<Long>
 }

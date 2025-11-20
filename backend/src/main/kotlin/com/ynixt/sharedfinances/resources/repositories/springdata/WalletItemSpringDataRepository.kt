@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.Repository
 import reactor.core.publisher.Mono
+import java.math.BigDecimal
 import java.util.UUID
 
 interface WalletItemSpringDataRepository :
@@ -60,5 +61,20 @@ interface WalletItemSpringDataRepository :
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        update wallet_item
+        set 
+            balance = balance + :balance,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :id
+    """,
+    )
+    override fun addBalanceById(
+        id: UUID,
+        balance: BigDecimal,
     ): Mono<Long>
 }

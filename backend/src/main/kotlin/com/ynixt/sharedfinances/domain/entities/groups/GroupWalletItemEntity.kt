@@ -5,7 +5,7 @@ import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 
 @Table("group_wallet_item")
-class GroupWalletItem(
+class GroupWalletItemEntity(
     val groupId: UUID,
     val walletItemId: UUID,
 ) : SimpleEntity()

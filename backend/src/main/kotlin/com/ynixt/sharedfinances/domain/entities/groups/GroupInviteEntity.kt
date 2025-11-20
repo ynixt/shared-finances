@@ -6,7 +6,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 @Table("group_invite")
-class GroupInvite(
+class GroupInviteEntity(
     val groupId: UUID,
     val expireAt: OffsetDateTime,
 ) : SimpleEntity()

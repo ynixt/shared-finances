@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -15,11 +15,11 @@ interface GroupUsersRepository {
     fun findOneByGroupIdAndUserId(
         groupId: UUID,
         userId: UUID,
-    ): Mono<GroupUser>
+    ): Mono<GroupUserEntity>
 
-    fun save(groupUser: GroupUser): Mono<GroupUser>
+    fun save(groupUser: GroupUserEntity): Mono<GroupUserEntity>
 
-    fun findAllMembers(groupId: UUID): Flux<GroupUser>
+    fun findAllMembers(groupId: UUID): Flux<GroupUserEntity>
 
     fun updateRole(
         userId: UUID,

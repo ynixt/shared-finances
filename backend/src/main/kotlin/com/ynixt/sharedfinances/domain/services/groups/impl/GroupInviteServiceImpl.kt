@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupInvite
+import com.ynixt.sharedfinances.domain.entities.groups.GroupInviteEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.models.groups.GroupInfoForInvite
 import com.ynixt.sharedfinances.domain.repositories.GroupInviteRepository
@@ -24,7 +24,7 @@ class GroupInviteServiceImpl(
     override fun generate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<GroupInvite> =
+    ): Mono<GroupInviteEntity> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
@@ -33,7 +33,7 @@ class GroupInviteServiceImpl(
             ).flatMap { hasPermission ->
                 if (hasPermission) {
                     repository.save(
-                        GroupInvite(
+                        GroupInviteEntity(
                             groupId = groupId,
                             expireAt = OffsetDateTime.now().plusMinutes(invitationExpirationMinutes),
                         ),

@@ -4,6 +4,6 @@ import com.ynixt.sharedfinances.domain.entities.AuditedEntity
 import org.springframework.data.relational.core.mapping.Table
 
 @Table("\"group\"")
-class Group(
+class GroupEntity(
     val name: String,
 ) : AuditedEntity()

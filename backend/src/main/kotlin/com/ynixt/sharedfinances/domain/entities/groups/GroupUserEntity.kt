@@ -8,7 +8,7 @@ import org.springframework.data.relational.core.mapping.Table
 import java.util.UUID
 
 @Table("group_user")
-class GroupUser(
+class GroupUserEntity(
     val groupId: UUID,
     val userId: UUID,
     val role: UserGroupRole,

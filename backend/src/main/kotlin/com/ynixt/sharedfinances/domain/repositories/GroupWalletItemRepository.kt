@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.repositories
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import org.springframework.data.domain.Pageable
@@ -20,7 +20,7 @@ interface GroupWalletItemRepository {
         enabled: Boolean,
     ): Mono<Long>
 
-    fun save(groupUser: GroupWalletItem): Mono<GroupWalletItem>
+    fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity>
 
     fun deleteByGroupIdAndWalletItemId(
         groupId: UUID,

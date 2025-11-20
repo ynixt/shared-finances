@@ -1,4 +1,3 @@
-export * from './credit-card-bill-for-list-dto';
 export * from './credit-card-dto';
 export * from './credit-card-for-group-associate-dto';
 export * from './edit-credit-card-dto';

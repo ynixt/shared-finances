@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
@@ -8,7 +8,7 @@ import org.springframework.data.repository.Repository
 import reactor.core.publisher.Mono
 import java.util.UUID
 
-interface GroupUsersSpringDataRepository : Repository<GroupUser, String> {
+interface GroupUsersSpringDataRepository : Repository<GroupUserEntity, String> {
     fun countByGroupIdAndUserId(
         groupId: UUID,
         userId: UUID,
@@ -17,10 +17,10 @@ interface GroupUsersSpringDataRepository : Repository<GroupUser, String> {
     fun findOneByGroupIdAndUserId(
         groupId: UUID,
         userId: UUID,
-    ): Mono<GroupUser>
+    ): Mono<GroupUserEntity>
 
     @Modifying
-    fun save(groupUser: GroupUser): Mono<GroupUser>
+    fun save(groupUser: GroupUserEntity): Mono<GroupUserEntity>
 
     @Modifying
     @Query(

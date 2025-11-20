@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupUser
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.UserR2DBCMapping
 import org.springframework.r2dbc.core.DatabaseClient
@@ -12,7 +12,7 @@ import java.util.UUID
 class GroupUsersR2DBCRepository(
     private val dbClient: DatabaseClient,
 ) : R2BDCGenericRepository() {
-    fun findAllMembers(groupId: UUID): Flux<GroupUser> {
+    fun findAllMembers(groupId: UUID): Flux<GroupUserEntity> {
         val sql =
             """
             SELECT
@@ -30,7 +30,7 @@ class GroupUsersR2DBCRepository(
             .sql(sql)
             .bind("groupId", groupId)
             .map { row, _ ->
-                GroupUser(
+                GroupUserEntity(
                     groupId = row.get("group_id", UUID::class.java)!!,
                     userId = row.get("user_id", UUID::class.java)!!,
                     role = UserGroupRole.valueOf(row.get("role", String::class.java)!!),

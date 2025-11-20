@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
+import java.math.BigDecimal
 import java.util.UUID
 
 @Service
@@ -28,4 +29,11 @@ class WalletItemServiceImpl(
                     pageable = pageable,
                 ).map(walletItemMapper::toModel)
         }
+
+    override fun findOne(id: UUID): Mono<WalletItem> = walletItemRepository.findOneById(id).map(walletItemMapper::toModel)
+
+    override fun addBalanceById(
+        id: UUID,
+        balance: BigDecimal,
+    ): Mono<Long> = walletItemRepository.addBalanceById(id, balance)
 }

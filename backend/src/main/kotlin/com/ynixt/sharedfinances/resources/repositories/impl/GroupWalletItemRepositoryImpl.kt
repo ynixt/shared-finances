@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
@@ -28,7 +28,7 @@ class GroupWalletItemRepositoryImpl(
         enabled: Boolean,
     ): Mono<Long> = springDataRepository.countByGroupId(groupId, enabled)
 
-    override fun save(groupUser: GroupWalletItem): Mono<GroupWalletItem> = springDataRepository.save(groupUser)
+    override fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity> = springDataRepository.save(groupUser)
 
     override fun deleteByGroupIdAndWalletItemId(
         groupId: UUID,

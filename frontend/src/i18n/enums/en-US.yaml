@@ -11,3 +11,11 @@ enums:
     WEEKLY: Weekly
     MONTHLY: Monthly
     YEARLY: Yearly
+  walletEntryType:
+    REVENUE: Revenue
+    EXPENSE: Expense
+    TRANSFER: Transfer
+  paymentType:
+    UNIQUE: Unique
+    RECURRING: Recurring
+    INSTALLMENTS: Installments

@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupInvite
+import com.ynixt.sharedfinances.domain.entities.groups.GroupInviteEntity
 import com.ynixt.sharedfinances.domain.models.groups.GroupInfoForInvite
 import reactor.core.publisher.Mono
 import java.util.UUID
@@ -9,7 +9,7 @@ interface GroupInviteService {
     fun generate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<GroupInvite>
+    ): Mono<GroupInviteEntity>
 
     fun expireOld(): Mono<Long>
 

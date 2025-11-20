@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.groups.Group
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import org.springframework.data.r2dbc.repository.Modifying
@@ -12,7 +12,7 @@ import java.util.UUID
 
 interface GroupSpringDataRepository :
     GroupRepository,
-    Repository<Group, String> {
+    Repository<GroupEntity, String> {
     @Query(
         """
             select g.*, gu.role as role

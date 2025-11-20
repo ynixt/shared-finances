@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { combineLatest, startWith } from 'rxjs';
 
+import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
@@ -22,29 +23,23 @@ import { UserResponseDto } from '../../../../models/generated/com/ynixt/sharedfi
 import { WalletItemSearchResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
 import {
+  PaymentType,
+  PaymentType__Obj,
   RecurrenceType,
   RecurrenceType__Obj,
   RecurrenceType__Options,
+  WalletEntryType,
+  WalletEntryType__Obj,
 } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { SimpleMenuItem } from '../../../../models/simple-menu-item';
+import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { CategoryPickerComponent } from '../../components/item-picker/category-picker/category-picker.component';
 import { WalletItemPickerComponent } from '../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
 import { CreditCardBillService } from '../../services/credit-card-bill.service';
 import { GroupService } from '../../services/group.service';
-
-enum TransactionType {
-  REVENUE,
-  EXPENSE,
-  TRANSFER,
-}
-
-enum PaymentType {
-  UNIQUE,
-  RECURRING,
-  INSTALLMENTS,
-}
+import { WalletEntryService } from '../../services/wallet-entry.service';
 
 enum ValueType {
   TOTAL = 'TOTAL',
@@ -52,7 +47,7 @@ enum ValueType {
 }
 
 type NewTransactionForm = FormGroup<{
-  type: FormControl<TransactionType | undefined>;
+  type: FormControl<WalletEntryType | undefined>;
   group: FormControl<GroupWithRoleDto | undefined>;
   origin: FormControl<WalletItemSearchResponseDto | undefined>;
   target: FormControl<WalletItemSearchResponseDto | undefined>;
@@ -67,8 +62,7 @@ type NewTransactionForm = FormGroup<{
   periodicity: FormControl<RecurrenceType | undefined>;
   valueType: FormControl<ValueType | undefined>;
   calculatedValue: FormControl<number | undefined>;
-  startDate: FormControl<Date | undefined>;
-  endDate: FormControl<Date | undefined>;
+  periodicityQtyLimit: FormControl<number | undefined>;
   originBill: FormControl<Date | undefined>;
   targetBill: FormControl<Date | undefined>;
   tags: FormControl<string[] | undefined>;
@@ -99,13 +93,16 @@ type NewTransactionForm = FormGroup<{
 })
 @UntilDestroy()
 export class NewTransactionPageComponent {
-  readonly TransactionType = TransactionType;
-  readonly PaymentType = PaymentType;
+  readonly WalletEntryType = WalletEntryType__Obj;
+  readonly PaymentType = PaymentType__Obj;
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly groupService = inject(GroupService);
   private readonly userService = inject(UserService);
   private readonly creditCardBillService = inject(CreditCardBillService);
+  private readonly walletEntryService = inject(WalletEntryService);
+  private readonly messageService = inject(MessageService);
+  private readonly errorMessageService = inject(ErrorMessageService);
 
   readonly form: NewTransactionForm;
 
@@ -185,7 +182,7 @@ export class NewTransactionPageComponent {
   }
 
   get valueSublabel(): string {
-    if (this.currentPaymentType === PaymentType.INSTALLMENTS) {
+    if (this.currentPaymentType === PaymentType__Obj.INSTALLMENTS) {
       if (this.valueTypeControl.value === ValueType.TOTAL) {
         return 'financesPage.transactionsPage.valueTypes.TOTAL';
       } else {
@@ -197,7 +194,7 @@ export class NewTransactionPageComponent {
   }
 
   get calculatedValueSublabel(): string {
-    if (this.currentPaymentType === PaymentType.INSTALLMENTS && this.valueTypeControl.value === ValueType.TOTAL) {
+    if (this.valueTypeControl.value === ValueType.TOTAL) {
       return this.currentPeriodicityLabel;
     } else {
       return '';
@@ -213,7 +210,7 @@ export class NewTransactionPageComponent {
   constructor() {
     this.form = this.formBuilder.group(
       {
-        type: [TransactionType.REVENUE, [Validators.required]],
+        type: [WalletEntryType__Obj.REVENUE, [Validators.required]],
         group: [undefined],
         origin: [undefined, [Validators.required]],
         target: [undefined],
@@ -223,13 +220,12 @@ export class NewTransactionPageComponent {
         date: [new Date(), [Validators.required]],
         confirmed: [false, [Validators.required]],
         observations: [undefined, [Validators.maxLength(512)]],
-        paymentType: [PaymentType.UNIQUE, [Validators.required]],
+        paymentType: [PaymentType__Obj.UNIQUE, [Validators.required]],
         installments: [undefined, [Validators.min(2), Validators.max(720)]],
         periodicity: [RecurrenceType__Obj.MONTHLY, []],
         valueType: [ValueType.TOTAL, []],
         calculatedValue: [0, []],
-        startDate: [new Date(), [Validators.required]],
-        endDate: [undefined, []],
+        periodicityQtyLimit: [undefined, []],
         originBill: [undefined, []],
         targetBill: [undefined, []],
         tags: [undefined, []],
@@ -256,17 +252,17 @@ export class NewTransactionPageComponent {
     });
 
     this.paymentTypeControl.valueChanges.pipe(untilDestroyed(this)).subscribe(newPaymentType => {
-      if (newPaymentType !== PaymentType.INSTALLMENTS) {
+      if (newPaymentType !== PaymentType__Obj.INSTALLMENTS) {
+        this.valueTypeControl.setValue(ValueType.TOTAL);
         this.installmentsControl.reset();
       }
 
-      if (newPaymentType !== PaymentType.INSTALLMENTS && newPaymentType !== PaymentType.RECURRING) {
-        this.periodicityControl.reset();
+      if (newPaymentType !== PaymentType__Obj.INSTALLMENTS && newPaymentType !== PaymentType__Obj.RECURRING) {
+        this.periodicityControl.setValue(RecurrenceType__Obj.MONTHLY);
       }
 
-      if (newPaymentType !== PaymentType.RECURRING) {
-        this.form.get('startDate')?.reset();
-        this.form.get('endDate')?.reset();
+      if (newPaymentType !== PaymentType__Obj.RECURRING) {
+        this.form.get('periodicityQtyLimit')?.reset();
       }
     });
 
@@ -320,20 +316,20 @@ export class NewTransactionPageComponent {
 
   transactionTypeOptions: any[] = [
     {
-      label: 'financesPage.transactionsPage.types.revenue',
-      value: TransactionType.REVENUE,
+      label: 'enums.walletEntryType.REVENUE',
+      value: WalletEntryType__Obj.REVENUE,
       styleClass: 'rounded-none md:rounded-l-md',
       severity: 'success',
     },
     {
-      label: 'financesPage.transactionsPage.types.expense',
-      value: TransactionType.EXPENSE,
+      label: 'enums.walletEntryType.EXPENSE',
+      value: WalletEntryType__Obj.EXPENSE,
       styleClass: 'rounded-none',
       severity: 'danger',
     },
     {
-      label: 'financesPage.transactionsPage.types.transfer',
-      value: TransactionType.TRANSFER,
+      label: 'enums.walletEntryType.TRANSFER',
+      value: WalletEntryType__Obj.TRANSFER,
       styleClass: 'rounded-none md:rounded-r-md',
       severity: 'info',
     },
@@ -341,16 +337,16 @@ export class NewTransactionPageComponent {
 
   paymentTypeOptions: SimpleMenuItem<PaymentType>[] = [
     {
-      label: 'financesPage.transactionsPage.paymentTypes.unique',
-      value: PaymentType.UNIQUE,
+      label: 'enums.paymentType.UNIQUE',
+      value: PaymentType__Obj.UNIQUE,
     },
     {
-      label: 'financesPage.transactionsPage.paymentTypes.recurring',
-      value: PaymentType.RECURRING,
+      label: 'enums.paymentType.RECURRING',
+      value: PaymentType__Obj.RECURRING,
     },
     {
-      label: 'financesPage.transactionsPage.paymentTypes.installments',
-      value: PaymentType.INSTALLMENTS,
+      label: 'enums.paymentType.INSTALLMENTS',
+      value: PaymentType__Obj.INSTALLMENTS,
     },
   ];
 
@@ -374,21 +370,53 @@ export class NewTransactionPageComponent {
     return await this.groupService.getAllGroups();
   }
 
-  submit() {
-    throw new Error('Method not implemented.');
+  async submit() {
+    if (this.form.invalid || this.submitting) {
+      return;
+    }
+
+    this.submitting = true;
+
+    try {
+      await this.walletEntryService.createWalletEntry({
+        categoryId: this.form.value.category?.id,
+        confirmed: this.form.value.confirmed ?? false,
+        date: this.form.value.date!!.toISOString(),
+        groupId: this.form.value.group?.id,
+        installments: this.form.value.installments,
+        name: this.form.value.name,
+        observations: this.form.value.observations,
+        originBillDate: this.form.value.originBill?.toISOString(),
+        originId: this.form.value.origin!!.id,
+        paymentType: this.form.value.paymentType!!,
+        periodicity: this.form.value.periodicity,
+        periodicityQtyLimit: this.form.value.periodicityQtyLimit,
+        tags: this.form.value.tags,
+        targetBillDate: this.form.value.targetBill?.toISOString(),
+        targetId: this.form.value.target?.id,
+        type: this.form.value.type!!,
+        value: this.form.value.value!!,
+      });
+      // await this.router.navigate(['..'], { relativeTo: this.route });
+      this.submitting = false; // TODO
+    } catch (error) {
+      this.errorMessageService.handleError(error, this.messageService);
+      this.submitting = false;
+      throw error;
+    }
   }
 
   private requiredOnlyOnTransfer = (group: NewTransactionForm): ValidationErrors | null => {
     const type = group.get('type')?.value;
     const targetControl = group.get('target')!!;
 
-    const isTransfer = type === TransactionType.TRANSFER;
+    const isTransfer = type === WalletEntryType__Obj.TRANSFER;
     return this.requireFieldsIf(targetControl, isTransfer);
   };
 
   private requiredOnlyIfInstallment = (group: NewTransactionForm): ValidationErrors | null => {
     const paymentType = group.get('paymentType')?.value;
-    const isInstallments = paymentType === PaymentType.INSTALLMENTS;
+    const isInstallments = paymentType === PaymentType__Obj.INSTALLMENTS;
 
     const errors = [
       this.requireFieldsIf(group.get('installments')!!, isInstallments),

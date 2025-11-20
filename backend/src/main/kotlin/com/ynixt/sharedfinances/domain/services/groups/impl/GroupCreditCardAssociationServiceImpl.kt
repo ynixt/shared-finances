@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups.impl
 
-import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItem
+import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.BankAccountAlreadyInGroupException
@@ -82,7 +82,7 @@ class GroupCreditCardAssociationServiceImpl(
                 if (hasPermission) {
                     groupWalletItemRepository
                         .save(
-                            GroupWalletItem(
+                            GroupWalletItemEntity(
                                 groupId = groupId,
                                 walletItemId = creditCardId,
                             ),

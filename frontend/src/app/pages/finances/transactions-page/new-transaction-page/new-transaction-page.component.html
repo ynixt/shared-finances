@@ -5,7 +5,7 @@
   ></app-finances-title-bar>
 
   <form [formGroup]="form" class="flex flex-col gap-4" (ngSubmit)="submit()">
-    @let isTransfer = typeControl.value === TransactionType.TRANSFER;
+    @let isTransfer = typeControl.value === WalletEntryType.TRANSFER;
 
     <div class="flex justify-center">
       <div class="transaction-type-buttons mb-4 grid w-full lg:w-5/6 xl:w-3/4 md:grid-cols-3">
@@ -195,14 +195,14 @@
       <div class="grid md:grid-cols-2 gap-2">
         <label class="flex flex-col gap-2">
           <span
-            >{{ 'financesPage.transactionsPage.startDate' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-          ></span>
-          <app-date-picker formControlName="startDate"></app-date-picker>
-        </label>
+            >{{ 'financesPage.transactionsPage.periodicityQtyLimit' | translate }}
 
-        <label class="flex flex-col gap-2">
-          <span>{{ 'financesPage.transactionsPage.endDate' | translate }}</span>
-          <app-date-picker formControlName="endDate"></app-date-picker>
+            @let sublabel = calculatedValueSublabel;
+            @if (sublabel.length > 0) {
+              <span class="mr">({{ sublabel | translate }})</span>
+            }
+          </span>
+          <p-input-number formControlName="periodicityQtyLimit" [showButtons]="true" [min]="2" fluid></p-input-number>
         </label>
       </div>
     }

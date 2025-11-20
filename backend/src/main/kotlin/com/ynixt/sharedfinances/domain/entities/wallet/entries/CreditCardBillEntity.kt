@@ -9,6 +9,7 @@ import java.util.UUID
 @Table("credit_card_bill")
 class CreditCardBillEntity(
     val creditCardId: UUID,
+    val billDate: LocalDate,
     val dueDate: LocalDate,
     val closingDate: LocalDate,
     val payed: Boolean,

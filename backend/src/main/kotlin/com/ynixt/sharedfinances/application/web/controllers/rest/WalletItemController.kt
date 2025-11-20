@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono
 @RequestMapping("/wallet-items")
 @Tag(
     name = "Wallet Item",
-    description = "Operations related to interact with wallet item, without care about your implementation, that logged user has access",
+    description = "Operations related to interact with wallet item, without care about your specialization, that logged user has access",
 )
 class WalletItemController(
     private val walletItemService: WalletItemService,
