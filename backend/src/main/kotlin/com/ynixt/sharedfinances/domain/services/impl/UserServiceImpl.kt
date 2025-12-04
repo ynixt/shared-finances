@@ -11,8 +11,9 @@ import java.util.UUID
 
 @Service
 class UserServiceImpl(
-    private val userRepository: UserRepository,
-) : UserService {
+    override val repository: UserRepository,
+) : EntityServiceImpl<UserEntity, UserEntity>(),
+    UserService {
     @Transactional
     override suspend fun createUser(request: CreateUserRequestDto): UserEntity {
         val user =
@@ -25,7 +26,7 @@ class UserServiceImpl(
                 defaultCurrency = request.defaultCurrency,
             )
 
-        return userRepository.save(user).awaitSingle()
+        return repository.save(user).awaitSingle()
     }
 
     @Transactional
@@ -33,7 +34,7 @@ class UserServiceImpl(
         userId: UUID,
         newLang: String,
     ) {
-        userRepository.changeLanguage(userId, newLang).awaitSingle()
+        repository.changeLanguage(userId, newLang).awaitSingle()
     }
 
     @Transactional
@@ -41,6 +42,6 @@ class UserServiceImpl(
         userId: UUID,
         newDefaultCurrency: String,
     ) {
-        userRepository.changeDefaultCurrency(userId, newDefaultCurrency).awaitSingle()
+        repository.changeDefaultCurrency(userId, newDefaultCurrency).awaitSingle()
     }
 }

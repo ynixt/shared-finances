@@ -6,9 +6,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
-interface WalletEntryCategoryRepository {
-    fun save(category: WalletEntryCategoryEntity): Mono<WalletEntryCategoryEntity>
-
+interface WalletEntryCategoryRepository : EntityRepository<WalletEntryCategoryEntity> {
     fun saveAll(category: Iterable<WalletEntryCategoryEntity>): Flux<WalletEntryCategoryEntity>
 
     fun deleteByIdAndUserId(

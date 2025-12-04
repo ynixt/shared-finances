@@ -1,0 +1,31 @@
+@let currentEntry = entry();
+
+@if (currentEntry != null) {
+  <div class="flex flex-col gap-4 leading-none">
+    <div class="flex flex-wrap lg:flex-nowrap gap-2 h-full">
+      <a [href]="originLink()">
+        <app-entry-chip [text]="currentEntry.origin.name" [icon]="originIcon()"></app-entry-chip>
+      </a>
+
+      @if (currentEntry.target != null) {
+        <a [href]="targetLink()">
+          <app-entry-chip [text]="currentEntry.target.name" [icon]="targetIcon()"></app-entry-chip>
+        </a>
+      }
+
+      @if (currentEntry.category != null) {
+        <a [href]="categoryLink()">
+          <app-entry-chip [text]="currentEntry.category.name" [icon]="categoryIcon"></app-entry-chip>
+        </a>
+      }
+
+      @if (currentEntry.tags != null) {
+        @for (tag of currentEntry.tags; track tag) {
+          <a [href]="getTagLink(tag, inGroup())">
+            <app-entry-chip [text]="tag" [icon]="tagIcon"></app-entry-chip>
+          </a>
+        }
+      }
+    </div>
+  </div>
+}

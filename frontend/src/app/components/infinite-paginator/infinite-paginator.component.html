@@ -1,0 +1,37 @@
+@if (!(!hasNext() && currentPage == 0)) {
+  <div class="infinite-paginator display flex items-center justify-center w-full">
+    <button
+      type="button"
+      pRipple
+      pButton
+      [disabled]="currentPage == 0"
+      (click)="firstPage()"
+      class="p-paginator-first p-paginator-element p-link"
+      [attr.aria-label]="getAriaLabel('firstPageLabel')"
+    >
+      <i class="pi pi-angle-double-left p-paginator-first-icon"></i>
+    </button>
+    <button
+      type="button"
+      [disabled]="currentPage == 0"
+      (click)="previousPage()"
+      pRipple
+      pButton
+      class="p-paginator-first p-paginator-element p-link"
+      [attr.aria-label]="getAriaLabel('prevPageLabel')"
+    >
+      <i class="pi pi-angle-left p-paginator-prev-icon"></i>
+    </button>
+    <button
+      type="button"
+      [disabled]="!hasNext()"
+      (click)="nextPage()"
+      pRipple
+      pButton
+      class="p-paginator-first p-paginator-element p-link"
+      [attr.aria-label]="getAriaLabel('nextPageLabel')"
+    >
+      <i class="pi pi-angle-right p-paginator-next-icon"></i>
+    </button>
+  </div>
+}

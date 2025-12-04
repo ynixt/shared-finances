@@ -19,5 +19,12 @@ financesPage:
     originBill: Fatura da origem
     targetBill: Fatura do destino
     tags: Tags
+    status:
+      pending: Pendente
+      confirmed: Confirmado
+      future: Agendado
     newTransactionPage:
       title: Nova transação
+    noWalletEntryFound:
+      title: 'Nenhuma transação foi encontrada em {{date}}.'
+      subtitle: Que tal enviar uma nova?

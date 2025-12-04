@@ -1,4 +1,4 @@
-<div class="advanced-menu hidden md:block" [class.!block]="drawerOpen">
+<div class="advanced-menu hidden lg:block" [class.!block]="drawerOpen">
   @for (item of items; track item.id ?? item) {
     <app-advanced-menu-item [item]="item" [root]="true"></app-advanced-menu-item>
   }

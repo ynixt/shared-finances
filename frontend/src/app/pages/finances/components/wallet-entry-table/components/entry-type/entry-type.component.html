@@ -1,0 +1,14 @@
+@let icon = typeFaIcon();
+@let text = typeText();
+
+@if (icon != null || text != null) {
+  <div class="flex gap-2 items-center text-gray-400 text-sm">
+    @if (icon != null) {
+      <fa-icon [icon]="icon"></fa-icon>
+    }
+
+    @if (text != null) {
+      <span>{{ text | translate }}</span>
+    }
+  </div>
+}

@@ -6,15 +6,13 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
-interface GroupRepository {
+interface GroupRepository : EntityRepository<GroupEntity> {
     fun findAllByUserIdOrderByName(userId: UUID): Flux<GroupWithRole>
 
     fun findOneByUserIdAndId(
         userId: UUID,
         id: UUID,
     ): Mono<GroupWithRole>
-
-    fun save(group: GroupEntity): Mono<GroupEntity>
 
     fun edit(
         id: UUID,

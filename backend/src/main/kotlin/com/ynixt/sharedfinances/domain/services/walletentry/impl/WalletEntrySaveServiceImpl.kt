@@ -104,7 +104,7 @@ abstract class WalletEntrySaveServiceImpl(
             name = newEntryRequest.name,
             categoryId = newEntryRequest.categoryId,
             date = date,
-            value = newEntryRequest.value,
+            value = newEntryRequest.valueFixedForType,
             confirmed = newEntryRequest.confirmed,
             observations = newEntryRequest.observations,
             tags = newEntryRequest.tags?.ifEmpty { null },

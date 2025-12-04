@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
@@ -55,4 +56,6 @@ interface GroupService {
         id: UUID,
         role: UserGroupRole = UserGroupRole.VIEWER,
     ): Mono<Unit>
+
+    fun findAllByIdIn(id: Collection<UUID>): Flux<GroupEntity>
 }

@@ -1,9 +1,9 @@
 @let user = userService.user();
 
-<div class="navbar py-4 bg-gray-700 text-white mb-8">
+<div class="navbar py-4 bg-gray-700 text-white lg:mb-8">
   <div class="container mx-auto flex items-center">
     @if (showDrawerMenu) {
-      <button (click)="toggleDrawer()" pButton class="md:hidden mr-4" severity="secondary">
+      <button (click)="toggleDrawer()" pButton class="lg:hidden mr-4" severity="secondary">
         <fa-icon [icon]="drawerOpen ? faBarsStaggered : faBars"></fa-icon>
       </button>
     }

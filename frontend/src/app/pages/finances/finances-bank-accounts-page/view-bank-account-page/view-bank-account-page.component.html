@@ -1,0 +1,28 @@
+@if (bankAccount == null) {
+  <p-progress-spinner></p-progress-spinner>
+} @else {
+  <app-finances-title-bar
+    [title]="'financesPage.bankAccountsPage.viewBankAccountPage.title' | translate: { name: bankAccount.name }"
+    closeRouterLink=".."
+    [extraButtons]="titleBarButtons"
+  ></app-finances-title-bar>
+
+  <app-advanced-date-picker class="mb-8" [formControl]="dateControl" />
+
+  @if (dateRange != null) {
+    <div class="flex flex-col h-full">
+      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 mb-8">
+        <app-dashboard-card
+          titleKey="Saldo"
+          [value]="bankAccount.balance | localCurrency: bankAccount.currency"
+          [faIcon]="balanceIcon"
+          [valueCssColorClass]="bankAccount.balance >= 0 ? 'text-green-700' : 'text-red-700'"
+        >
+        </app-dashboard-card>
+        <app-dashboard-card titleKey="Alteração mensal" [value]="undefined" [faIcon]="monthlyDiff"></app-dashboard-card>
+      </div>
+
+      <app-wallet-entry-table class="flex-1" [dateRange]="dateRange" [walletItemIds]="[bankAccount.id!!]"></app-wallet-entry-table>
+    </div>
+  }
+}

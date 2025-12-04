@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.util.UUID
 
-interface WalletItemRepository {
+interface WalletItemRepository : EntityRepository<WalletItemEntity> {
     fun findAllByUserIdAndEnabled(
         userId: UUID,
         enabled: Boolean,
@@ -30,8 +30,6 @@ interface WalletItemRepository {
         userId: UUID,
         type: WalletItemType,
     ): Mono<Long>
-
-    fun save(walletItem: WalletItemEntity): Mono<WalletItemEntity>
 
     fun findOneById(id: UUID): Mono<WalletItemEntity>
 

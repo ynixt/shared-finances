@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, effect } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faBars, faBarsStaggered } from '@fortawesome/free-solid-svg-icons';
@@ -13,6 +13,7 @@ import { Divider } from 'primeng/divider';
 import { Menu } from 'primeng/menu';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { BreakpointService } from '../../services/breakpoint.service';
 import { KratosAuthService } from '../../services/kratos-auth.service';
 import { UserService } from '../../services/user.service';
 import { LangButtonComponent } from '../lang-button/lang-button.component';
@@ -47,9 +48,16 @@ export class NavbarComponent {
     public userService: UserService,
     private translateService: TranslateService,
     private kratosAuthService: KratosAuthService,
+    breakpointService: BreakpointService,
   ) {
     this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(lang => {
       this.loadItems();
+    });
+
+    effect(() => {
+      if (breakpointService.isUp('lg')()) {
+        this.setDrawer(false);
+      }
     });
   }
 
@@ -58,7 +66,11 @@ export class NavbarComponent {
   }
 
   toggleDrawer() {
-    this.drawerOpen = !this.drawerOpen;
+    this.setDrawer(!this.drawerOpen);
+  }
+
+  setDrawer(open: boolean) {
+    this.drawerOpen = open;
     this.drawerOpenChange.emit(this.drawerOpen);
   }
 

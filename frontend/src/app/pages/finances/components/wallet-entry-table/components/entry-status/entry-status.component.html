@@ -1,0 +1,12 @@
+@let icon = statusFaIcon();
+@let text = statusText();
+
+@if (icon != null || text != null) {
+  <div class="flex gap-2 items-center text-gray-400 text-sm">
+    <fa-icon [class]="statusClassColor()" [icon]="icon"></fa-icon>
+
+    @if (text != null) {
+      <span>{{ text | translate }}</span>
+    }
+  </div>
+}

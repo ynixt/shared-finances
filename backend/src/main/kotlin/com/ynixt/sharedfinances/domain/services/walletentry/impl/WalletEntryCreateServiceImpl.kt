@@ -4,7 +4,6 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceCo
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
-import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.Wrapper
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
@@ -56,12 +55,7 @@ class WalletEntryCreateServiceImpl(
     private fun updateBalance(newEntryRequest: NewEntryRequest): Mono<Void> {
         val updateOriginBalance =
             newEntryRequest.origin!!.let { origin ->
-                val valueForOrigin =
-                    if (newEntryRequest.type == WalletEntryType.TRANSFER || newEntryRequest.type == WalletEntryType.EXPENSE) {
-                        newEntryRequest.value.unaryMinus()
-                    } else {
-                        newEntryRequest.value.abs()
-                    }
+                val valueForOrigin = newEntryRequest.valueFixedForType
 
                 walletItemService.addBalanceById(origin.id!!, valueForOrigin)
             }

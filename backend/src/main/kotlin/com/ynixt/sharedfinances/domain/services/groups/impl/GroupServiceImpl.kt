@@ -17,6 +17,7 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationServi
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.impl.EntityServiceImpl
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
@@ -24,7 +25,7 @@ import java.util.UUID
 
 @Service
 class GroupServiceImpl(
-    private val groupRepository: GroupRepository,
+    override val repository: GroupRepository,
     private val groupUserRepository: GroupUsersRepository,
     private val groupActionEventService: GroupActionEventService,
     private val groupPermissionService: GroupPermissionService,
@@ -32,9 +33,10 @@ class GroupServiceImpl(
     private val groupCategoryService: GroupCategoryService,
     private val groupBankAssociationService: GroupBankAssociationService,
     private val creditCardAssociationService: GroupCreditCardAssociationService,
-) : GroupService {
+) : EntityServiceImpl<GroupEntity, GroupEntity>(),
+    GroupService {
     override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> =
-        groupRepository.findAllByUserIdOrderByName(userId).collectList().map { list ->
+        repository.findAllByUserIdOrderByName(userId).collectList().map { list ->
             list.map { groupWithRole ->
                 groupWithRole.apply {
                     this.permissions = groupPermissionService.getAllPermissionsForRole(groupWithRole.role)
@@ -55,7 +57,7 @@ class GroupServiceImpl(
                 GroupPermissions.EDIT_GROUP,
             ).flatMap { hasPermission ->
                 if (hasPermission) {
-                    groupRepository
+                    repository
                         .edit(id, request.name)
                         .flatMap {
                             findGroup(
@@ -87,7 +89,7 @@ class GroupServiceImpl(
             ).flatMap { hasPermission ->
                 if (hasPermission) {
                     groupUserRepository.findAllMembers(id).map { it.userId }.collectList().flatMap { memberList ->
-                        groupRepository.deleteById(id).flatMap { modifiedLines ->
+                        repository.deleteById(id).flatMap { modifiedLines ->
                             if (modifiedLines > 0) {
                                 groupActionEventService
                                     .sendDeletedGroup(
@@ -109,7 +111,7 @@ class GroupServiceImpl(
         userId: UUID,
         id: UUID,
     ): Mono<GroupWithRole> =
-        groupRepository
+        repository
             .findOneByUserIdAndId(
                 userId = userId,
                 id = id,
@@ -156,7 +158,7 @@ class GroupServiceImpl(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
     ): Mono<GroupEntity> =
-        groupRepository
+        repository
             .save(
                 GroupEntity(
                     name = newGroupRequest.name,

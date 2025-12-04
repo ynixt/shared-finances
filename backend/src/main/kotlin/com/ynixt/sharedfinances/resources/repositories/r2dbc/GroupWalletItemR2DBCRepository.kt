@@ -44,7 +44,7 @@ class GroupWalletItemR2DBCRepository(
             .bind("groupId", groupId)
             .bind("enabled", enabled)
             .map { row, _ ->
-                WalletItemR2DBCMapping.walletItemFromRow(row, "").also { wa ->
+                WalletItemR2DBCMapping.walletItemFromRow(row, "")!!.also { wa ->
                     wa.user = UserR2DBCMapping.userFromRow(row)
                 }
             }.all()
@@ -79,7 +79,7 @@ class GroupWalletItemR2DBCRepository(
             .bind("groupId", groupId)
             .bind("type", type.toString())
             .map { row, _ ->
-                WalletItemR2DBCMapping.walletItemFromRow(row, "").also { wa ->
+                WalletItemR2DBCMapping.walletItemFromRow(row, "")!!.also { wa ->
                     wa.user = UserR2DBCMapping.userFromRow(row)
                 }
             }.all()
@@ -109,7 +109,7 @@ class GroupWalletItemR2DBCRepository(
             .bind("groupId", groupId)
             .bind("type", type.toString())
             .map { row, _ ->
-                WalletItemR2DBCMapping.walletItemFromRow(row, "").also { wa ->
+                WalletItemR2DBCMapping.walletItemFromRow(row, "")!!.also { wa ->
                     wa.user = UserR2DBCMapping.userFromRow(row)
                 }
             }.all()

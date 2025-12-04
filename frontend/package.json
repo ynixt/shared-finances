@@ -30,6 +30,7 @@
     "@ngx-translate/core": "^17.0.0",
     "@ory/client": "^1.22.8",
     "@primeng/themes": "^20.3.0",
+    "ag-grid-angular": "^34.3.1",
     "angularx-qrcode": "^20.0.0",
     "apollo-angular": "^12.1.0",
     "broadcast-channel": "^7.2.0",

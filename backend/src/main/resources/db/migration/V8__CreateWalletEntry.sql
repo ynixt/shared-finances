@@ -30,8 +30,8 @@ CREATE TABLE wallet_entry (
     CONSTRAINT fk_w_entry_recurrence FOREIGN KEY (recurrence_config_id) REFERENCES entry_recurrence_config(id)
 );
 
-CREATE INDEX idx_wallet_entry_user_date ON wallet_entry(user_id, date DESC) WHERE user_id IS NOT NULL;
-CREATE INDEX idx_wallet_entry_group_date ON wallet_entry(group_id, date DESC) WHERE group_id IS NOT NULL;
+CREATE INDEX idx_wallet_entry_user_date_id ON wallet_entry(user_id, date DESC, id DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_wallet_entry_group_date_id ON wallet_entry(group_id, date DESC, id DESC) WHERE group_id IS NOT NULL;
 CREATE INDEX idx_wallet_entry_user_origin_id ON wallet_entry(user_id, origin_id) WHERE user_id IS NOT NULL;
 CREATE INDEX idx_wallet_entry_group_origin_id ON wallet_entry(group_id, origin_id) WHERE group_id IS NOT NULL;
 CREATE INDEX idx_wallet_entry_user_target_id ON wallet_entry(user_id, target_id) WHERE user_id IS NOT NULL AND target_id IS NOT NULL;

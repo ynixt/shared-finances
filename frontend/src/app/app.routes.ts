@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './guards/auth.guard';
 import { notLoggedGuard } from './guards/not-logged.guard';
+import { ViewBankAccountPageComponent } from './pages/finances/finances-bank-accounts-page/view-bank-account-page/view-bank-account-page.component';
 import { AssociateCreditCardGroupPageComponent } from './pages/finances/groups-page/associate-credit-card-group-page/associate-credit-card-group-page.component';
 import { GroupCreditCardsPageComponent } from './pages/finances/groups-page/group-credit-cards-page/group-credit-cards-page.component';
 
@@ -87,6 +88,16 @@ export const routes: Routes = [
               ),
             data: {
               pageTitleKey: 'pageTitle.newBankAccount',
+            },
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./pages/finances/finances-bank-accounts-page/view-bank-account-page/view-bank-account-page.component').then(
+                m => m.ViewBankAccountPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.bankAccount',
             },
           },
           {

@@ -19,5 +19,12 @@ financesPage:
     originBill: Origin bill
     targetBill: Target bill
     tags: Tags
+    status:
+      pending: Pending
+      confirmed: Confirmed
+      future: Scheduled
     newTransactionPage:
       title: New transaction
+    noWalletEntryFound:
+      title: 'No transaction was found in {{date}}.'
+      subtitle: How about sending a new one?

@@ -1,0 +1,29 @@
+<form [formGroup]="form" class="advanced-date-picker flex items-center gap-2 justify-center">
+  @if (!isToShowInput && value != null) {
+    <div class="flex gap-2 justify-center items-center font-bold">
+      <p-button type="button" (click)="previousMonth()" pRipple variant="text" severity="secondary">
+        <i class="pi pi-angle-left"></i>
+      </p-button>
+
+      <p-button class="w-56" fluid variant="text" severity="secondary" type="button" (click)="showInput()">
+        <span class="text-lg">{{ value.startDate | localDate: 'MMMM, yyyy' | titlecase }}</span>
+      </p-button>
+
+      <p-button type="button" (click)="nextMonth()" pRipple variant="text" severity="secondary">
+        <i class="pi pi-angle-right"></i>
+      </p-button>
+    </div>
+  }
+
+  <p-date-picker
+    #datePicker
+    formControlName="rangeDates"
+    [selectionMode]="selectionMode()"
+    [readonlyInput]="true"
+    class="w-56"
+    [hidden]="!isToShowInput"
+    fluid
+    (onClose)="datePickerClosed()"
+    [required]="true"
+  />
+</form>

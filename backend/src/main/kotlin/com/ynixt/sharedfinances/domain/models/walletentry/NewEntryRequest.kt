@@ -35,4 +35,11 @@ data class NewEntryRequest(
     val target: WalletItem? = null,
     val targetBill: CreditCardBillEntity? = null,
     val category: WalletEntryCategoryEntity? = null,
-)
+) {
+    val valueFixedForType: BigDecimal =
+        if (type == WalletEntryType.TRANSFER || type == WalletEntryType.EXPENSE) {
+            value.unaryMinus()
+        } else {
+            value.abs()
+        }
+}

@@ -6,6 +6,7 @@
     border: unset;
     padding: unset;
     margin: unset;
+    color: inherit;
   }
 
   .p-panel-header {
@@ -42,7 +43,7 @@
   .p-panel-header {
     background: var(--p-menu-submenu-label-background);
     padding: var(--p-menu-submenu-label-padding);
-    color: var(--p-menu-submenu-label-color);
+    color: inherit;
     font-weight: var(--p-menu-submenu-label-font-weight);
     margin-bottom: 0.25rem;
   }

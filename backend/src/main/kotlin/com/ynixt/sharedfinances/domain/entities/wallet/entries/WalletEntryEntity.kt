@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.domain.entities.wallet.entries
 
 import com.ynixt.sharedfinances.domain.entities.AuditedEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -47,4 +49,10 @@ class WalletEntryEntity(
         groupId = groupId,
         tags = tags,
         observations = observations,
-    )
+    ) {
+    @Transient
+    var origin: WalletItemEntity? = null
+
+    @Transient
+    var target: WalletItemEntity? = null
+}
