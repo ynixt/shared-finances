@@ -1,5 +1,6 @@
 export * from './action-event-category';
 export * from './action-event-type';
+export * from './entry-summary-type';
 export * from './group-permissions';
 export * from './payment-type';
 export * from './recurrence-type';

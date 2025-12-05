@@ -11,18 +11,69 @@
 
   @if (dateRange != null) {
     <div class="flex flex-col h-full">
-      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4 mb-8">
+      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-8">
+        @let totalBalance = summary?.total?.balance;
+        @let totalPeriodBalance = summary?.totalPeriod?.balance;
+        @let totalPeriodRevenue = summary?.totalPeriod?.revenue;
+        @let totalPeriodExpense = summary?.totalPeriod?.expense;
+        @let totalProjectedBalance = summary?.totalProjected?.balance;
+        @let totalProjectedRevenue = summary?.totalProjected?.revenue;
+        @let totalProjectedExpense = summary?.totalProjected?.expense;
+
         <app-dashboard-card
-          titleKey="Saldo"
-          [value]="bankAccount.balance | localCurrency: bankAccount.currency"
+          class="md:col-span-2 xl:col-span-3"
+          [titleKey]="'financesPage.transactionsPage.summary.balance' | translate"
+          [value]="totalBalance == null ? undefined : (totalBalance | localCurrency: bankAccount.currency)"
           [faIcon]="balanceIcon"
-          [valueCssColorClass]="bankAccount.balance >= 0 ? 'text-green-700' : 'text-red-700'"
+          [valueCssColorClass]="(totalBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+        ></app-dashboard-card>
+
+        <app-dashboard-card
+          [titleKey]="'financesPage.transactionsPage.summary.totalPeriodRevenue' | translate"
+          [value]="totalPeriodRevenue == null ? undefined : (totalPeriodRevenue | localCurrency: bankAccount.currency)"
+          [faIcon]="revenueIcon"
+          [valueCssColorClass]="(totalPeriodRevenue ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
         >
         </app-dashboard-card>
-        <app-dashboard-card titleKey="Alteração mensal" [value]="undefined" [faIcon]="monthlyDiff"></app-dashboard-card>
+        <app-dashboard-card
+          [titleKey]="'financesPage.transactionsPage.summary.totalPeriodExpense' | translate"
+          [value]="totalPeriodExpense == null ? undefined : (totalPeriodExpense | localCurrency: bankAccount.currency)"
+          [faIcon]="expensesIcon"
+          [valueCssColorClass]="(totalPeriodExpense ?? 0) <= 0 ? 'text-green-700' : 'text-red-700'"
+        >
+        </app-dashboard-card>
+        <app-dashboard-card
+          [titleKey]="'financesPage.transactionsPage.summary.totalPeriodBalance' | translate"
+          [value]="totalPeriodBalance == null ? undefined : (totalPeriodBalance | localCurrency: bankAccount.currency)"
+          [faIcon]="diffIcon"
+          [valueCssColorClass]="(totalPeriodBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+        >
+        </app-dashboard-card>
+
+        <app-dashboard-card
+          [titleKey]="'financesPage.transactionsPage.summary.totalProjectedRevenue' | translate"
+          [value]="totalProjectedRevenue == null ? undefined : (totalProjectedRevenue | localCurrency: bankAccount.currency)"
+          [faIcon]="projectedIcon"
+          [valueCssColorClass]="(totalProjectedRevenue ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+        >
+        </app-dashboard-card>
+        <app-dashboard-card
+          [titleKey]="'financesPage.transactionsPage.summary.totalProjectedExpense' | translate"
+          [value]="totalProjectedExpense == null ? undefined : (totalProjectedExpense | localCurrency: bankAccount.currency)"
+          [faIcon]="projectedIcon"
+          [valueCssColorClass]="(totalProjectedExpense ?? 0) <= 0 ? 'text-green-700' : 'text-red-700'"
+        >
+        </app-dashboard-card>
+        <app-dashboard-card
+          [titleKey]="'financesPage.transactionsPage.summary.totalProjectedBalance' | translate"
+          [value]="totalProjectedBalance == null ? undefined : (totalProjectedBalance | localCurrency: bankAccount.currency)"
+          [faIcon]="projectedIcon"
+          [valueCssColorClass]="(totalProjectedBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+        >
+        </app-dashboard-card>
       </div>
 
-      <app-wallet-entry-table class="flex-1" [dateRange]="dateRange" [walletItemIds]="[bankAccount.id!!]"></app-wallet-entry-table>
+      <app-wallet-entry-table class="flex-1" [dateRange]="dateRange" [walletItemId]="bankAccount.id!!"></app-wallet-entry-table>
     </div>
   }
 }

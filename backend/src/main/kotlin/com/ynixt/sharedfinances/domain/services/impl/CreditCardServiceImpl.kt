@@ -105,6 +105,7 @@ class CreditCardServiceImpl(
             .deleteByIdAndUserId(id = id, userId = userId)
             .flatMap { modifiedLines ->
                 if (modifiedLines > 0) {
+                    // TODO: only delete if has no wallet entry. Otherwise only disable.
                     creditCardActionEventService
                         .sendDeletedCreditCard(
                             userId = userId,

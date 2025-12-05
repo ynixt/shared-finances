@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
+import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryCursorFindAll
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.WalletEntryR2DBCRepository
@@ -24,7 +25,7 @@ class WalletEntryRepositoryImpl(
         userId: UUID?,
         groupId: UUID?,
         limit: Int,
-        walletItemIs: List<UUID>?,
+        walletItemId: UUID?,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         cursor: WalletEntryCursorFindAll?,
@@ -33,9 +34,24 @@ class WalletEntryRepositoryImpl(
             userId = userId,
             groupId = groupId,
             limit = limit,
-            walletItemIs = walletItemIs,
+            walletItemId = walletItemId,
             minimumDate = minimumDate,
             maximumDate = maximumDate,
             cursor = cursor,
+        )
+
+    override fun sumForBankAccountSummary(
+        userId: UUID?,
+        groupId: UUID?,
+        walletItemId: UUID?,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate?,
+    ): Flux<EntrySumResult> =
+        r2dbcRepository.sumForBankAccountSummary(
+            userId = userId,
+            groupId = groupId,
+            walletItemId = walletItemId,
+            minimumDate = minimumDate,
+            maximumDate = maximumDate,
         )
 }

@@ -4,9 +4,9 @@ import java.time.LocalDate
 import java.util.UUID
 
 data class ListEntryRequest(
-    val walletItemIds: List<UUID>?,
+    val walletItemId: UUID?,
     val groupId: UUID?,
-    val pageRequest: CursorPageRequest = CursorPageRequest(),
+    val pageRequest: CursorPageRequest,
     val minimumDate: LocalDate?,
     val maximumDate: LocalDate?,
 ) {

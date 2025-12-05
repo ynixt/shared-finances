@@ -28,3 +28,11 @@ financesPage:
     noWalletEntryFound:
       title: 'Nenhuma transação foi encontrada em {{date}}.'
       subtitle: Que tal enviar uma nova?
+    summary:
+      balance: Saldo
+      totalPeriodRevenue: Receitas do período
+      totalPeriodExpense: Despesas do período
+      totalPeriodBalance: Alterações do período
+      totalProjectedRevenue: Receitas projetadas do período
+      totalProjectedExpense: Despesas projetadas do período
+      totalProjectedBalance: Alterações projetadas do período

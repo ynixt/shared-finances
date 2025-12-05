@@ -28,3 +28,10 @@ financesPage:
     noWalletEntryFound:
       title: 'No transaction was found in {{date}}.'
       subtitle: How about sending a new one?
+    summary:
+      balance: Balance
+      totalPeriodRevenue: Period revenue
+      totalPeriodExpense: Period expense
+      totalProjectedRevenue: Projected period revenue
+      totalProjectedExpense: Projected period expense
+      totalProjectedBalance: Projected period diff

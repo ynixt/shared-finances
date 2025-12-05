@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.util.function.component1
 import reactor.kotlin.core.util.function.component2
-import reactor.kotlin.core.util.function.component3
 import java.util.UUID
 
 @Service
@@ -42,7 +41,7 @@ class WalletEntryListServiceImpl(
                 userId = userId,
                 groupId = groupId,
                 limit = request.pageRequest.size + 1,
-                walletItemIs = request.walletItemIds,
+                walletItemId = request.walletItemId,
                 minimumDate = request.minimumDate,
                 maximumDate = request.maximumDate,
                 cursor =

@@ -6,8 +6,10 @@ import { lastValueFrom, take } from 'rxjs';
 import { CursorPage, CursorPageRequest } from '../../../models/cursor-pagination';
 import {
   EntryForListDto,
+  EntrySummaryDto,
   ListEntryRequestDto,
   NewEntryDto,
+  SummaryEntryRequestDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { CursorPaginationService } from '../../../services/cursor-pagination.service';
 import { UserService } from '../../../services/user.service';
@@ -41,6 +43,16 @@ export class WalletEntryService {
       return lastValueFrom(
         this.cursorPaginationService.post<EntryForListDto>(`/api/wallet-entries/list`, pageRequest, undefined, request).pipe(take(1)),
       );
+    }
+
+    throw new UserMissingError();
+  }
+
+  async summaryWalletEntries(request?: SummaryEntryRequestDto): Promise<EntrySummaryDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.http.post<EntrySummaryDto>(`/api/wallet-entries/summary`, request).pipe(take(1)));
     }
 
     throw new UserMissingError();

@@ -28,6 +28,8 @@ class WalletEntryR2DBCMapping {
                 confirmed = row.get("${columnPrefix}confirmed", Boolean::class.java)!!,
                 installment = row.get("${columnPrefix}installment", Int::class.javaObjectType),
                 recurrenceConfigId = row.get("${columnPrefix}recurrence_config_id", UUID::class.java),
+                originBillId = row.get("${columnPrefix}origin_bill_id", UUID::class.java),
+                targetBillId = row.get("${columnPrefix}target_bill_id", UUID::class.java),
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

@@ -38,6 +38,8 @@ class WalletEntryEntity(
     val confirmed: Boolean,
     val installment: Int?,
     val recurrenceConfigId: UUID?,
+    val originBillId: UUID?,
+    val targetBillId: UUID?,
 ) : MinimumWalletEntry(
         originId = originId,
         targetId = targetId,

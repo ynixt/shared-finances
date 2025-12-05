@@ -110,6 +110,8 @@ abstract class WalletEntrySaveServiceImpl(
             tags = newEntryRequest.tags?.ifEmpty { null },
             installment = installment,
             recurrenceConfigId = recurrenceConfig?.id,
+            originBillId = newEntryRequest.originBill?.id,
+            targetBillId = newEntryRequest.targetBill?.id,
         ).also {
             it.id = id
         }

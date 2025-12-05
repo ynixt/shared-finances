@@ -2,13 +2,16 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.CursorPageDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntryForListDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ListEntryRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.SummaryEntryRequestDto
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapCursorPageToDto
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryListService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntrySummaryService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -29,6 +32,7 @@ class WalletEntryController(
     private val walletEntryDtoMapper: WalletEntryDtoMapper,
     private val walletEntryCreateService: WalletEntryCreateService,
     private val walletEntryListService: WalletEntryListService,
+    private val walletEntrySummaryService: WalletEntrySummaryService,
 ) {
     @Operation(summary = "Create a new entry")
     @PostMapping
@@ -54,4 +58,17 @@ class WalletEntryController(
                 groupId = null,
                 request = listEntryRequest.let { walletEntryDtoMapper.fromEntryListRequestDtoToModel(it) },
             ).mapCursorPageToDto(walletEntryDtoMapper::fromListResponseToListDto)
+
+    @Operation(summary = "Summary entries")
+    @PostMapping("/summary")
+    fun summary(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @RequestBody request: SummaryEntryRequestDto,
+    ): Mono<EntrySummaryDto> =
+        walletEntrySummaryService
+            .summary(
+                userId = principalToken.principal.id,
+                groupId = null,
+                request = request.let { walletEntryDtoMapper.fromEntrySummaryRequestDtoToModel(it) },
+            ).map(walletEntryDtoMapper::fromSummaryModelToDto)
 }

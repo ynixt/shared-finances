@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { faChartSimple, faDollarSign, faPencil } from '@fortawesome/free-solid-svg-icons';
+import { faArrowTrendDown, faArrowTrendUp, faChartSimple, faClock, faDollarSign, faPencil } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -13,6 +13,7 @@ import { MessageService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
+import { EntrySummaryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { DashboardCardComponent } from '../../components/dashboard-card/dashboard-card.component';
@@ -23,6 +24,7 @@ import {
 } from '../../components/wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 import { WalletEntryTableComponent } from '../../components/wallet-entry-table/wallet-entry-table.component';
 import { BankAccountService } from '../../services/bank-account.service';
+import { WalletEntryService } from '../../services/wallet-entry.service';
 
 @Component({
   selector: 'app-view-bank-account-page',
@@ -42,7 +44,11 @@ import { BankAccountService } from '../../services/bank-account.service';
 @UntilDestroy()
 export class ViewBankAccountPageComponent {
   readonly balanceIcon = faDollarSign;
-  readonly monthlyDiff = faChartSimple;
+  readonly diffIcon = faChartSimple;
+  readonly revenueIcon = faArrowTrendUp;
+  readonly expensesIcon = faArrowTrendDown;
+  readonly projectedIcon = faClock;
+
   readonly dateControl = new FormControl<DateRange | undefined>({
     startDate: dayjs().startOf('month'),
     endDate: dayjs().endOf('month'),
@@ -52,6 +58,7 @@ export class ViewBankAccountPageComponent {
   bankAccount: BankAccountDto | null = null;
   titleBarButtons: FinancesTitleBarExtraButton[] = [];
   dateRange: DateRange | undefined = undefined;
+  summary: EntrySummaryDto | undefined = undefined;
 
   constructor(
     private route: ActivatedRoute,
@@ -60,6 +67,7 @@ export class ViewBankAccountPageComponent {
     private messageService: MessageService,
     private translateService: TranslateService,
     private errorMessageService: ErrorMessageService,
+    private walletEntryService: WalletEntryService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -73,6 +81,21 @@ export class ViewBankAccountPageComponent {
 
     this.dateControl.valueChanges.pipe(untilDestroyed(this), startWith(this.dateControl.value)).subscribe(date => {
       this.dateRange = date == null ? undefined : date;
+      this.getSummary();
+    });
+  }
+
+  private async getSummary() {
+    if (this.bankAccount == null || this.dateRange == null) {
+      this.summary = undefined;
+      return;
+    }
+
+    this.summary = await this.walletEntryService.summaryWalletEntries({
+      walletItemId: this.bankAccount.id!!,
+      minimumDate: this.dateRange.startDate?.format('YYYY-MM-DD'),
+      maximumDate: this.dateRange.endDate?.format('YYYY-MM-DD'),
+      summaryType: 'BANK_ACCOUNT',
     });
   }
 
@@ -88,6 +111,8 @@ export class ViewBankAccountPageComponent {
           icon: faPencil,
         },
       ];
+
+      this.getSummary();
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
         if (error.status === 404 || error.status === 400) {
@@ -107,6 +132,4 @@ export class ViewBankAccountPageComponent {
   private goToNotFound() {
     return this.router.navigateByUrl('/not-found');
   }
-
-  dateChanged(event: Date[]) {}
 }

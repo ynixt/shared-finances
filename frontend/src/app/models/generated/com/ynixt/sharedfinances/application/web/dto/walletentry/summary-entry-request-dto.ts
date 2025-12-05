@@ -1,10 +1,11 @@
 /* eslint-disable */
 /* tslint-disable */
+import { EntrySummaryType } from '../../../../domain/enums/entry-summary-type';
 
-export interface ListEntryRequestDto {
+export interface SummaryEntryRequestDto {
   groupId?: string | null;
   maximumDate?: string | null;
   minimumDate?: string | null;
-  pageRequest?: any | null;
+  summaryType: EntrySummaryType;
   walletItemId?: string | null;
 }

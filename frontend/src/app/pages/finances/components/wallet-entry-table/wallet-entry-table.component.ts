@@ -60,21 +60,21 @@ export class WalletEntryTableComponent {
     return `${this.localDatePipeService.transform(dateRange.startDate, 'short')} - ${this.localDatePipeService.transform(dateRange.endDate, 'short')}`;
   });
 
-  walletItemIds = input<string[] | undefined>();
+  walletItemId = input<string | undefined>();
 
   currentPageNumber = 0;
   page: CursorPage<EntryForListDto> | undefined;
 
   constructor() {
     effect(async () => {
-      const walletItemIds = this.walletItemIds();
+      const walletItemId = this.walletItemId();
       const dateRange = this.dateRange();
 
       this.currentPageNumber = 0;
       this.page = undefined;
       this.pages.clear();
 
-      const page = await this.entryFetcher(walletItemIds, dateRange);
+      const page = await this.entryFetcher(walletItemId, dateRange);
 
       this.page = page;
       this.pages.set(0, page);
@@ -82,7 +82,7 @@ export class WalletEntryTableComponent {
   }
 
   entryFetcher = async (
-    walletItemIds: string[] | undefined,
+    walletItemId: string | undefined,
     dateRange: DateRange | undefined,
     nextCursor?:
       | {
@@ -96,7 +96,7 @@ export class WalletEntryTableComponent {
         nextCursor: nextCursor,
       },
       {
-        walletItemIds,
+        walletItemId,
         minimumDate: dateRange?.startDate?.format('YYYY-MM-DD'),
         maximumDate: dateRange?.endDate?.format('YYYY-MM-DD'),
       },
@@ -111,7 +111,7 @@ export class WalletEntryTableComponent {
       const nextCursor = this.page?.nextCursor;
       this.page = undefined;
 
-      const page = await this.entryFetcher(this.walletItemIds(), this.dateRange(), nextCursor);
+      const page = await this.entryFetcher(this.walletItemId(), this.dateRange(), nextCursor);
       this.page = page;
       this.pages.set(++this.currentPageNumber, page);
     }
