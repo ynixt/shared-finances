@@ -24,6 +24,7 @@ interface WalletEntryRepository {
         walletItemId: UUID?,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
+        billId: UUID?,
         cursor: WalletEntryCursorFindAll?,
     ): Flux<WalletEntryEntity>
 

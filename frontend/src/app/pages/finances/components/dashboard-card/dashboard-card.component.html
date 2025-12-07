@@ -8,7 +8,7 @@
   </div>
 
   @if (value() != null) {
-    <span [class]="'font-medium text-lg ' + valueCssColorClass()">{{ value() }}</span>
+    <span style="min-height: 28px" [class]="'font-medium text-lg ' + valueCssColorClass()">{{ value() }}</span>
   } @else {
     <p-skeleton height="28px" width="89px"></p-skeleton>
   }

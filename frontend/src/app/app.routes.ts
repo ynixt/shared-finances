@@ -136,6 +136,16 @@ export const routes: Routes = [
             },
           },
           {
+            path: ':id',
+            loadComponent: () =>
+              import('./pages/finances/finances-credit-cards-page/view-credit-card-page/view-credit-card-page.component').then(
+                m => m.ViewCreditCardPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.creditCard',
+            },
+          },
+          {
             path: 'edit/:id',
             loadComponent: () =>
               import('./pages/finances/finances-credit-cards-page/edit-credit-card-page/edit-credit-card-page.component').then(

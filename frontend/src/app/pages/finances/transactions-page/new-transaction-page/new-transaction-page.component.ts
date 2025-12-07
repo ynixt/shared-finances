@@ -292,7 +292,11 @@ export class NewTransactionPageComponent {
         if (origin?.type === 'CREDIT_CARD') {
           this.form
             .get('originBill')!!
-            .setValue(this.creditCardBillService.getBestBill(date ?? new Date(), origin.dueDay!!, origin.dueOnNextBusinessDay!!));
+            .setValue(
+              this.creditCardBillService
+                .getBestBill(date ?? new Date(), origin.dueDay!!, origin.dueOnNextBusinessDay!!, origin.daysBetweenDueAndClosing!!)
+                .toDate(),
+            );
         } else {
           this.form.get('originBill')?.reset();
         }
@@ -307,7 +311,11 @@ export class NewTransactionPageComponent {
         if (target?.type === 'CREDIT_CARD') {
           this.form
             .get('targetBill')!!
-            .setValue(this.creditCardBillService.getBestBill(date ?? new Date(), target.dueDay!!, target.dueOnNextBusinessDay!!));
+            .setValue(
+              this.creditCardBillService
+                .getBestBill(date ?? new Date(), target.dueDay!!, target.dueOnNextBusinessDay!!, target.daysBetweenDueAndClosing!!)
+                .toDate(),
+            );
         } else {
           this.form.get('targetBill')?.reset();
         }

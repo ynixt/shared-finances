@@ -12,4 +12,5 @@ class WalletItemSearchResponseDto(
     val type: WalletItemType,
     val dueDay: Int?,
     val dueOnNextBusinessDay: Boolean?,
+    val daysBetweenDueAndClosing: Int?,
 )

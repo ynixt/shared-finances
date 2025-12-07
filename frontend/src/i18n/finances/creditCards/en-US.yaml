@@ -15,3 +15,10 @@ financesPage:
       title: 'Edit credit card: {{name}}'
       successMessage: Credit card updated successfully
       successDeleteMessage: Credit card deleted successfully
+    viewCreditCardPage:
+      title: 'Credit card: {{name}}'
+      billValue: 'Bill value'
+      availableLimit: 'Available limit'
+      totalLimit: 'Total limit'
+      dueDate: 'Data do vencimento'
+      closingDate: 'Data do fechamento'

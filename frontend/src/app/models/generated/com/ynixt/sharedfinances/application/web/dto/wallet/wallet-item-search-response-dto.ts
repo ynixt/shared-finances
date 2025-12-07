@@ -5,6 +5,7 @@ import { UserSimpleDto } from '../user/user-simple-dto';
 
 export interface WalletItemSearchResponseDto {
   currency: string;
+  daysBetweenDueAndClosing?: number | null;
   dueDay?: number | null;
   dueOnNextBusinessDay?: boolean | null;
   id: string;

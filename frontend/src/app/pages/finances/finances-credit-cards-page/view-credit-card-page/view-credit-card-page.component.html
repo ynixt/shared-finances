@@ -1,0 +1,56 @@
+@if (creditCard == null) {
+  <p-progress-spinner></p-progress-spinner>
+} @else {
+  <app-finances-title-bar
+    [title]="'financesPage.creditCardsPage.viewCreditCardPage.title' | translate: { name: creditCard.name }"
+    closeRouterLink=".."
+    [extraButtons]="titleBarButtons"
+  ></app-finances-title-bar>
+
+  <div class="grid gap-4 grid-cols-1 md:grid-cols-2">
+    <app-dashboard-card
+      [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.availableLimit' | translate"
+      [value]="creditCard.balance | localCurrency: creditCard.currency"
+      [faIcon]="balanceIcon"
+    ></app-dashboard-card>
+
+    <app-dashboard-card
+      [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.totalLimit' | translate"
+      [value]="creditCard.totalLimit | localCurrency: creditCard.currency"
+      [faIcon]="balanceIcon"
+    ></app-dashboard-card>
+  </div>
+
+  <app-advanced-date-picker class="my-8" [formControl]="dateControl" selectionMode="single" />
+
+  @if (creditCardBill != null) {
+    <div class="flex flex-col h-full">
+      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-8">
+        @let value = creditCardBill.value != 0 ? creditCardBill.value * -1 : creditCardBill.value;
+
+        <app-dashboard-card
+          [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.billValue' | translate"
+          [value]="value | localCurrency: creditCard.currency"
+          [faIcon]="balanceIcon"
+        ></app-dashboard-card>
+        <app-dashboard-card
+          [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.closingDate' | translate"
+          [value]="creditCardBill.closingDate | localDate: 'shortDate'"
+          [faIcon]="closingIcon"
+        ></app-dashboard-card>
+        <app-dashboard-card
+          [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.dueDate' | translate"
+          [value]="creditCardBill.dueDate | localDate: 'shortDate'"
+          [faIcon]="dueIcon"
+        ></app-dashboard-card>
+      </div>
+
+      <app-wallet-entry-table
+        class="flex-1"
+        [creditCardBillId]="creditCardBill?.id"
+        [walletItemId]="creditCard.id!!"
+        [noWalletEntryFoundMessage]="dateRange?.startDate | localDate: 'MMMM, yyyy'"
+      ></app-wallet-entry-table>
+    </div>
+  }
+}

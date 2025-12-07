@@ -24,6 +24,7 @@ class WalletEntryR2DBCRepository(
         walletItemId: UUID?,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
+        billId: UUID?,
         cursor: WalletEntryCursorFindAll?,
     ): Flux<WalletEntryEntity> {
         require(userId != null || groupId != null) { "Either userId or groupId must be provided" }
@@ -46,6 +47,7 @@ class WalletEntryR2DBCRepository(
         if (groupId != null) sql += " we.group_id = :groupId"
 
         if (walletItemId != null) sql += " and (we.origin_id = :walletItemId or we.target_id = :walletItemId)"
+        if (billId != null) sql += " and (we.origin_bill_id = :billId or we.target_bill_id = :billId)"
         if (minimumDate != null) sql += " and we.date >= :minimumDate"
         if (maximumDate != null) sql += " and we.date <= :maximumDate"
 
@@ -64,6 +66,7 @@ class WalletEntryR2DBCRepository(
         if (userId != null) spec = spec.bind("userId", userId)
         if (groupId != null) spec = spec.bind("groupId", groupId)
         if (walletItemId != null) spec = spec.bind("walletItemId", walletItemId)
+        if (billId != null) spec = spec.bind("billId", billId)
         if (minimumDate != null) spec = spec.bind("minimumDate", minimumDate)
         if (maximumDate != null) spec = spec.bind("maximumDate", maximumDate)
         if (cursor != null) spec = spec.bind("cursorDate", cursor.maximumDate).bind("cursorId", cursor.maximumId)

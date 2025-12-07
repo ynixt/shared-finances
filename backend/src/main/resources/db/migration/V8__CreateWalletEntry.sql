@@ -3,7 +3,7 @@ CREATE TABLE wallet_entry (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     type TEXT NOT NULL,
-    name CITEXT NOT NULL CHECK (char_length(name) <= 255),
+    name CITEXT CHECK (char_length(name) <= 255),
     description TEXT,
     value NUMERIC(12,2) NOT NULL,
     category_id UUID,

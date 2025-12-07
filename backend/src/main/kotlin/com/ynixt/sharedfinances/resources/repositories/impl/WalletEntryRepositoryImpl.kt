@@ -28,6 +28,7 @@ class WalletEntryRepositoryImpl(
         walletItemId: UUID?,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
+        billId: UUID?,
         cursor: WalletEntryCursorFindAll?,
     ): Flux<WalletEntryEntity> =
         r2dbcRepository.findAll(
@@ -37,6 +38,7 @@ class WalletEntryRepositoryImpl(
             walletItemId = walletItemId,
             minimumDate = minimumDate,
             maximumDate = maximumDate,
+            billId = billId,
             cursor = cursor,
         )
 

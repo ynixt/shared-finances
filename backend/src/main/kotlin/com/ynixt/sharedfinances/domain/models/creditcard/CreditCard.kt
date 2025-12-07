@@ -29,7 +29,7 @@ class CreditCard(
     override val type: WalletItemType = WalletItemType.CREDIT_CARD
 
     fun getDueDate(billDate: LocalDate): LocalDate {
-        var dueDate = billDate.plusDays(dueDay.toLong())
+        var dueDate = billDate.withDayOfMonth(dueDay)
 
         if (dueOnNextBusinessDay && dueDate.dayOfWeek.value > 5) {
             if (dueDate.dayOfWeek.value == 6) {

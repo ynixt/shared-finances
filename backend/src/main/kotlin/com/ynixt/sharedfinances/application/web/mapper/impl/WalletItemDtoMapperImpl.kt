@@ -33,6 +33,9 @@ class WalletItemDtoMapperImpl(
                 to::dueOnNextBusinessDay fromExpression { from ->
                     if (from is CreditCard) from.dueOnNextBusinessDay else null
                 }
+                to::daysBetweenDueAndClosing fromExpression { from ->
+                    if (from is CreditCard) from.daysBetweenDueAndClosing else null
+                }
             }
     }
 

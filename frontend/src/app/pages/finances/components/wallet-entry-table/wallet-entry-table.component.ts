@@ -51,13 +51,22 @@ export class WalletEntryTableComponent {
   readonly pages: Map<number, CursorPage<EntryForListDto>> = new Map();
   readonly skeletons = Array.from({ length: this.pageSize > 10 ? 10 : this.pageSize }, (_, i) => i + 1);
   readonly dateRange = input<DateRange | undefined>(undefined);
-  readonly dateRangeText = computed(() => {
+  readonly creditCardBillId = input<string | undefined | null>(undefined);
+  private readonly dateRangeText = computed(() => {
     const dateRange = this.dateRange();
 
     if (dateRange == null) return '';
     if (dateRange.sameMonth) return this.localDatePipeService.transform(dateRange.startDate, 'MMMM, yyyy');
 
     return `${this.localDatePipeService.transform(dateRange.startDate, 'short')} - ${this.localDatePipeService.transform(dateRange.endDate, 'short')}`;
+  });
+  readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
+  readonly noWalletEntryFoundDynamicMessage = computed(() => {
+    if (this.noWalletEntryFoundMessage() == null) {
+      return this.dateRangeText();
+    }
+
+    return this.noWalletEntryFoundMessage();
   });
 
   walletItemId = input<string | undefined>();
@@ -90,6 +99,15 @@ export class WalletEntryTableComponent {
         }
       | undefined,
   ): Promise<CursorPage<EntryForListDto>> => {
+    const billId = this.creditCardBillId();
+
+    if (billId === null)
+      return {
+        items: [],
+        hasNext: false,
+        nextCursor: undefined,
+      };
+
     return await this.walletEntryService.listWalletEntries(
       {
         size: this.pageSize,
@@ -97,6 +115,7 @@ export class WalletEntryTableComponent {
       },
       {
         walletItemId,
+        billId,
         minimumDate: dateRange?.startDate?.format('YYYY-MM-DD'),
         maximumDate: dateRange?.endDate?.format('YYYY-MM-DD'),
       },

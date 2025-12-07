@@ -53,22 +53,43 @@ class WalletEntryCreateServiceImpl(
         }
 
     private fun updateBalance(newEntryRequest: NewEntryRequest): Mono<Void> {
+        val valueForOrigin = newEntryRequest.valueFixedForType
+        val valueForTarget = newEntryRequest.value.abs()
+
         val updateOriginBalance =
             newEntryRequest.origin!!.let { origin ->
-                val valueForOrigin = newEntryRequest.valueFixedForType
+                val valueForOrigin = valueForOrigin
 
                 walletItemService.addBalanceById(origin.id!!, valueForOrigin)
             }
 
+        val updateOriginalBillValue =
+            newEntryRequest.originBill?.let { originBill ->
+                creditCardBillService.addValueById(
+                    originBill.id!!,
+                    valueForOrigin,
+                )
+            } ?: Mono.empty()
+
         val updateTargetBalance =
             newEntryRequest.target?.let { origin ->
-                walletItemService.addBalanceById(origin.id!!, newEntryRequest.value.abs())
+                walletItemService.addBalanceById(origin.id!!, valueForTarget)
+            } ?: Mono.empty()
+
+        val updateTargetBillValue =
+            newEntryRequest.targetBill?.let { targetBill ->
+                creditCardBillService.addValueById(
+                    targetBill.id!!,
+                    valueForTarget,
+                )
             } ?: Mono.empty()
 
         return Mono
             .zip(
-                updateOriginBalance,
-                updateTargetBalance,
+                updateOriginBalance.defaultIfEmpty(0),
+                updateTargetBalance.defaultIfEmpty(0),
+                updateOriginalBillValue.defaultIfEmpty(0),
+                updateTargetBillValue.defaultIfEmpty(0),
             ).then()
     }
 

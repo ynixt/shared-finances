@@ -10,4 +10,5 @@ data class ListEntryRequestDto(
     val pageRequest: CursorPageRequest?,
     val minimumDate: LocalDate?,
     val maximumDate: LocalDate?,
+    val billId: UUID?,
 )

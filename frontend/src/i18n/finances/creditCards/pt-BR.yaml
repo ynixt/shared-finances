@@ -15,3 +15,10 @@ financesPage:
       title: 'Editar cartão de crédito: {{name}}'
       successMessage: Cartão de crédito atualizado com sucesso
       successDeleteMessage: Cartão de crédito excluído com sucesso
+    viewCreditCardPage:
+      title: 'Cartão de crédito: {{name}}'
+      billValue: 'Valor da fatura'
+      availableLimit: 'Limite disponível'
+      totalLimit: 'Limite total'
+      dueDate: 'Data do vencimento'
+      closingDate: 'Data do fechamento'

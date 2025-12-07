@@ -44,6 +44,7 @@ class WalletEntryListServiceImpl(
                 walletItemId = request.walletItemId,
                 minimumDate = request.minimumDate,
                 maximumDate = request.maximumDate,
+                billId = request.billId,
                 cursor =
                     if (request.lastId != null && request.lastDate != null) {
                         WalletEntryCursorFindAll(
