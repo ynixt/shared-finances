@@ -19,3 +19,9 @@ enums:
     UNIQUE: Unique
     RECURRING: Recurring
     INSTALLMENTS: Installments
+  creditCardBillStatus:
+    OPEN: Open
+    PAID: Paid
+    OVERDUE: Delayed
+    FUTURE: Future
+    CLOSED: Closed

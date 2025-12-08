@@ -12,6 +12,6 @@ class CreditCardBillEntity(
     val billDate: LocalDate,
     val dueDate: LocalDate,
     val closingDate: LocalDate,
-    val payed: Boolean,
+    val paid: Boolean,
     val value: BigDecimal,
 ) : AuditedEntity()

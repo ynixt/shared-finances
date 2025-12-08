@@ -6,7 +6,7 @@ CREATE TABLE credit_card_bill (
     bill_date DATE NOT NULL,
     due_date DATE NOT NULL,
     closing_date DATE NOT NULL,
-    payed BOOLEAN NOT NULL,
+    paid BOOLEAN NOT NULL,
     value NUMERIC(10,2) NOT NULL,
     CONSTRAINT fk_credit_card_bill_card
         FOREIGN KEY (credit_card_id) REFERENCES wallet_item(id)

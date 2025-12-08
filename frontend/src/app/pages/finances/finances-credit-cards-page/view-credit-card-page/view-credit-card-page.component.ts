@@ -1,9 +1,19 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faCalendarMinus, faCalendarXmark, faDollarSign, faPencil } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCalendarMinus,
+  faCalendarXmark,
+  faCircle,
+  faCircleCheck,
+  faCircleExclamation,
+  faCircleInfo,
+  faCircleMinus,
+  faDollarSign,
+  faPencil,
+} from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -19,6 +29,7 @@ import {
   CreditCardBillDto,
   CreditCardDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
+import { CreditCardBillStatus__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
@@ -59,6 +70,11 @@ export class ViewCreditCardPageComponent {
   public readonly closingIcon = faCalendarMinus;
   public readonly dueIcon = faCalendarXmark;
   public readonly editIcon = faPencil;
+  public readonly openIcon = faCircle;
+  public readonly paidIcon = faCircleCheck;
+  public readonly overdueIcon = faCircleMinus;
+  public readonly futureIcon = faCircleInfo;
+  public readonly closedIcon = faCircleExclamation;
 
   readonly dateControl = new FormControl<DateRange | undefined>(undefined);
   readonly formToEditClosingDay = new FormGroup({ closingDay: new FormControl<DateRange | undefined>(undefined, [Validators.required]) });
@@ -66,7 +82,7 @@ export class ViewCreditCardPageComponent {
 
   titleBarButtons: FinancesTitleBarExtraButton[] = [];
   creditCard: CreditCardDto | undefined = undefined;
-  creditCardBill: CreditCardBillDto | undefined = undefined;
+  creditCardBill = signal<CreditCardBillDto | undefined>(undefined);
 
   dateRange: DateRange | undefined = undefined;
   dialogToEditClosingDayIsVisible = false;
@@ -75,6 +91,61 @@ export class ViewCreditCardPageComponent {
   dialogToEditDueDayIsSubmitting = false;
 
   private currentFilter: { creditCard: string; billDate: dayjs.Dayjs } | undefined = undefined;
+
+  status = computed(() => {
+    const creditCardBill = this.creditCardBill();
+
+    return creditCardBill?.status;
+  });
+
+  statusIcon = computed(() => {
+    const status = this.status();
+
+    switch (status) {
+      case CreditCardBillStatus__Obj.FUTURE:
+        return this.futureIcon;
+      case CreditCardBillStatus__Obj.OPEN:
+        return this.openIcon;
+      case CreditCardBillStatus__Obj.PAID:
+        return this.paidIcon;
+      case CreditCardBillStatus__Obj.CLOSED:
+        return this.closedIcon;
+      case CreditCardBillStatus__Obj.OVERDUE:
+        return this.overdueIcon;
+    }
+
+    return undefined;
+  });
+
+  statusIconCssColorClass = computed(() => {
+    const status = this.status();
+
+    switch (status) {
+      case CreditCardBillStatus__Obj.OPEN:
+        return 'text-green-500';
+      case CreditCardBillStatus__Obj.PAID:
+        return 'text-blue-500';
+      case CreditCardBillStatus__Obj.CLOSED:
+        return 'text-yellow-500';
+      case CreditCardBillStatus__Obj.OVERDUE:
+        return 'text-red-500';
+    }
+
+    return 'text-muted-color';
+  });
+
+  statusCssColorClass = computed(() => {
+    const status = this.status();
+
+    switch (status) {
+      case 'CLOSED':
+        return 'text-yellow-500';
+      case 'OVERDUE':
+        return 'text-red-500';
+    }
+
+    return 'text-surface-900 dark:text-surface-0';
+  });
 
   constructor(
     private route: ActivatedRoute,
@@ -103,27 +174,31 @@ export class ViewCreditCardPageComponent {
   }
 
   openEditClosingDateDialog() {
-    if (this.creditCardBill) {
+    const creditCardBill = this.creditCardBill();
+
+    if (creditCardBill) {
       this.formToEditClosingDay.reset();
-      this.formToEditClosingDay.get('closingDay')!!.setValue({ startDate: dayjs(this.creditCardBill.closingDate) });
+      this.formToEditClosingDay.get('closingDay')!!.setValue({ startDate: dayjs(creditCardBill.closingDate) });
       this.dialogToEditClosingDayIsVisible = true;
     }
   }
 
   async submitNewClosingDate() {
-    if (!this.formToEditClosingDay.valid || !this.creditCardBill || this.creditCardBill.id == null) return;
+    const creditCardBill = this.creditCardBill();
+
+    if (!this.formToEditClosingDay.valid || !creditCardBill || creditCardBill.id == null) return;
 
     const closingDate = this.formToEditClosingDay.get('closingDay')?.value?.startDate;
 
     if (closingDate) {
       try {
         this.dialogToEditClosingDayIsSubmitting = true;
-        await this.creditCardBillService.changeClosingDate(this.creditCardBill.id, closingDate);
+        await this.creditCardBillService.changeClosingDate(creditCardBill.id, closingDate);
 
-        this.creditCardBill = {
-          ...this.creditCardBill,
+        this.creditCardBill.set({
+          ...creditCardBill,
           closingDate: closingDate.format(ONLY_DATE_FORMAT),
-        };
+        });
       } catch (error) {
         this.errorMessageService.handleError(error, this.messageService);
 
@@ -137,27 +212,31 @@ export class ViewCreditCardPageComponent {
   }
 
   openEditDueDateDialog() {
-    if (this.creditCardBill) {
+    const creditCardBill = this.creditCardBill();
+
+    if (creditCardBill) {
       this.formToEditDueDay.reset();
-      this.formToEditDueDay.get('dueDay')!!.setValue({ startDate: dayjs(this.creditCardBill.dueDate) });
+      this.formToEditDueDay.get('dueDay')!!.setValue({ startDate: dayjs(creditCardBill.dueDate) });
       this.dialogToEditDueDayIsVisible = true;
     }
   }
 
   async submitNewDueDate() {
-    if (!this.formToEditDueDay.valid || !this.creditCardBill || this.creditCardBill.id == null) return;
+    const creditCardBill = this.creditCardBill();
+
+    if (!this.formToEditDueDay.valid || !creditCardBill || creditCardBill.id == null) return;
 
     const dueDate = this.formToEditDueDay.get('dueDay')?.value?.startDate;
 
     if (dueDate) {
       try {
         this.dialogToEditDueDayIsSubmitting = true;
-        await this.creditCardBillService.changeDueDate(this.creditCardBill.id, dueDate);
+        await this.creditCardBillService.changeDueDate(creditCardBill.id, dueDate);
 
-        this.creditCardBill = {
-          ...this.creditCardBill,
+        this.creditCardBill.set({
+          ...creditCardBill,
           dueDate: dueDate.format(ONLY_DATE_FORMAT),
-        };
+        });
       } catch (error) {
         this.errorMessageService.handleError(error, this.messageService);
 
@@ -179,20 +258,22 @@ export class ViewCreditCardPageComponent {
       return undefined;
     }
 
-    this.creditCardBill = undefined;
+    this.creditCardBill.set(undefined);
 
     this.currentFilter = {
       creditCard: this.creditCard.id,
       billDate: this.dateRange.startDate,
     };
 
-    this.creditCardBill = await this.creditCardBillService.getBillForMonth(
-      this.creditCard.id,
-      this.dateRange.startDate.month() + 1,
-      this.dateRange.startDate.year(),
+    this.creditCardBill.set(
+      await this.creditCardBillService.getBillForMonth(
+        this.creditCard.id,
+        this.dateRange.startDate.month() + 1,
+        this.dateRange.startDate.year(),
+      ),
     );
 
-    return this.creditCardBill;
+    return this.creditCardBill();
   }
 
   private async getCreditCard(id: string): Promise<void> {
@@ -212,7 +293,7 @@ export class ViewCreditCardPageComponent {
         sameMonth: true,
       });
 
-      this.getCreditCardBill();
+      await this.getCreditCardBill();
 
       this.titleBarButtons = [
         {

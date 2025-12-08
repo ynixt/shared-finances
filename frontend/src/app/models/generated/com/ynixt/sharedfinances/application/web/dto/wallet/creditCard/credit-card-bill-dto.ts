@@ -1,12 +1,15 @@
 /* eslint-disable */
 /* tslint-disable */
+import { CreditCardBillStatus } from '../../../../../domain/enums/credit-card-bill-status';
 
 export interface CreditCardBillDto {
-  billDate?: string | null;
-  closingDate?: string | null;
+  billDate: string;
+  closingDate: string;
   creditCardId: string;
-  dueDate?: string | null;
+  dueDate: string;
   id?: string | null;
-  payed: boolean;
+  paid: boolean;
+  startDate?: string | null;
+  status?: CreditCardBillStatus | null;
   value: number;
 }

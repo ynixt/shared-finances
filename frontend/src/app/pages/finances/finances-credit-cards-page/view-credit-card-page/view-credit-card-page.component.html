@@ -24,9 +24,23 @@
   <app-advanced-date-picker class="my-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />
 
   <div class="flex flex-col h-full">
-    <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-8">
-      @let value = creditCardBill ? (creditCardBill.value != 0 ? creditCardBill.value * -1 : creditCardBill.value) : undefined;
+    <div class="grid gap-4 grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 mb-8">
+      @let currentCreditCardBill = creditCardBill();
+      @let value =
+        currentCreditCardBill
+          ? currentCreditCardBill.value != 0
+            ? currentCreditCardBill.value * -1
+            : currentCreditCardBill.value
+          : undefined;
+      @let currentStatus = status();
 
+      <app-dashboard-card
+        [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.status' | translate"
+        [value]="currentStatus != null ? ('enums.creditCardBillStatus.' + currentStatus | translate) : undefined"
+        [faIcon]="statusIcon()"
+        [iconCssColorClass]="statusIconCssColorClass()"
+        [valueCssColorClass]="statusCssColorClass()"
+      ></app-dashboard-card>
       <app-dashboard-card
         [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.billValue' | translate"
         [value]="value != null ? (value | localCurrency: creditCard.currency) : undefined"
@@ -34,10 +48,10 @@
       ></app-dashboard-card>
       <app-dashboard-card
         [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.closingDate' | translate"
-        [value]="creditCardBill ? (creditCardBill.closingDate | localDate: 'shortDate') : undefined"
+        [value]="currentCreditCardBill ? (currentCreditCardBill.closingDate | localDate: 'shortDate') : undefined"
         [faIcon]="closingIcon"
       >
-        @if (creditCardBill?.id != null) {
+        @if (currentCreditCardBill?.id != null) {
           <ng-template #headerRight>
             <p-button severity="secondary" variant="text" rounded size="small" (click)="openEditClosingDateDialog()">
               <fa-icon class="text-muted-color" [icon]="editIcon"></fa-icon>
@@ -47,10 +61,10 @@
       </app-dashboard-card>
       <app-dashboard-card
         [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.dueDate' | translate"
-        [value]="creditCardBill ? (creditCardBill.dueDate | localDate: 'shortDate') : undefined"
+        [value]="currentCreditCardBill ? (currentCreditCardBill.dueDate | localDate: 'shortDate') : undefined"
         [faIcon]="dueIcon"
       >
-        @if (creditCardBill?.id != null) {
+        @if (currentCreditCardBill?.id != null) {
           <ng-template #headerRight>
             <p-button severity="secondary" variant="text" rounded size="small" (click)="openEditDueDateDialog()">
               <fa-icon class="text-muted-color" [icon]="editIcon"></fa-icon>
@@ -62,8 +76,8 @@
 
     <app-wallet-entry-table
       class="flex-1"
-      [creditCardBillId]="creditCardBill?.id"
-      [loading]="creditCardBill == null"
+      [creditCardBillId]="currentCreditCardBill?.id"
+      [loading]="currentCreditCardBill == null"
       [walletItemId]="creditCard.id!!"
       [noWalletEntryFoundMessage]="dateRange?.startDate | localDate: 'MMMM, yyyy'"
     ></app-wallet-entry-table>

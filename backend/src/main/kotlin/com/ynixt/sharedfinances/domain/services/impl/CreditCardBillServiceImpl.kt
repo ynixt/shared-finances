@@ -40,7 +40,7 @@ class CreditCardBillServiceImpl(
                                 billDate = billDate,
                                 dueDate = dueDate,
                                 closingDate = closingDate,
-                                payed = false,
+                                paid = false,
                                 value = startValue,
                             ),
                         ).onErrorResume { error ->
@@ -61,27 +61,17 @@ class CreditCardBillServiceImpl(
     ): Mono<CreditCardBill> {
         val billDate = LocalDate.of(year, month, 1)
 
-        return creditCardBillRepository
-            .findOneByUserIdAndCreditCardIdAndBillDate(
+        return getBillFromDatabaseOrSimulate(
+            userId = userId,
+            creditCardId = creditCardId,
+            billDate = billDate,
+        ).flatMap { bill ->
+            getBillFromDatabaseOrSimulate(
                 userId = userId,
                 creditCardId = creditCardId,
-                billDate = billDate,
-            ).map(creditCardBillMapper::toModel)
-            .switchIfEmpty {
-                creditCardService.findOne(userId, creditCardId).map { creditCard ->
-                    val dueDate = creditCard.getDueDate(billDate)
-
-                    CreditCardBill(
-                        creditCardId = creditCardId,
-                        id = null,
-                        payed = false,
-                        value = BigDecimal.ZERO,
-                        dueDate = dueDate,
-                        closingDate = creditCard.getClosingDate(dueDate),
-                        billDate = billDate,
-                    )
-                }
-            }
+                billDate = billDate.minusMonths(1),
+            ).map { previousBill -> bill.also { it.startDate = previousBill.closingDate.plusDays(1) } }
+        }
     }
 
     override fun changeClosingDate(
@@ -100,4 +90,31 @@ class CreditCardBillServiceImpl(
         id: UUID,
         value: BigDecimal,
     ): Mono<Long> = creditCardBillRepository.addValueById(id, value)
+
+    private fun getBillFromDatabaseOrSimulate(
+        userId: UUID,
+        creditCardId: UUID,
+        billDate: LocalDate,
+    ): Mono<CreditCardBill> =
+        creditCardBillRepository
+            .findOneByUserIdAndCreditCardIdAndBillDate(
+                userId = userId,
+                creditCardId = creditCardId,
+                billDate = billDate,
+            ).map(creditCardBillMapper::toModel)
+            .switchIfEmpty {
+                creditCardService.findOne(userId, creditCardId).map { creditCard ->
+                    val dueDate = creditCard.getDueDate(billDate)
+
+                    CreditCardBill(
+                        creditCardId = creditCardId,
+                        id = null,
+                        paid = false,
+                        value = BigDecimal.ZERO,
+                        dueDate = dueDate,
+                        closingDate = creditCard.getClosingDate(dueDate),
+                        billDate = billDate,
+                    )
+                }
+            }
 }

@@ -17,6 +17,7 @@ financesPage:
       successDeleteMessage: Credit card deleted successfully
     viewCreditCardPage:
       title: 'Credit card: {{name}}'
+      status: Status
       billValue: Bill value
       availableLimit: Available limit
       totalLimit: Total limit

@@ -17,6 +17,7 @@ financesPage:
       successDeleteMessage: Cartão de crédito excluído com sucesso
     viewCreditCardPage:
       title: 'Cartão de crédito: {{name}}'
+      status: Situação
       billValue: Valor da fatura
       availableLimit: Limite disponível
       totalLimit: Limite total
