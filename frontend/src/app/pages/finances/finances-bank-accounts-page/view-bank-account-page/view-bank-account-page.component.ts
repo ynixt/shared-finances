@@ -16,6 +16,7 @@ import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfin
 import { EntrySummaryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
+import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
 import { DashboardCardComponent } from '../../components/dashboard-card/dashboard-card.component';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
 import {
@@ -93,8 +94,8 @@ export class ViewBankAccountPageComponent {
 
     this.summary = await this.walletEntryService.summaryWalletEntries({
       walletItemId: this.bankAccount.id!!,
-      minimumDate: this.dateRange.startDate?.format('YYYY-MM-DD'),
-      maximumDate: this.dateRange.endDate?.format('YYYY-MM-DD'),
+      minimumDate: this.dateRange.startDate?.format(ONLY_DATE_FORMAT),
+      maximumDate: this.dateRange.endDate?.format(ONLY_DATE_FORMAT),
       summaryType: 'BANK_ACCOUNT',
     });
   }

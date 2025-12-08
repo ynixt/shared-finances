@@ -1,5 +1,7 @@
 import { Dayjs } from 'dayjs';
 
+export const ONLY_DATE_FORMAT = 'YYYY-MM-DD';
+
 export const skipWeekend = (date: Dayjs): Dayjs => {
   const day = date.day();
 

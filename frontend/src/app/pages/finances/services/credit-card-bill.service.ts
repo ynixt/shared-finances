@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 
 import { CreditCardBillDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { UserService } from '../../../services/user.service';
-import { skipWeekend } from '../../../util/date-util';
+import { ONLY_DATE_FORMAT, skipWeekend } from '../../../util/date-util';
 import { UserMissingError } from '../errors/user-missing.error';
 
 @Injectable({ providedIn: 'root' })
@@ -27,7 +27,7 @@ export class CreditCardBillService {
       date = skipWeekend(date);
     }
 
-    date = date.subtract(daysBetweenDueAndClosing, 'day')
+    date = date.subtract(daysBetweenDueAndClosing, 'day');
 
     if (dayjs(transactionDate).isAfter(date)) {
       date = date.startOf('month').add(1, 'month');
@@ -43,6 +43,36 @@ export class CreditCardBillService {
       return lastValueFrom(
         this.httpClient.get<CreditCardBillDto>(`/api/credit-card-bills/${creditCardId}/of/${year}/${month}`).pipe(take(1)),
       );
+    }
+
+    throw new UserMissingError();
+  }
+
+  async changeClosingDate(creditCardId: string, closingDate: dayjs.Dayjs): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(
+        this.httpClient
+          .put<void>(`/api/credit-card-bills/${creditCardId}/closingDate/${closingDate.format(ONLY_DATE_FORMAT)}`, undefined)
+          .pipe(take(1)),
+      );
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async changeDueDate(creditCardId: string, dueDate: dayjs.Dayjs): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(
+        this.httpClient
+          .put<void>(`/api/credit-card-bills/${creditCardId}/dueDate/${dueDate.format(ONLY_DATE_FORMAT)}`, undefined)
+          .pipe(take(1)),
+      );
+      return;
     }
 
     throw new UserMissingError();

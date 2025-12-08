@@ -21,36 +21,117 @@
     ></app-dashboard-card>
   </div>
 
-  <app-advanced-date-picker class="my-8" [formControl]="dateControl" selectionMode="single" />
+  <app-advanced-date-picker class="my-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />
 
-  @if (creditCardBill != null) {
-    <div class="flex flex-col h-full">
-      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-8">
-        @let value = creditCardBill.value != 0 ? creditCardBill.value * -1 : creditCardBill.value;
+  <div class="flex flex-col h-full">
+    <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-8">
+      @let value = creditCardBill ? (creditCardBill.value != 0 ? creditCardBill.value * -1 : creditCardBill.value) : undefined;
 
-        <app-dashboard-card
-          [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.billValue' | translate"
-          [value]="value | localCurrency: creditCard.currency"
-          [faIcon]="balanceIcon"
-        ></app-dashboard-card>
-        <app-dashboard-card
-          [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.closingDate' | translate"
-          [value]="creditCardBill.closingDate | localDate: 'shortDate'"
-          [faIcon]="closingIcon"
-        ></app-dashboard-card>
-        <app-dashboard-card
-          [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.dueDate' | translate"
-          [value]="creditCardBill.dueDate | localDate: 'shortDate'"
-          [faIcon]="dueIcon"
-        ></app-dashboard-card>
-      </div>
-
-      <app-wallet-entry-table
-        class="flex-1"
-        [creditCardBillId]="creditCardBill?.id"
-        [walletItemId]="creditCard.id!!"
-        [noWalletEntryFoundMessage]="dateRange?.startDate | localDate: 'MMMM, yyyy'"
-      ></app-wallet-entry-table>
+      <app-dashboard-card
+        [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.billValue' | translate"
+        [value]="value != null ? (value | localCurrency: creditCard.currency) : undefined"
+        [faIcon]="balanceIcon"
+      ></app-dashboard-card>
+      <app-dashboard-card
+        [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.closingDate' | translate"
+        [value]="creditCardBill ? (creditCardBill.closingDate | localDate: 'shortDate') : undefined"
+        [faIcon]="closingIcon"
+      >
+        @if (creditCardBill?.id != null) {
+          <ng-template #headerRight>
+            <p-button severity="secondary" variant="text" rounded size="small" (click)="openEditClosingDateDialog()">
+              <fa-icon class="text-muted-color" [icon]="editIcon"></fa-icon>
+            </p-button>
+          </ng-template>
+        }
+      </app-dashboard-card>
+      <app-dashboard-card
+        [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.dueDate' | translate"
+        [value]="creditCardBill ? (creditCardBill.dueDate | localDate: 'shortDate') : undefined"
+        [faIcon]="dueIcon"
+      >
+        @if (creditCardBill?.id != null) {
+          <ng-template #headerRight>
+            <p-button severity="secondary" variant="text" rounded size="small" (click)="openEditDueDateDialog()">
+              <fa-icon class="text-muted-color" [icon]="editIcon"></fa-icon>
+            </p-button>
+          </ng-template>
+        }
+      </app-dashboard-card>
     </div>
-  }
+
+    <app-wallet-entry-table
+      class="flex-1"
+      [creditCardBillId]="creditCardBill?.id"
+      [loading]="creditCardBill == null"
+      [walletItemId]="creditCard.id!!"
+      [noWalletEntryFoundMessage]="dateRange?.startDate | localDate: 'MMMM, yyyy'"
+    ></app-wallet-entry-table>
+  </div>
 }
+
+<p-dialog
+  [header]="'financesPage.creditCardsPage.viewCreditCardPage.editClosingDateDialog.title' | translate"
+  [modal]="true"
+  [(visible)]="dialogToEditClosingDayIsVisible"
+  [breakpoints]="{ '1199px': '75vw', '575px': '100vw' }"
+  [style]="{ width: '518px', 'max-width': '518px' }"
+  contentStyleClass="p-0"
+  [pt]="{
+    header: {
+      style: { paddingLeft: '1rem', paddingRight: '0.7rem' },
+    },
+  }"
+>
+  <form [formGroup]="formToEditClosingDay" (ngSubmit)="submitNewClosingDate()" class="flex flex-col gap-4 h-full">
+    <app-advanced-date-picker
+      formControlName="closingDay"
+      selectionMode="single"
+      [forceShowInput]="true"
+      [inputInline]="true"
+      inputClass="max-w-full"
+    ></app-advanced-date-picker>
+    <div class="flex justify-end gap-2 py-4 px-7">
+      <p-button [label]="'general.cancel' | translate" severity="secondary" (click)="dialogToEditClosingDayIsVisible = false" />
+      <p-button
+        [label]="'general.save' | translate"
+        type="submit"
+        [disabled]="formToEditClosingDay.invalid"
+        [loading]="dialogToEditClosingDayIsSubmitting"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [header]="'financesPage.creditCardsPage.viewCreditCardPage.editDueDateDialog.title' | translate"
+  [modal]="true"
+  [(visible)]="dialogToEditDueDayIsVisible"
+  [breakpoints]="{ '1199px': '75vw', '575px': '100vw' }"
+  [style]="{ width: '518px', 'max-width': '518px' }"
+  contentStyleClass="p-0"
+  [pt]="{
+    header: {
+      style: { paddingLeft: '1rem', paddingRight: '0.7rem' },
+    },
+  }"
+>
+  <form [formGroup]="formToEditDueDay" (ngSubmit)="submitNewDueDate()" class="flex flex-col gap-4 h-full">
+    <app-advanced-date-picker
+      formControlName="dueDay"
+      selectionMode="single"
+      [forceShowInput]="true"
+      [inputInline]="true"
+      inputClass="max-w-full"
+    ></app-advanced-date-picker>
+    <div class="flex justify-end gap-2 py-4 px-7">
+      <p-button [label]="'general.cancel' | translate" severity="secondary" (click)="dialogToEditDueDayIsVisible = false" />
+      <p-button
+        [label]="'general.save' | translate"
+        type="submit"
+        [disabled]="formToEditDueDay.invalid"
+        [loading]="dialogToEditDueDayIsSubmitting"
+      />
+    </div>
+  </form>
+</p-dialog>

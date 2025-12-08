@@ -44,4 +44,34 @@ interface CreditCardBillSpringDataRepository :
         id: UUID,
         value: BigDecimal,
     ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        update credit_card_bill 
+        set 
+            closing_date = :closingDate,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :id
+    """,
+    )
+    override fun changeClosingDateById(
+        id: UUID,
+        closingDate: LocalDate,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        update credit_card_bill 
+        set 
+            due_date = :dueDate,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :id
+    """,
+    )
+    override fun changeDueDateById(
+        id: UUID,
+        dueDate: LocalDate,
+    ): Mono<Long>
 }

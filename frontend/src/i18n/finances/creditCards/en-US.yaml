@@ -17,8 +17,12 @@ financesPage:
       successDeleteMessage: Credit card deleted successfully
     viewCreditCardPage:
       title: 'Credit card: {{name}}'
-      billValue: 'Bill value'
-      availableLimit: 'Available limit'
-      totalLimit: 'Total limit'
-      dueDate: 'Data do vencimento'
-      closingDate: 'Data do fechamento'
+      billValue: Bill value
+      availableLimit: Available limit
+      totalLimit: Total limit
+      dueDate: Due date
+      closingDate: Closing date
+      editClosingDateDialog:
+        title: Edit closing date
+      editDueDateDialog:
+        title: Edit due date

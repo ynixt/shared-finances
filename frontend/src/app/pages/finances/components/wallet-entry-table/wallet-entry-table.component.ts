@@ -16,6 +16,7 @@ import { CursorPage } from '../../../../models/cursor-pagination';
 import { EntryForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../../pipes/local-date.pipe';
+import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 import { DateRange } from './components/advanced-date-picker/advanced-date-picker.component';
 import { EntryDescriptionComponent } from './components/entry-description/entry-description.component';
@@ -45,21 +46,18 @@ import { EntryTypeComponent } from './components/entry-type/entry-type.component
   styleUrl: './wallet-entry-table.component.scss',
 })
 export class WalletEntryTableComponent {
-  readonly pageSize = 30;
   readonly walletEntryService = inject(WalletEntryService);
   readonly localDatePipeService = inject(LocalDatePipeService);
+
+  readonly pageSize = 30;
   readonly pages: Map<number, CursorPage<EntryForListDto>> = new Map();
   readonly skeletons = Array.from({ length: this.pageSize > 10 ? 10 : this.pageSize }, (_, i) => i + 1);
+  currentPageNumber = 0;
+  page: CursorPage<EntryForListDto> | undefined;
+
+  readonly loading = input<boolean>(false);
   readonly dateRange = input<DateRange | undefined>(undefined);
   readonly creditCardBillId = input<string | undefined | null>(undefined);
-  private readonly dateRangeText = computed(() => {
-    const dateRange = this.dateRange();
-
-    if (dateRange == null) return '';
-    if (dateRange.sameMonth) return this.localDatePipeService.transform(dateRange.startDate, 'MMMM, yyyy');
-
-    return `${this.localDatePipeService.transform(dateRange.startDate, 'short')} - ${this.localDatePipeService.transform(dateRange.endDate, 'short')}`;
-  });
   readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
   readonly noWalletEntryFoundDynamicMessage = computed(() => {
     if (this.noWalletEntryFoundMessage() == null) {
@@ -71,13 +69,22 @@ export class WalletEntryTableComponent {
 
   walletItemId = input<string | undefined>();
 
-  currentPageNumber = 0;
-  page: CursorPage<EntryForListDto> | undefined;
+  private readonly dateRangeText = computed(() => {
+    const dateRange = this.dateRange();
+
+    if (dateRange == null) return '';
+    if (dateRange.sameMonth) return this.localDatePipeService.transform(dateRange.startDate, 'MMMM, yyyy');
+
+    return `${this.localDatePipeService.transform(dateRange.startDate, 'short')} - ${this.localDatePipeService.transform(dateRange.endDate, 'short')}`;
+  });
 
   constructor() {
     effect(async () => {
       const walletItemId = this.walletItemId();
       const dateRange = this.dateRange();
+      const isLoading = this.loading();
+
+      if (isLoading) return;
 
       this.currentPageNumber = 0;
       this.page = undefined;
@@ -116,8 +123,8 @@ export class WalletEntryTableComponent {
       {
         walletItemId,
         billId,
-        minimumDate: dateRange?.startDate?.format('YYYY-MM-DD'),
-        maximumDate: dateRange?.endDate?.format('YYYY-MM-DD'),
+        minimumDate: dateRange?.startDate?.format(ONLY_DATE_FORMAT),
+        maximumDate: dateRange?.endDate?.format(ONLY_DATE_FORMAT),
       },
     );
   };

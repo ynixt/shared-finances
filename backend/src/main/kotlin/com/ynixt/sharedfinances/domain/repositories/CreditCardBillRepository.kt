@@ -24,4 +24,14 @@ interface CreditCardBillRepository {
         id: UUID,
         value: BigDecimal,
     ): Mono<Long>
+
+    fun changeDueDateById(
+        id: UUID,
+        dueDate: LocalDate,
+    ): Mono<Long>
+
+    fun changeClosingDateById(
+        id: UUID,
+        closingDate: LocalDate,
+    ): Mono<Long>
 }

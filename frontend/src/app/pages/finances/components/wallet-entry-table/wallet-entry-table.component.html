@@ -1,5 +1,5 @@
 <div class="wallet-entry-table">
-  @if (page != null) {
+  @if (page != null && !loading()) {
     <p-data-view [value]="page.items">
       <ng-template #list let-items>
         <div class="grid grid-cols-12 gap-4 grid-nogutter">

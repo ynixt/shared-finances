@@ -1,10 +1,14 @@
 <div class="flex flex-col gap-2 dashboard-card">
-  <div class="title flex gap-2">
+  <div class="title flex flex-wrap items-center gap-2 mb-3 h-10">
     @if (faIcon()) {
       <fa-icon class="dashboard-card-icon {{ iconCssColorClass() }}" [icon]="faIcon()"></fa-icon>
     }
 
-    <span class="font-medium mb-4 {{ titleCssColorClass() }}">{{ titleKey() }}</span>
+    <span class="font-medium mr-auto {{ titleCssColorClass() }}">{{ titleKey() }}</span>
+
+    @if (headerRightTemplate) {
+      <ng-container [ngTemplateOutlet]="headerRightTemplate"></ng-container>
+    }
   </div>
 
   @if (value() != null) {

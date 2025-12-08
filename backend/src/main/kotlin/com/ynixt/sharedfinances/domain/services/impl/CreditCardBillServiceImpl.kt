@@ -84,6 +84,18 @@ class CreditCardBillServiceImpl(
             }
     }
 
+    override fun changeClosingDate(
+        userId: UUID,
+        creditCardId: UUID,
+        closingDate: LocalDate,
+    ): Mono<Unit> = creditCardBillRepository.changeClosingDateById(creditCardId, closingDate).map {}
+
+    override fun changeDueDate(
+        userId: UUID,
+        creditCardId: UUID,
+        dueDate: LocalDate,
+    ): Mono<Unit> = creditCardBillRepository.changeDueDateById(creditCardId, dueDate).map {}
+
     override fun addValueById(
         id: UUID,
         value: BigDecimal,

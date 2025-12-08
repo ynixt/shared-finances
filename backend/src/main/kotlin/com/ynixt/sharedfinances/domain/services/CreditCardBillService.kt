@@ -26,6 +26,18 @@ interface CreditCardBillService {
         year: Int,
     ): Mono<CreditCardBill>
 
+    fun changeClosingDate(
+        userId: UUID,
+        creditCardId: UUID,
+        closingDate: LocalDate,
+    ): Mono<Unit>
+
+    fun changeDueDate(
+        userId: UUID,
+        creditCardId: UUID,
+        dueDate: LocalDate,
+    ): Mono<Unit>
+
     fun addValueById(
         id: UUID,
         value: BigDecimal,

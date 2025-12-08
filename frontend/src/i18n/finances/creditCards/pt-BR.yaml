@@ -17,8 +17,12 @@ financesPage:
       successDeleteMessage: Cartão de crédito excluído com sucesso
     viewCreditCardPage:
       title: 'Cartão de crédito: {{name}}'
-      billValue: 'Valor da fatura'
-      availableLimit: 'Limite disponível'
-      totalLimit: 'Limite total'
-      dueDate: 'Data do vencimento'
-      closingDate: 'Data do fechamento'
+      billValue: Valor da fatura
+      availableLimit: Limite disponível
+      totalLimit: Limite total
+      dueDate: Data do vencimento
+      closingDate: Data do fechamento
+      editClosingDateDialog:
+        title: Editar data de fechamento
+      editDueDateDialog:
+        title: Editar data de vencimento

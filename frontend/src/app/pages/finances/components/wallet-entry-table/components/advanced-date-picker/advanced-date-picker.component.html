@@ -1,5 +1,5 @@
 <form [formGroup]="form" class="advanced-date-picker flex items-center gap-2 justify-center">
-  @if (!isToShowInput && value != null) {
+  @if (!isToShowInput() && value != null) {
     <div class="flex gap-2 justify-center items-center font-bold">
       <p-button type="button" (click)="previousMonth()" pRipple variant="text" severity="secondary">
         <i class="pi pi-angle-left"></i>
@@ -20,11 +20,12 @@
     [formControlName]="selectionMode() == 'single' ? 'date' : 'rangeDates'"
     [selectionMode]="selectionMode()"
     [readonlyInput]="true"
-    class="w-56"
-    [hidden]="!isToShowInput"
+    [class]="inputClass()"
+    [hidden]="!isToShowInput()"
     fluid
     (onClose)="datePickerClosed()"
     [required]="true"
     [view]="viewMode()"
+    [inline]="inputInline()"
   />
 </form>
