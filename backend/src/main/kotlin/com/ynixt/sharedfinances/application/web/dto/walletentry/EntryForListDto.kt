@@ -25,4 +25,5 @@ data class EntryForListDto(
     val confirmed: Boolean,
     val installment: Int?,
     val recurrenceConfigId: UUID?,
+    val currency: String,
 )

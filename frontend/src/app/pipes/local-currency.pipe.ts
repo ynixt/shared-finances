@@ -31,6 +31,8 @@ export class LocalCurrencyPipeService {
       style: 'currency',
       currency: code,
       minimumFractionDigits,
-    }).format(value);
+    })
+      .format(value)
+      .replace('-', '- ');
   }
 }

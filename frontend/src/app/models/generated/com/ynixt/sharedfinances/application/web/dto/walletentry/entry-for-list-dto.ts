@@ -9,6 +9,7 @@ import { WalletItemForEntryListDto } from '../wallet/wallet-item-for-entry-list-
 export interface EntryForListDto {
   category?: CategoryDto | null;
   confirmed: boolean;
+  currency: string;
   date: string;
   group?: GroupDto | null;
   id: string;

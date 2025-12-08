@@ -138,5 +138,6 @@ class WalletEntryListServiceImpl(
             confirmed = entry.confirmed,
             installment = entry.installment,
             recurrenceConfigId = entry.recurrenceConfigId,
+            currency = entry.origin!!.currency,
         )
 }
