@@ -42,4 +42,6 @@ data class NewEntryRequest(
         } else {
             value.abs()
         }
+
+    val inFuture = date.isAfter(LocalDate.now())
 }

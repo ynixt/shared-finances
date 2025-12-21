@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.walletentry.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
@@ -16,6 +17,8 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
@@ -30,22 +33,21 @@ class WalletEntryCreateServiceImpl(
     private val entryRecurrenceConfigRepository: EntryRecurrenceConfigRepository,
     private val walletEntryActionEventService: WalletEntryActionEventService,
 ) : WalletEntrySaveServiceImpl(
-        groupService = groupService,
-        walletItemService = walletItemService,
-        creditCardBillService = creditCardBillService,
-        entryRecurrenceService = entryRecurrenceService,
-    ),
+    groupService = groupService,
+    walletItemService = walletItemService,
+    creditCardBillService = creditCardBillService,
+    entryRecurrenceService = entryRecurrenceService,
+),
     WalletEntryCreateService {
     @Transactional
     override fun create(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-    ): Mono<WalletEntryEntity> =
+    ): Mono<MinimumWalletEntry> =
         loadRelationships(userId, newEntryRequest).flatMap { newEntryRequest ->
             checkDataIntegrity(newEntryRequest)
             if (checkAllPermissions(userId, newEntryRequest)) {
                 createWithoutCheckPermissions(userId, newEntryRequest)
-                    .flatMap { updateBalance(newEntryRequest).thenReturn(it) }
                     .flatMap { walletEntryActionEventService.sendInsertedWalletEntry(userId, it).thenReturn(it) }
             } else {
                 Mono.empty()
@@ -96,50 +98,56 @@ class WalletEntryCreateServiceImpl(
     private fun createWithoutCheckPermissions(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-    ): Mono<WalletEntryEntity> {
+    ): Mono<MinimumWalletEntry> {
         val recurrenceConfigMono = createRecurrenceConfig(userId, newEntryRequest)
 
-        return recurrenceConfigMono.flatMap { recurrenceConfig ->
-            val installments = if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) newEntryRequest.installments!! else 1
+        return if (newEntryRequest.inFuture) recurrenceConfigMono.map { it.value!! }
+        else {
+            recurrenceConfigMono.flatMap { recurrenceConfig ->
+                val installments = if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) newEntryRequest.installments!! else 1
 
-            if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) {
-                var date: LocalDate = newEntryRequest.date
+                if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) {
+                    var date: LocalDate = newEntryRequest.date
 
-                walletEntryRepository
-                    .saveAll(
-                        (1..installments).map {
-                            date =
-                                when (newEntryRequest.periodicity!!) {
-                                    RecurrenceType.DAILY -> date.plusDays(it.toLong() - 1)
-                                    RecurrenceType.WEEKLY -> date.plusWeeks(it.toLong() - 1)
-                                    RecurrenceType.MONTHLY -> date.plusMonths(it.toLong() - 1)
-                                    RecurrenceType.YEARLY -> date.plusYears(it.toLong() - 1)
-                                }
+                    walletEntryRepository
+                        .saveAll(
+                            (1..installments).map {
+                                date =
+                                    when (newEntryRequest.periodicity!!) {
+                                        RecurrenceType.SINGLE -> throw IllegalArgumentException("Single recurrence is not allowed here.")
+                                        RecurrenceType.DAILY -> date.plusDays(it.toLong() - 1)
+                                        RecurrenceType.WEEKLY -> date.plusWeeks(it.toLong() - 1)
+                                        RecurrenceType.MONTHLY -> date.plusMonths(it.toLong() - 1)
+                                        RecurrenceType.YEARLY -> date.plusYears(it.toLong() - 1)
+                                    }
 
-                            requestToEntity(
-                                id = null,
-                                userId = userId,
-                                newEntryRequest = newEntryRequest,
-                                recurrenceConfig = recurrenceConfig.value,
-                                installment = it,
-                                date = date,
-                            )
-                        },
-                    ).collectList()
-                    .flatMap {
-                        Mono.just(it.first())
-                    }
-            } else {
-                walletEntryRepository.save(
-                    requestToEntity(
-                        id = null,
-                        userId = userId,
-                        newEntryRequest = newEntryRequest,
-                        recurrenceConfig = recurrenceConfig.value,
-                        installment = null,
-                        date = newEntryRequest.date,
-                    ),
-                )
+                                requestToEntity(
+                                    id = null,
+                                    userId = userId,
+                                    newEntryRequest = newEntryRequest,
+                                    recurrenceConfig = recurrenceConfig.value,
+                                    installment = it,
+                                    date = date,
+                                )
+                            },
+                        ).collectList()
+                        .flatMap {
+                            Mono.just(it.first())
+                        }
+                } else {
+                    walletEntryRepository.save(
+                        requestToEntity(
+                            id = null,
+                            userId = userId,
+                            newEntryRequest = newEntryRequest,
+                            recurrenceConfig = recurrenceConfig.value,
+                            installment = null,
+                            date = newEntryRequest.date,
+                        ),
+                    )
+                }
+            }.flatMap {
+                updateBalance(newEntryRequest).thenReturn(it)
             }
         }
     }
@@ -147,8 +155,8 @@ class WalletEntryCreateServiceImpl(
     private fun createRecurrenceConfig(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-    ): Mono<Wrapper<EntryRecurrenceConfigEntity>> =
-        when (newEntryRequest.paymentType) {
+    ): Mono<Wrapper<EntryRecurrenceConfigEntity>> {
+        return when (newEntryRequest.paymentType) {
             PaymentType.INSTALLMENTS ->
                 entryRecurrenceConfigRepository
                     .save(
@@ -157,7 +165,7 @@ class WalletEntryCreateServiceImpl(
                             userId = userId,
                             newEntryRequest = newEntryRequest,
                             qtyLimit = newEntryRequest.installments!!,
-                            qtyExecuted = newEntryRequest.installments,
+                            qtyExecuted = if (newEntryRequest.inFuture) 0 else newEntryRequest.installments,
                         ),
                     ).map { Wrapper(it) }
 
@@ -169,10 +177,24 @@ class WalletEntryCreateServiceImpl(
                             userId = userId,
                             newEntryRequest = newEntryRequest,
                             qtyLimit = newEntryRequest.periodicityQtyLimit,
-                            qtyExecuted = 1,
+                            qtyExecuted = if (newEntryRequest.inFuture) 0 else 1,
                         ),
                     ).map { Wrapper(it) }
 
-            else -> Mono.just(Wrapper.empty())
+            else -> {
+                if (newEntryRequest.inFuture)
+                    entryRecurrenceConfigRepository
+                        .save(
+                            requestToRecurrenceEntity(
+                                id = null,
+                                userId = userId,
+                                newEntryRequest = newEntryRequest,
+                                qtyLimit = 1,
+                                qtyExecuted = 0,
+                            ),
+                        ).map { Wrapper(it) }
+                else Mono.just(Wrapper.empty())
+            }
         }
+    }
 }

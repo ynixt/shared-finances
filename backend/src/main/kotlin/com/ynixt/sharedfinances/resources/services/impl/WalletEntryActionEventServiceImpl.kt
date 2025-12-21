@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.services.impl
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
@@ -16,7 +16,7 @@ class WalletEntryActionEventServiceImpl(
 ) : WalletEntryActionEventService {
     override fun sendInsertedWalletEntry(
         userId: UUID,
-        walletEntry: WalletEntryEntity,
+        walletEntry: MinimumWalletEntry,
     ): Mono<Long> =
         actionEventService
             .newEvent(

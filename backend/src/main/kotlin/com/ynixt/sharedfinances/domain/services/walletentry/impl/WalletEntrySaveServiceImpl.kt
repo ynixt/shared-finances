@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceCo
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.GroupNotFoundException
@@ -124,6 +125,7 @@ abstract class WalletEntrySaveServiceImpl(
         qtyLimit: Int?,
     ): EntryRecurrenceConfigEntity {
         val lastExecution = LocalDate.now()
+        val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
 
         return EntryRecurrenceConfigEntity(
             name = newEntryRequest.name,
@@ -136,7 +138,7 @@ abstract class WalletEntrySaveServiceImpl(
             type = newEntryRequest.type,
             originId = newEntryRequest.originId,
             targetId = newEntryRequest.targetId,
-            periodicity = newEntryRequest.periodicity!!,
+            periodicity = periodicity,
             paymentType = newEntryRequest.paymentType,
             qtyExecuted = qtyExecuted,
             qtyLimit = qtyLimit,
@@ -144,7 +146,7 @@ abstract class WalletEntrySaveServiceImpl(
             nextExecution =
                 entryRecurrenceService.calculateNextDate(
                     lastExecution = lastExecution,
-                    periodicity = newEntryRequest.periodicity,
+                    periodicity = periodicity,
                     qtyExecuted = qtyExecuted,
                     qtyLimit = qtyLimit,
                 ),

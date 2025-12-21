@@ -18,6 +18,7 @@ class EntryRecurrenceServiceImpl : EntryRecurrenceService {
         }
 
         return when (periodicity) {
+            RecurrenceType.SINGLE -> null
             RecurrenceType.DAILY -> lastExecution.plusDays(1)
             RecurrenceType.WEEKLY -> lastExecution.plusWeeks(1)
             RecurrenceType.MONTHLY -> lastExecution.plusMonths(1)
