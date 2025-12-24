@@ -3,18 +3,18 @@ import { Injectable } from '@angular/core';
 
 import { Observable, mergeMap, take } from 'rxjs';
 
-import { KratosAuthService } from '../services/kratos-auth.service';
+import { TokenStateService } from '../services/token-state.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private auth: KratosAuthService) {}
+  constructor(private tokenStateService: TokenStateService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if (!req.url.startsWith('/api')) {
+    if ((!req.url.startsWith('/api') && !req.url.startsWith('/private/external')) || req.url.startsWith('/api/open/auth/refresh')) {
       return next.handle(req);
     }
 
-    return this.auth.token$.pipe(
+    return this.tokenStateService.token$.pipe(
       take(1),
       mergeMap(token => {
         if (!token) {

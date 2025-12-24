@@ -5,5 +5,9 @@
     "pathRewrite": {
       "^/api": ""
     }
+  },
+  "/private/external": {
+    "target": "http://localhost:8080",
+    "secure": false
   }
 }

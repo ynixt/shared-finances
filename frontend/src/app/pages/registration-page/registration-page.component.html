@@ -1,14 +1,15 @@
 <app-navbar></app-navbar>
 
-<div class="flex items-center justify-center mt-12 min-w-[100vw] overflow-hidden">
-  <div class="flex flex-col items-center justify-center">
+<div class="flex justify-center overflow-hidden h-full">
+  <div class="flex flex-col items-center">
     @if (form) {
       <form [formGroup]="form" (ngSubmit)="submit()">
         <div class="flex mb-8 gap-2" formGroupName="name">
           <div>
             <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
-              >{{ 'general.firstName' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-            ></label>
+              >{{ 'general.firstName' | translate }}
+              <app-required-field-asterisk></app-required-field-asterisk>
+            </label>
             <input
               pInputText
               id="firstName"
@@ -21,8 +22,9 @@
 
           <div>
             <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
-              >{{ 'general.lastName' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-            ></label>
+              >{{ 'general.lastName' | translate }}
+              <app-required-field-asterisk></app-required-field-asterisk>
+            </label>
             <input
               pInputText
               id="lastName"
@@ -35,13 +37,15 @@
         </div>
 
         <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
-          >{{ 'general.email' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-        ></label>
+          >{{ 'general.email' | translate }}
+          <app-required-field-asterisk></app-required-field-asterisk>
+        </label>
         <input pInputText id="email" type="text" [placeholder]="'general.email' | translate" class="w-full mb-8" formControlName="email" />
 
         <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-          >{{ 'general.password' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-        ></label>
+          >{{ 'general.password' | translate }}
+          <app-required-field-asterisk></app-required-field-asterisk>
+        </label>
         <p-password
           id="password"
           formControlName="password"
@@ -54,8 +58,9 @@
         ></p-password>
 
         <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-          >{{ 'general.passwordConfirm' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-        ></label>
+          >{{ 'general.passwordConfirm' | translate }}
+          <app-required-field-asterisk></app-required-field-asterisk>
+        </label>
         <p-password
           id="confirmPassword"
           formControlName="confirmPassword"
@@ -70,19 +75,36 @@
 
         <div class="w-full mb-8">
           <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-            >{{ 'general.language' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-          ></label>
+            >{{ 'general.language' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk>
+          </label>
           <app-language-picker id="languagePicker" formControlName="language"></app-language-picker>
         </div>
 
-        <input type="hidden" formControlName="csrf_token" />
+        <div class="w-full mb-8">
+          <label for="currencySelector" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">
+            {{ 'onboardingPage.defaultCurrency' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk>
+          </label>
+
+          <app-currency-selector id="currencySelector" formControlName="defaultCurrency"></app-currency-selector>
+        </div>
+
+        <div class="w-full mb-8">
+          <label for="timezoneSelector" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">
+            {{ 'onboardingPage.timezone' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk>
+          </label>
+
+          <app-time-zone-selector id="timezoneSelector" formControlName="tmz"></app-time-zone-selector>
+        </div>
 
         <p-button
           [loading]="submitting"
           [disabled]="form.invalid"
           type="submit"
           [label]="'registerPage.register' | translate"
-          styleClass="w-full"
+          styleClass="w-full mt-8"
         ></p-button>
       </form>
     }

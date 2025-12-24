@@ -1,6 +1,5 @@
 package com.ynixt.sharedfinances.domain.services.actionevents.impl
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.models.events.GroupActionEvent
@@ -11,6 +10,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import tools.jackson.databind.ObjectMapper
 import java.util.UUID
 
 class NewEventGroupInfo(

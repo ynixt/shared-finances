@@ -2,11 +2,13 @@
 /* tslint-disable */
 
 export interface UserResponseDto {
-  defaultCurrency?: string | null;
+  defaultCurrency: string;
   email: string;
-  externalId: string;
+  emailVerified: boolean;
   firstName: string;
   id: string;
   lang: string;
   lastName: string;
+  mfaEnabled: boolean;
+  tmz: string;
 }

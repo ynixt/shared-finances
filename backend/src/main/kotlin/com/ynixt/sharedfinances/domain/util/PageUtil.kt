@@ -7,7 +7,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 object PageUtil {
-    fun <T> createPage(
+    fun <T : Any> createPage(
         pageable: Pageable,
         countFn: () -> Mono<Long>,
         getPageFn: () -> Flux<T>,

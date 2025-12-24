@@ -5,7 +5,7 @@ import { Observable, Subject, defer, filter, from, lastValueFrom, map, share, sw
 import { createEventSource } from 'eventsource-client';
 
 import { ActionEventCategory } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
-import { KratosAuthService } from '../../../services/kratos-auth.service';
+import { TokenStateService } from '../../../services/token-state.service';
 
 type Wire = { event?: string; data: string };
 
@@ -16,12 +16,12 @@ export abstract class ActionEventService implements OnDestroy {
   protected readonly wire$: Observable<Wire>;
 
   protected constructor(
-    private authService: KratosAuthService,
+    private tokenStateService: TokenStateService,
     private zone: NgZone,
     private sseUrl: string,
   ) {
     this.wire$ = defer(() =>
-      from(lastValueFrom(this.authService.token$.pipe(take(1)))).pipe(
+      from(lastValueFrom(this.tokenStateService.token$.pipe(take(1)))).pipe(
         switchMap(token => {
           if (!token) throw new Error('Missing token');
 

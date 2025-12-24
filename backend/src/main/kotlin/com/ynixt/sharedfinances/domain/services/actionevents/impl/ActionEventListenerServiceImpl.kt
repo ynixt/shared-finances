@@ -1,7 +1,5 @@
 package com.ynixt.sharedfinances.domain.services.actionevents.impl
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.ynixt.sharedfinances.domain.models.events.GroupActionEvent
 import com.ynixt.sharedfinances.domain.models.events.UserActionEvent
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventListenerService
@@ -10,6 +8,8 @@ import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.ReactiveRedisMessageListenerContainer
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import java.util.UUID
 
 @Service

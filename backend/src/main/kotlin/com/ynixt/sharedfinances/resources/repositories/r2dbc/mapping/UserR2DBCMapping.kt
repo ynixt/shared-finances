@@ -28,12 +28,17 @@ class UserR2DBCMapping {
             columnPrefix: String = "u_",
         ): UserEntity =
             UserEntity(
-                externalId = row.get("${columnPrefix}external_id", String::class.java)!!,
                 email = row.get("${columnPrefix}email", String::class.java)!!,
+                passwordHash = null,
                 firstName = row.get("${columnPrefix}first_name", String::class.java)!!,
                 lastName = row.get("${columnPrefix}last_name", String::class.java)!!,
                 lang = row.get("${columnPrefix}lang", String::class.java)!!,
-                defaultCurrency = row.get("${columnPrefix}default_currency", String::class.java),
+                defaultCurrency = row.get("${columnPrefix}default_currency", String::class.java)!!,
+                tmz = row.get("${columnPrefix}tmz", String::class.java)!!,
+                photoUrl = row.get("${columnPrefix}photo_url", String::class.java),
+                emailVerified = row.get("${columnPrefix}email_verified", Boolean::class.java)!!,
+                mfaEnabled = row.get("${columnPrefix}mfa_enabled", Boolean::class.java)!!,
+                totpSecret = null,
             ).also { u ->
                 u.id = row.get("${columnPrefix}id", UUID::class.java)!!
                 u.createdAt = row.get("${columnPrefix}created_at", OffsetDateTime::class.java)

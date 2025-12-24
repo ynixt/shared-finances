@@ -172,7 +172,6 @@ export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
     const s = new Set(this.options);
 
     if (!s.has(value)) {
-      console.log(value);
       this.options = [value, ...this.options];
     }
   }

@@ -13,8 +13,8 @@ import { Divider } from 'primeng/divider';
 import { Menu } from 'primeng/menu';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { AuthService } from '../../services/auth.service';
 import { BreakpointService } from '../../services/breakpoint.service';
-import { KratosAuthService } from '../../services/kratos-auth.service';
 import { UserService } from '../../services/user.service';
 import { LangButtonComponent } from '../lang-button/lang-button.component';
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
@@ -47,7 +47,7 @@ export class NavbarComponent {
   constructor(
     public userService: UserService,
     private translateService: TranslateService,
-    private kratosAuthService: KratosAuthService,
+    private authService: AuthService,
     breakpointService: BreakpointService,
   ) {
     this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(lang => {
@@ -62,7 +62,7 @@ export class NavbarComponent {
   }
 
   async logout() {
-    return this.kratosAuthService.logout();
+    return this.authService.logout();
   }
 
   toggleDrawer() {

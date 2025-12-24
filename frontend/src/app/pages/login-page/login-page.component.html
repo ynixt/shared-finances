@@ -2,8 +2,6 @@
 
 @if (form) {
   <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
-    <input type="hidden" formControlName="csrf_token" />
-
     <label class="flex flex-col gap-2">
       <span>{{ 'loginPage.email' | translate }}</span>
       <input pInputText formControlName="identifier" />

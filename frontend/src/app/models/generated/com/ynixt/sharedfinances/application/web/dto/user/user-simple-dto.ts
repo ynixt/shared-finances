@@ -6,4 +6,5 @@ export interface UserSimpleDto {
   firstName: string;
   id: string;
   lastName: string;
+  photoUrl?: string | null;
 }

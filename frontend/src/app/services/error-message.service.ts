@@ -12,23 +12,28 @@ export class ErrorMessageService {
   constructor(private translateService: TranslateService) {}
 
   handleError(error: any, messageService: MessageService) {
+    console.log(error);
     if (error instanceof HttpErrorResponse) {
-      const apiError = error.error as AppResponseErrorDto;
-
+      if (error.error instanceof Array) {
+        error.error.forEach(e => this.addApiErrorOnMessageService(messageService, e));
+      } else {
+        this.addApiErrorOnMessageService(messageService, error.error);
+      }
+    } else {
       messageService.add({
         severity: 'error',
         summary: this.translateService.instant('error.genericTitle'),
-        detail: this.translateService.instant(apiError.messageI18n ?? 'error.genericMessage', apiError.argsI18n ?? {}),
+        detail: this.translateService.instant('error.genericMessage'),
         life: DEFAULT_ERROR_LIFE,
       });
-
-      return;
     }
+  }
 
+  private addApiErrorOnMessageService(messageService: MessageService, apiError: AppResponseErrorDto | undefined | null) {
     messageService.add({
       severity: 'error',
       summary: this.translateService.instant('error.genericTitle'),
-      detail: this.translateService.instant('error.genericMessage'),
+      detail: this.translateService.instant(apiError?.messageI18n ?? 'error.genericMessage', apiError?.argsI18n ?? {}),
       life: DEFAULT_ERROR_LIFE,
     });
   }

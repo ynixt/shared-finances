@@ -9,10 +9,9 @@ import { filter, interval } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { PrimeNG } from 'primeng/config';
 
-import { KratosAuthService } from './services/kratos-auth.service';
+import { AuthService } from './services/auth.service';
 import { LangService } from './services/lang.service';
 import { TitleService } from './services/title.service';
-import { TokenSyncService } from './services/token-sync.service';
 import { UserService } from './services/user.service';
 import { i18nIsReady } from './util/i18n-util';
 import { updatePrimeI18n } from './util/prime-i18n';
@@ -21,12 +20,14 @@ import { updatePrimeI18n } from './util/prime-i18n';
   selector: 'app-root',
   imports: [RouterOutlet, ButtonModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  template: ` <router-outlet />`,
+  template: `
+    <div class="w-full min-h-screen flex router-wrapper-full">
+      <router-outlet />
+    </div>
+  `,
   styles: [],
 })
 export class AppComponent {
-  private readonly timeToRefreshToken = 9 * 60 * 1000;
-
   constructor(
     private primengConfig: PrimeNG,
     private translateService: TranslateService,
@@ -34,9 +35,8 @@ export class AppComponent {
     private title: Title,
     private titleService: TitleService,
     private router: Router,
-    private tokenSyncService: TokenSyncService,
     private userService: UserService,
-    private authService: KratosAuthService,
+    private authService: AuthService,
     private langService: LangService,
   ) {
     this.langService.init();
@@ -48,11 +48,6 @@ export class AppComponent {
       this.title.setTitle(this.titleService.getTitle(this.router.routerState.snapshot.root, this.router.url));
     });
 
-    this.authService.refreshJwt();
     this.userService.getUser();
-
-    interval(this.timeToRefreshToken).subscribe(() => {
-      this.tokenSyncService.refreshOnce();
-    });
   }
 }

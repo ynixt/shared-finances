@@ -9,7 +9,7 @@ class UserJwtAuthenticationToken(
     private val user: UserPrincipal,
     authorities: Collection<GrantedAuthority>,
 ) : AbstractAuthenticationToken(authorities) {
-    override fun getCredentials(): Any = jwt
+    override fun getCredentials(): Jwt = jwt
 
     override fun getPrincipal(): UserPrincipal = user
 

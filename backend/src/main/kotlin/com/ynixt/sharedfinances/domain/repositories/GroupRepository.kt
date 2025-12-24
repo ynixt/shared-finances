@@ -18,6 +18,4 @@ interface GroupRepository : EntityRepository<GroupEntity> {
         id: UUID,
         newName: String,
     ): Mono<Long>
-
-    fun deleteById(id: UUID): Mono<Long>
 }

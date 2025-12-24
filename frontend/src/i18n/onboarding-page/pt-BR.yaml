@@ -2,3 +2,4 @@ onboardingPage:
   title: Obrigado por ter nos escolhido
   subtitle: Agora só falta algumas informações complementares
   defaultCurrency: Moeda padrão
+  timezone: Fuso horário

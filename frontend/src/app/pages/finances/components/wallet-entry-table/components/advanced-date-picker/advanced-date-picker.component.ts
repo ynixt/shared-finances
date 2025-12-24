@@ -142,7 +142,6 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
         dayjs(rangeDates[1]).add(1, 'month').endOf('month').toDate(),
       ]);
     } else if (this.dateFormControl.value != null) {
-      console.log('asd');
       this.dateFormControl.setValue(dayjs(this.dateFormControl.value).add(1, 'month').toDate());
     }
   }

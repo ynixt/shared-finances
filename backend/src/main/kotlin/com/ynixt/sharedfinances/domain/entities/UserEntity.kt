@@ -4,10 +4,15 @@ import org.springframework.data.relational.core.mapping.Table
 
 @Table("users")
 class UserEntity(
-    val externalId: String,
     val email: String,
-    val firstName: String,
-    val lastName: String,
+    var passwordHash: String?,
+    var firstName: String,
+    var lastName: String,
     var lang: String,
-    var defaultCurrency: String?,
+    var defaultCurrency: String,
+    var tmz: String,
+    var photoUrl: String?,
+    var emailVerified: Boolean,
+    var mfaEnabled: Boolean,
+    var totpSecret: String?,
 ) : AuditedEntity()

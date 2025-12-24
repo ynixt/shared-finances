@@ -1,9 +1,7 @@
 server:
-  port: ${PORT}
+  port: ${APP_PORT}
   http2:
     enabled: true
-  error:
-    include-message: always
 
 spring:
   application:
@@ -43,12 +41,9 @@ spring:
           max-idle: 16
           min-idle: 0
           max-wait: 5s
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${APP_ISSUER_URL}
-          jwk-set-uri: ${APP_JWK_URL}
+  web:
+    error:
+      include-message: always
 #  graphql:
 #    graphiql:
 #      enabled: true
@@ -75,4 +70,21 @@ logging:
     io.r2dbc.postgresql.PARAM: DEBUG
 
 app:
-  invitationExpirationMinutes: 15
+  invitationExpirationMinutes: ${APP_INVITATION_EXPIRATION_MINUTES:15}
+  security:
+    jwt:
+      publicKeyBase64: ${APP_JWT_PUBLIC_KEY}
+      privateKeyBase64: ${APP_JWT_PRIVATE_KEY}
+      kid: ${APP_JWT_KID}
+      issuer: ${APP_JWT_ISSUER}
+      accessTokenTTLMinutes: ${APP_JWT_ACCESS_TOKEN_TTL_MINUTES:15}
+      refreshTokenTTLMinutes: ${APP_JWT_REFRESH_TOKEN_TTL_MINUTES:43200}
+    wrongPasswordTtlMinutes: ${APP_WRONG_PASSWORD_TTL_MINUTES:120}
+    secureCookie: ${APP_SECURE_COOKIE:true}
+  s3:
+    endpoint: ${APP_S3_ENDPOINT}
+    accessKey: ${APP_S3_ACCESS_KEY_ID}
+    secretKey: ${APP_S3_SECRET_ACCESS_KEY}
+    region: ${APP_S3_REGION}
+    bucket: ${APP_S3_BUCKET}
+    pathStyleAccessEnabled: ${APP_S3_PATH_STYLE_ACCESS_ENABLED:true}

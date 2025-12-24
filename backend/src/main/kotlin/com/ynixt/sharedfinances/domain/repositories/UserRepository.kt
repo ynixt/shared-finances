@@ -6,9 +6,7 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface UserRepository : EntityRepository<UserEntity> {
-    fun findByEmail(email: String): Flux<UserEntity>
-
-    fun findByExternalId(externalId: String): Flux<UserEntity>
+    fun findOneByEmail(email: String): Mono<UserEntity>
 
     fun changeLanguage(
         userId: UUID,
@@ -19,4 +17,8 @@ interface UserRepository : EntityRepository<UserEntity> {
         userId: UUID,
         newDefaultCurrency: String,
     ): Mono<Int>
+
+    fun findAllUsersInSameGroup(userId: UUID): Flux<UserEntity>
+
+    fun insert(user: UserEntity): Mono<UserEntity>
 }

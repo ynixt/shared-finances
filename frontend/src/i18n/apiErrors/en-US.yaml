@@ -2,3 +2,17 @@ apiErrors:
   memberAlreadyInGroup: User is already on this group.
   bankAccountAlreadyInGroup: Bank account is already associated to this group.
   duplicatedCategory: This name is already in use in another category.
+  login:
+    invalidCredentials: Invalid credentials
+  generic:
+    fieldInvalid: "Invalid field '{{field}}'."
+  registration:
+    emailInvalid: Invalid e-mail.
+    emailSize: 'Email must have between {{min}} and {{max}} characters.'
+    emailAlreadyInUse: Email already in use.
+    passwordInvalid: Invalid password.
+    passwordSize: 'Password must have between {{min}} and {{max}} characters.'
+    firstNameInvalid: Invalid first name.
+    firstNameSize: 'The first name must have between {{min}} and {{max}} characters.'
+    lastNameInvalid: Invalid last name.
+    lastNameSize: 'The last name must have between {{min}} and {{max}} characters.'

@@ -17,6 +17,7 @@ class SimpleEntityUuidBeforeConvertCallback : BeforeConvertCallback<SimpleEntity
         if (entity.id == null) {
             entity.id = Generators.timeBasedEpochRandomGenerator().generate()
         }
+
         return Mono.just(entity)
     }
 }

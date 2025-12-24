@@ -7,7 +7,7 @@ import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/app
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { ActionEventCategory } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
-import { KratosAuthService } from '../../../services/kratos-auth.service';
+import { TokenStateService } from '../../../services/token-state.service';
 import { ActionEventService } from './action-event.service';
 
 const notGroupFilter = filter((e: UserActionEventDto) => e.groupId == null);
@@ -32,8 +32,8 @@ export class UserActionEventService extends ActionEventService implements OnDest
 
   readonly groupInserted$: Observable<GroupDto>;
 
-  constructor(authService: KratosAuthService, zone: NgZone) {
-    super(authService, zone, '/api/sse/user-events');
+  constructor(tokenStateService: TokenStateService, zone: NgZone) {
+    super(tokenStateService, zone, '/api/sse/user-events');
 
     this.groupEvents$ = this.wire$.pipe(
       map(msg => {

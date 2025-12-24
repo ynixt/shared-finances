@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page
 import reactor.core.publisher.Mono
 
 object MonoExtensions {
-    inline fun <T, R> Mono<Page<T>>.mapPage(crossinline mapper: (T) -> R): Mono<Page<R>> =
+    inline fun <T : Any, R : Any> Mono<Page<T>>.mapPage(crossinline mapper: (T) -> R): Mono<Page<R>> =
         this.map { page ->
             page.map { mapper(it) }
         }

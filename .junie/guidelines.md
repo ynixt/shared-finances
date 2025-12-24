@@ -116,9 +116,6 @@ tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
         "com.ynixt.sharedfinances.application.web.dto",
         "com.ynixt.sharedfinances.domain.enums",
     )
-    excludeClassPackages = listOf(
-        "com.ynixt.sharedfinances.application.web.dto.kratos",
-    )
     generateEnumObject = true
 }
 ```

@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { md5 } from 'js-md5';
@@ -7,6 +7,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tooltip } from 'primeng/tooltip';
 
 import { UserResponseDto, UserSimpleDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { PresignedService } from '../../pages/finances/services/presigned.service';
 
 export type UserAvatarSize = 'normal' | 'large' | 'xlarge';
 
@@ -30,6 +31,7 @@ export const convertUserAvatarSizeToRem: (size: UserAvatarSize) => number = (siz
   styleUrl: './user-avatar.component.scss',
 })
 export class UserAvatarComponent {
+  presignedService = inject(PresignedService);
   tooltipPosition = input<'bottom' | 'left' | 'top' | 'right'>('bottom');
   user = input<UserSimpleDto | undefined>(undefined);
   showTooltip = input<boolean>(true);
@@ -55,16 +57,16 @@ export class UserAvatarComponent {
 
       if (user == null) return undefined;
 
-      const hash = md5(user.email.trim().toLowerCase());
-      const size = this.convertRemToPixels(this.sizeInRem());
-      const rating = 'g';
-
-      let url = `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404}&r=${rating}`;
-
-      const img = new Image();
-      img.onload = () => this.imageUrl.set(url);
-      img.onerror = () => this.imageUrl.set(undefined);
-      img.src = url;
+      if (user.photoUrl == null) return this.imageUrl.set(undefined);
+      else {
+        this.presignedService
+          .getUrl(user.photoUrl)
+          .then(url => this.imageUrl.set(url))
+          .catch(err => {
+            this.imageUrl.set(undefined);
+            console.error(err);
+          });
+      }
     });
   }
 

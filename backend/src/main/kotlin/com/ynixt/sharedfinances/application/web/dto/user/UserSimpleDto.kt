@@ -7,4 +7,5 @@ data class UserSimpleDto(
     val firstName: String,
     var lastName: String,
     val email: String,
+    val photoUrl: String?,
 )

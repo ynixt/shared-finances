@@ -155,7 +155,7 @@ abstract class WalletEntrySaveServiceImpl(
         }
     }
 
-    private fun <ID, ENTITY> NewEntryRequest.attachRequired(
+    private fun <ID, ENTITY : Any> NewEntryRequest.attachRequired(
         id: ID,
         fetch: (ID) -> Mono<ENTITY>,
         onFound: NewEntryRequest.(ENTITY) -> NewEntryRequest,
@@ -165,7 +165,7 @@ abstract class WalletEntrySaveServiceImpl(
             .map { entity -> onFound(entity) }
             .switchIfEmpty(Mono.error(onNotFound(id)))
 
-    private fun <ID, ENTITY> NewEntryRequest.attachOptional(
+    private fun <ID, ENTITY : Any> NewEntryRequest.attachOptional(
         id: ID?,
         fetch: (ID) -> Mono<ENTITY>,
         onFound: NewEntryRequest.(ENTITY) -> NewEntryRequest,

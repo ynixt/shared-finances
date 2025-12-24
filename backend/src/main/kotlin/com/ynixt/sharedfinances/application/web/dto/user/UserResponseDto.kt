@@ -4,10 +4,13 @@ import java.util.UUID
 
 data class UserResponseDto(
     val id: UUID,
-    val externalId: String,
     val email: String,
     val firstName: String,
     var lastName: String,
     val lang: String,
-    val defaultCurrency: String?,
+    val defaultCurrency: String,
+    val tmz: String,
+    val emailVerified: Boolean,
+    val mfaEnabled: Boolean,
+    var photoUrl: String?,
 )

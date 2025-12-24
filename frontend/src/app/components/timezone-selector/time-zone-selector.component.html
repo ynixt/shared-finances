@@ -1,0 +1,26 @@
+<p-select
+  class="w-full"
+  [options]="timezones"
+  [ngModel]="value"
+  (ngModelChange)="onValueChange($event)"
+  inputId="timezone-autocomplete"
+  [disabled]="disabled"
+  optionValue="name"
+  optionLabel="name"
+  [filter]="true"
+  filterBy="all"
+  [virtualScroll]="true"
+  [virtualScrollItemSize]="65"
+>
+  <ng-template #selectedItem let-selectedOption>
+    <div class="flex items-center gap-2">
+      <div>{{ selectedOption ? `${selectedOption.name} (${selectedOption.abbreviation})` : '' }}</div>
+    </div>
+  </ng-template>
+  <ng-template #item let-item>
+    <div class="p-clearfix">
+      <div style="font-weight: 600">{{ item.name }}</div>
+      <div style="font-size: 0.9em; color: var(--text-secondary)">{{ item.abbreviation }}</div>
+    </div>
+  </ng-template>
+</p-select>

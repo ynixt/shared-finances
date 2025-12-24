@@ -9,7 +9,7 @@ import { GroupCreditCardsPageComponent } from './pages/finances/groups-page/grou
 export const routes: Routes = [
   {
     'path': '',
-    canActivate: [notLoggedGuard()],
+    canActivate: [notLoggedGuard],
     loadComponent: () => import('./pages/showcase-page/showcase-page.component').then(m => m.ShowcasePageComponent),
     data: {
       pageTitleKey: 'pageTitle.home',
@@ -17,7 +17,7 @@ export const routes: Routes = [
   },
   {
     'path': 'login',
-    canActivate: [notLoggedGuard()],
+    canActivate: [notLoggedGuard],
     loadComponent: () => import('./pages/login-page/login-page.component').then(m => m.LoginPageComponent),
     data: {
       pageTitleKey: 'pageTitle.login',
@@ -25,7 +25,7 @@ export const routes: Routes = [
   },
   {
     'path': 'register',
-    canActivate: [notLoggedGuard()],
+    canActivate: [notLoggedGuard],
     loadComponent: () => import('./pages/registration-page/registration-page.component').then(m => m.RegistrationPageComponent),
     data: {
       pageTitleKey: 'pageTitle.register',
@@ -33,7 +33,7 @@ export const routes: Routes = [
   },
   {
     path: 'welcome',
-    canActivate: [authGuard()],
+    canActivate: [authGuard],
     loadComponent: () => import('./pages/onboarding-page/onboarding-page.component').then(m => m.OnboardingPageComponent),
     data: {
       pageTitleKey: 'pageTitle.onboarding',
@@ -41,7 +41,7 @@ export const routes: Routes = [
   },
   {
     'path': 'app',
-    canActivate: [authGuard()],
+    canActivate: [authGuard],
     loadComponent: () => import('./pages/finances/finances-home-page/finances-page.component').then(m => m.FinancesPageComponent),
     children: [
       {

@@ -9,12 +9,14 @@ import { InputText } from 'primeng/inputtext';
 import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 
+import { CurrencySelectorComponent } from '../../components/currency-selector/currency-selector.component';
 import { LanguagePickerComponent } from '../../components/language-picker/language-picker.component';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RequiredFieldAsteriskComponent } from '../../components/required-field-asterisk/required-field-asterisk.component';
-import { KratosAuthService } from '../../services/kratos-auth.service';
-import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
-import { translateKratosError } from '../../util/kratos-i18n';
+import { TimeZoneSelectorComponent, allTimezones } from '../../components/timezone-selector/time-zone-selector.component';
+import { AuthService } from '../../services/auth.service';
+import { ErrorMessageService } from '../../services/error-message.service';
+import { groupArrayBy } from '../../util/collection-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 import { promiseTimeout } from '../../util/timeout-util';
 import { confirmPasswordValidator } from './confirm-password.validator';
@@ -31,6 +33,8 @@ import { confirmPasswordValidator } from './confirm-password.validator';
     LanguagePickerComponent,
     NavbarComponent,
     RequiredFieldAsteriskComponent,
+    CurrencySelectorComponent,
+    TimeZoneSelectorComponent,
   ],
   templateUrl: './registration-page.component.html',
   styleUrl: './registration-page.component.scss',
@@ -38,16 +42,16 @@ import { confirmPasswordValidator } from './confirm-password.validator';
 })
 export class RegistrationPageComponent implements OnInit {
   form!: FormGroup;
-  flow: any;
   submitting = false;
 
   constructor(
     private fb: FormBuilder,
-    private auth: KratosAuthService,
+    private auth: AuthService,
     private translateService: TranslateService,
     private messageService: MessageService,
     private router: Router,
     private route: ActivatedRoute,
+    private errorMessageService: ErrorMessageService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -59,24 +63,22 @@ export class RegistrationPageComponent implements OnInit {
   }
 
   async submit(): Promise<void> {
-    if (!this.flow || this.form.invalid || this.submitting) {
+    if (this.form.invalid || this.submitting) {
       return;
     }
-
-    const body = {
-      method: 'password',
-      csrf_token: this.form.value.csrf_token,
-      password: this.form.value.password,
-      'traits.email': this.form.value.email,
-      'traits.lang': this.form.value.language,
-      'traits.name.firstName': this.form.value.name.first,
-      'traits.name.lastName': this.form.value.name.last,
-    };
 
     this.submitting = true;
 
     try {
-      await this.auth.submitRegistrationFlow(this.flow.id, body);
+      await this.auth.submitRegistration({
+        email: this.form.value.email,
+        password: this.form.value.password,
+        firstName: this.form.value.name.first,
+        lastName: this.form.value.name.last,
+        lang: this.form.value.language,
+        tmz: this.form.value.tmz,
+        defaultCurrency: this.form.value.defaultCurrency,
+      });
 
       this.messageService.add({
         severity: 'success',
@@ -96,30 +98,13 @@ export class RegistrationPageComponent implements OnInit {
     } catch (error) {
       this.submitting = false;
 
-      console.error(error);
+      this.errorMessageService.handleError(error, this.messageService);
 
-      let errorMessage = translateKratosError(error, this.translateService);
-
-      if (errorMessage == null) {
-        errorMessage = this.translateService.instant('registerPage.error.genericMessage');
-      }
-
-      this.messageService.add({
-        severity: 'error',
-        summary: this.translateService.instant('registerPage.error.title'),
-        detail: errorMessage!!,
-        life: DEFAULT_ERROR_LIFE,
-      });
+      throw error;
     }
   }
 
   private async getFlow() {
-    const flow = await this.auth.getRegistrationFlow();
-
-    this.flow = flow;
-
-    const csrf = flow.ui.nodes.find((n: any) => n.attributes.name === 'csrf_token')?.attributes.value;
-
     this.form = this.fb.group(
       {
         email: ['', [Validators.required, Validators.email]],
@@ -127,13 +112,24 @@ export class RegistrationPageComponent implements OnInit {
           first: ['', [Validators.required, Validators.minLength(2)]],
           last: ['', [Validators.required, Validators.minLength(2)]],
         }),
-        password: ['', [Validators.required, Validators.minLength(3)]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', [Validators.required]],
-        language: ['', [Validators.required]],
-        method: ['password'],
-        csrf_token: [csrf],
+        language: [undefined, [Validators.required]],
+        tmz: [this.getBrowserTmz(), [Validators.required]],
+        defaultCurrency: [undefined, [Validators.required]],
       },
       { validators: confirmPasswordValidator },
     );
+  }
+
+  private getBrowserTmz(): string | undefined {
+    const browserTmz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const allTimezonesByName = groupArrayBy(allTimezones, it => it.name);
+
+    if (allTimezonesByName.has(browserTmz)) {
+      return browserTmz;
+    }
+
+    return undefined;
   }
 }

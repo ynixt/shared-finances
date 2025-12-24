@@ -5,7 +5,7 @@ import io.github.ynixt.anothertypescriptgenerator.GenerateTypescriptInterfacesTa
 plugins {
     kotlin("jvm") version "2.2.21"
     kotlin("plugin.spring") version "2.2.21"
-    id("org.springframework.boot") version "3.5.0"
+    id("org.springframework.boot") version "4.0.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("io.github.ynixt.another-typescript-generator") version "1.2.0"
     id("tech.mappie.plugin") version "2.2.21-2.0.0"
@@ -30,30 +30,36 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.security:spring-security-oauth2-authorization-server")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-resource-server")
+    implementation("org.springframework.boot:spring-boot-starter-security-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
 
     implementation("com.graphql-java:graphql-java-extended-scalars:24.0")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-api:2.8.13")
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.13")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-api:3.0.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.0")
 
-    implementation("com.fasterxml.uuid:java-uuid-generator:5.1.0")
+    implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
+    implementation("tools.jackson.module:jackson-module-kotlin")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 
     implementation("io.r2dbc:r2dbc-pool")
-    implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
 
-    implementation("org.apache.commons:commons-pool2:2.12.1")
+    implementation("org.apache.commons:commons-pool2:2.13.0")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("com.github.slugify:slugify:3.0.7")
 
+    implementation(platform("software.amazon.awssdk:bom:2.25.60"))
+    implementation("software.amazon.awssdk:s3")
+
+    runtimeOnly("commons-logging:commons-logging")
     runtimeOnly("org.postgresql:postgresql") // flyway
     runtimeOnly("org.postgresql:r2dbc-postgresql")
     runtimeOnly("org.bouncycastle:bcprov-jdk18on:1.80")
@@ -82,10 +88,6 @@ tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
         listOf(
             "com.ynixt.sharedfinances.application.web.dto",
             "com.ynixt.sharedfinances.domain.enums",
-        )
-    excludeClassPackages =
-        listOf(
-            "com.ynixt.sharedfinances.application.web.dto.kratos",
         )
     generateEnumObject = true
 }
