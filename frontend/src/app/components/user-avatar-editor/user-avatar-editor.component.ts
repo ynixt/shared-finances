@@ -53,7 +53,7 @@ export class UserAvatarEditorComponent extends SimpleControlValueAccessor<string
     if (!user) return;
 
     const hash = md5(user.email.trim().toLowerCase());
-    const size = 256;
+    const size = 128;
     const rating = 'g';
 
     this.onValueChange(`https://www.gravatar.com/avatar/${hash}?s=${size}&d=404}&r=${rating}`);
