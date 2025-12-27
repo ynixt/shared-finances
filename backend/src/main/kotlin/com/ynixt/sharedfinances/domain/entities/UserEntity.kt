@@ -4,7 +4,7 @@ import org.springframework.data.relational.core.mapping.Table
 
 @Table("users")
 class UserEntity(
-    val email: String,
+    var email: String,
     var passwordHash: String?,
     var firstName: String,
     var lastName: String,

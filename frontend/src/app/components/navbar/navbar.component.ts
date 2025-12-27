@@ -77,6 +77,11 @@ export class NavbarComponent {
   private loadItems() {
     this.items = [
       {
+        label: this.translateService.instant('navbar.settings'),
+        icon: 'pi pi-cog',
+        routerLink: ['/app', 'settings'],
+      },
+      {
         label: this.translateService.instant('navbar.logout'),
         icon: 'pi pi-sign-out',
         command: (event: MenuItemCommandEvent) => {

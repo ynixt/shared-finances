@@ -24,6 +24,7 @@ general:
   unassociate: Unassociate
   genericConfirmation: Are you sure that you want to proceed?
   confirmation: Confirmation
+  ok: Ok
   cancel: Cancel
   greetings: 'Hello, {{name}}'
   copy: Copy
@@ -35,4 +36,5 @@ error:
   genericMessage: An error occurred
 
 navbar:
+  settings: Settings
   logout: Logout

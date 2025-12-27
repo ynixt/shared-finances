@@ -4,7 +4,9 @@ import { Injectable, Injector, WritableSignal, inject, signal } from '@angular/c
 import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 
-import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { ChangePasswordDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
+import { UpdateUserDto, UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { UserMissingError } from '../pages/finances/errors/user-missing.error';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -45,7 +47,30 @@ export class UserService {
     });
   }
 
-  getUserFromHttp(): Promise<UserResponseDto> {
-    return lastValueFrom(this.http.get<UserResponseDto>('/api/users/current').pipe(take(1)));
+  async changePassword(changePasswordRequest: ChangePasswordDto): Promise<void> {
+    const currentUser = this.user();
+
+    if (currentUser == null) return;
+
+    await lastValueFrom(this.http.put(`/api/users/current/changePassword`, changePasswordRequest).pipe(take(1)));
+  }
+
+  async updateCurrentUser(request: UpdateUserDto, avatar: File | undefined): Promise<UserResponseDto> {
+    const currentUser = this.user();
+
+    if (currentUser == null) new UserMissingError();
+
+    const form = new FormData();
+    form.append('dto', new Blob([JSON.stringify(request)], { type: 'application/json' }));
+
+    if (avatar) {
+      form.append('avatar', avatar, avatar.name);
+    }
+
+    const newUser = await lastValueFrom(this.http.put<UserResponseDto>(`/api/users/current`, form).pipe(take(1)));
+
+    this.changeUser(newUser);
+
+    return newUser;
   }
 }

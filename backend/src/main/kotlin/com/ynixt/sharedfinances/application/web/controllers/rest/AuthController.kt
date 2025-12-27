@@ -106,27 +106,26 @@ class AuthController(
     )
     @PostMapping("/open/auth/refresh")
     fun refreshToken(
-        @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = true) refreshToken: String,
+        @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) refreshToken: String?,
     ): Mono<ResponseEntity<Unit>> =
-        authService
-            .refreshToken(refreshToken)
-            .map { refreshTokenResult ->
-                ResponseEntity
-                    .noContent()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer $refreshTokenResult")
-                    .build<Unit>()
-            }.onErrorResume { error ->
-                if (error is BadCredentialsException) {
-                    Mono.just(
-                        ResponseEntity
-                            .status(HttpStatus.UNAUTHORIZED)
-                            .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
-                            .build(),
-                    )
-                } else {
-                    Mono.error(error)
+        if (refreshToken == null) {
+            unauthorized()
+        } else {
+            authService
+                .refreshToken(refreshToken)
+                .map { refreshTokenResult ->
+                    ResponseEntity
+                        .noContent()
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer $refreshTokenResult")
+                        .build<Unit>()
+                }.onErrorResume { error ->
+                    if (error is BadCredentialsException) {
+                        unauthorized()
+                    } else {
+                        Mono.error(error)
+                    }
                 }
-            }
+        }
 
     private fun setRefreshCookie(
         value: String,
@@ -142,4 +141,12 @@ class AuthController(
             .build()
 
     private fun clearRefreshCookie() = setRefreshCookie("", Duration.ZERO)
+
+    private fun unauthorized(): Mono<ResponseEntity<Unit>> =
+        Mono.just(
+            ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
+                .build(),
+        )
 }

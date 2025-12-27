@@ -20,6 +20,7 @@ import { groupArrayBy } from '../../util/collection-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 import { promiseTimeout } from '../../util/timeout-util';
 import { confirmPasswordValidator } from './confirm-password.validator';
+import { passwordValidator } from './password-validator';
 
 @Component({
   selector: 'app-registration-page',
@@ -112,7 +113,7 @@ export class RegistrationPageComponent implements OnInit {
           first: ['', [Validators.required, Validators.minLength(2)]],
           last: ['', [Validators.required, Validators.minLength(2)]],
         }),
-        password: ['', [Validators.required, Validators.minLength(6)]],
+        password: ['', [Validators.required, passwordValidator]],
         confirmPassword: ['', [Validators.required]],
         language: [undefined, [Validators.required]],
         tmz: [this.getBrowserTmz(), [Validators.required]],

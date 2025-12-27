@@ -4,6 +4,7 @@ pageTitle:
   register: Cadastrar
   notFound: 404 - Não encontrado
   app: Visão Geral
+  settings: Configurações
   bankAccounts: Contas bancárias
   newBankAccount: Nova conta bancária
   editBankAccount: Editar conta bancária

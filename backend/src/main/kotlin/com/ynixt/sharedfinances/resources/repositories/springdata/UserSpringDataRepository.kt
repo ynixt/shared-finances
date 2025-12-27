@@ -42,6 +42,20 @@ interface UserSpringDataRepository :
         newDefaultCurrency: String,
     ): Mono<Int>
 
+    @Modifying
+    @Query(
+        """
+        update users
+        set password_hash = :newPasswordHash,
+        updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+    """,
+    )
+    fun changePassword(
+        userId: UUID,
+        newPasswordHash: String,
+    ): Mono<Int>
+
     @Query(
         """
         select u.*

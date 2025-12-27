@@ -1,0 +1,16 @@
+financesPage:
+  userSettingsPage:
+    title: Settings
+    general: General
+    security: Security
+    changePassword: Change password
+    changePasswordSuccessfully: Password was successfully changed.
+    currentPassword: Current password
+    newPassword: New password
+    newPasswordConfirmation: New password confirmation
+    twoStepsSettings: Configuring 2-step authentication
+    enableTwoStep: Enable 2-step authentication
+    disableTwoStep: Disable 2-step authentication
+    addPhoto: Add from file
+    fromGravatar: Add from Gravatar
+    avatar: Avatar

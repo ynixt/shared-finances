@@ -1,7 +1,7 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export interface LoginResult {
+export interface LoginResultDto {
   accessToken: string;
   refreshExpiresInSeconds: number;
   refreshToken: string;

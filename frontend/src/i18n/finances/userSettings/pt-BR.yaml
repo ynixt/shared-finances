@@ -1,0 +1,16 @@
+financesPage:
+  userSettingsPage:
+    title: Configurações
+    general: Gerais
+    security: Segurança
+    changePassword: Alterar senha
+    changePasswordSuccessfully: Senha alterada com sucesso.
+    currentPassword: Senha atual
+    newPassword: Nova senha
+    newPasswordConfirmation: Confirmação da nova senha
+    twoStepsSettings: Configuração da autenticação por 2 etapas
+    enableTwoStep: Ativar verificação de duas etapas
+    disableTwoStep: Desativar verificação de duas etapas
+    addPhoto: Adicionar por arquivo
+    fromGravatar: Adicionar do Gravatar
+    avatar: Avatar

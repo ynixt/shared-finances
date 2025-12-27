@@ -1,13 +1,12 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { md5 } from 'js-md5';
 import { Avatar } from 'primeng/avatar';
 import { Skeleton } from 'primeng/skeleton';
 import { Tooltip } from 'primeng/tooltip';
 
-import { UserResponseDto, UserSimpleDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
-import { PresignedService } from '../../pages/finances/services/presigned.service';
+import { UserSimpleDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { FileService } from '../../services/file.service';
 
 export type UserAvatarSize = 'normal' | 'large' | 'xlarge';
 
@@ -31,9 +30,11 @@ export const convertUserAvatarSizeToRem: (size: UserAvatarSize) => number = (siz
   styleUrl: './user-avatar.component.scss',
 })
 export class UserAvatarComponent {
-  presignedService = inject(PresignedService);
+  fileService = inject(FileService);
+
   tooltipPosition = input<'bottom' | 'left' | 'top' | 'right'>('bottom');
   user = input<UserSimpleDto | undefined>(undefined);
+  customImageUrl = input<string | null | undefined>(undefined);
   showTooltip = input<boolean>(true);
   size = input<UserAvatarSize>('normal');
 
@@ -54,23 +55,17 @@ export class UserAvatarComponent {
   constructor() {
     effect(() => {
       const user = this.user();
+      const customImageUrl = this.customImageUrl();
 
-      if (user == null) return undefined;
-
-      if (user.photoUrl == null) return this.imageUrl.set(undefined);
-      else {
-        this.presignedService
-          .getUrl(user.photoUrl)
-          .then(url => this.imageUrl.set(url))
-          .catch(err => {
-            this.imageUrl.set(undefined);
-            console.error(err);
-          });
+      if (customImageUrl === undefined) {
+        if (user == null) return undefined;
+        if (user.photoUrl == null) return this.imageUrl.set(undefined);
+        else {
+          this.fileService.getRealUrl(user.photoUrl).then(url => this.imageUrl.set(url == null ? undefined : url));
+        }
+      } else {
+        this.imageUrl.set(customImageUrl == null ? undefined : customImageUrl);
       }
     });
-  }
-
-  private convertRemToPixels(rem: number) {
-    return rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
   }
 }

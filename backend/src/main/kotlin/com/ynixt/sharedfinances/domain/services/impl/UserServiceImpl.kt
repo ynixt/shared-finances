@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.services.impl
 
 import com.fasterxml.uuid.Generators
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
+import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.exceptions.EmailAlreadyInUseException
 import com.ynixt.sharedfinances.domain.models.Wrapper
@@ -10,11 +11,12 @@ import com.ynixt.sharedfinances.domain.services.AvatarService
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.UserService
 import kotlinx.coroutines.reactor.awaitSingle
+import org.springframework.http.codec.multipart.FilePart
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.security.MessageDigest
-import java.util.Locale.getDefault
+import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -64,6 +66,29 @@ class UserServiceImpl(
             }.awaitSingle()
     }
 
+    override fun changePassword(
+        userId: UUID,
+        currentPasswordHash: String?,
+        newPasswordHash: String,
+    ): Mono<Void> {
+        return repository
+            .findById(userId)
+            .switchIfEmpty(Mono.error(BadCredentialsException("invalid credentials")))
+            .flatMap { user ->
+                val correctHash = user.passwordHash
+
+                if (correctHash != null && !passwordEncoder.matches(currentPasswordHash, correctHash)) {
+                    return@flatMap Mono.error(BadCredentialsException("invalid credentials"))
+                }
+
+                repository
+                    .changePassword(
+                        userId = userId,
+                        newPasswordHash = passwordEncoder.encode(newPasswordHash)!!,
+                    ).then()
+            }
+    }
+
     @Transactional
     override suspend fun changeLanguage(
         userId: UUID,
@@ -80,14 +105,53 @@ class UserServiceImpl(
         repository.changeDefaultCurrency(userId, newDefaultCurrency).awaitSingle()
     }
 
-    private fun getPhotoFromGravatar(email: String) {
-        val hash = MessageDigest.getInstance("MD5").digest(email.trim().lowercase(getDefault()).toByteArray())
-        val size = 256
-        val rating = "g"
+    override fun updateUser(
+        userId: UUID,
+        updateUserDto: UpdateUserDto,
+        newAvatar: FilePart?,
+    ): Mono<UserEntity> =
+        repository
+            .findById(userId)
+            .flatMap { user ->
+                user.email = updateUserDto.email
+                user.firstName = updateUserDto.firstName
+                user.lastName = updateUserDto.lastName
+                user.lang = updateUserDto.lang
+                user.defaultCurrency = updateUserDto.defaultCurrency
+                user.tmz = updateUserDto.tmz
 
-        val url = "https://www.gravatar.com/avatar/$hash?s=$size&d=404}&r=$rating"
+                val removePhotoMono =
+                    if (user.photoUrl != null && (updateUserDto.removeAvatar || updateUserDto.getFromGravatar)) {
+                        avatarService.deletePhoto(userId).then()
+                    } else {
+                        Mono.empty()
+                    }
+                var newPhotoMono = Mono.empty<String>()
 
-        // TODO: baixar
-        // TODO fazer upload no minion
-    }
+                if (updateUserDto.removeAvatar) {
+                    user.photoUrl = null
+                } else if (updateUserDto.getFromGravatar) {
+                    newPhotoMono =
+                        avatarService.getPhotoFromGravatar(user.email, userId).map {
+                            user.photoUrl = it
+                            it
+                        }
+                } else if (newAvatar != null) {
+                    newPhotoMono =
+                        avatarService
+                            .upload(
+                                userId = userId,
+                                file = newAvatar,
+                            ).map {
+                                user.photoUrl = it
+                                it
+                            }
+                }
+
+                removePhotoMono
+                    .then(newPhotoMono)
+                    .then(repository.save(user))
+            }.flatMap {
+                repository.findById(userId)
+            }
 }

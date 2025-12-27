@@ -1,1 +1,171 @@
-<p>user-settings works!</p>
+<div class="user-settings-page">
+  <app-finances-title-bar [title]="'financesPage.userSettingsPage.title' | translate" closeRouterLink=".."></app-finances-title-bar>
+
+  @if (user == null) {
+    <p-progress-spinner></p-progress-spinner>
+  } @else {
+    <p-tabs value="0">
+      <p-tablist>
+        <p-tab value="0">{{ 'financesPage.userSettingsPage.general' | translate }}</p-tab>
+        <p-tab value="1">{{ 'financesPage.userSettingsPage.security' | translate }}</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="0">
+          <form [formGroup]="generalForm" class="flex flex-col gap-4 pt-4" (ngSubmit)="submitGeneralForm()">
+            <div class="grid md:grid-cols-2 gap-2" formGroupName="name">
+              <div>
+                <label for="firstName" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
+                  'general.firstName' | translate
+                }}</label>
+                <input
+                  pInputText
+                  id="firstName"
+                  type="text"
+                  [placeholder]="'general.firstName' | translate"
+                  formControlName="first"
+                  fluid
+                />
+              </div>
+
+              <div>
+                <label for="lastName" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                  >{{ 'general.lastName' | translate }}
+                </label>
+                <input pInputText id="lastName" type="text" [placeholder]="'general.lastName' | translate" formControlName="last" fluid />
+              </div>
+            </div>
+
+            <div class="w-full mb-4">
+              <label for="email" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                >{{ 'general.email' | translate }}
+              </label>
+              <input pInputText id="email" type="text" [placeholder]="'general.email' | translate" fluid formControlName="email" />
+            </div>
+
+            <div class="w-full mb-4">
+              <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                >{{ 'general.language' | translate }}
+              </label>
+              <app-language-picker id="languagePicker" formControlName="language"></app-language-picker>
+            </div>
+
+            <div class="w-full mb-4">
+              <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                >{{ 'onboardingPage.defaultCurrency' | translate }}
+              </label>
+              <app-currency-selector id="currencySelector" formControlName="defaultCurrency"></app-currency-selector>
+            </div>
+
+            <div class="w-full mb-4">
+              <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                >{{ 'onboardingPage.timezone' | translate }}
+              </label>
+              <app-time-zone-selector id="timezoneSelector" formControlName="tmz"></app-time-zone-selector>
+            </div>
+
+            <div class="w-full mt-4 mb-8">
+              <label for="avatar" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                >{{ 'financesPage.userSettingsPage.avatar' | translate }}
+              </label>
+              <div class="justify-center items-center flex">
+                <app-user-avatar-editor id="avatar" formControlName="photo" [user]="user"></app-user-avatar-editor>
+              </div>
+            </div>
+
+            <p-button
+              [loading]="submitting"
+              [disabled]="generalForm.invalid"
+              type="submit"
+              [label]="'general.save' | translate"
+              styleClass="w-full"
+            ></p-button>
+          </form>
+        </p-tabpanel>
+        <p-tabpanel value="1">
+          <p-panel
+            class="mt-4"
+            [header]="'financesPage.userSettingsPage.changePassword' | translate"
+            [toggleable]="true"
+            [collapsed]="true"
+            toggler="header"
+          >
+            <form [formGroup]="securityPasswordForm" class="flex flex-col gap-4" (ngSubmit)="submitChangePasswordForm()">
+              <div class="w-full mb-8">
+                <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                  >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
+                </label>
+                <p-password id="currentPassword" fluid formControlName="currentPassword" [toggleMask]="true" [feedback]="false" />
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-2">
+                <div class="w-full mb-8">
+                  <label for="newPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                    >{{ 'financesPage.userSettingsPage.newPassword' | translate }}
+                  </label>
+                  <p-password id="newPassword" fluid formControlName="newPassword" [toggleMask]="true" [feedback]="true" />
+                </div>
+
+                <div class="w-full mb-8">
+                  <label for="newPasswordConfirmation" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                    >{{ 'financesPage.userSettingsPage.newPasswordConfirmation' | translate }}
+                  </label>
+                  <p-password
+                    id="newPasswordConfirmation"
+                    fluid
+                    formControlName="newPasswordConfirmation"
+                    [toggleMask]="true"
+                    [feedback]="false"
+                  />
+                </div>
+              </div>
+
+              <p-button
+                [loading]="submitting"
+                [disabled]="securityPasswordForm.invalid"
+                type="submit"
+                [label]="'general.save' | translate"
+                styleClass="w-full"
+              ></p-button>
+            </form>
+          </p-panel>
+
+          <p-panel
+            class="mt-4"
+            [header]="'financesPage.userSettingsPage.twoStepsSettings' | translate"
+            [toggleable]="true"
+            [collapsed]="true"
+            toggler="header"
+          >
+            <form [formGroup]="securityTwoStepForm" class="flex flex-col gap-4">
+              <div class="w-full mb-8">
+                <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                  >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
+                </label>
+                <p-password id="currentPassword" fluid formControlName="currentPassword" [toggleMask]="true" [feedback]="false" />
+              </div>
+
+              @if (user.mfaEnabled) {
+                <p-button
+                  [loading]="submitting"
+                  [disabled]="securityTwoStepForm.invalid"
+                  type="submit"
+                  [label]="'financesPage.userSettingsPage.disableTwoStep' | translate"
+                  styleClass="w-full"
+                  severity="danger"
+                ></p-button>
+              } @else {
+                <p-button
+                  [loading]="submitting"
+                  [disabled]="securityTwoStepForm.invalid"
+                  type="submit"
+                  [label]="'financesPage.userSettingsPage.enableTwoStep' | translate"
+                  styleClass="w-full"
+                ></p-button>
+              }
+            </form>
+          </p-panel>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  }
+</div>

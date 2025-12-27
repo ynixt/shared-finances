@@ -4,6 +4,7 @@ pageTitle:
   register: Register
   notFound: 404 - Not Found
   app: Overview
+  settings: Settings
   bankAccounts: Bank accounts
   newBankAccount: New bank account
   editBankAccount: Edit bank account

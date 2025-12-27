@@ -18,6 +18,11 @@ interface UserRepository : EntityRepository<UserEntity> {
         newDefaultCurrency: String,
     ): Mono<Int>
 
+    fun changePassword(
+        userId: UUID,
+        newPasswordHash: String,
+    ): Mono<Int>
+
     fun findAllUsersInSameGroup(userId: UUID): Flux<UserEntity>
 
     fun insert(user: UserEntity): Mono<UserEntity>

@@ -4,20 +4,13 @@
   <div class="flex flex-col items-center">
     @if (form) {
       <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="flex mb-8 gap-2" formGroupName="name">
+        <div class="grid md:grid-cols-2 gap-2" formGroupName="name">
           <div>
             <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
               >{{ 'general.firstName' | translate }}
               <app-required-field-asterisk></app-required-field-asterisk>
             </label>
-            <input
-              pInputText
-              id="firstName"
-              type="text"
-              [placeholder]="'general.firstName' | translate"
-              class="w-full md:w-[30rem]"
-              formControlName="first"
-            />
+            <input pInputText id="firstName" type="text" [placeholder]="'general.firstName' | translate" fluid formControlName="first" />
           </div>
 
           <div>
@@ -25,14 +18,7 @@
               >{{ 'general.lastName' | translate }}
               <app-required-field-asterisk></app-required-field-asterisk>
             </label>
-            <input
-              pInputText
-              id="lastName"
-              type="text"
-              [placeholder]="'general.lastName' | translate"
-              class="w-full md:w-[30rem]"
-              formControlName="last"
-            />
+            <input pInputText id="lastName" type="text" [placeholder]="'general.lastName' | translate" fluid formControlName="last" />
           </div>
         </div>
 

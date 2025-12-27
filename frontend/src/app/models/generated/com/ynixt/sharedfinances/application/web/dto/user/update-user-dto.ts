@@ -1,15 +1,13 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export interface UserResponseDto {
+export interface UpdateUserDto {
   defaultCurrency: string;
   email: string;
-  emailVerified: boolean;
   firstName: string;
-  id: string;
+  getFromGravatar: boolean;
   lang: string;
   lastName: string;
-  mfaEnabled: boolean;
-  photoUrl?: string | null;
+  removeAvatar: boolean;
   tmz: string;
 }

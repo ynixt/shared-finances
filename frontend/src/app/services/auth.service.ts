@@ -87,7 +87,7 @@ export class AuthService {
   }
 
   private async getUserFromHttp(retryOnError = true): Promise<UserResponseDto> {
-    const token = await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
+    let token = await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
 
     if (token == null) throw 'Missing token.';
 
@@ -98,7 +98,6 @@ export class AuthService {
         const newToken = await this.refreshJwt();
 
         if (newToken != null) {
-          this.tokenSyncService.postTokenUpdatedMessage(newToken);
           return this.getUserFromHttp(false);
         }
       }
@@ -163,14 +162,17 @@ export class AuthService {
     this.navigateAfterLoginSuccess();
   }
 
-  async refreshJwt(): Promise<string | null> {
+  private async refreshJwt(): Promise<string | null> {
     try {
       const response = await this.authHttpService.refreshJwt();
       const token = this.getTokenFromHeaders(response.headers);
       await this.changeTokenAndSync(token);
     } catch (err) {
-      await this.changeTokenAndSync(null);
-      this.navigateAfterLogoutSuccess(window.location.pathname);
+      await this.logout({
+        sync: true,
+        callHttpLogout: false,
+        returnTo: window.location.pathname,
+      });
       throw err;
     }
 

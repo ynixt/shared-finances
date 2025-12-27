@@ -26,6 +26,11 @@ class UserRepositoryImpl(
         newDefaultCurrency: String,
     ): Mono<Int> = userSpringDataRepository.changeDefaultCurrency(userId, newDefaultCurrency)
 
+    override fun changePassword(
+        userId: UUID,
+        newPasswordHash: String,
+    ): Mono<Int> = userSpringDataRepository.changePassword(userId, newPasswordHash)
+
     override fun findAllUsersInSameGroup(userId: UUID): Flux<UserEntity> = userSpringDataRepository.findAllUsersInSameGroup(userId)
 
     override fun insert(user: UserEntity): Mono<UserEntity> = userR2DBCRepository.insert(user)

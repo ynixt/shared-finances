@@ -55,6 +55,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("com.github.slugify:slugify:3.0.7")
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.13.0")
 
     implementation(platform("software.amazon.awssdk:bom:2.25.60"))
     implementation("software.amazon.awssdk:s3")

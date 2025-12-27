@@ -53,6 +53,13 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'settings',
+        loadComponent: () => import('./pages/finances/user-settings/user-settings.component').then(m => m.UserSettingsComponent),
+        data: {
+          pageTitleKey: 'pageTitle.settings',
+        },
+      },
+      {
         path: 'transactions',
         children: [
           {

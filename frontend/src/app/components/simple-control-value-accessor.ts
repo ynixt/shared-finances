@@ -12,7 +12,7 @@ export abstract class SimpleControlValueAccessor<T> implements ControlValueAcces
   }
 
   onValueChange(value: T | undefined) {
-    this.value = value;
+    this.writeValue(value);
     this.onChange(value);
     this.onTouched();
   }

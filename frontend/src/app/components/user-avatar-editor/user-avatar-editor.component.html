@@ -1,0 +1,54 @@
+<div class="user-avatar-editor flex flex-col md:flex-row gap-2 items-center md:h-25">
+  <div>
+    <app-user-avatar [customImageUrl]="currentValueUrl" [showTooltip]="false" size="xlarge"></app-user-avatar>
+  </div>
+  <div class="flex flex-col gap-2">
+    <button type="button" pButton pRipple size="small" (click)="edit()">{{ 'financesPage.userSettingsPage.addPhoto' | translate }}</button>
+    @if (user()) {
+      <button type="button" severity="secondary" pButton pRipple size="small" (click)="fromGravatar()">
+        {{ 'financesPage.userSettingsPage.fromGravatar' | translate }}
+      </button>
+    }
+    @if (value) {
+      <button type="button" pButton pRipple severity="danger" size="small" (click)="delete()">{{ 'general.delete' | translate }}</button>
+    }
+  </div>
+
+  <input
+    #inputFile
+    style="visibility: hidden; position: absolute"
+    type="file"
+    (change)="fileChangeEvent($event)"
+    accept="image/png,image/jpeg,image/webp"
+  />
+</div>
+
+<p-dialog [showHeader]="false" [modal]="true" [(visible)]="dialogOpen" styleClass="w-screen h-screen flex flex-col">
+  <div class="my-8 h-full w-full flex flex-1 overflow-hidden">
+    @if (imageChangedEvent) {
+      <image-cropper
+        [imageChangedEvent]="imageChangedEvent"
+        [maintainAspectRatio]="true"
+        [aspectRatio]="1"
+        format="png"
+        (imageCropped)="imageCropped($event)"
+        [resizeToHeight]="256"
+        [resizeToWidth]="256"
+      ></image-cropper>
+    } @else if (currentValueUrl) {
+      <image-cropper
+        [imageURL]="currentValueUrl"
+        [maintainAspectRatio]="true"
+        [aspectRatio]="1"
+        format="png"
+        (imageCropped)="imageCropped($event)"
+        [resizeToHeight]="256"
+        [resizeToWidth]="256"
+      ></image-cropper>
+    }
+  </div>
+  <div class="flex justify-end gap-2 mt-4">
+    <p-button [label]="'general.cancel' | translate" severity="secondary" (click)="cancel()" />
+    <p-button [label]="'general.ok' | translate" (click)="ok()" />
+  </div>
+</p-dialog>
