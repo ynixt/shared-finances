@@ -2,6 +2,6 @@
 /* tslint-disable */
 
 export interface ChangePasswordDto {
-  currentPasswordHash?: string | null;
-  newPasswordHash: string;
+  currentPassword?: string | null;
+  newPassword: string;
 }

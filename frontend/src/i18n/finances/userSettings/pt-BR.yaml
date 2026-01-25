@@ -6,11 +6,14 @@ financesPage:
     changePassword: Alterar senha
     changePasswordSuccessfully: Senha alterada com sucesso.
     currentPassword: Senha atual
+    mfa: Código 2-step
     newPassword: Nova senha
     newPasswordConfirmation: Confirmação da nova senha
     twoStepsSettings: Configuração da autenticação por 2 etapas
     enableTwoStep: Ativar verificação de duas etapas
+    enableTwoStepSuccessfully: '2-step foi ativado com sucesso. Por favor guarde os códigos abaixo de forma segura:'
     disableTwoStep: Desativar verificação de duas etapas
+    disableTwoStepSuccessfully: 2-step foi desativado com sucesso.
     addPhoto: Adicionar por arquivo
     fromGravatar: Adicionar do Gravatar
     avatar: Avatar

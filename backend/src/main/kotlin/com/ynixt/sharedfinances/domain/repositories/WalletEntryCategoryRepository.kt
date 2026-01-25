@@ -7,8 +7,6 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface WalletEntryCategoryRepository : EntityRepository<WalletEntryCategoryEntity> {
-    fun saveAll(category: Iterable<WalletEntryCategoryEntity>): Flux<WalletEntryCategoryEntity>
-
     fun deleteByIdAndUserId(
         id: UUID,
         userId: UUID,

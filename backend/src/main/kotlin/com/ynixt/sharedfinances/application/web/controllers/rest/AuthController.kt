@@ -1,8 +1,10 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.auth.LoginDto
+import com.ynixt.sharedfinances.application.web.dto.auth.LoginMfaDto
 import com.ynixt.sharedfinances.application.web.dto.auth.LoginResultDto
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
+import com.ynixt.sharedfinances.domain.exceptions.MfaIsNeededException
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.AuthService
 import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
@@ -63,19 +65,50 @@ class AuthController(
         return authService
             .login(
                 email = payload.email,
-                passwordHash = payload.passwordHash,
+                rawPassword = payload.password,
                 ip = request.remoteAddress?.address,
                 userAgent = request.headers.getFirst("User-Agent"),
             ).map { loginResult ->
                 val refreshCookie = setRefreshCookie(loginResult.refreshToken, Duration.ofSeconds(loginResult.refreshExpiresInSeconds))
 
-                val responseBuilder =
-                    ResponseEntity
-                        .noContent()
-                        .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer ${loginResult.accessToken}")
+                ResponseEntity
+                    .ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer ${loginResult.accessToken}")
+                    .body(LoginResultDto())
+            }.onErrorResume { error ->
+                if (error is MfaIsNeededException) {
+                    Mono.just(ResponseEntity.ok(LoginResultDto(mfaChallengeId = error.challengeId)))
+                } else {
+                    Mono.error(error)
+                }
+            }
+    }
 
-                responseBuilder.build()
+    @Operation(
+        summary = "Login using MFA",
+    )
+    @PostMapping("/open/auth/mfa")
+    fun mfa(
+        exchange: ServerWebExchange,
+        @Valid @RequestBody payload: LoginMfaDto,
+    ): Mono<ResponseEntity<Void>> {
+        val request = exchange.request
+
+        return authService
+            .mfa(
+                challengeId = payload.challengeId,
+                code = payload.code,
+                ip = request.remoteAddress?.address,
+                userAgent = request.headers.getFirst("User-Agent"),
+            ).map { loginResult ->
+                val refreshCookie = setRefreshCookie(loginResult.refreshToken, Duration.ofSeconds(loginResult.refreshExpiresInSeconds))
+
+                ResponseEntity
+                    .noContent()
+                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer ${loginResult.accessToken}")
+                    .build()
             }
     }
 

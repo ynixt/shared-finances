@@ -1,7 +1,7 @@
 <app-navbar></app-navbar>
 
-@if (form) {
-  <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
+@if (loginForm && loginResponse?.mfaRequired != true) {
+  <form [formGroup]="loginForm" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
     <label class="flex flex-col gap-2">
       <span>{{ 'loginPage.email' | translate }}</span>
       <input pInputText formControlName="identifier" />
@@ -10,6 +10,17 @@
     <label class="flex flex-col gap-2">
       <span>{{ 'loginPage.password' | translate }}</span>
       <p-password fluid formControlName="password" [toggleMask]="true" [feedback]="false" />
+    </label>
+
+    <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>
+  </form>
+}
+
+@if (loginResponse?.mfaRequired && mfaForm) {
+  <form [formGroup]="mfaForm" (ngSubmit)="submitMfa()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
+    <label class="flex flex-col gap-2">
+      <span>{{ 'loginPage.2faCode' | translate }}</span>
+      <p-input-otp formControlName="code" [integerOnly]="true" [length]="6" [autofocus]="true" (keydown.enter)="submitMfa()" />
     </label>
 
     <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>

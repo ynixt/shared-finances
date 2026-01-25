@@ -8,9 +8,9 @@ import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
-import com.ynixt.sharedfinances.domain.exceptions.GroupNotFoundException
-import com.ynixt.sharedfinances.domain.exceptions.OriginNotFoundException
-import com.ynixt.sharedfinances.domain.exceptions.TargetNotFoundException
+import com.ynixt.sharedfinances.domain.exceptions.http.GroupNotFoundException
+import com.ynixt.sharedfinances.domain.exceptions.http.OriginNotFoundException
+import com.ynixt.sharedfinances.domain.exceptions.http.TargetNotFoundException
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService

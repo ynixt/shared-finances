@@ -8,11 +8,13 @@ import { filter } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { InputOtp } from 'primeng/inputotp';
 import { InputText } from 'primeng/inputtext';
 import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { LoginResultDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
 import { TokenSyncService } from '../../services/token-sync.service';
@@ -21,15 +23,18 @@ import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, Toast, TranslatePipe, NavbarComponent, ButtonDirective, Password, InputText],
+  imports: [ReactiveFormsModule, Toast, TranslatePipe, NavbarComponent, ButtonDirective, Password, InputText, InputOtp],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
   providers: [MessageService],
 })
 @UntilDestroy()
 export class LoginPageComponent implements OnInit {
-  form!: FormGroup;
+  loginForm!: FormGroup;
+  mfaForm!: FormGroup;
+
   loading = false;
+  loginResponse: LoginResultDto | undefined;
 
   constructor(
     private fb: FormBuilder,
@@ -74,6 +79,7 @@ export class LoginPageComponent implements OnInit {
 
   private async initLoginForm() {
     this.loading = false;
+    this.loginResponse = undefined;
 
     try {
       await this.getFlow();
@@ -83,19 +89,45 @@ export class LoginPageComponent implements OnInit {
   }
 
   async submit(): Promise<void> {
-    if (this.form.invalid) {
+    if (this.loginForm.invalid) {
       return;
     }
 
     this.loading = true;
 
     try {
-      await this.authService.submitLogin({
-        email: this.form.value.identifier,
-        passwordHash: this.form.value.password,
+      this.loginResponse = await this.authService.submitLogin({
+        email: this.loginForm.value.identifier,
+        password: this.loginForm.value.password,
+      });
+
+      if (this.loginResponse.mfaRequired) {
+        this.loading = false;
+      } else {
+        await this.authService.waitForLoginSuccess();
+      }
+    } catch (err) {
+      this.loading = false;
+      this.errorMessageService.handleError(err, this.messageService);
+      throw err;
+    }
+  }
+
+  async submitMfa(): Promise<void> {
+    if (this.mfaForm.invalid || this.loginResponse?.mfaRequired != true || !this.loginResponse?.mfaChallengeId) {
+      return;
+    }
+
+    try {
+      this.loading = true;
+
+      await this.authService.submitMfa({
+        code: this.mfaForm.value.code,
+        challengeId: this.loginResponse.mfaChallengeId,
       });
 
       await this.authService.waitForLoginSuccess();
+      this.loginResponse = undefined;
     } catch (err) {
       this.loading = false;
       this.errorMessageService.handleError(err, this.messageService);
@@ -104,11 +136,17 @@ export class LoginPageComponent implements OnInit {
   }
 
   private async getFlow() {
-    if (this.form == null) {
-      this.form = this.fb.group({
+    if (this.loginForm == null) {
+      this.loginForm = this.fb.group({
         identifier: ['', [Validators.required]],
         password: ['', [Validators.required]],
         method: ['password'],
+      });
+    }
+
+    if (this.mfaForm == null) {
+      this.mfaForm = this.fb.group({
+        code: ['', [Validators.required]],
       });
     }
   }

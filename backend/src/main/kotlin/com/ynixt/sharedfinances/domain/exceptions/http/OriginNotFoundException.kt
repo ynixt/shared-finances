@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.domain.exceptions
+package com.ynixt.sharedfinances.domain.exceptions.http
 
 import java.util.UUID
 

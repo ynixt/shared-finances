@@ -51,6 +51,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
 
     implementation("org.apache.commons:commons-pool2:2.13.0")
+    implementation("commons-codec:commons-codec:1.20.0")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")

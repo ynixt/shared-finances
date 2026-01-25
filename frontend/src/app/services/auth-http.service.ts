@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
-import { LoginDto, RegisterDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
+import { LoginDto, LoginMfaDto, LoginResultDto, RegisterDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 
 @Injectable({ providedIn: 'root' })
@@ -14,10 +14,20 @@ export class AuthHttpService {
     return lastValueFrom(this.httpClient.get<UserResponseDto>('/api/users/current').pipe(take(1)));
   }
 
-  login(body: LoginDto): Promise<HttpResponse<Object>> {
+  login(body: LoginDto): Promise<HttpResponse<LoginResultDto>> {
     return lastValueFrom(
       this.httpClient
-        .post('/api/open/auth/login', body, {
+        .post<LoginResultDto>('/api/open/auth/login', body, {
+          observe: 'response',
+        })
+        .pipe(take(1)),
+    );
+  }
+
+  mfa(body: LoginMfaDto): Promise<HttpResponse<object>> {
+    return lastValueFrom(
+      this.httpClient
+        .post('/api/open/auth/mfa', body, {
           observe: 'response',
         })
         .pipe(take(1)),

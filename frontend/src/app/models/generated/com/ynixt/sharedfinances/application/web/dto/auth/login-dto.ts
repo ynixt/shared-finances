@@ -3,5 +3,5 @@
 
 export interface LoginDto {
   email: string;
-  passwordHash: string;
+  password: string;
 }

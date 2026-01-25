@@ -2,7 +2,7 @@ package com.ynixt.sharedfinances.domain.services.categories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
-import com.ynixt.sharedfinances.domain.exceptions.DuplicatedCategoryException
+import com.ynixt.sharedfinances.domain.exceptions.http.DuplicatedCategoryException
 import com.ynixt.sharedfinances.domain.models.category.EditCategoryRequest
 import com.ynixt.sharedfinances.domain.models.category.NewCategoryRequest
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryCategoryRepository

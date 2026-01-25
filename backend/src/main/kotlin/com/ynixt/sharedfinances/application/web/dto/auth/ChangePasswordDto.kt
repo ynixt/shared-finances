@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
 data class ChangePasswordDto(
-    val currentPasswordHash: String?,
+    val currentPassword: String?,
     @field:NotBlank(message = "apiErrors.registration.passwordInvalid")
     @field:Size(min = 6, max = 15, message = "apiErrors.registration.passwordSize")
-    val newPasswordHash: String,
+    val newPassword: String,
 )

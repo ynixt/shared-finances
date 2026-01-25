@@ -136,7 +136,7 @@
             [collapsed]="true"
             toggler="header"
           >
-            <form [formGroup]="securityTwoStepForm" class="flex flex-col gap-4">
+            <form [formGroup]="securityTwoStepBeginForm" class="flex flex-col gap-4" (ngSubmit)="submitSecurityTwoStepBeginForm()">
               <div class="w-full mb-8">
                 <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
                   >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
@@ -145,9 +145,22 @@
               </div>
 
               @if (user.mfaEnabled) {
+                <div class="w-full mb-8">
+                  <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+                  >{{ 'financesPage.userSettingsPage.mfa' | translate }}
+                  </label>
+                  <p-input-otp
+                    formControlName="code"
+                    [integerOnly]="true"
+                    [length]="6"
+                    [autofocus]="true"
+                    (keydown.enter)="submitSecurityTwoStepConfirmForm()"
+                  />
+                </div>
+
                 <p-button
                   [loading]="submitting"
-                  [disabled]="securityTwoStepForm.invalid"
+                  [disabled]="securityTwoStepBeginForm.invalid"
                   type="submit"
                   [label]="'financesPage.userSettingsPage.disableTwoStep' | translate"
                   styleClass="w-full"
@@ -156,7 +169,7 @@
               } @else {
                 <p-button
                   [loading]="submitting"
-                  [disabled]="securityTwoStepForm.invalid"
+                  [disabled]="securityTwoStepBeginForm.invalid"
                   type="submit"
                   [label]="'financesPage.userSettingsPage.enableTwoStep' | translate"
                   styleClass="w-full"
@@ -168,4 +181,51 @@
       </p-tabpanels>
     </p-tabs>
   }
+
+  <p-dialog
+    [header]="'financesPage.userSettingsPage.twoStepsSettings' | translate"
+    [modal]="true"
+    [(visible)]="showMfaConfirmDialog"
+    (onHide)="closeTwoStepDialogConfirm()"
+  >
+    @if (enableMfaConfirmResponse != null) {
+      <h3 class="text-lg">{{ 'financesPage.userSettingsPage.enableTwoStepSuccessfully' | translate }}</h3>
+
+      <ul class="my-4">
+        @for (code of enableMfaConfirmResponse.recoveryCodes; track code) {
+          <li>{{ code }}</li>
+        }
+      </ul>
+
+      <div class="flex justify-end gap-2 py-4 px-7">
+        <p-button [label]="'general.ok' | translate" (click)="closeTwoStepDialogConfirm(true)" />
+      </div>
+    } @else if (enableMfaBeginResponse != null) {
+      <form [formGroup]="securityTwoStepConfirmForm" class="flex flex-col gap-8" (ngSubmit)="submitSecurityTwoStepConfirmForm()">
+        <div class="flex items-center gap-8 flex-col">
+          <qrcode [qrdata]="enableMfaBeginResponse.otpauthUri" [width]="280" [errorCorrectionLevel]="'M'" [margin]="0"></qrcode>
+
+          <input type="text" pInputText readonly style="width: 280px" disabled [value]="enableMfaBeginResponse.secretBase32" />
+
+          <p-input-otp
+            formControlName="code"
+            [integerOnly]="true"
+            [length]="6"
+            [autofocus]="true"
+            (keydown.enter)="submitSecurityTwoStepConfirmForm()"
+          />
+        </div>
+
+        <div class="flex justify-end gap-2 py-4 px-7">
+          <p-button [label]="'general.cancel' | translate" severity="secondary" (click)="closeTwoStepDialogConfirm()" />
+          <p-button
+            [label]="'general.save' | translate"
+            type="submit"
+            [disabled]="securityTwoStepConfirmForm.invalid"
+            [loading]="submitting"
+          />
+        </div>
+      </form>
+    }
+  </p-dialog>
 </div>

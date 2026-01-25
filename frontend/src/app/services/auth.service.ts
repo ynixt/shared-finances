@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -6,7 +6,7 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { lastValueFrom, take } from 'rxjs';
 
 import { authGuard } from '../guards/auth.guard';
-import { LoginDto, RegisterDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
+import { LoginDto, LoginMfaDto, LoginResultDto, RegisterDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { AuthHttpService } from './auth-http.service';
 import { GuardInspector } from './guard-inspector.service';
@@ -105,18 +105,34 @@ export class AuthService {
     }
   }
 
-  async submitLogin(body: LoginDto): Promise<any> {
+  async submitLogin(body: LoginDto): Promise<LoginResultDto> {
     try {
       this.userService.loading.set(true);
       const response = await this.authHttpService.login(body);
-      const token = this.getTokenFromHeaders(response.headers);
-      await this.changeTokenAndSync(token);
+      const mfaRequired = response.body?.mfaRequired ?? false;
+
+      if (!mfaRequired) {
+        await this.loginSuccess(response);
+      } else {
+        this.userService.loading.set(false);
+      }
+
+      return response.body!!;
     } catch (err) {
       this.userService.loading.set(false);
       throw err;
     }
+  }
 
-    return await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
+  async submitMfa(body: LoginMfaDto): Promise<void> {
+    try {
+      this.userService.loading.set(true);
+      const response = await this.authHttpService.mfa(body);
+      await this.loginSuccess(response);
+    } catch (err) {
+      this.userService.loading.set(false);
+      throw err;
+    }
   }
 
   async submitRegistration(body: RegisterDto): Promise<object> {
@@ -177,6 +193,11 @@ export class AuthService {
     }
 
     return await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
+  }
+
+  private async loginSuccess(response: HttpResponse<any>) {
+    const token = this.getTokenFromHeaders(response.headers);
+    await this.changeTokenAndSync(token);
   }
 
   private getTokenFromHeaders(headers: HttpHeaders): string | null {

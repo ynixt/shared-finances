@@ -3,7 +3,7 @@ package com.ynixt.sharedfinances.domain.services.groups.impl
 import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
-import com.ynixt.sharedfinances.domain.exceptions.BankAccountAlreadyInGroupException
+import com.ynixt.sharedfinances.domain.exceptions.http.BankAccountAlreadyInGroupException
 import com.ynixt.sharedfinances.domain.mapper.CreditCardMapper
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository

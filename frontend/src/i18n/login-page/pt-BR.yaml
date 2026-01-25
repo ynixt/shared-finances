@@ -1,6 +1,7 @@
 loginPage:
   email: Email
   password: Senha
+  2faCode: Código 2-step
   login: Entrar
   error:
     title: Erro ao efetuar o login

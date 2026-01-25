@@ -4,7 +4,7 @@ import com.fasterxml.uuid.Generators
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
-import com.ynixt.sharedfinances.domain.exceptions.EmailAlreadyInUseException
+import com.ynixt.sharedfinances.domain.exceptions.http.EmailAlreadyInUseException
 import com.ynixt.sharedfinances.domain.models.Wrapper
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.AvatarService

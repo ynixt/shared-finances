@@ -68,4 +68,33 @@ interface UserSpringDataRepository :
     """,
     )
     fun findAllUsersInSameGroup(userId: UUID): Flux<UserEntity>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set 
+            totp_secret = :totpSecret,
+            mfa_enabled = true,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+    """,
+    )
+    fun enableMfa(
+        userId: UUID,
+        totpSecret: String,
+    ): Mono<Int>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set 
+            totp_secret = null,
+            mfa_enabled = false,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+    """,
+    )
+    fun disableMfa(userId: UUID): Mono<Int>
 }

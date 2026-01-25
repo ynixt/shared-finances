@@ -88,7 +88,7 @@ class UserController(
         userService
             .changePassword(
                 userId = principalToken.principal.id,
-                currentPasswordHash = changePasswordDto.currentPasswordHash,
-                newPasswordHash = changePasswordDto.newPasswordHash,
+                currentPasswordHash = changePasswordDto.currentPassword,
+                newPasswordHash = changePasswordDto.newPassword,
             ).thenReturn(ResponseEntity.ok().build())
 }

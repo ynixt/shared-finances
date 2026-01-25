@@ -5,6 +5,12 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
 
 import { ChangePasswordDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
+import {
+  ConfirmMfaRequestDto,
+  ConfirmMfaResponseDto, DisableMfaRequestDto,
+  EnableMfaRequestDto,
+  EnableMfaResponseDto,
+} from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth/mfa';
 import { UpdateUserDto, UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { UserMissingError } from '../pages/finances/errors/user-missing.error';
 
@@ -72,5 +78,29 @@ export class UserService {
     this.changeUser(newUser);
 
     return newUser;
+  }
+
+  async enableMfaBegin(request: EnableMfaRequestDto): Promise<EnableMfaResponseDto> {
+    const currentUser = this.user();
+
+    if (currentUser == null) new UserMissingError();
+
+    return await lastValueFrom(this.http.post<EnableMfaResponseDto>(`/api/mfa-settings/begin`, request).pipe(take(1)));
+  }
+
+  async enableMfaConfirm(request: ConfirmMfaRequestDto): Promise<ConfirmMfaResponseDto> {
+    const currentUser = this.user();
+
+    if (currentUser == null) new UserMissingError();
+
+    return await lastValueFrom(this.http.post<ConfirmMfaResponseDto>(`/api/mfa-settings/confirm`, request).pipe(take(1)));
+  }
+
+  async disableMfa(request: DisableMfaRequestDto): Promise<void> {
+    const currentUser = this.user();
+
+    if (currentUser == null) new UserMissingError();
+
+    await lastValueFrom(this.http.post(`/api/mfa-settings/disable`, request).pipe(take(1)));
   }
 }

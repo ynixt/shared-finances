@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
-import com.ynixt.sharedfinances.domain.exceptions.HeavyFileException
-import com.ynixt.sharedfinances.domain.exceptions.InvalidFileTypeException
+import com.ynixt.sharedfinances.domain.exceptions.http.HeavyFileException
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidFileTypeException
 import com.ynixt.sharedfinances.domain.services.AvatarService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.buffer.DataBufferUtils

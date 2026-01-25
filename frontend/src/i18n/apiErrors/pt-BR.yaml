@@ -16,3 +16,7 @@ apiErrors:
     firstNameSize: 'Primeiro nome deve possuir entre {{min}} e {{max}} caracteres.'
     lastNameInvalid: Último nome inválido.
     lastNameSize: 'Último nome deve possuir entre {{min}} e {{max}} caracteres.'
+  wrongMfaCode: Código 2-step incorreto.
+  mfaAlreadyEnabled: 2-step já está ativo.
+  mfaEnrollmentNotFound: Não foi possível configurar o 2-step. Por favor, atualize a página e tente novamente.
+  emailAlreadyInUse: Conta bloqueada temporariamente por muitas tentativas incorretas de login.

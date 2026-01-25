@@ -23,6 +23,13 @@ interface UserRepository : EntityRepository<UserEntity> {
         newPasswordHash: String,
     ): Mono<Int>
 
+    fun enableMfa(
+        userId: UUID,
+        totpSecret: String,
+    ): Mono<Int>
+
+    fun disableMfa(userId: UUID): Mono<Int>
+
     fun findAllUsersInSameGroup(userId: UUID): Flux<UserEntity>
 
     fun insert(user: UserEntity): Mono<UserEntity>

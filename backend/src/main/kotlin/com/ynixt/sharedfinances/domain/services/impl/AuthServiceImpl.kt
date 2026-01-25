@@ -1,15 +1,19 @@
 package com.ynixt.sharedfinances.domain.services.impl
 
-import com.ynixt.sharedfinances.application.web.dto.auth.LoginResultDto
 import com.ynixt.sharedfinances.domain.entities.RefreshTokenEntity
 import com.ynixt.sharedfinances.domain.entities.SessionEntity
 import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.exceptions.MfaIsNeededException
+import com.ynixt.sharedfinances.domain.exceptions.http.AccountTemporaryBlocked
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidCredentialsException
+import com.ynixt.sharedfinances.domain.models.LoginResult
 import com.ynixt.sharedfinances.domain.repositories.FailedLoginRepository
 import com.ynixt.sharedfinances.domain.repositories.RefreshTokenRepository
 import com.ynixt.sharedfinances.domain.repositories.SessionRepository
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.AuthService
 import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
+import com.ynixt.sharedfinances.domain.services.mfa.MfaService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -37,11 +41,13 @@ class AuthServiceImpl(
     private val failedLoginRepository: FailedLoginRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtEncoder: JwtEncoder,
+    private val mfaService: MfaService,
     @param:Value("\${app.security.jwt.kid}") private val kid: String,
     @param:Value("\${app.security.jwt.issuer}") private val issuer: String,
     @param:Value("\${app.security.jwt.accessTokenTTLMinutes}") private val accessTtlMinutes: Int,
     @param:Value("\${app.security.jwt.refreshTokenTTLMinutes}") private val refreshTtlMinutes: Int,
     @param:Value("\${app.security.wrongPasswordTtlMinutes}") private val wrongPasswordTtlMinutes: Int,
+    @param:Value("\${app.security.wrongPasswordBlock}") private val wrongPasswordBlock: Int,
 ) : AuthService {
     val accessTtlSeconds = accessTtlMinutes * 60L
     val refreshTtlSeconds = refreshTtlMinutes * 60L
@@ -49,79 +55,100 @@ class AuthServiceImpl(
 
     override fun login(
         email: String,
-        passwordHash: String,
+        rawPassword: String,
         userAgent: String?,
         ip: InetAddress?,
-    ): Mono<LoginResultDto> {
+    ): Mono<LoginResult> {
         val normalizedEmail = email.trim().lowercase()
 
-        return userRepository
-            .findOneByEmail(normalizedEmail)
-            .switchIfEmpty(Mono.error(BadCredentialsException("invalid credentials")))
-            .flatMap { user ->
-                val correctHash =
-                    user.passwordHash
-                        ?: return@flatMap Mono.error(BadCredentialsException("invalid credentials"))
-
-                if (!passwordEncoder.matches(passwordHash, correctHash)) {
-                    return@flatMap Mono.error(BadCredentialsException("invalid credentials"))
-                }
-
-                // TODO: se você tiver 2FA habilitado, aqui você deve interromper e pedir o código (MFA_REQUIRED).
-                // TODO: lockout / rate limit etc.
-
-                val refreshToken = generateOpaqueToken()
-                val refreshTokenHash = sha256(refreshToken)
-
-                val now = Instant.now()
-                val refreshExpiresAt = now.plusSeconds(refreshTtlSeconds)
-
-                failedLoginRepository
-                    .deleteByIpAndEmail(
-                        ip = ip.toString(),
-                        email = email,
-                    ).then(
-                        sessionRepository
-                            .save(
-                                SessionEntity(
-                                    userId = user.id!!,
-                                    userAgent = userAgent,
-                                    ip = ip,
+        return refuseLoginIfTooManyFails(email = email, ip = ip).then(
+            userRepository
+                .findOneByEmail(normalizedEmail)
+                .switchIfEmpty(
+                    Mono.error(
+                        InvalidCredentialsException(
+                            email = normalizedEmail,
+                            ip = ip?.toString(),
+                        ),
+                    ),
+                ).flatMap { user ->
+                    val correctHash =
+                        user.passwordHash
+                            ?: return@flatMap Mono.error(
+                                InvalidCredentialsException(
+                                    email = normalizedEmail,
+                                    ip = ip?.toString(),
                                 ),
-                            ).flatMap { session ->
-                                refreshTokenRepository
-                                    .save(
-                                        RefreshTokenEntity(
-                                            sessionId = session.id!!,
-                                            tokenHash = refreshTokenHash,
-                                            createdAt = now,
-                                            expiresAt = refreshExpiresAt,
-                                        ),
-                                    ).then(
-                                        mintAccessToken(user, session.id!!)
-                                            .map { access ->
-                                                LoginResultDto(
-                                                    accessToken = access,
-                                                    refreshToken = refreshToken,
-                                                    refreshExpiresInSeconds = refreshTtlSeconds,
-                                                )
-                                            },
-                                    )
-                            },
-                    )
+                            )
+
+                    if (!passwordEncoder.matches(rawPassword, correctHash)) {
+                        return@flatMap Mono.error(
+                            InvalidCredentialsException(
+                                email = normalizedEmail,
+                                ip = ip?.toString(),
+                            ),
+                        )
+                    }
+
+                    if (user.mfaEnabled) {
+                        requestMfa(
+                            user = user,
+                            userAgent = userAgent,
+                            ip = ip,
+                        )
+                    } else {
+                        loginSuccess(
+                            user = user,
+                            userAgent = userAgent,
+                            ip = ip,
+                        )
+                    }
+                }.onErrorResume { error ->
+                    if (error is InvalidCredentialsException && error.ip != null && error.email != null) {
+                        failedLoginRepository
+                            .incrementFails(
+                                ip = error.ip,
+                                email = error.email,
+                                ttlSeconds = wrongPasswordTtlSeconds,
+                            ).then(Mono.error(error))
+                    } else {
+                        Mono.error(error)
+                    }
+                },
+        )
+    }
+
+    override fun mfa(
+        challengeId: UUID,
+        code: String,
+        userAgent: String?,
+        ip: InetAddress?,
+    ): Mono<LoginResult> =
+        mfaService
+            .verifyChallenge(
+                challengeId = challengeId,
+                code = code,
+                ip = ip,
+            ).flatMap { user ->
+                refuseLoginIfTooManyFails(email = user.email, ip = ip).then(
+                    loginSuccess(
+                        user = user,
+                        userAgent = userAgent,
+                        ip = ip,
+                    ),
+                )
             }.onErrorResume { error ->
-                if (error is BadCredentialsException) {
+                if (error is InvalidCredentialsException && error.email != null && error.ip != null) {
                     failedLoginRepository
                         .incrementFails(
-                            ip = ip.toString(),
-                            email = email,
+                            ip = error.ip,
+                            email = error.email,
                             ttlSeconds = wrongPasswordTtlSeconds,
                         ).then(Mono.error(error))
                 } else {
                     Mono.error(error)
                 }
             }
-    }
 
     override fun logout(session: UUID): Mono<Void> = sessionRepository.deleteById(session).then().onErrorResume { Mono.empty() }
 
@@ -138,6 +165,86 @@ class AuthServiceImpl(
             }.switchIfEmpty {
                 Mono.error(BadCredentialsException("invalid refresh token"))
             }
+    }
+
+    override fun checkPassword(
+        userId: UUID,
+        rawPassword: String,
+    ): Mono<UserEntity> {
+        return userRepository
+            .findById(userId)
+            .switchIfEmpty(Mono.error(BadCredentialsException("invalid credentials")))
+            .flatMap { user ->
+                val correctHash =
+                    user.passwordHash
+                        ?: return@flatMap Mono.error(BadCredentialsException("invalid credentials"))
+
+                if (!passwordEncoder.matches(rawPassword, correctHash)) {
+                    return@flatMap Mono.error(BadCredentialsException("invalid credentials"))
+                }
+
+                Mono.just(user)
+            }
+    }
+
+    private fun requestMfa(
+        user: UserEntity,
+        userAgent: String?,
+        ip: InetAddress?,
+    ): Mono<LoginResult> =
+        mfaService
+            .generateNewChallenge(
+                userId = user.id!!,
+                userAgent = userAgent,
+                ip = ip,
+            ).flatMap { challengeId ->
+                Mono.error(MfaIsNeededException(challengeId = challengeId))
+            }
+
+    private fun loginSuccess(
+        user: UserEntity,
+        userAgent: String?,
+        ip: InetAddress?,
+    ): Mono<LoginResult> {
+        val refreshToken = generateOpaqueToken()
+        val refreshTokenHash = sha256(refreshToken)
+
+        val now = Instant.now()
+        val refreshExpiresAt = now.plusSeconds(refreshTtlSeconds)
+
+        return failedLoginRepository
+            .deleteByIpAndEmail(
+                ip = ip.toString(),
+                email = user.email,
+            ).then(
+                sessionRepository
+                    .save(
+                        SessionEntity(
+                            userId = user.id!!,
+                            userAgent = userAgent,
+                            ip = ip,
+                        ),
+                    ).flatMap { session ->
+                        refreshTokenRepository
+                            .save(
+                                RefreshTokenEntity(
+                                    sessionId = session.id!!,
+                                    tokenHash = refreshTokenHash,
+                                    createdAt = now,
+                                    expiresAt = refreshExpiresAt,
+                                ),
+                            ).then(
+                                mintAccessToken(user, session.id!!)
+                                    .map { access ->
+                                        LoginResult(
+                                            accessToken = access,
+                                            refreshToken = refreshToken,
+                                            refreshExpiresInSeconds = refreshTtlSeconds,
+                                        )
+                                    },
+                            )
+                    },
+            )
     }
 
     private fun mintAccessToken(
@@ -179,4 +286,16 @@ class AuthServiceImpl(
     }
 
     private fun sha256(input: String): ByteArray = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))
+
+    private fun refuseLoginIfTooManyFails(
+        email: String,
+        ip: InetAddress?,
+    ): Mono<Void> =
+        failedLoginRepository.getFails(ip.toString(), email).flatMap { fails ->
+            if (fails > wrongPasswordBlock) {
+                Mono.error(AccountTemporaryBlocked())
+            } else {
+                Mono.empty()
+            }
+        }
 }

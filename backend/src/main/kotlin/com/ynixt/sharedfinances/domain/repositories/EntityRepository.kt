@@ -13,5 +13,7 @@ interface EntityRepository<T : Any> {
 
     fun save(entity: T): Mono<T>
 
+    fun saveAll(entity: Iterable<T>): Flux<T>
+
     fun findAllByIdIn(id: Collection<UUID>): Flux<T>
 }

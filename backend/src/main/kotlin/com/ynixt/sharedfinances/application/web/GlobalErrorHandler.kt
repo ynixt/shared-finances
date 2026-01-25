@@ -1,10 +1,9 @@
 package com.ynixt.sharedfinances.application.web
 
 import com.ynixt.sharedfinances.application.web.dto.AppResponseErrorDto
-import com.ynixt.sharedfinances.domain.exceptions.AppResponseException
+import com.ynixt.sharedfinances.domain.exceptions.http.AppResponseException
 import org.hibernate.validator.internal.engine.ConstraintViolationImpl
 import org.slf4j.LoggerFactory
-import org.springframework.data.redis.connection.ReactiveStreamCommands.AddStreamRecord.body
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity

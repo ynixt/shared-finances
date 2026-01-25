@@ -6,11 +6,14 @@ financesPage:
     changePassword: Change password
     changePasswordSuccessfully: Password was successfully changed.
     currentPassword: Current password
+    mfa: 2-step code
     newPassword: New password
     newPasswordConfirmation: New password confirmation
     twoStepsSettings: Configuring 2-step authentication
     enableTwoStep: Enable 2-step authentication
+    enableTwoStepSuccessfully: '2-step was successfully enabled. Please keep safe the codes below:'
     disableTwoStep: Disable 2-step authentication
+    disableTwoStepSuccessfully: 2-step was successfully disabled.
     addPhoto: Add from file
     fromGravatar: Add from Gravatar
     avatar: Avatar
