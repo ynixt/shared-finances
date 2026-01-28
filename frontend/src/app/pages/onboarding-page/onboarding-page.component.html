@@ -1,19 +1,20 @@
 <div class="onboarding-page flex flex-col gap-4 w-full max-w-lg mx-auto mt-12">
   <div class="flex gap-4">
     <h1 class="text-3xl">{{ 'onboardingPage.title' | translate }}</h1>
-    <app-lang-button></app-lang-button>
   </div>
 
-  <h1 class="text-xl">{{ 'onboardingPage.subtitle' | translate }}</h1>
+  <!--  <h1 class="text-xl">{{ 'onboardingPage.subtitle' | translate }}</h1>-->
 
-  <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 mt-8">
-    <label class="flex flex-col gap-2">
-      <span>{{ 'onboardingPage.defaultCurrency' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
-      <app-currency-selector formControlName="currency"></app-currency-selector>
-    </label>
+  <!--  <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4 mt-8">-->
+  <!--    <label class="flex flex-col gap-2">-->
+  <!--      <span>{{ 'onboardingPage.defaultCurrency' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>-->
+  <!--      <app-currency-selector formControlName="currency"></app-currency-selector>-->
+  <!--    </label>-->
 
-    <button pButton type="submit" [loading]="submitting" [disabled]="form.invalid">{{ 'general.save' | translate }}</button>
-  </form>
+  <!--    <button pButton type="submit" [loading]="submitting" [disabled]="form.invalid">{{ 'general.save' | translate }}</button>-->
+  <!--  </form>-->
+
+  <div class="pt-10 flex items-center"><p-progress-spinner></p-progress-spinner></div>
 </div>
 
 <p-toast />

@@ -2,10 +2,12 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.auth.ChangePasswordDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
+import com.ynixt.sharedfinances.application.web.dto.user.UserOnboardingDto
 import com.ynixt.sharedfinances.application.web.dto.user.UserResponseDto
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.domain.models.Wrapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
+import com.ynixt.sharedfinances.domain.services.OnboardingService
 import com.ynixt.sharedfinances.domain.services.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -16,6 +18,7 @@ import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -34,6 +37,7 @@ import reactor.kotlin.core.util.function.component2
 class UserController(
     private val userService: UserService,
     private val userDtoMapper: UserDtoMapper,
+    private val onboardingService: OnboardingService,
 ) {
     @GetMapping("/current")
     @Operation(summary = "Get info about the logged user")
@@ -69,16 +73,6 @@ class UserController(
             userService.changeLanguage(principalToken.principal.id, newLang)
         }.thenReturn(ResponseEntity.ok().build())
 
-    @PutMapping("/current/changeDefaultCurrency/{newDefaultCurrency}")
-    @Operation(summary = "Change default currency of logged user")
-    fun changeDefaultCurrency(
-        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-        @PathVariable("newDefaultCurrency") newDefaultCurrency: String,
-    ): Mono<ResponseEntity<Unit>> =
-        mono {
-            userService.changeDefaultCurrency(principalToken.principal.id, newDefaultCurrency)
-        }.thenReturn(ResponseEntity.ok().build())
-
     @PutMapping("/current/changePassword")
     @Operation(summary = "Change default currency of logged user")
     fun changePassword(
@@ -90,5 +84,16 @@ class UserController(
                 userId = principalToken.principal.id,
                 currentPasswordHash = changePasswordDto.currentPassword,
                 newPasswordHash = changePasswordDto.newPassword,
+            ).thenReturn(ResponseEntity.ok().build())
+
+    @PostMapping("/current/onboarding")
+    fun onboarding(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @RequestBody body: UserOnboardingDto,
+    ): Mono<ResponseEntity<Unit>> =
+        onboardingService
+            .onboarding(
+                userId = principalToken.principal.id,
+                onboardingDto = body,
             ).thenReturn(ResponseEntity.ok().build())
 }

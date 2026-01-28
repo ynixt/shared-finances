@@ -5,6 +5,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { lastValueFrom, take } from 'rxjs';
 
 import { getDefaultCategoriesTranslated } from '../../default-categories';
+import { UserOnboardingDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 
 @Injectable({ providedIn: 'root' })
 export class OnboardingService {
@@ -13,9 +14,13 @@ export class OnboardingService {
     private translateService: TranslateService,
   ) {}
 
-  createDefaultCategories() {
+  onboarding() {
     const translatedCategories = getDefaultCategoriesTranslated(this.translateService);
 
-    return lastValueFrom(this.http.post<void>('/api/categories/bulk', translatedCategories).pipe(take(1)));
+    const requestBody: UserOnboardingDto = {
+      categories: translatedCategories,
+    };
+
+    return lastValueFrom(this.http.post<void>('/api/users/current/onboarding', requestBody).pipe(take(1)));
   }
 }

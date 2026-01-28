@@ -15,4 +15,5 @@ class UserEntity(
     var emailVerified: Boolean,
     var mfaEnabled: Boolean,
     var totpSecret: String?,
+    var onboardingDone: Boolean,
 ) : AuditedEntity()

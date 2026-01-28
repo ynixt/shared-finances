@@ -33,4 +33,9 @@ interface UserRepository : EntityRepository<UserEntity> {
     fun findAllUsersInSameGroup(userId: UUID): Flux<UserEntity>
 
     fun insert(user: UserEntity): Mono<UserEntity>
+
+    fun changeOnboardingDone(
+        userId: UUID,
+        newOnboardingDone: Boolean,
+    ): Mono<Int>
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD column onboarding_done BOOLEAN default false;

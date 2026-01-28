@@ -84,7 +84,7 @@ export class FinancesPageComponent {
     });
 
     this.userService.getUser().then(u => {
-      if (u && u.defaultCurrency == null) {
+      if (u && !u.onboardingDone) {
         this.router.navigate(['/welcome'], {
           queryParams: {
             return_to: this.router.url,

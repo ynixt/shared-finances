@@ -16,6 +16,7 @@ class UserPrincipal(
     var photoUrl: String?,
     var emailVerified: Boolean,
     var mfaEnabled: Boolean,
+    var onboardingDone: Boolean,
     val authorities: List<GrantedAuthority>,
 ) : Principal {
     constructor(user: UserEntity, authorities: List<GrantedAuthority>) : this(
@@ -29,6 +30,7 @@ class UserPrincipal(
         user.photoUrl,
         user.emailVerified,
         user.mfaEnabled,
+        user.onboardingDone,
         authorities,
     )
 

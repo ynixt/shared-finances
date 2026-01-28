@@ -41,19 +41,6 @@ export class UserService {
     this.error.set(err);
   }
 
-  async changeDefaultCurrency(newDefaultCurrency: string): Promise<void> {
-    const currentUser = this.user();
-
-    if (currentUser == null) return;
-
-    await lastValueFrom(this.http.put(`/api/users/current/changeDefaultCurrency/${newDefaultCurrency}`, null).pipe(take(1)));
-
-    this.user.set({
-      ...currentUser,
-      defaultCurrency: newDefaultCurrency,
-    });
-  }
-
   async changePassword(changePasswordRequest: ChangePasswordDto): Promise<void> {
     const currentUser = this.user();
 

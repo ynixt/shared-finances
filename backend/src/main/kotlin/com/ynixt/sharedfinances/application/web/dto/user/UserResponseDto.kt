@@ -13,4 +13,5 @@ data class UserResponseDto(
     val emailVerified: Boolean,
     val mfaEnabled: Boolean,
     var photoUrl: String?,
+    var onboardingDone: Boolean,
 )

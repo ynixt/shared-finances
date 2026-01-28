@@ -56,6 +56,20 @@ interface UserSpringDataRepository :
         newPasswordHash: String,
     ): Mono<Int>
 
+    @Modifying
+    @Query(
+        """
+        update users
+        set onboarding_done = :newOnboardingDone,
+        updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+    """,
+    )
+    fun changeOnboardingDone(
+        userId: UUID,
+        newOnboardingDone: Boolean,
+    ): Mono<Int>
+
     @Query(
         """
         select u.*

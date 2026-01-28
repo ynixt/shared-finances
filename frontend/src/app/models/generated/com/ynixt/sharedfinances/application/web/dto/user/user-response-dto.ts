@@ -10,6 +10,7 @@ export interface UserResponseDto {
   lang: string;
   lastName: string;
   mfaEnabled: boolean;
+  onboardingDone: boolean;
   photoUrl?: string | null;
   tmz: string;
 }

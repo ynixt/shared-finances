@@ -16,11 +16,6 @@ interface UserService {
         newLang: String,
     )
 
-    suspend fun changeDefaultCurrency(
-        userId: UUID,
-        newDefaultCurrency: String,
-    )
-
     fun findAllByIdIn(ids: Collection<UUID>): Flux<UserEntity>
 
     fun updateUser(

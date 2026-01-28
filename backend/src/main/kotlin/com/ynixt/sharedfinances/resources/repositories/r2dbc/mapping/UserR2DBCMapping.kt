@@ -39,6 +39,7 @@ class UserR2DBCMapping {
                 emailVerified = row.get("${columnPrefix}email_verified", Boolean::class.java)!!,
                 mfaEnabled = row.get("${columnPrefix}mfa_enabled", Boolean::class.java)!!,
                 totpSecret = null,
+                onboardingDone = row.get("${columnPrefix}onboarding_done", Boolean::class.java)!!,
             ).also { u ->
                 u.id = row.get("${columnPrefix}id", UUID::class.java)!!
                 u.createdAt = row.get("${columnPrefix}created_at", OffsetDateTime::class.java)

@@ -42,6 +42,7 @@ class UserServiceImpl(
                 emailVerified = false,
                 mfaEnabled = false,
                 totpSecret = null,
+                onboardingDone = false,
             ).also {
                 it.id = Generators.timeBasedEpochRandomGenerator().generate()
             }
@@ -95,14 +96,6 @@ class UserServiceImpl(
         newLang: String,
     ) {
         repository.changeLanguage(userId, newLang).awaitSingle()
-    }
-
-    @Transactional
-    override suspend fun changeDefaultCurrency(
-        userId: UUID,
-        newDefaultCurrency: String,
-    ) {
-        repository.changeDefaultCurrency(userId, newDefaultCurrency).awaitSingle()
     }
 
     override fun updateUser(
