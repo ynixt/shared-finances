@@ -7,7 +7,8 @@ import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 
 import { ChangePasswordDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import {
   ConfirmMfaRequestDto,
-  ConfirmMfaResponseDto, DisableMfaRequestDto,
+  ConfirmMfaResponseDto,
+  DisableMfaRequestDto,
   EnableMfaRequestDto,
   EnableMfaResponseDto,
 } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth/mfa';

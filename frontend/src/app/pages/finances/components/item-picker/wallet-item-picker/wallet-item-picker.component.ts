@@ -55,8 +55,9 @@ export class WalletItemPickerComponent extends SimpleControlValueAccessor<Wallet
     const t = await (group == null
       ? this.walletItemService.getAllItems({
           sort: 'name',
+          page,
         })
-      : this.groupWalletItemService.getAllItems(group.id, { sort: 'name' }));
+      : this.groupWalletItemService.getAllItems(group.id, { sort: 'name', page }));
 
     const getIcon = (item: WalletItemSearchResponseDto) => {
       return item.type === 'CREDIT_CARD' ? faCreditCard : faBuildingColumns;

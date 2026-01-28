@@ -15,6 +15,7 @@
     [virtualScrollItemSize]="44"
     [virtualScrollOptions]="scrollerOptions()"
     [dataKey]="dataKey()"
+    (onShow)="onShow()"
   >
     <ng-template #loader>
       <div class="p-2">

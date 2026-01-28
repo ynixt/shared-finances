@@ -108,7 +108,7 @@ export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
         this.loading.set(true);
         const items = await fn(page, query);
 
-        if (page == 0) {
+        if (page <= 0) {
           this.options = [...items];
           this.putValueOnListIfListNotContainsValue(this.value);
         } else {
@@ -123,21 +123,33 @@ export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
     }
   }
 
+  async onShow() {
+    if (!this.selectLoaded) {
+      // We need to manual dispare on lazy load for the first time
+      this.selectLoaded = false;
+
+      await this.onLazyLoad({ first: 0, last: 0 });
+    } else {
+      if (this.select?.scroller) {
+        this.select.scroller.autoSize = false;
+      }
+    }
+
+    // This is bad, I know, but this was the only method that I discover to force items to be reloaded
+    this.select?._filterValue.set('loading');
+    setTimeout(() => {
+      this.select?._filterValue.set('');
+      if (this.select?.scroller) {
+        this.select.scroller.autoSize = false;
+      }
+    }, 0);
+  }
+
   async onLazyLoad(event: SelectLazyLoadEvent) {
     if (event.last >= this.lastItemRequested) {
-      await this.loadItems(Math.ceil(event.last / this.pageSize()));
+      const page = event.last == -1 ? 0 : Math.floor(event.last / this.pageSize());
 
-      if (!this.selectLoaded) {
-        // This is bad, I know, but this was the only method that I discover to force items to be reloaded
-        this.select?._filterValue.set('loading');
-        setTimeout(() => {
-          this.select?._filterValue.set('');
-          if (this.select?.scroller) {
-            this.select.scroller.autoSize = false;
-          }
-          this.selectLoaded = true;
-        }, 0);
-      }
+      await this.loadItems(page);
     }
   }
 
