@@ -3,13 +3,13 @@ import io.github.ynixt.anothertypescriptgenerator.GenerateTypescriptInterfacesTa
 
 
 plugins {
-    kotlin("jvm") version "2.2.21"
-    kotlin("plugin.spring") version "2.2.21"
-    id("org.springframework.boot") version "4.0.0"
+    kotlin("jvm") version "2.3.0"
+    kotlin("plugin.spring") version "2.3.0"
+    id("org.springframework.boot") version "4.0.2"
     id("io.spring.dependency-management") version "1.1.7"
     id("io.github.ynixt.another-typescript-generator") version "1.2.0"
-    id("tech.mappie.plugin") version "2.2.21-2.0.0"
-    id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
+    id("tech.mappie.plugin") version "2.3.0-2.3.1"
+    id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
 }
 
 group = "com.ynixt"
@@ -39,8 +39,8 @@ dependencies {
 
     implementation("com.graphql-java:graphql-java-extended-scalars:24.0")
 
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-api:3.0.0")
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-api:3.0.1")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.1")
 
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
     implementation("tools.jackson.module:jackson-module-kotlin")
