@@ -1,4 +1,4 @@
-import { HTTP_INTERCEPTORS, HttpBackend, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpBackend, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom, inject, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { InMemoryCache } from '@apollo/client/core';
@@ -13,6 +13,7 @@ import { SharedFinancesPreset } from '../theme-preset';
 import { routes } from './app.routes';
 import { CustomTranslateYamlLoader } from './custom-translate-yaml-loader';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { apiAuthInterceptor } from './interceptors/unauthorized.interceptor';
 
 const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateYamlLoader => new CustomTranslateYamlLoader();
 
@@ -32,7 +33,7 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withInterceptorsFromDi(), withInterceptors([apiAuthInterceptor])),
     provideApollo(() => {
       const httpLink = inject(HttpLink);
 

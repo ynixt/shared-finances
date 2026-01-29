@@ -1,28 +1,24 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Component, OnInit } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Toast } from 'primeng/toast';
 
-import { CurrencySelectorComponent } from '../../components/currency-selector/currency-selector.component';
-import { LangButtonComponent } from '../../components/lang-button/lang-button.component';
-import { RequiredFieldAsteriskComponent } from '../../components/required-field-asterisk/required-field-asterisk.component';
 import { ErrorMessageService } from '../../services/error-message.service';
 import { UserService } from '../../services/user.service';
 import { OnboardingService } from './onboarding.service';
 
 @Component({
   selector: 'app-onboarding-page',
-  imports: [TranslatePipe, ReactiveFormsModule, LangButtonComponent, Toast, ProgressSpinner],
+  imports: [TranslatePipe, ReactiveFormsModule, Toast, ProgressSpinner],
   templateUrl: './onboarding-page.component.html',
   styleUrl: './onboarding-page.component.scss',
   providers: [MessageService],
 })
-export class OnboardingPageComponent {
+export class OnboardingPageComponent implements OnInit {
   submitting = false;
 
   constructor(
@@ -37,23 +33,25 @@ export class OnboardingPageComponent {
         this.router.navigate(['/app']);
       }
     });
+  }
 
-    setTimeout(async () => {
-      try {
-        await this.onboardingService.onboarding();
+  async ngOnInit() {
+    try {
+      await this.onboardingService.onboarding();
 
-        const currentUser = this.userService.user()!!;
-        this.userService.changeUser({
-          ...currentUser,
-          onboardingDone: true,
-        });
+      const currentUser = this.userService.user()!!;
+      this.userService.changeUser({
+        ...currentUser,
+        onboardingDone: true,
+      });
 
+      setTimeout(() => {
         this.router.navigate(['/app']);
-      } catch (error) {
-        this.errorMessageService.handleError(error, this.messageService);
+      }, 3000);
+    } catch (error) {
+      this.errorMessageService.handleError(error, this.messageService);
 
-        throw error;
-      }
-    }, 3000);
+      throw error;
+    }
   }
 }

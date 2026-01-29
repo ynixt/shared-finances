@@ -65,6 +65,17 @@ export class AuthService {
     });
   }
 
+  async loadUser() {
+    try {
+      const user = await this.getUserFromHttp();
+      this.userService.changeUser(user);
+    } catch (err) {
+      this.userService.changeUser(null, err);
+      this.logout({ ignoreError: true, sync: false });
+      throw err;
+    }
+  }
+
   private async changeTokenAndSync(token: string | undefined | null) {
     this.tokenStateService.changeToken(token);
 
@@ -73,16 +84,6 @@ export class AuthService {
       this.tokenSyncService.postTokenUpdatedMessage(token);
     } else {
       this.tokenSyncService.postLogoutMessage();
-    }
-  }
-
-  private async loadUser() {
-    try {
-      const user = await this.getUserFromHttp();
-      this.userService.changeUser(user);
-    } catch (err) {
-      this.userService.changeUser(null, err);
-      this.logout({ ignoreError: true, sync: false });
     }
   }
 
@@ -153,7 +154,9 @@ export class AuthService {
       } catch (err) {
         if (!args.ignoreError) throw err;
       }
+    }
 
+    if (token != null) {
       if (args.sync) {
         await this.changeTokenAndSync(null);
       } else {
