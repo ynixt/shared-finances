@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { combineLatest, startWith } from 'rxjs';
 
+import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputNumber } from 'primeng/inputnumber';
@@ -34,6 +35,7 @@ import {
 import { SimpleMenuItem } from '../../../../models/simple-menu-item';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
+import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { CategoryPickerComponent } from '../../components/item-picker/category-picker/category-picker.component';
 import { WalletItemPickerComponent } from '../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
@@ -369,7 +371,9 @@ export class NewTransactionPageComponent {
     },
   ];
 
-  recurrenceTypeOptions: SimpleMenuItem<RecurrenceType>[] = RecurrenceType__Options.map(recurrence => ({
+  recurrenceTypeOptions: SimpleMenuItem<RecurrenceType>[] = RecurrenceType__Options.filter(
+    recurrence => recurrence !== RecurrenceType__Obj.SINGLE,
+  ).map(recurrence => ({
     label: `enums.recurrenceType.${recurrence}`,
     value: recurrence,
   }));
@@ -389,7 +393,7 @@ export class NewTransactionPageComponent {
       await this.walletEntryService.createWalletEntry({
         categoryId: this.form.value.category?.id,
         confirmed: this.form.value.confirmed ?? false,
-        date: this.form.value.date!!.toISOString(),
+        date: dayjs(this.form.value.date!!).format(ONLY_DATE_FORMAT),
         groupId: this.form.value.group?.id,
         installments: this.form.value.installments,
         name: this.form.value.name,
@@ -400,7 +404,7 @@ export class NewTransactionPageComponent {
         periodicity: this.form.value.periodicity,
         periodicityQtyLimit: this.form.value.periodicityQtyLimit,
         tags: this.form.value.tags,
-        targetBillDate: this.form.value.targetBill?.toISOString(),
+        targetBillDate: this.form.value.targetBill == null ? null : dayjs(this.form.value.targetBill).format(ONLY_DATE_FORMAT),
         targetId: this.form.value.target?.id,
         type: this.form.value.type!!,
         value: this.form.value.value!!,

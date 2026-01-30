@@ -21,17 +21,21 @@ class OnboardingServiceImpl(
         userId: UUID,
         onboardingDto: UserOnboardingDto,
     ): Mono<Void> =
-        Mono
-            .`when`(
-                onboardingDto.categories.map { cat ->
-                    // TODO: use bulk insert
-                    userCategoryService
-                        .newCategory(
-                            userId,
-                            categoryDtoMapper.fromNewDtoToNewRequest(cat),
-                        )
-                },
-            ).then(
-                userRepository.changeOnboardingDone(userId, true),
-            ).then()
+        userRepository.changeOnboardingDone(userId, true).flatMap { modifiedLines ->
+            if (modifiedLines == 0) {
+                Mono.empty()
+            } else {
+                Mono
+                    .`when`(
+                        onboardingDto.categories.map { cat ->
+                            // TODO: use bulk insert
+                            userCategoryService
+                                .newCategory(
+                                    userId,
+                                    categoryDtoMapper.fromNewDtoToNewRequest(cat),
+                                )
+                        },
+                    ).then()
+            }
+        }
 }

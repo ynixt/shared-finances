@@ -36,12 +36,6 @@ data class NewEntryRequest(
     val targetBill: CreditCardBillEntity? = null,
     val category: WalletEntryCategoryEntity? = null,
 ) {
-    val valueFixedForType: BigDecimal =
-        if (type == WalletEntryType.TRANSFER || type == WalletEntryType.EXPENSE) {
-            value.unaryMinus()
-        } else {
-            value.abs()
-        }
-
+    val valueFixedForType: BigDecimal = type.fixValue(value)
     val inFuture = date.isAfter(LocalDate.now())
 }

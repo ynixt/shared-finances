@@ -49,6 +49,7 @@ dependencies {
 
     implementation("io.r2dbc:r2dbc-pool")
     implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("io.nats:jnats:2.25.1")
 
     implementation("org.apache.commons:commons-pool2:2.13.0")
     implementation("commons-codec:commons-codec:1.20.0")

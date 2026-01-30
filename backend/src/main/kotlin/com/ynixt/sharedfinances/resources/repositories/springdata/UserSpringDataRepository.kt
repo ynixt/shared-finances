@@ -62,7 +62,9 @@ interface UserSpringDataRepository :
         update users
         set onboarding_done = :newOnboardingDone,
         updated_at = CURRENT_TIMESTAMP
-        where id = :userId
+        where 
+            id = :userId
+            and onboarding_done = false
     """,
     )
     fun changeOnboardingDone(

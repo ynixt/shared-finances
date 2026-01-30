@@ -9,7 +9,6 @@ import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.mfa.MfaSecretCryptoService
 import com.ynixt.sharedfinances.domain.services.mfa.MfaService
 import com.ynixt.sharedfinances.domain.services.mfa.TotpService
-import io.lettuce.core.KillArgs.Builder.user
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
