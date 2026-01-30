@@ -6,116 +6,159 @@ import com.ynixt.sharedfinances.resources.queues.jetstream.JetStreamConstants.GE
 import com.ynixt.sharedfinances.resources.queues.jetstream.JetStreamConstants.GENERATE_ENTRY_RECURRENCE_QUEUE
 import io.nats.client.Connection
 import io.nats.client.JetStream
+import io.nats.client.JetStreamSubscription
 import io.nats.client.Message
-import io.nats.client.PushSubscribeOptions
+import io.nats.client.PullSubscribeOptions
 import io.nats.client.api.AckPolicy
 import io.nats.client.api.ConsumerConfiguration
 import io.nats.client.impl.Headers
 import io.nats.client.impl.NatsMessage
+import jakarta.annotation.PreDestroy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitSingle
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
+import org.springframework.stereotype.Component
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.readValue
 import java.time.Duration
 import java.time.Instant
 
-@org.springframework.stereotype.Component
+@Component
 class GenerateEntryRecurrenceQueueListener(
     private val natsConnection: Connection,
     private val walletEntryCreateService: WalletEntryCreateService,
     private val objectMapper: ObjectMapper,
 ) {
-    private val scope =
-        CoroutineScope(
-            Dispatchers.IO + SupervisorJob(),
-        )
-    private val logger =
-        LoggerFactory
-            .getLogger(GenerateEntryRecurrenceQueueListener::class.java)
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val maxAttempts = 3
+    private val logger = LoggerFactory.getLogger(GenerateEntryRecurrenceQueueListener::class.java)
+
+    private val maxAttempts = 3L
     private val delayBetweenAttempts = Duration.ofSeconds(10)
+
+    private lateinit var subscription: JetStreamSubscription
 
     @EventListener(ApplicationReadyEvent::class)
     fun startListening() {
         val js = natsConnection.jetStream()
-        val dispatcher = natsConnection.createDispatcher { }
 
-        val options =
-            PushSubscribeOptions
+        val pullOptions =
+            PullSubscribeOptions
                 .builder()
                 .durable("entry-recurrence-consumer")
                 .configuration(
                     ConsumerConfiguration
                         .builder()
-                        .ackWait(
-                            Duration.ofMinutes(1),
-                        ).maxDeliver(maxAttempts.toLong())
+                        .ackWait(Duration.ofMinutes(1))
+                        .maxDeliver(maxAttempts)
                         .ackPolicy(AckPolicy.Explicit)
                         .build(),
                 ).build()
 
-        js.subscribe(GENERATE_ENTRY_RECURRENCE_QUEUE, dispatcher, { msg ->
-            scope.launch {
+        subscription = js.subscribe(GENERATE_ENTRY_RECURRENCE_QUEUE, pullOptions)
+
+        logger.info("JetStream Pull Consumer started for $GENERATE_ENTRY_RECURRENCE_QUEUE")
+
+        startWorker(js)
+    }
+
+    private fun startWorker(js: JetStream) {
+        scope.launch {
+            while (isActive) {
                 try {
-                    processorMessage(msg)
-                    msg.ack()
+                    val msgs = subscription.fetch(5, Duration.ofSeconds(1))
+
+                    val jobs =
+                        msgs.map { msg ->
+                            launch {
+                                processMessageSafe(js, msg)
+                            }
+                        }
+
+                    jobs.joinAll()
+                } catch (e: InterruptedException) {
+                    // Shutdown graceful
+                    break
                 } catch (e: Exception) {
-                    handleFailure(js, msg, e)
+                    logger.error("Error in JetStream consumer loop: ${e.message}", e)
+                    delay(3000)
                 }
             }
-        }, false, options)
+        }
     }
 
-    private suspend fun processorMessage(msg: Message) {
-        val request = objectMapper.readValue<GenerateEntryRecurrenceRequestDto>(msg.data)
+    private suspend fun processMessageSafe(
+        js: JetStream,
+        msg: Message,
+    ) {
+        try {
+            if (shouldDiscardOrDlqBeforeProcess(js, msg)) {
+                return
+            }
 
-        walletEntryCreateService
-            .createFromRecurrenceConfig(
-                recurrenceConfigId = request.entryRecurrenceConfigId,
-                date = request.date,
-            ).awaitSingle()
+            val request = objectMapper.readValue<GenerateEntryRecurrenceRequestDto>(msg.data)
+
+            walletEntryCreateService
+                .createFromRecurrenceConfig(
+                    recurrenceConfigId = request.entryRecurrenceConfigId,
+                    date = request.date,
+                ).awaitSingle()
+
+            msg.ack()
+        } catch (e: Exception) {
+            handleProcessingFailure(js, msg, e)
+        }
     }
 
-    private fun handleFailure(
+    private fun shouldDiscardOrDlqBeforeProcess(
+        js: JetStream,
+        msg: Message,
+    ): Boolean {
+        val deliveries = msg.metaData()?.deliveredCount() ?: 1
+
+        if (deliveries > maxAttempts) {
+            val e = Exception("Max delivery attempts exceeded ($deliveries)")
+            handleProcessingFailure(js, msg, e)
+            return true
+        }
+
+        return false
+    }
+
+    private fun handleProcessingFailure(
         js: JetStream,
         msg: Message,
         e: Exception,
     ) {
-        val deliveries = runCatching { msg.metaData()?.deliveredCount() ?: 1 }.getOrDefault(1)
+        val deliveries = msg.metaData()?.deliveredCount() ?: 1
 
         if (deliveries < maxAttempts) {
+            logger.warn("Processing failed (attempt $deliveries/$maxAttempts). Retrying in ${delayBetweenAttempts.seconds}s: ${e.message}")
             msg.nakWithDelay(delayBetweenAttempts)
-            logger.error(
-                "Error processing message (attempt $deliveries/$maxAttempts). Will retry in ${delayBetweenAttempts.seconds}s: ${e.message}",
-                e,
-            )
-            return
-        }
-
-        try {
-            publishToDlq(js, msg, e, deliveries)
-            msg.ack()
-            logger.error(
-                "Error processing message (attempt $deliveries/$maxAttempts). Sent to DLQ and ACKed original: ${e.message}",
-                e,
-            )
-        } catch (dlqErr: Exception) {
-            msg.nakWithDelay(Duration.ofSeconds(5))
-            logger.error("Failed to publish message to DLQ. Will retry DLQ publish: ${dlqErr.message}", dlqErr)
+        } else {
+            logger.error("Max attempts reached ($deliveries). Moving to DLQ: ${e.message}", e)
+            try {
+                publishToDlq(js, msg, deliveries)
+                msg.ack()
+            } catch (dlqErr: Exception) {
+                logger.error("CRITICAL: Failed to publish to DLQ. Retrying...", dlqErr)
+                msg.nakWithDelay(Duration.ofSeconds(5))
+            }
         }
     }
 
     private fun publishToDlq(
         js: JetStream,
         originalMsg: Message,
-        e: Exception,
         deliveries: Long,
     ) {
         val md = originalMsg.metaData()
@@ -140,5 +183,18 @@ class GenerateEntryRecurrenceQueueListener(
                 .build()
 
         js.publish(dlqMsg)
+    }
+
+    @PreDestroy
+    fun cleanup() {
+        logger.info("Stopping JetStream consumer...")
+        scope.cancel()
+        try {
+            if (::subscription.isInitialized && subscription.isActive) {
+                subscription.unsubscribe()
+            }
+        } catch (e: Exception) {
+            logger.warn("Error closing subscription: ${e.message}")
+        }
     }
 }
