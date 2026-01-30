@@ -6,14 +6,19 @@ import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToke
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventListenerService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Flux
 import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @RestController
 @RequestMapping("/sse")
@@ -27,9 +32,9 @@ class EventsStreamController(
 ) {
     @GetMapping("/user-events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     @Operation(summary = "Events stream for the logged user. This includes groups that user is member")
-    fun userEvents(
+    suspend fun userEvents(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-    ): Flux<ServerSentEvent<UserActionEventDto>> {
+    ): Flow<ServerSentEvent<UserActionEventDto>> {
         val userData =
             actionEventListenerService
                 .listenUserActions(principalToken.principal.id)
@@ -54,16 +59,19 @@ class EventsStreamController(
                         .build()
                 }
 
-        val keepalive =
-            Flux
-                .interval(Duration.ZERO, Duration.ofSeconds(15))
-                .map {
-                    ServerSentEvent
-                        .builder<UserActionEventDto>()
-                        .comment("keepalive")
-                        .build()
+        val keepAliveFlow =
+            flow {
+                while (true) {
+                    emit(
+                        ServerSentEvent
+                            .builder<UserActionEventDto>()
+                            .comment("keepalive")
+                            .build(),
+                    )
+                    delay(15.seconds)
                 }
+            }
 
-        return userData.mergeWith(groupData).mergeWith(keepalive)
+        return merge(userData, groupData, keepAliveFlow)
     }
 }

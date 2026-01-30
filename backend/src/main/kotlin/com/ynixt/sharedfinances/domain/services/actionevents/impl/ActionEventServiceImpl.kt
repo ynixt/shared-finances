@@ -6,11 +6,12 @@ import com.ynixt.sharedfinances.domain.models.events.GroupActionEvent
 import com.ynixt.sharedfinances.domain.models.events.UserActionEvent
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
-import org.springframework.data.redis.core.ReactiveRedisTemplate
+import io.nats.client.Connection
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import tools.jackson.databind.ObjectMapper
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 class NewEventGroupInfo(
@@ -20,13 +21,14 @@ class NewEventGroupInfo(
 
 @Service
 class ActionEventServiceImpl(
-    private val redis: ReactiveRedisTemplate<String, String>,
+    private val natsConnection: Connection,
     private val objectMapper: ObjectMapper,
     private val groupUsersRepository: GroupUsersRepository,
 ) : ActionEventService {
-    override fun getDestinationForUser(userId: UUID): String = "evt:user_action:$userId"
+    // NATS usa '.' como separador hierárquico padrão, ao contrário do ':' do Redis
+    override fun getDestinationForUser(userId: UUID): String = "evt.user_action.$userId"
 
-    override fun getDestinationForGroup(userId: UUID): String = "evt:user_action:$userId:groups"
+    override fun getDestinationForGroup(userId: UUID): String = "evt.user_action.$userId.groups"
 
     override fun <T> newEvent(
         userId: UUID,
@@ -75,17 +77,22 @@ class ActionEventServiceImpl(
 
     private fun <T> newUserEvent(actionEvent: UserActionEvent<T>): Mono<Long> {
         val destination = getDestinationForUser(actionEvent.userId)
-        return redis.convertAndSend(
-            destination,
-            objectMapper.writeValueAsString(actionEvent),
-        )
+        return publishToNats(destination, actionEvent)
     }
 
     private fun <T> newGroupEvent(actionEvent: GroupActionEvent<T>): Mono<Long> {
         val destination = getDestinationForGroup(actionEvent.userId)
-        return redis.convertAndSend(
-            destination,
-            objectMapper.writeValueAsString(actionEvent),
-        )
+        return publishToNats(destination, actionEvent)
     }
+
+    private fun publishToNats(
+        destination: String,
+        payload: Any,
+    ): Mono<Long> =
+        Mono.fromCallable {
+            val json = objectMapper.writeValueAsString(payload)
+            natsConnection.publish(destination, json.toByteArray(StandardCharsets.UTF_8))
+            // TODO return void
+            1L
+        }
 }
