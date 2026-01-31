@@ -1,29 +1,28 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupBankAssociationService {
-    fun findAllAllowedBanksToAssociate(
+    suspend fun findAllAllowedBanksToAssociate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<BankAccount>>
+    ): List<BankAccount>
 
-    fun findAllAssociatedBanks(
+    suspend fun findAllAssociatedBanks(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<BankAccount>>
+    ): List<BankAccount>
 
-    fun associateBank(
+    suspend fun associateBank(
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,
-    ): Mono<Unit>
+    ): Boolean
 
-    fun unassociateBank(
+    suspend fun unassociateBank(
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,
-    ): Mono<Unit>
+    ): Boolean
 }

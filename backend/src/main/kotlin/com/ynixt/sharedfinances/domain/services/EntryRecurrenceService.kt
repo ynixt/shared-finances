@@ -1,7 +1,6 @@
 package com.ynixt.sharedfinances.domain.services
 
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 
 interface EntryRecurrenceService {
@@ -12,5 +11,5 @@ interface EntryRecurrenceService {
         qtyLimit: Int?,
     ): LocalDate?
 
-    fun queueAllPendingOfExecution(): Mono<Int>
+    suspend fun queueAllPendingOfExecution(): Int
 }

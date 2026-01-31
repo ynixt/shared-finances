@@ -5,18 +5,17 @@ import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.exceptions.http.EmailAlreadyInUseException
-import com.ynixt.sharedfinances.domain.models.Wrapper
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.AvatarService
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.UserService
 import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -47,47 +46,43 @@ class UserServiceImpl(
                 it.id = Generators.timeBasedEpochRandomGenerator().generate()
             }
 
-        return avatarService
-            .getPhotoFromGravatar(user.email, user.id!!)
-            .map { Wrapper(it) }
-            .onErrorReturn(Wrapper(null))
-            .defaultIfEmpty(Wrapper(null))
-            .flatMap { avatarUrlWrapper ->
-                user.photoUrl = avatarUrlWrapper.value
+        user.photoUrl =
+            avatarService
+                .getPhotoFromGravatar(user.email, user.id!!)
 
-                repository
-                    .insert(user)
-                    .onErrorMap { t ->
-                        if (databaseHelperService.isUniqueViolation(t, "users_email_key")) {
-                            EmailAlreadyInUseException(request.email)
-                        } else {
-                            t
-                        }
-                    }
+        return repository
+            .insert(user)
+            .onErrorMap { t ->
+                if (databaseHelperService.isUniqueViolation(t, "users_email_key")) {
+                    EmailAlreadyInUseException(request.email)
+                } else {
+                    t
+                }
             }.awaitSingle()
     }
 
-    override fun changePassword(
+    override suspend fun changePassword(
         userId: UUID,
         currentPasswordHash: String?,
         newPasswordHash: String,
-    ): Mono<Void> {
-        return repository
+    ) {
+        repository
             .findById(userId)
-            .switchIfEmpty(Mono.error(BadCredentialsException("invalid credentials")))
-            .flatMap { user ->
+            .awaitSingleOrNull()
+            ?.let { user ->
                 val correctHash = user.passwordHash
 
                 if (correctHash != null && !passwordEncoder.matches(currentPasswordHash, correctHash)) {
-                    return@flatMap Mono.error(BadCredentialsException("invalid credentials"))
+                    throw BadCredentialsException("invalid credentials")
                 }
 
                 repository
                     .changePassword(
                         userId = userId,
                         newPasswordHash = passwordEncoder.encode(newPasswordHash)!!,
-                    ).then()
-            }
+                    ).awaitSingle()
+                    .let { if (it == 0) null else user }
+            } ?: throw BadCredentialsException("invalid credentials")
     }
 
     @Transactional
@@ -98,14 +93,15 @@ class UserServiceImpl(
         repository.changeLanguage(userId, newLang).awaitSingle()
     }
 
-    override fun updateUser(
+    override suspend fun updateUser(
         userId: UUID,
         updateUserDto: UpdateUserDto,
         newAvatar: FilePart?,
-    ): Mono<UserEntity> =
+    ): UserEntity =
         repository
             .findById(userId)
-            .flatMap { user ->
+            .awaitSingle()
+            .let { user ->
                 user.email = updateUserDto.email
                 user.firstName = updateUserDto.firstName
                 user.lastName = updateUserDto.lastName
@@ -113,38 +109,28 @@ class UserServiceImpl(
                 user.defaultCurrency = updateUserDto.defaultCurrency
                 user.tmz = updateUserDto.tmz
 
-                val removePhotoMono =
-                    if (user.photoUrl != null && (updateUserDto.removeAvatar || updateUserDto.getFromGravatar)) {
-                        avatarService.deletePhoto(userId).then()
-                    } else {
-                        Mono.empty()
-                    }
-                var newPhotoMono = Mono.empty<String>()
+                if (user.photoUrl != null && (updateUserDto.removeAvatar || updateUserDto.getFromGravatar)) {
+                    avatarService.deletePhoto(userId)
+                }
 
                 if (updateUserDto.removeAvatar) {
                     user.photoUrl = null
                 } else if (updateUserDto.getFromGravatar) {
-                    newPhotoMono =
-                        avatarService.getPhotoFromGravatar(user.email, userId).map {
+                    avatarService.getPhotoFromGravatar(user.email, userId).let {
+                        user.photoUrl = it
+                        it
+                    }
+                } else if (newAvatar != null) {
+                    avatarService
+                        .upload(
+                            userId = userId,
+                            file = newAvatar,
+                        ).let {
                             user.photoUrl = it
                             it
                         }
-                } else if (newAvatar != null) {
-                    newPhotoMono =
-                        avatarService
-                            .upload(
-                                userId = userId,
-                                file = newAvatar,
-                            ).map {
-                                user.photoUrl = it
-                                it
-                            }
                 }
 
-                removePhotoMono
-                    .then(newPhotoMono)
-                    .then(repository.save(user))
-            }.flatMap {
-                repository.findById(userId)
+                repository.save(user).awaitSingle()
             }
 }

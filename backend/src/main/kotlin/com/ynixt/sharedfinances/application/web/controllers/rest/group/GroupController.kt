@@ -10,7 +10,6 @@ import com.ynixt.sharedfinances.application.web.dto.groups.NewGroupDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupInviteDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupUserDtoMapper
-import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapList
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.groups.GroupInviteService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -44,109 +42,108 @@ class GroupController(
 ) {
     @Operation(summary = "Get all groups")
     @GetMapping
-    fun findAll(
+    suspend fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-    ): Mono<List<GroupWithRoleDto>> =
+    ): List<GroupWithRoleDto> =
         groupService
             .findAllGroups(
                 principalToken.principal.id,
-            ).mapList(groupDtoMapper::toDto)
+            ).map(groupDtoMapper::toDto)
 
     @Operation(summary = "Get a group by id")
     @GetMapping("/{id}")
-    fun findOne(
+    suspend fun findOne(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<GroupWithRoleDto>> =
+    ): ResponseEntity<GroupWithRoleDto> =
         groupService
             .findGroup(
                 userId = principalToken.principal.id,
                 id = id,
-            ).map {
-                ResponseEntity.ofNullable(groupDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { group ->
+                ResponseEntity.ofNullable(group?.let { groupDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Edit a group by id")
     @PutMapping("/{id}")
-    fun edit(
+    suspend fun edit(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @RequestBody body: EditGroupDto,
-    ): Mono<ResponseEntity<GroupWithRoleDto>> =
+    ): ResponseEntity<GroupWithRoleDto> =
         groupService
             .editGroup(
                 userId = principalToken.principal.id,
                 id = id,
                 groupDtoMapper.fromEditDtoToEditRequest(body),
-            ).map {
-                ResponseEntity.ofNullable(groupDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { group ->
+                ResponseEntity.ofNullable(group?.let { groupDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Delete a group by id")
     @DeleteMapping("/{id}")
-    fun delete(
+    suspend fun delete(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         groupService
             .deleteGroup(
                 userId = principalToken.principal.id,
                 id = id,
-            ).map { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
+            ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 
     @Operation(summary = "Create a new group")
     @PostMapping
-    fun newGroup(
+    suspend fun newGroup(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: NewGroupDto,
-    ): Mono<GroupDto> =
+    ): GroupDto =
         groupService
             .newGroup(
                 principalToken.principal.id,
                 groupDtoMapper.fromNewDtoToNewRequest(body),
-            ).map(groupDtoMapper::toDto)
+            ).let(groupDtoMapper::toDto)
 
     @Operation(summary = "Change a role of a user inside group")
     @PutMapping("/{id}/members/change-role")
-    fun changeMemberRole(
+    suspend fun changeMemberRole(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @RequestBody request: ChangeRoleGroupUserRequestDto,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         groupService
             .updateMemberRole(
                 userId = principalToken.principal.id,
                 id = id,
                 memberId = request.memberId,
                 newRole = request.role,
-            ).map { changed ->
-                if (changed) ResponseEntity.noContent().build<Unit>() else ResponseEntity.unprocessableEntity().build()
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { changed ->
+                if (changed) ResponseEntity.noContent().build<Unit>() else ResponseEntity.notFound().build()
+            }
 
     @Operation(summary = "Generate a invitation to allow a user to join a group by id")
     @PostMapping("/{id}/members/generate-invitation")
-    fun generateInvitation(
+    suspend fun generateInvitation(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<GroupInviteDto>> =
+    ): ResponseEntity<GroupInviteDto> =
         groupInviteService
             .generate(
                 userId = principalToken.principal.id,
                 groupId = id,
-            ).map { ResponseEntity.ofNullable(groupInviteDtoMapper.toDto(it)) }
-            .defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { groupInvite -> ResponseEntity.ofNullable(groupInvite?.let { groupInviteDtoMapper.toDto(it) }) }
 
     @Operation(summary = "Get all users that are in a group, by id")
     @GetMapping("/{id}/members")
-    fun findAllMembers(
+    suspend fun findAllMembers(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<List<GroupUserDto>>> =
+    ): ResponseEntity<List<GroupUserDto>> =
         groupService
             .findAllMembers(
                 userId = principalToken.principal.id,
                 id = id,
-            ).map { list ->
+            ).let { list ->
                 ResponseEntity.ofNullable(list.map(groupUserDtoMapper::toDto))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            }
 }

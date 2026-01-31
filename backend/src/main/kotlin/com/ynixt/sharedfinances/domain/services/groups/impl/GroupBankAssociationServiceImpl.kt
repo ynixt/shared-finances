@@ -12,8 +12,8 @@ import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -25,116 +25,120 @@ class GroupBankAssociationServiceImpl(
     private val groupActionEventService: GroupActionEventService,
     private val bankAccountMapper: BankAccountMapper,
 ) : GroupBankAssociationService {
-    override fun findAllAllowedBanksToAssociate(
+    override suspend fun findAllAllowedBanksToAssociate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<BankAccount>> =
+    ): List<BankAccount> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.ADD_BANK_ACCOUNT,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     groupWalletItemRepository
                         .findAllAllowedForGroup(
                             groupId,
                             WalletItemType.BANK_ACCOUNT,
-                        ).map(bankAccountMapper::toModel)
-                        .collectList()
+                        ).collectList()
+                        .awaitSingle()
+                        .map(bankAccountMapper::toModel)
                 } else {
-                    Mono.empty()
+                    emptyList()
                 }
             }
 
-    override fun findAllAssociatedBanks(
+    override suspend fun findAllAssociatedBanks(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<BankAccount>> =
+    ): List<BankAccount> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     groupWalletItemRepository
                         .findAllAssociatedToGroup(
                             groupId,
                             WalletItemType.BANK_ACCOUNT,
-                        ).map(bankAccountMapper::toModel)
-                        .collectList()
+                        ).collectList()
+                        .awaitSingle()
+                        .map(bankAccountMapper::toModel)
                 } else {
-                    Mono.empty()
+                    emptyList()
                 }
             }
 
-    override fun associateBank(
+    override suspend fun associateBank(
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,
-    ): Mono<Unit> =
+    ): Boolean =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.ADD_BANK_ACCOUNT,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
-                    groupWalletItemRepository
-                        .save(
-                            GroupWalletItemEntity(
-                                groupId = groupId,
-                                walletItemId = bankAccountId,
-                            ),
-                        ).flatMap {
-                            groupActionEventService
-                                .sendBankAssociated(
-                                    groupBankAccount = it,
-                                    userId = userId,
-                                )
-                        }.map { }
-                        .onErrorMap { t ->
-                            if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
-                                BankAccountAlreadyInGroupException(
+                    try {
+                        groupWalletItemRepository
+                            .save(
+                                GroupWalletItemEntity(
                                     groupId = groupId,
-                                    bankAccountId = bankAccountId,
-                                    cause = t,
-                                )
-                            } else {
-                                t
+                                    walletItemId = bankAccountId,
+                                ),
+                            ).awaitSingle()
+                            .also {
+                                groupActionEventService
+                                    .sendBankAssociated(
+                                        groupBankAccount = it,
+                                        userId = userId,
+                                    )
                             }
+                    } catch (t: Throwable) {
+                        throw if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
+                            BankAccountAlreadyInGroupException(
+                                groupId = groupId,
+                                bankAccountId = bankAccountId,
+                                cause = t,
+                            )
+                        } else {
+                            t
                         }
-                } else {
-                    Mono.empty()
+                    }
                 }
+
+                return hasPermission
             }
 
-    override fun unassociateBank(
+    override suspend fun unassociateBank(
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,
-    ): Mono<Unit> =
+    ): Boolean =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.REMOVE_BANK_ACCOUNT,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     groupWalletItemRepository
                         .deleteByGroupIdAndWalletItemId(
                             groupId = groupId,
                             walletItemId = bankAccountId,
-                        ).flatMap {
+                        ).also {
                             groupActionEventService
                                 .sendBankUnassociated(
                                     groupId = groupId,
                                     bankAccountId = bankAccountId,
                                     userId = userId,
                                 )
-                        }.map { }
-                } else {
-                    Mono.empty()
+                        }
                 }
+
+                return hasPermission
             }
 }

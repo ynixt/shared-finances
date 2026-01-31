@@ -7,7 +7,6 @@ import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -15,39 +14,36 @@ class BankAccountActionEventServiceImpl(
     private val actionEventService: ActionEventService,
     private val mapper: BankAccountDtoMapper,
 ) : BankAccountActionEventService {
-    override fun sendInsertedBankAccount(
+    override suspend fun sendInsertedBankAccount(
         userId: UUID,
         bankAccount: BankAccount,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = mapper.toDto(bankAccount),
-                userId = userId,
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.BANK_ACCOUNT,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = mapper.toDto(bankAccount),
+            userId = userId,
+            type = ActionEventType.INSERT,
+            category = ActionEventCategory.BANK_ACCOUNT,
+        )
 
-    override fun sendUpdatedBankAccount(
+    override suspend fun sendUpdatedBankAccount(
         userId: UUID,
         bankAccount: BankAccount,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = mapper.toDto(bankAccount),
-                userId = userId,
-                type = ActionEventType.UPDATE,
-                category = ActionEventCategory.BANK_ACCOUNT,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = mapper.toDto(bankAccount),
+            userId = userId,
+            type = ActionEventType.UPDATE,
+            category = ActionEventCategory.BANK_ACCOUNT,
+        )
 
-    override fun sendDeletedBankAccount(
+    override suspend fun sendDeletedBankAccount(
         userId: UUID,
         id: UUID,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = id.toString(),
-                userId = userId,
-                type = ActionEventType.DELETE,
-                category = ActionEventCategory.BANK_ACCOUNT,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = id.toString(),
+            userId = userId,
+            type = ActionEventType.DELETE,
+            category = ActionEventCategory.BANK_ACCOUNT,
+        )
 }

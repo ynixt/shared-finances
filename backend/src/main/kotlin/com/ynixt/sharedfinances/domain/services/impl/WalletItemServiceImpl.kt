@@ -6,10 +6,11 @@ import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.util.UUID
 
@@ -19,10 +20,10 @@ class WalletItemServiceImpl(
     private val walletItemMapper: WalletItemMapper,
 ) : EntityServiceImpl<WalletItemEntity, WalletItem>(),
     WalletItemService {
-    override fun findAllItems(
+    override suspend fun findAllItems(
         userId: UUID,
         pageable: Pageable,
-    ): Mono<Page<WalletItem>> =
+    ): Page<WalletItem> =
         createPage(pageable, countFn = { repository.countByUserIdAndEnabled(userId, enabled = true) }) {
             repository
                 .findAllByUserIdAndEnabled(
@@ -32,12 +33,12 @@ class WalletItemServiceImpl(
                 ).map(this::convert)
         }
 
-    override fun findOne(id: UUID): Mono<WalletItem> = repository.findOneById(id).map(this::convert)
+    override suspend fun findOne(id: UUID): WalletItem? = repository.findOneById(id).map(this::convert).awaitSingleOrNull()
 
-    override fun addBalanceById(
+    override suspend fun addBalanceById(
         id: UUID,
         balance: BigDecimal,
-    ): Mono<Long> = repository.addBalanceById(id, balance)
+    ): Long = repository.addBalanceById(id, balance).awaitSingle()
 
     override fun convert(entity: WalletItemEntity): WalletItem = walletItemMapper.toModel(entity)
 }

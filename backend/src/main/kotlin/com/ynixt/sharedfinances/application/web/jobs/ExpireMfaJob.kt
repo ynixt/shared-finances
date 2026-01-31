@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.application.web.jobs
 
 import com.ynixt.sharedfinances.domain.services.mfa.MfaService
+import kotlinx.coroutines.reactor.mono
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -16,9 +17,10 @@ class ExpireMfaJob(
     fun job() {
         logger.info("Expire mfa job started")
 
-        mfaService
-            .expireOld()
-            .subscribeOn(Schedulers.boundedElastic())
+        mono {
+            mfaService
+                .expireOld()
+        }.subscribeOn(Schedulers.boundedElastic())
             .doOnSuccess { logger.info("Expire mfa job finished successfully. Expired $it.") }
             .doOnError { ex -> logger.error("Expire mfa job failed", ex) }
             .subscribe()

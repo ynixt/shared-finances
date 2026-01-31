@@ -12,8 +12,8 @@ import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -25,116 +25,121 @@ class GroupCreditCardAssociationServiceImpl(
     private val groupActionEventService: GroupActionEventService,
     private val creditCardMapper: CreditCardMapper,
 ) : GroupCreditCardAssociationService {
-    override fun findAllAllowedCreditCardsToAssociate(
+    override suspend fun findAllAllowedCreditCardsToAssociate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<CreditCard>> =
+    ): List<CreditCard> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.ADD_CREDIT_CARD,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     groupWalletItemRepository
                         .findAllAllowedForGroup(
                             groupId,
                             WalletItemType.CREDIT_CARD,
-                        ).map(creditCardMapper::toModel)
-                        .collectList()
+                        ).collectList()
+                        .awaitSingle()
+                        .map(creditCardMapper::toModel)
                 } else {
-                    Mono.empty()
+                    emptyList()
                 }
             }
 
-    override fun findAllAssociatedCreditCards(
+    override suspend fun findAllAssociatedCreditCards(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<CreditCard>> =
+    ): List<CreditCard> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     groupWalletItemRepository
                         .findAllAssociatedToGroup(
                             groupId,
                             WalletItemType.CREDIT_CARD,
-                        ).map(creditCardMapper::toModel)
-                        .collectList()
+                        ).collectList()
+                        .awaitSingle()
+                        .map(creditCardMapper::toModel)
                 } else {
-                    Mono.empty()
+                    emptyList()
                 }
             }
 
-    override fun associateCreditCard(
+    override suspend fun associateCreditCard(
         userId: UUID,
         groupId: UUID,
         creditCardId: UUID,
-    ): Mono<Unit> =
+    ): Boolean =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.ADD_CREDIT_CARD,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
-                    groupWalletItemRepository
-                        .save(
-                            GroupWalletItemEntity(
-                                groupId = groupId,
-                                walletItemId = creditCardId,
-                            ),
-                        ).flatMap {
-                            groupActionEventService
-                                .sendCreditCardAssociated(
-                                    groupCreditCard = it,
-                                    userId = userId,
-                                )
-                        }.map { }
-                        .onErrorMap { t ->
-                            if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
-                                BankAccountAlreadyInGroupException(
+                    try {
+                        groupWalletItemRepository
+                            .save(
+                                GroupWalletItemEntity(
                                     groupId = groupId,
-                                    bankAccountId = creditCardId,
-                                    cause = t,
-                                )
-                            } else {
-                                t
+                                    walletItemId = creditCardId,
+                                ),
+                            ).awaitSingle()
+                            .also {
+                                groupActionEventService
+                                    .sendCreditCardAssociated(
+                                        groupCreditCard = it,
+                                        userId = userId,
+                                    )
                             }
+                    } catch (t: Throwable) {
+                        throw if (databaseHelperService.isUniqueViolation(t, "idx_group_bank_account_group_id_bank_account")) {
+                            BankAccountAlreadyInGroupException(
+                                groupId = groupId,
+                                bankAccountId = creditCardId,
+                                cause = t,
+                            )
+                        } else {
+                            t
                         }
-                } else {
-                    Mono.empty()
+                    }
                 }
+
+                hasPermission
             }
 
-    override fun unassociateCreditCard(
+    override suspend fun unassociateCreditCard(
         userId: UUID,
         groupId: UUID,
         creditCardId: UUID,
-    ): Mono<Unit> =
+    ): Boolean =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.REMOVE_CREDIT_CARD,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     groupWalletItemRepository
                         .deleteByGroupIdAndWalletItemId(
                             groupId = groupId,
                             walletItemId = creditCardId,
-                        ).flatMap {
+                        ).awaitSingle()
+                        .also {
                             groupActionEventService
                                 .sendCreditCardUnassociated(
                                     groupId = groupId,
                                     creditCardId = creditCardId,
                                     userId = userId,
                                 )
-                        }.map { }
-                } else {
-                    Mono.empty()
+                        }
                 }
+
+                hasPermission
             }
 }

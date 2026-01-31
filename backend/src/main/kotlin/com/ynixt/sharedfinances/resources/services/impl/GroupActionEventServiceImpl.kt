@@ -9,9 +9,8 @@ import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.impl.NewEventGroupInfo
+import kotlinx.coroutines.flow.asFlow
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -19,115 +18,108 @@ class GroupActionEventServiceImpl(
     private val actionEventService: ActionEventService,
     private val mapper: GroupDtoMapper,
 ) : GroupActionEventService {
-    override fun sendInsertedGroup(
+    override suspend fun sendInsertedGroup(
         userId: UUID,
         group: GroupEntity,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = mapper.toDto(group),
-                userId = userId,
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.GROUP,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = mapper.toDto(group),
+            userId = userId,
+            type = ActionEventType.INSERT,
+            category = ActionEventCategory.GROUP,
+        )
 
-    override fun sendUpdatedGroup(
+    override suspend fun sendUpdatedGroup(
         userId: UUID,
         group: GroupWithRole,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = mapper.toDto(group),
-                userId = userId,
-                type = ActionEventType.UPDATE,
-                category = ActionEventCategory.GROUP,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = group.id!!,
-                    ),
-            )
+    ) = actionEventService
+        .newEvent(
+            data = mapper.toDto(group),
+            userId = userId,
+            type = ActionEventType.UPDATE,
+            category = ActionEventCategory.GROUP,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = group.id!!,
+                ),
+        )
 
-    override fun sendDeletedGroup(
+    override suspend fun sendDeletedGroup(
         userId: UUID,
         id: UUID,
         membersId: List<UUID>,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = id,
-                userId = userId,
-                type = ActionEventType.DELETE,
-                category = ActionEventCategory.GROUP,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = id,
-                        groupMemberIdGetter = { Flux.fromIterable(membersId) },
-                    ),
-            )
+    ) = actionEventService
+        .newEvent(
+            data = id,
+            userId = userId,
+            type = ActionEventType.DELETE,
+            category = ActionEventCategory.GROUP,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = id,
+                    groupMemberIdGetter = { membersId.asFlow() },
+                ),
+        )
 
-    override fun sendBankAssociated(
+    override suspend fun sendBankAssociated(
         userId: UUID,
         groupBankAccount: GroupWalletItemEntity,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = groupBankAccount.walletItemId,
-                userId = userId,
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = groupBankAccount.groupId,
-                    ),
-            )
+    ) = actionEventService
+        .newEvent(
+            data = groupBankAccount.walletItemId,
+            userId = userId,
+            type = ActionEventType.INSERT,
+            category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = groupBankAccount.groupId,
+                ),
+        )
 
-    override fun sendBankUnassociated(
+    override suspend fun sendBankUnassociated(
         userId: UUID,
         groupId: UUID,
         bankAccountId: UUID,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = bankAccountId,
-                userId = userId,
-                type = ActionEventType.DELETE,
-                category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = groupId,
-                    ),
-            )
+    ) = actionEventService
+        .newEvent(
+            data = bankAccountId,
+            userId = userId,
+            type = ActionEventType.DELETE,
+            category = ActionEventCategory.BANK_ACCOUNT_ASSOCIATE,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = groupId,
+                ),
+        )
 
-    override fun sendCreditCardAssociated(
+    override suspend fun sendCreditCardAssociated(
         userId: UUID,
         groupCreditCard: GroupWalletItemEntity,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = groupCreditCard.walletItemId,
-                userId = userId,
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = groupCreditCard.groupId,
-                    ),
-            )
+    ) = actionEventService
+        .newEvent(
+            data = groupCreditCard.walletItemId,
+            userId = userId,
+            type = ActionEventType.INSERT,
+            category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = groupCreditCard.groupId,
+                ),
+        )
 
-    override fun sendCreditCardUnassociated(
+    override suspend fun sendCreditCardUnassociated(
         userId: UUID,
         groupId: UUID,
         creditCardId: UUID,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = creditCardId,
-                userId = userId,
-                type = ActionEventType.DELETE,
-                category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = groupId,
-                    ),
-            )
+    ) = actionEventService
+        .newEvent(
+            data = creditCardId,
+            userId = userId,
+            type = ActionEventType.DELETE,
+            category = ActionEventCategory.CREDIT_CARD_ASSOCIATE,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = groupId,
+                ),
+        )
 }

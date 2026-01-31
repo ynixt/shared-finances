@@ -5,14 +5,14 @@ import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.application.web.dto.user.UserOnboardingDto
 import com.ynixt.sharedfinances.application.web.dto.user.UserResponseDto
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
-import com.ynixt.sharedfinances.domain.models.Wrapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.OnboardingService
 import com.ynixt.sharedfinances.domain.services.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -25,8 +25,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
 
 @RestController
 @RequestMapping("/users")
@@ -43,57 +41,50 @@ class UserController(
     @Operation(summary = "Get info about the logged user")
     fun currentUser(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-    ): Mono<UserResponseDto> = Mono.just(userDtoMapper.toResponseDtoFromPrincipal(principalToken.principal))
+    ): UserResponseDto = userDtoMapper.toResponseDtoFromPrincipal(principalToken.principal)
 
     @PutMapping("/current")
     @Operation(summary = "Change default currency of logged user")
-    fun updateCurrentUser(
+    suspend fun updateCurrentUser(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @Valid @RequestPart("dto") dto: Mono<UpdateUserDto>,
         @RequestPart("avatar", required = false) avatar: Mono<FilePart>,
-    ): Mono<UserResponseDto> =
-        (avatar.map { Wrapper(it) }.switchIfEmpty(Mono.just(Wrapper(null)))).let { avatar ->
-            Mono.zip(dto, avatar).flatMap { (dto, avatar) ->
-                userService
-                    .updateUser(
-                        userId = principalToken.principal.id,
-                        updateUserDto = dto,
-                        newAvatar = avatar.value,
-                    ).map { userDtoMapper.toDto(it) }
-            }
-        }
+    ): UserResponseDto =
+        userService
+            .updateUser(
+                userId = principalToken.principal.id,
+                updateUserDto = dto.awaitSingle(),
+                newAvatar = avatar.awaitSingleOrNull(),
+            ).let(userDtoMapper::toDto)
 
     @PutMapping("/current/changeLanguage/{newLang}")
     @Operation(summary = "Change language of logged user")
-    fun changeLanguage(
+    suspend fun changeLanguage(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-        @PathVariable("newLang") newLang: String,
-    ): Mono<ResponseEntity<Unit>> =
-        mono {
-            userService.changeLanguage(principalToken.principal.id, newLang)
-        }.thenReturn(ResponseEntity.ok().build())
+        @PathVariable newLang: String,
+    ): ResponseEntity<Unit> = userService.changeLanguage(principalToken.principal.id, newLang).let { ResponseEntity.noContent().build() }
 
     @PutMapping("/current/changePassword")
     @Operation(summary = "Change default currency of logged user")
-    fun changePassword(
+    suspend fun changePassword(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @Valid @RequestBody changePasswordDto: ChangePasswordDto,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         userService
             .changePassword(
                 userId = principalToken.principal.id,
                 currentPasswordHash = changePasswordDto.currentPassword,
                 newPasswordHash = changePasswordDto.newPassword,
-            ).thenReturn(ResponseEntity.ok().build())
+            ).let { ResponseEntity.noContent().build() }
 
     @PostMapping("/current/onboarding")
-    fun onboarding(
+    suspend fun onboarding(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: UserOnboardingDto,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         onboardingService
             .onboarding(
                 userId = principalToken.principal.id,
                 onboardingDto = body,
-            ).thenReturn(ResponseEntity.ok().build())
+            ).let { ResponseEntity.noContent().build() }
 }

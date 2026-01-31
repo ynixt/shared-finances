@@ -11,11 +11,12 @@ import com.ynixt.sharedfinances.domain.services.actionevents.GroupCategoryAction
 import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
+import kotlinx.coroutines.reactor.mono
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toMono
 import java.util.UUID
 
 @Service
@@ -26,10 +27,10 @@ class GroupCategoryServiceImpl(
     private val groupPermissionService: GroupPermissionService,
 ) : CategoryService(repository),
     GroupCategoryService {
-    override fun newCategories(
+    override suspend fun newCategories(
         groupId: UUID,
         categories: List<NewCategoryRequest>,
-    ): Mono<List<WalletEntryCategoryEntity>> =
+    ): List<WalletEntryCategoryEntity> =
         repository
             .saveAll(
                 categories.map {
@@ -42,20 +43,21 @@ class GroupCategoryServiceImpl(
                     )
                 },
             ).collectList()
+            .awaitSingle()
 
-    override fun findAllCategories(
+    override suspend fun findAllCategories(
         userId: UUID,
         groupId: UUID,
         onlyRoot: Boolean,
         mountChildren: Boolean,
         query: String?,
         pageable: Pageable,
-    ): Mono<Page<WalletEntryCategoryEntity>> =
+    ): Page<WalletEntryCategoryEntity> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     createPage(pageable, countFn = { repository.countByGroupId(groupId) }) {
                         val items =
@@ -88,99 +90,103 @@ class GroupCategoryServiceImpl(
                             }
 
                         if (mountChildren) {
-                            mountChildren(items.collectList()).flatMapIterable { it }
+                            mono { mountChildren(items.collectList().awaitSingle()) }.flatMapIterable { it }
                         } else {
                             items
                         }
                     }
                 } else {
-                    Mono.empty()
+                    Page.empty()
                 }
             }
 
-    override fun findCategory(
+    override suspend fun findCategory(
         userId: UUID,
         groupId: UUID,
         id: UUID,
         mountChildren: Boolean,
-    ): Mono<WalletEntryCategoryEntity> =
+    ): WalletEntryCategoryEntity? =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     repository
                         .findOneByIdAndGroupId(
                             id = id,
                             groupId = groupId,
-                        ).flatMap {
+                        ).awaitSingleOrNull()
+                        ?.let {
                             if (mountChildren) {
-                                mountChildren(listOf(it).toMono()).flatMap { list -> Mono.just(list[0]) }
+                                mountChildren(listOf(it)).firstOrNull()
                             } else {
-                                Mono.just(it)
+                                it
                             }
                         }
                 } else {
-                    Mono.empty()
+                    null
                 }
             }
 
-    override fun newCategory(
+    override suspend fun newCategory(
         userId: UUID,
         groupId: UUID,
         newCategoryRequest: NewCategoryRequest,
-    ): Mono<WalletEntryCategoryEntity> =
+    ): WalletEntryCategoryEntity? =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.NEW_CATEGORY,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
-                    repository
-                        .save(
-                            WalletEntryCategoryEntity(
-                                userId = null,
-                                name = newCategoryRequest.name,
-                                color = newCategoryRequest.color,
-                                groupId = groupId,
-                                parentId = newCategoryRequest.parentId,
-                            ),
-                        ).flatMap { saved ->
-                            groupCategoryActionEventService
-                                .sendInsertedCategory(
-                                    category = saved,
-                                    userId = userId,
-                                ).thenReturn(saved)
-                        }.onErrorMap { t ->
-                            if (databaseHelperService.isUniqueViolation(t, "idx_wallet_entry_category_group_id_name")) {
-                                DuplicatedCategoryException(
+                    try {
+                        repository
+                            .save(
+                                WalletEntryCategoryEntity(
                                     userId = null,
+                                    name = newCategoryRequest.name,
+                                    color = newCategoryRequest.color,
                                     groupId = groupId,
-                                    cause = t,
-                                )
-                            } else {
-                                t
+                                    parentId = newCategoryRequest.parentId,
+                                ),
+                            ).awaitSingle()
+                            .also { saved ->
+                                groupCategoryActionEventService
+                                    .sendInsertedCategory(
+                                        category = saved,
+                                        userId = userId,
+                                    )
                             }
+                    } catch (t: Throwable) {
+                        throw if (databaseHelperService.isUniqueViolation(t, "idx_wallet_entry_category_group_id_name")) {
+                            DuplicatedCategoryException(
+                                userId = null,
+                                groupId = groupId,
+                                cause = t,
+                            )
+                        } else {
+                            t
                         }
+                    }
                 } else {
-                    Mono.empty()
+                    null
                 }
             }
 
-    override fun editCategory(
+    override suspend fun editCategory(
         userId: UUID,
         groupId: UUID,
         id: UUID,
         editCategory: EditCategoryRequest,
-    ): Mono<WalletEntryCategoryEntity> =
+    ): WalletEntryCategoryEntity? =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.EDIT_CATEGORY,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     repository
                         .updateByGroupId(
@@ -189,43 +195,45 @@ class GroupCategoryServiceImpl(
                             newName = editCategory.name,
                             newColor = editCategory.color,
                             newParentId = editCategory.parentId,
-                        ).flatMap {
-                            if (it > 0) {
-                                findCategory(userId = userId, id = id, groupId = groupId, mountChildren = false).flatMap { saved ->
+                        ).awaitSingle()
+                        .let { modifiedLines ->
+                            if (modifiedLines > 0) {
+                                findCategory(userId = userId, id = id, groupId = groupId, mountChildren = false)?.also { saved ->
                                     groupCategoryActionEventService
                                         .sendUpdatedCategory(
                                             category = saved,
                                             userId = userId,
-                                        ).thenReturn(saved)
+                                        )
                                 }
                             } else {
-                                Mono.empty()
+                                null
                             }
                         }
                 } else {
-                    Mono.empty()
+                    null
                 }
             }
 
-    override fun deleteCategory(
+    override suspend fun deleteCategory(
         userId: UUID,
         groupId: UUID,
         id: UUID,
-    ): Mono<Boolean> =
+    ): Boolean =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
                 GroupPermissions.DELETE_CATEGORY,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     repository
                         .deleteByIdAndGroupId(
                             id = id,
                             groupId = groupId,
-                        ).map { it > 0 }
+                        ).awaitSingle()
+                        .let { it > 0 }
                 } else {
-                    Mono.empty()
+                    false
                 }
             }
 }

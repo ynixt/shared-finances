@@ -2,7 +2,6 @@ package com.ynixt.sharedfinances.domain.services
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
-import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
@@ -12,34 +11,34 @@ interface CreditCardBillService {
      * Try to get a bill using credit card id and bill date (bill date is dueDate at start of month).
      * If not found, creates a new bill.
      */
-    fun getOrCreateBill(
+    suspend fun getOrCreateBill(
         creditCardId: UUID,
         dueDate: LocalDate,
         closingDate: LocalDate,
         startValue: BigDecimal = BigDecimal.ZERO,
-    ): Mono<CreditCardBillEntity>
+    ): CreditCardBillEntity
 
-    fun getBillForMonth(
+    suspend fun getBillForMonth(
         userId: UUID,
         creditCardId: UUID,
         month: Int,
         year: Int,
-    ): Mono<CreditCardBill>
+    ): CreditCardBill?
 
-    fun changeClosingDate(
+    suspend fun changeClosingDate(
         userId: UUID,
         creditCardId: UUID,
         closingDate: LocalDate,
-    ): Mono<Unit>
+    )
 
-    fun changeDueDate(
+    suspend fun changeDueDate(
         userId: UUID,
         creditCardId: UUID,
         dueDate: LocalDate,
-    ): Mono<Unit>
+    )
 
-    fun addValueById(
+    suspend fun addValueById(
         id: UUID,
         value: BigDecimal,
-    ): Mono<Long>
+    ): Long
 }

@@ -4,7 +4,6 @@ import com.ynixt.sharedfinances.application.web.dto.wallet.category.CategoryDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.EditCategoryDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.NewCategoryDto
 import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
-import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapPage
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.categories.UserCategoryService
 import io.swagger.v3.oas.annotations.Operation
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -37,13 +35,13 @@ class UserCategoryController(
 ) {
     @Operation(summary = "Get all user categories")
     @GetMapping
-    fun findAll(
+    suspend fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestParam onlyRoot: Boolean = true,
         @RequestParam mountChildren: Boolean = true,
         @RequestParam query: String? = null,
         pageable: Pageable,
-    ): Mono<Page<CategoryDto>> =
+    ): Page<CategoryDto> =
         userCategoryService
             .findAllCategories(
                 principalToken.principal.id,
@@ -51,79 +49,78 @@ class UserCategoryController(
                 mountChildren = mountChildren,
                 query = query,
                 pageable,
-            ).mapPage(categoryDtoMapper::toDto)
+            ).map(categoryDtoMapper::toDto)
 
     @Operation(summary = "Get user category by id")
     @GetMapping("/{id}")
-    fun findCategory(
+    suspend fun findCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @RequestParam mountChildren: Boolean = true,
-    ): Mono<ResponseEntity<CategoryDto>> =
+    ): ResponseEntity<CategoryDto> =
         userCategoryService
             .findCategory(
                 userId = principalToken.principal.id,
                 id = id,
                 mountChildren = mountChildren,
-            ).map {
-                ResponseEntity.ofNullable(categoryDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { category ->
+                ResponseEntity.ofNullable(category?.let { categoryDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Create a new user category")
     @PostMapping
-    fun newCategory(
+    suspend fun newCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: NewCategoryDto,
-    ): Mono<CategoryDto> =
+    ): CategoryDto =
         userCategoryService
             .newCategory(
                 principalToken.principal.id,
                 categoryDtoMapper.fromNewDtoToNewRequest(body),
-            ).map(categoryDtoMapper::toDto)
+            ).let(categoryDtoMapper::toDto)
 
     @Operation(summary = "Create a many user categories")
     @PostMapping("/bulk")
-    fun newCategories(
+    suspend fun newCategories(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: List<NewCategoryDto>,
-    ): Mono<ResponseEntity<Unit>> =
-        Mono
-            .`when`(
-                body.map { cat ->
-                    userCategoryService
-                        .newCategory(
-                            principalToken.principal.id,
-                            categoryDtoMapper.fromNewDtoToNewRequest(cat),
-                        )
-                },
-            ).then(Mono.fromCallable { ResponseEntity.noContent().build<Unit>() })
-            .defaultIfEmpty(ResponseEntity.badRequest().build())
+    ): ResponseEntity<Unit> {
+        body.forEach { cat ->
+            userCategoryService
+                .newCategory(
+                    principalToken.principal.id,
+                    categoryDtoMapper.fromNewDtoToNewRequest(cat),
+                )
+        }
+
+        return ResponseEntity.noContent().build()
+    }
 
     @Operation(summary = "Edit user category by id")
     @PutMapping("/{id}")
-    fun editCategory(
+    suspend fun editCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @RequestBody body: EditCategoryDto,
-    ): Mono<ResponseEntity<CategoryDto>> =
+    ): ResponseEntity<CategoryDto> =
         userCategoryService
             .editCategory(
                 userId = principalToken.principal.id,
                 id = id,
                 categoryDtoMapper.fromEditDtoToEditRequest(body),
-            ).map {
-                ResponseEntity.ofNullable(categoryDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { category ->
+                ResponseEntity.ofNullable(category?.let { categoryDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Delete user category by id")
     @DeleteMapping("/{id}")
-    fun deleteCategory(
+    suspend fun deleteCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         userCategoryService
             .deleteCategory(
                 userId = principalToken.principal.id,
                 id = id,
-            ).map { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
+            ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 }

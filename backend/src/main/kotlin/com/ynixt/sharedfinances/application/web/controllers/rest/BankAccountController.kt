@@ -4,7 +4,6 @@ import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.BankAccou
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.EditBankAccountDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.bankAccount.NewBankAccountDto
 import com.ynixt.sharedfinances.application.web.mapper.BankAccountDtoMapper
-import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapPage
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import io.swagger.v3.oas.annotations.Operation
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -36,67 +34,67 @@ class BankAccountController(
 ) {
     @Operation(summary = "Get all bank accounts")
     @GetMapping
-    fun findAll(
+    suspend fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         pageable: Pageable,
-    ): Mono<Page<BankAccountDto>> =
+    ): Page<BankAccountDto> =
         bankAccountService
             .findAllBanks(
                 principalToken.principal.id,
                 pageable,
-            ).mapPage(bankAccountDtoMapper::toDto)
+            ).map(bankAccountDtoMapper::toDto)
 
     @Operation(summary = "Get bank account by id")
     @GetMapping("/{id}")
-    fun findBankAccount(
+    suspend fun findBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<BankAccountDto>> =
+    ): ResponseEntity<BankAccountDto> =
         bankAccountService
             .findBankAccount(
                 userId = principalToken.principal.id,
                 id = id,
-            ).map {
-                ResponseEntity.ofNullable(bankAccountDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { bankAccount ->
+                ResponseEntity.ofNullable(bankAccount?.let { bankAccountDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Create a new bank account")
     @PostMapping
-    fun newBankAccount(
+    suspend fun newBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: NewBankAccountDto,
-    ): Mono<BankAccountDto> =
+    ): BankAccountDto =
         bankAccountService
             .newBankAccount(
                 principalToken.principal.id,
                 bankAccountDtoMapper.fromNewDtoToNewRequest(body),
-            ).map(bankAccountDtoMapper::toDto)
+            ).let(bankAccountDtoMapper::toDto)
 
     @Operation(summary = "Edit bank account by id")
     @PutMapping("/{id}")
-    fun editBankAccount(
+    suspend fun editBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @RequestBody body: EditBankAccountDto,
-    ): Mono<ResponseEntity<BankAccountDto>> =
+    ): ResponseEntity<BankAccountDto> =
         bankAccountService
             .editBankAccount(
                 userId = principalToken.principal.id,
                 id = id,
                 bankAccountDtoMapper.fromEditDtoToEditRequest(body),
-            ).map {
-                ResponseEntity.ofNullable(bankAccountDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { bankAccount ->
+                ResponseEntity.ofNullable(bankAccount?.let { bankAccountDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Delete bank account by id")
     @DeleteMapping("/{id}")
-    fun deleteBankAccount(
+    suspend fun deleteBankAccount(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         bankAccountService
             .deleteBankAccount(
                 userId = principalToken.principal.id,
                 id = id,
-            ).map { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
+            ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 }

@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 
 @RestController
 @RequestMapping("/mfa-settings")
@@ -30,15 +29,15 @@ class MfaController(
         summary = "Begin of enabling MFA",
     )
     @PostMapping("/begin")
-    fun enableMfaBegin(
+    suspend fun enableMfaBegin(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: EnableMfaRequestDto,
-    ): Mono<ResponseEntity<EnableMfaResponseDto>> =
+    ): ResponseEntity<EnableMfaResponseDto> =
         mfaSettingsService
             .enableMfaBegin(
                 userId = principalToken.principal.id,
                 rawPassword = body.rawPassword,
-            ).map { response ->
+            ).let { response ->
                 ResponseEntity.ok(response)
             }
 
@@ -46,16 +45,16 @@ class MfaController(
         summary = "Confirmation of enabling MFA",
     )
     @PostMapping("confirm")
-    fun enableMfaConfirm(
+    suspend fun enableMfaConfirm(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: ConfirmMfaRequestDto,
-    ): Mono<ResponseEntity<ConfirmMfaResponseDto>> =
+    ): ResponseEntity<ConfirmMfaResponseDto> =
         mfaSettingsService
             .enableMfaConfirm(
                 userId = principalToken.principal.id,
                 code = body.code,
                 enrollmentId = body.enrollmentId,
-            ).map {
+            ).let {
                 ResponseEntity.ok(it)
             }
 
@@ -63,16 +62,16 @@ class MfaController(
         summary = "Disable MFA",
     )
     @PostMapping("disable")
-    fun disableMfa(
+    suspend fun disableMfa(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: DisableMfaRequestDto,
-    ): Mono<ResponseEntity<Void>> =
+    ): ResponseEntity<Void> =
         mfaSettingsService
             .disableMfa(
                 userId = principalToken.principal.id,
                 rawPassword = body.rawPassword,
                 code = body.code,
-            ).map { _ ->
+            ).let {
                 ResponseEntity.noContent().build()
             }
 }

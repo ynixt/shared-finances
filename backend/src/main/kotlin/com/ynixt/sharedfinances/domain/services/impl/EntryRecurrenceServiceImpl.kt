@@ -5,8 +5,9 @@ import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.queue.producer.GenerateEntryRecurrenceQueueProducer
 import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
 import com.ynixt.sharedfinances.domain.services.EntryRecurrenceService
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 
 @Service
@@ -33,16 +34,18 @@ class EntryRecurrenceServiceImpl(
         }
     }
 
-    override fun queueAllPendingOfExecution(): Mono<Int> =
-        repository
-            .findAllByNextExecutionLessThanEqual(LocalDate.now())
-            .doOnNext { config ->
-                queueProducer.send(
-                    GenerateEntryRecurrenceRequestDto(
-                        entryRecurrenceConfigId = config.id!!,
-                        date = config.nextExecution!!,
-                    ),
-                )
-            }.collectList()
-            .map { it.size }
+    override suspend fun queueAllPendingOfExecution(): Int {
+        val itemsFlow = repository.findAllByNextExecutionLessThanEqual(LocalDate.now()).asFlow()
+
+        itemsFlow.collect {
+            queueProducer.send(
+                GenerateEntryRecurrenceRequestDto(
+                    entryRecurrenceConfigId = it.id!!,
+                    date = it.nextExecution!!,
+                ),
+            )
+        }
+
+        return itemsFlow.toList().size
+    }
 }

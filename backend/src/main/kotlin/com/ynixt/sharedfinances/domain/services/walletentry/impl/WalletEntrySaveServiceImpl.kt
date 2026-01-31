@@ -17,7 +17,6 @@ import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.EntryRecurrenceService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
@@ -27,17 +26,16 @@ abstract class WalletEntrySaveServiceImpl(
     protected val creditCardBillService: CreditCardBillService,
     protected val entryRecurrenceService: EntryRecurrenceService,
 ) {
-    protected fun loadRelationships(
+    protected suspend fun loadRelationships(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-    ): Mono<NewEntryRequest> =
-        Mono
-            .just(newEntryRequest)
-            .flatMap { it.attachGroup(userId) }
-            .flatMap { it.attachOrigin() }
-            .flatMap { it.attachTarget() }
-            .flatMap { it.attachOriginBill() }
-            .flatMap { it.attachTargetBill() }
+    ): NewEntryRequest =
+        newEntryRequest
+            .attachGroup(userId)
+            .attachOrigin()
+            .attachTarget()
+            .attachOriginBill()
+            .attachTargetBill()
 
     protected fun checkDataIntegrity(newEntryRequest: NewEntryRequest) {
         requireNotNull(newEntryRequest.origin)
@@ -155,31 +153,29 @@ abstract class WalletEntrySaveServiceImpl(
         }
     }
 
-    private fun <ID, ENTITY : Any> NewEntryRequest.attachRequired(
+    private suspend fun <ID, ENTITY : Any> NewEntryRequest.attachRequired(
         id: ID,
-        fetch: (ID) -> Mono<ENTITY>,
+        fetch: suspend (ID) -> ENTITY?,
         onFound: NewEntryRequest.(ENTITY) -> NewEntryRequest,
         onNotFound: (ID) -> Throwable,
-    ): Mono<NewEntryRequest> =
+    ): NewEntryRequest =
         fetch(id)
-            .map { entity -> onFound(entity) }
-            .switchIfEmpty(Mono.error(onNotFound(id)))
+            ?.let { entity -> onFound(entity) } ?: throw onNotFound(id)
 
-    private fun <ID, ENTITY : Any> NewEntryRequest.attachOptional(
+    private suspend fun <ID, ENTITY : Any> NewEntryRequest.attachOptional(
         id: ID?,
-        fetch: (ID) -> Mono<ENTITY>,
+        fetch: suspend (ID) -> ENTITY?,
         onFound: NewEntryRequest.(ENTITY) -> NewEntryRequest,
         onNotFound: (ID) -> Throwable,
-    ): Mono<NewEntryRequest> =
+    ): NewEntryRequest =
         if (id != null) {
             fetch(id)
-                .map { entity -> onFound(entity) }
-                .switchIfEmpty(Mono.error(onNotFound(id)))
+                ?.let { entity -> onFound(entity) } ?: throw onNotFound(id)
         } else {
-            Mono.just(this)
+            this
         }
 
-    private fun NewEntryRequest.attachGroup(userId: UUID): Mono<NewEntryRequest> =
+    private suspend fun NewEntryRequest.attachGroup(userId: UUID): NewEntryRequest =
         attachOptional(
             id = groupId,
             fetch = { groupId -> groupService.findGroupWithAssociatedItems(userId, groupId) },
@@ -187,7 +183,7 @@ abstract class WalletEntrySaveServiceImpl(
             onNotFound = { groupId -> GroupNotFoundException(groupId) },
         )
 
-    private fun NewEntryRequest.attachOrigin(): Mono<NewEntryRequest> =
+    private suspend fun NewEntryRequest.attachOrigin(): NewEntryRequest =
         attachRequired(
             id = originId,
             fetch = { originId -> walletItemService.findOne(originId) },
@@ -195,7 +191,7 @@ abstract class WalletEntrySaveServiceImpl(
             onNotFound = { originId -> OriginNotFoundException(originId) },
         )
 
-    private fun NewEntryRequest.attachTarget(): Mono<NewEntryRequest> =
+    private suspend fun NewEntryRequest.attachTarget(): NewEntryRequest =
         attachOptional(
             id = targetId,
             fetch = { targetId -> walletItemService.findOne(targetId) },
@@ -203,7 +199,7 @@ abstract class WalletEntrySaveServiceImpl(
             onNotFound = { targetId -> TargetNotFoundException(targetId) },
         )
 
-    private fun NewEntryRequest.attachOriginBill(): Mono<NewEntryRequest> =
+    private suspend fun NewEntryRequest.attachOriginBill(): NewEntryRequest =
         attachBillIfNeeded(
             creditCard = origin as? CreditCard,
             billDate = originBillDate,
@@ -211,7 +207,7 @@ abstract class WalletEntrySaveServiceImpl(
             copy(originBill = bill)
         }
 
-    private fun NewEntryRequest.attachTargetBill(): Mono<NewEntryRequest> =
+    private suspend fun NewEntryRequest.attachTargetBill(): NewEntryRequest =
         attachBillIfNeeded(
             creditCard = target as? CreditCard,
             billDate = targetBillDate,
@@ -219,11 +215,11 @@ abstract class WalletEntrySaveServiceImpl(
             copy(targetBill = bill)
         }
 
-    private fun NewEntryRequest.attachBillIfNeeded(
+    private suspend fun NewEntryRequest.attachBillIfNeeded(
         creditCard: CreditCard?,
         billDate: LocalDate?,
         setBill: NewEntryRequest.(CreditCardBillEntity) -> NewEntryRequest,
-    ): Mono<NewEntryRequest> =
+    ): NewEntryRequest =
         attachOptional(
             id = if (creditCard != null && billDate != null) creditCard to billDate else null,
             fetch = { (card, billDate) ->

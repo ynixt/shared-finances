@@ -4,7 +4,6 @@ import com.ynixt.sharedfinances.application.web.dto.wallet.category.CategoryDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.EditCategoryDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.NewCategoryDto
 import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
-import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapPage
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
 import io.swagger.v3.oas.annotations.Operation
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -37,14 +35,14 @@ class GroupCategoryController(
 ) {
     @Operation(summary = "Get all group categories")
     @GetMapping
-    fun findAll(
+    suspend fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @RequestParam onlyRoot: Boolean = true,
         @RequestParam mountChildren: Boolean = true,
         @RequestParam query: String? = null,
         pageable: Pageable,
-    ): Mono<Page<CategoryDto>> =
+    ): Page<CategoryDto> =
         groupCategoryService
             .findAllCategories(
                 userId = principalToken.principal.id,
@@ -53,89 +51,90 @@ class GroupCategoryController(
                 mountChildren = mountChildren,
                 query = query,
                 pageable,
-            ).mapPage(categoryDtoMapper::toDto)
+            ).map(categoryDtoMapper::toDto)
 
     @Operation(summary = "Get group category by id")
     @GetMapping("/{id}")
-    fun findCategory(
+    suspend fun findCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @PathVariable id: UUID,
         @RequestParam mountChildren: Boolean = true,
-    ): Mono<ResponseEntity<CategoryDto>> =
+    ): ResponseEntity<CategoryDto> =
         groupCategoryService
             .findCategory(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 id = id,
                 mountChildren = mountChildren,
-            ).map {
-                ResponseEntity.ofNullable(categoryDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { category ->
+                ResponseEntity.ofNullable(category?.let { categoryDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Create a new group category")
     @PostMapping
-    fun newCategory(
+    suspend fun newCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @RequestBody body: NewCategoryDto,
-    ): Mono<CategoryDto> =
+    ): ResponseEntity<CategoryDto> =
         groupCategoryService
             .newCategory(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 categoryDtoMapper.fromNewDtoToNewRequest(body),
-            ).map(categoryDtoMapper::toDto)
+            ).let { category ->
+                ResponseEntity.ofNullable(category?.let { categoryDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Create a many group categories")
     @PostMapping("/bulk")
-    fun newCategories(
+    suspend fun newCategories(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @RequestBody body: List<NewCategoryDto>,
-    ): Mono<ResponseEntity<Unit>> =
-        Mono
-            .`when`(
-                body.map { cat ->
-                    groupCategoryService
-                        .newCategory(
-                            userId = principalToken.principal.id,
-                            groupId = groupId,
-                            categoryDtoMapper.fromNewDtoToNewRequest(cat),
-                        )
-                },
-            ).then(Mono.fromCallable { ResponseEntity.noContent().build<Unit>() })
-            .defaultIfEmpty(ResponseEntity.badRequest().build())
+    ): ResponseEntity<Unit> =
+        body
+            .forEach { cat ->
+                groupCategoryService
+                    .newCategory(
+                        userId = principalToken.principal.id,
+                        groupId = groupId,
+                        categoryDtoMapper.fromNewDtoToNewRequest(cat),
+                    )
+            }.let {
+                ResponseEntity.noContent().build<Unit>()
+            }
 
     @Operation(summary = "Edit group category by id")
     @PutMapping("/{id}")
-    fun editCategory(
+    suspend fun editCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @PathVariable id: UUID,
         @RequestBody body: EditCategoryDto,
-    ): Mono<ResponseEntity<CategoryDto>> =
+    ): ResponseEntity<CategoryDto> =
         groupCategoryService
             .editCategory(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 id = id,
                 categoryDtoMapper.fromEditDtoToEditRequest(body),
-            ).map {
-                ResponseEntity.ofNullable(categoryDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { category ->
+                ResponseEntity.ofNullable(category?.let { categoryDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Delete group category by id")
     @DeleteMapping("/{id}")
-    fun deleteCategory(
+    suspend fun deleteCategory(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         groupCategoryService
             .deleteCategory(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 id = id,
-            ).map { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
+            ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 }

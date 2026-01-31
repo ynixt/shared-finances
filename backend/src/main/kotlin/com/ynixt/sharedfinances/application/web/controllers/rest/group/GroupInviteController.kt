@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -29,27 +28,27 @@ class GroupInviteController(
 ) {
     @Operation(summary = "Get invite by id")
     @GetMapping("/open/group-invite/{id}")
-    fun findOne(
+    suspend fun findOne(
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<GroupInfoForInviteDto>> =
+    ): ResponseEntity<GroupInfoForInviteDto> =
         groupInviteService
             .findInfoForInvite(
                 id,
-            ).map {
-                ResponseEntity.ofNullable(groupInviteDtoMapper.toDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { groupInvite ->
+                ResponseEntity.ofNullable(groupInvite?.let { groupInviteDtoMapper.toDto(it) })
+            }
 
     @Operation(summary = "Accept the invite, by id, in the logged user")
     @PutMapping("/group-invite/{id}/accept")
-    fun accept(
+    suspend fun accept(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
-    ): Mono<ResponseEntity<OnlyIdDto>> =
+    ): ResponseEntity<OnlyIdDto> =
         groupInviteService
             .accept(
                 userId = principalToken.principal.id,
                 inviteId = id,
-            ).map {
-                ResponseEntity.ofNullable(OnlyIdDto(it))
-            }.defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { id ->
+                ResponseEntity.ofNullable(id?.let { OnlyIdDto(it) })
+            }
 }

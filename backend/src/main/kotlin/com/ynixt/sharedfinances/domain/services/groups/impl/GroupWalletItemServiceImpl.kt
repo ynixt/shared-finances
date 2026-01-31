@@ -9,7 +9,6 @@ import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -18,16 +17,16 @@ class GroupWalletItemServiceImpl(
     private val groupPermissionService: GroupPermissionService,
     private val walletItemMapper: WalletItemMapper,
 ) : GroupWalletItemService {
-    override fun findAllItems(
+    override suspend fun findAllItems(
         userId: UUID,
         groupId: UUID,
         pageable: Pageable,
-    ): Mono<Page<WalletItem>> =
+    ): Page<WalletItem> =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = groupId,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     createPage(pageable, countFn = { groupWalletItemRepository.countByGroupId(groupId, enabled = true) }) {
                         groupWalletItemRepository
@@ -38,7 +37,7 @@ class GroupWalletItemServiceImpl(
                             ).map(walletItemMapper::toModel)
                     }
                 } else {
-                    Mono.empty()
+                    Page.empty()
                 }
             }
 }

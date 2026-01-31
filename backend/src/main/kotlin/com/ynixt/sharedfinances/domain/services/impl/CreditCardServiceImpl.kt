@@ -9,11 +9,12 @@ import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -22,97 +23,105 @@ class CreditCardServiceImpl(
     private val creditCardActionEventService: CreditCardActionEventService,
     private val creditCardMapper: CreditCardMapper,
 ) : CreditCardService {
-    override fun findAll(
+    override suspend fun findAll(
         userId: UUID,
         pageable: Pageable,
-    ): Mono<Page<CreditCard>> =
+    ): Page<CreditCard> =
         createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.CREDIT_CARD) }) {
             walletItemRepository.findAllByUserIdAndType(userId, WalletItemType.CREDIT_CARD, pageable).map(creditCardMapper::toModel)
         }
 
     @Transactional
-    override fun create(
+    override suspend fun create(
         userId: UUID,
         request: NewCreditCardRequest,
-    ): Mono<CreditCard> =
-        walletItemRepository
-            .save(
-                creditCardMapper.toEntity(
-                    CreditCard(
-                        name = request.name,
-                        enabled = true,
-                        userId = userId,
-                        currency = request.currency,
-                        totalLimit = request.totalLimit,
-                        balance = request.totalLimit, // on creation, available equals total
-                        dueDay = request.dueDay,
-                        daysBetweenDueAndClosing = request.daysBetweenDueAndClosing,
-                        dueOnNextBusinessDay = request.dueOnNextBusinessDay,
-                    ),
-                ),
-            ).flatMap { saved ->
-                creditCardMapper.toModel(saved).let { savedModel ->
-                    creditCardActionEventService
-                        .sendInsertedCreditCard(
+    ): CreditCard {
+        val saved =
+            walletItemRepository
+                .save(
+                    creditCardMapper.toEntity(
+                        CreditCard(
+                            name = request.name,
+                            enabled = true,
                             userId = userId,
-                            creditCard = savedModel,
-                        ).thenReturn(savedModel)
-                }
-            }
+                            currency = request.currency,
+                            totalLimit = request.totalLimit,
+                            balance = request.totalLimit, // on creation, available equals total
+                            dueDay = request.dueDay,
+                            daysBetweenDueAndClosing = request.daysBetweenDueAndClosing,
+                            dueOnNextBusinessDay = request.dueOnNextBusinessDay,
+                        ),
+                    ),
+                ).awaitSingle()
 
-    override fun findOne(
+        val savedModel = creditCardMapper.toModel(saved)
+
+        creditCardActionEventService
+            .sendInsertedCreditCard(
+                userId = userId,
+                creditCard = savedModel,
+            )
+
+        return savedModel
+    }
+
+    override suspend fun findOne(
         userId: UUID,
         id: UUID,
-    ): Mono<CreditCard> = walletItemRepository.findOneByIdAndUserId(id = id, userId = userId).map(creditCardMapper::toModel)
+    ): CreditCard? = walletItemRepository.findOneByIdAndUserId(id = id, userId = userId).awaitSingleOrNull()?.let(creditCardMapper::toModel)
 
     @Transactional
-    override fun edit(
+    override suspend fun edit(
         userId: UUID,
         id: UUID,
         request: EditCreditCardRequest,
-    ): Mono<CreditCard> =
-        walletItemRepository
-            .updateCreditCard(
-                id = id,
-                userId = userId,
-                newName = request.newName,
-                newEnabled = request.newEnabled,
-                newCurrency = request.newCurrency,
-                newTotalLimit = request.newTotalLimit,
-                newDueDay = request.newDueDay,
-                newDaysBetweenDueAndClosing = request.newDaysBetweenDueAndClosing,
-                newDueOnNextBusinessDay = request.newDueOnNextBusinessDay,
-            ).flatMap { updated ->
-                if (updated > 0) {
-                    findOne(userId = userId, id = id).flatMap { saved ->
-                        creditCardActionEventService
-                            .sendUpdatedCreditCard(
-                                userId = userId,
-                                creditCard = saved,
-                            ).thenReturn(saved)
-                    }
-                } else {
-                    Mono.empty()
-                }
+    ): CreditCard? {
+        val updated =
+            walletItemRepository
+                .updateCreditCard(
+                    id = id,
+                    userId = userId,
+                    newName = request.newName,
+                    newEnabled = request.newEnabled,
+                    newCurrency = request.newCurrency,
+                    newTotalLimit = request.newTotalLimit,
+                    newDueDay = request.newDueDay,
+                    newDaysBetweenDueAndClosing = request.newDaysBetweenDueAndClosing,
+                    newDueOnNextBusinessDay = request.newDueOnNextBusinessDay,
+                ).awaitSingle()
+
+        return if (updated > 0) {
+            findOne(userId = userId, id = id)?.also {
+                creditCardActionEventService
+                    .sendUpdatedCreditCard(
+                        userId = userId,
+                        creditCard = it,
+                    )
             }
+        } else {
+            null
+        }
+    }
 
     @Transactional
-    override fun delete(
+    override suspend fun delete(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean> =
-        walletItemRepository
-            .deleteByIdAndUserId(id = id, userId = userId)
-            .flatMap { modifiedLines ->
-                if (modifiedLines > 0) {
-                    // TODO: only delete if has no wallet entry. Otherwise only disable.
-                    creditCardActionEventService
-                        .sendDeletedCreditCard(
-                            userId = userId,
-                            id = id,
-                        ).thenReturn(true)
-                } else {
-                    Mono.just(false)
-                }
+    ): Boolean {
+        // TODO: only delete if has no wallet entry. Otherwise only disable.
+        val modifiedLines =
+            walletItemRepository
+                .deleteByIdAndUserId(id = id, userId = userId)
+                .awaitSingle()
+
+        return (modifiedLines > 0).also { deleted ->
+            if (deleted) {
+                creditCardActionEventService
+                    .sendDeletedCreditCard(
+                        userId = userId,
+                        id = id,
+                    )
             }
+        }
+    }
 }

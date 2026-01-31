@@ -7,16 +7,16 @@ import com.ynixt.sharedfinances.domain.models.events.UserActionEvent
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import io.nats.client.Connection
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.reactive.asFlow
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import tools.jackson.databind.ObjectMapper
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 class NewEventGroupInfo(
     val groupId: UUID,
-    var groupMemberIdGetter: (() -> Flux<UUID>)? = null,
+    var groupMemberIdGetter: (() -> Flow<UUID>)? = null,
 )
 
 @Service
@@ -30,33 +30,28 @@ class ActionEventServiceImpl(
 
     override fun getDestinationForGroup(userId: UUID): String = "evt.user_action.$userId.groups"
 
-    override fun <T> newEvent(
+    override suspend fun <T> newEvent(
         userId: UUID,
         type: ActionEventType,
         category: ActionEventCategory,
         data: T,
         groupInfo: NewEventGroupInfo?,
-    ): Mono<Long> {
-        val userEventMono: Mono<Long> =
-            if (groupInfo != null) {
-                Mono.empty()
-            } else {
-                newUserEvent(
-                    UserActionEvent(
-                        userId = userId,
-                        type = type,
-                        category = category,
-                        data = data,
-                    ),
-                ).defaultIfEmpty(0L)
+    ) {
+        if (groupInfo == null) {
+            newUserEvent(
+                UserActionEvent(
+                    userId = userId,
+                    type = type,
+                    category = category,
+                    data = data,
+                ),
+            )
+        } else {
+            if (groupInfo.groupMemberIdGetter == null) {
+                groupInfo.groupMemberIdGetter = { groupUsersRepository.findAllMembers(groupInfo.groupId).map { it.userId }.asFlow() }
             }
 
-        if (groupInfo != null && groupInfo.groupMemberIdGetter == null) {
-            groupInfo.groupMemberIdGetter = { groupUsersRepository.findAllMembers(groupInfo.groupId).map { it.userId } }
-        }
-
-        val groupsEventsFlux: Flux<Long> =
-            groupInfo?.groupMemberIdGetter?.invoke()?.flatMap { id ->
+            groupInfo.groupMemberIdGetter?.invoke()?.collect { id ->
                 newGroupEvent(
                     GroupActionEvent(
                         modifiedByUserId = userId,
@@ -66,33 +61,26 @@ class ActionEventServiceImpl(
                         category = category,
                         data = data,
                     ),
-                ).defaultIfEmpty(0L)
+                )
             }
-                ?: Flux.empty()
-
-        return Flux
-            .concat(userEventMono.flux(), groupsEventsFlux)
-            .reduce(0L) { acc, v -> acc + v }
+        }
     }
 
-    private fun <T> newUserEvent(actionEvent: UserActionEvent<T>): Mono<Long> {
+    private suspend fun <T> newUserEvent(actionEvent: UserActionEvent<T>) {
         val destination = getDestinationForUser(actionEvent.userId)
         return publishToNats(destination, actionEvent)
     }
 
-    private fun <T> newGroupEvent(actionEvent: GroupActionEvent<T>): Mono<Long> {
+    private suspend fun <T> newGroupEvent(actionEvent: GroupActionEvent<T>) {
         val destination = getDestinationForGroup(actionEvent.userId)
         return publishToNats(destination, actionEvent)
     }
 
-    private fun publishToNats(
+    private suspend fun publishToNats(
         destination: String,
         payload: Any,
-    ): Mono<Long> =
-        Mono.fromCallable {
-            val json = objectMapper.writeValueAsString(payload)
-            natsConnection.publish(destination, json.toByteArray(StandardCharsets.UTF_8))
-            // TODO return void
-            1L
-        }
+    ) {
+        val json = objectMapper.writeValueAsString(payload)
+        natsConnection.publish(destination, json.toByteArray(StandardCharsets.UTF_8))
+    }
 }

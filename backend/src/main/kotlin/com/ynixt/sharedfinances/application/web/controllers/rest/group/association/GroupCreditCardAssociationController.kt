@@ -2,7 +2,6 @@ package com.ynixt.sharedfinances.application.web.controllers.rest.group.associat
 
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.CreditCardForGroupAssociateDto
 import com.ynixt.sharedfinances.application.web.mapper.CreditCardDtoMapper
-import com.ynixt.sharedfinances.domain.extensions.MonoExtensions.mapList
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import io.swagger.v3.oas.annotations.Operation
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -30,56 +28,53 @@ class GroupCreditCardAssociationController(
 ) {
     @Operation(summary = "Get all credit cards that can be associate to this group")
     @GetMapping("/allowed")
-    fun findAllAllowedCreditCardsToAssociate(
+    suspend fun findAllAllowedCreditCardsToAssociate(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
-    ): Mono<List<CreditCardForGroupAssociateDto>> =
+    ): List<CreditCardForGroupAssociateDto> =
         groupCreditCardAssociationService
             .findAllAllowedCreditCardsToAssociate(
                 userId = principalToken.principal.id,
                 groupId = groupId,
-            ).mapList(creditCardDtoMapper::toAssociateDto)
+            ).map(creditCardDtoMapper::toAssociateDto)
 
     @Operation(summary = "Get all associated credit cards of this group")
     @GetMapping
-    fun findAllAssociatedCreditCards(
+    suspend fun findAllAssociatedCreditCards(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
-    ): Mono<List<CreditCardForGroupAssociateDto>> =
+    ): List<CreditCardForGroupAssociateDto> =
         groupCreditCardAssociationService
             .findAllAssociatedCreditCards(
                 userId = principalToken.principal.id,
                 groupId = groupId,
-            ).mapList(creditCardDtoMapper::toAssociateDto)
-            .defaultIfEmpty(listOf())
+            ).map(creditCardDtoMapper::toAssociateDto)
 
     @Operation(summary = "Associate a new credit card to this group")
     @PutMapping("/{creditCardId}")
-    fun associateCreditCard(
+    suspend fun associateCreditCard(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @PathVariable creditCardId: UUID,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         groupCreditCardAssociationService
             .associateCreditCard(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 creditCardId = creditCardId,
-            ).map { ResponseEntity.noContent().build<Unit>() }
-            .defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 
     @Operation(summary = "Unassociate a credit card at this group")
     @DeleteMapping("/{creditCardId}")
-    fun unassociateCreditCard(
+    suspend fun unassociateCreditCard(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         @PathVariable creditCardId: UUID,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         groupCreditCardAssociationService
             .unassociateCreditCard(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 creditCardId = creditCardId,
-            ).map { ResponseEntity.noContent().build<Unit>() }
-            .defaultIfEmpty(ResponseEntity.notFound().build())
+            ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 }

@@ -3,9 +3,8 @@ package com.ynixt.sharedfinances.domain.services
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
+import kotlinx.coroutines.flow.Flow
 import org.springframework.http.codec.multipart.FilePart
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface UserService {
@@ -16,17 +15,17 @@ interface UserService {
         newLang: String,
     )
 
-    fun findAllByIdIn(ids: Collection<UUID>): Flux<UserEntity>
+    fun findAllByIdIn(ids: Collection<UUID>): Flow<UserEntity>
 
-    fun updateUser(
+    suspend fun updateUser(
         userId: UUID,
         updateUserDto: UpdateUserDto,
         newAvatar: FilePart?,
-    ): Mono<UserEntity>
+    ): UserEntity
 
-    fun changePassword(
+    suspend fun changePassword(
         userId: UUID,
         currentPasswordHash: String?,
         newPasswordHash: String,
-    ): Mono<Void>
+    )
 }

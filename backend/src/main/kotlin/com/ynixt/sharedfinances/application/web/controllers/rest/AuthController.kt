@@ -12,7 +12,6 @@ import com.ynixt.sharedfinances.domain.services.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
-import kotlinx.coroutines.reactor.mono
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ServerWebExchange
-import reactor.core.publisher.Mono
 import java.time.Duration
 import java.util.UUID
 
@@ -45,54 +43,49 @@ class AuthController(
         summary = "Register a new user using email/password",
     )
     @PostMapping("/open/auth/register")
-    fun register(
+    suspend fun register(
         @Valid @RequestBody payload: RegisterDto,
-    ): Mono<ResponseEntity<Void>> =
-        mono {
-            userService.createUser(payload)
-        }.thenReturn(ResponseEntity.ok().build())
+    ): ResponseEntity<Unit> = userService.createUser(payload).let { ResponseEntity.noContent().build() }
 
     @Operation(
         summary = "Login using email/password",
     )
     @PostMapping("/open/auth/login")
-    fun login(
+    suspend fun login(
         exchange: ServerWebExchange,
         @Valid @RequestBody payload: LoginDto,
-    ): Mono<ResponseEntity<LoginResultDto>> {
+    ): ResponseEntity<LoginResultDto> {
         val request = exchange.request
 
-        return authService
-            .login(
-                email = payload.email,
-                rawPassword = payload.password,
-                ip = request.remoteAddress?.address,
-                userAgent = request.headers.getFirst("User-Agent"),
-            ).map { loginResult ->
-                val refreshCookie = setRefreshCookie(loginResult.refreshToken, Duration.ofSeconds(loginResult.refreshExpiresInSeconds))
+        return try {
+            authService
+                .login(
+                    email = payload.email,
+                    rawPassword = payload.password,
+                    ip = request.remoteAddress?.address,
+                    userAgent = request.headers.getFirst("User-Agent"),
+                ).let { loginResult ->
+                    val refreshCookie = setRefreshCookie(loginResult.refreshToken, Duration.ofSeconds(loginResult.refreshExpiresInSeconds))
 
-                ResponseEntity
-                    .ok()
-                    .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer ${loginResult.accessToken}")
-                    .body(LoginResultDto())
-            }.onErrorResume { error ->
-                if (error is MfaIsNeededException) {
-                    Mono.just(ResponseEntity.ok(LoginResultDto(mfaChallengeId = error.challengeId)))
-                } else {
-                    Mono.error(error)
+                    ResponseEntity
+                        .ok()
+                        .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer ${loginResult.accessToken}")
+                        .body(LoginResultDto())
                 }
-            }
+        } catch (ex: MfaIsNeededException) {
+            ResponseEntity.ok(LoginResultDto(mfaChallengeId = ex.challengeId))
+        }
     }
 
     @Operation(
         summary = "Login using MFA",
     )
     @PostMapping("/open/auth/mfa")
-    fun mfa(
+    suspend fun mfa(
         exchange: ServerWebExchange,
         @Valid @RequestBody payload: LoginMfaDto,
-    ): Mono<ResponseEntity<Void>> {
+    ): ResponseEntity<Unit> {
         val request = exchange.request
 
         return authService
@@ -101,7 +94,7 @@ class AuthController(
                 code = payload.code,
                 ip = request.remoteAddress?.address,
                 userAgent = request.headers.getFirst("User-Agent"),
-            ).map { loginResult ->
+            ).let { loginResult ->
                 val refreshCookie = setRefreshCookie(loginResult.refreshToken, Duration.ofSeconds(loginResult.refreshExpiresInSeconds))
 
                 ResponseEntity
@@ -116,48 +109,42 @@ class AuthController(
         summary = "Logout user",
     )
     @PostMapping("/auth/logout")
-    fun logout(
+    suspend fun logout(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-        @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) refreshToken: String?,
-    ): Mono<ResponseEntity<Unit>> {
+//        @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) refreshToken: String?,
+    ): ResponseEntity<Unit> {
         val session = principalToken.getCredentials().claims[SESSION_CLAIM_NAME] as String
 
-        println(refreshToken)
+        authService.logout(UUID.fromString(session))
 
-        return authService
-            .logout(UUID.fromString(session))
-            .thenReturn(
-                ResponseEntity
-                    .noContent()
-                    .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
-                    .build(),
-            )
+        return ResponseEntity
+            .noContent()
+            .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
+            .build()
     }
 
     @Operation(
         summary = "Refresh user token",
     )
     @PostMapping("/open/auth/refresh")
-    fun refreshToken(
+    suspend fun refreshToken(
         @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) refreshToken: String?,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         if (refreshToken == null) {
             unauthorized()
         } else {
-            authService
-                .refreshToken(refreshToken)
-                .map { refreshTokenResult ->
-                    ResponseEntity
-                        .noContent()
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer $refreshTokenResult")
-                        .build<Unit>()
-                }.onErrorResume { error ->
-                    if (error is BadCredentialsException) {
-                        unauthorized()
-                    } else {
-                        Mono.error(error)
+            return try {
+                authService
+                    .refreshToken(refreshToken)
+                    .let { refreshTokenResult ->
+                        ResponseEntity
+                            .noContent()
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer $refreshTokenResult")
+                            .build<Unit>()
                     }
-                }
+            } catch (_: BadCredentialsException) {
+                unauthorized()
+            }
         }
 
     private fun setRefreshCookie(
@@ -175,11 +162,9 @@ class AuthController(
 
     private fun clearRefreshCookie() = setRefreshCookie("", Duration.ZERO)
 
-    private fun unauthorized(): Mono<ResponseEntity<Unit>> =
-        Mono.just(
-            ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
-                .build(),
-        )
+    private fun unauthorized(): ResponseEntity<Unit> =
+        ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .header(HttpHeaders.SET_COOKIE, clearRefreshCookie().toString())
+            .build()
 }

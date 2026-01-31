@@ -1,25 +1,24 @@
 package com.ynixt.sharedfinances.domain.services
 
 import org.springframework.http.codec.multipart.FilePart
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface AvatarService {
-    fun getPhotoFromGravatar(
+    suspend fun getPhotoFromGravatar(
         email: String,
         userId: UUID,
-    ): Mono<String>
+    ): String?
 
-    fun deletePhoto(userId: UUID): Mono<Boolean>
+    suspend fun deletePhoto(userId: UUID): Boolean
 
-    fun upload(
+    suspend fun upload(
         userId: UUID,
         bytes: ByteArray,
         contentType: String,
-    ): Mono<String>
+    ): String
 
-    fun upload(
+    suspend fun upload(
         userId: UUID,
         file: FilePart,
-    ): Mono<String>
+    ): String
 }

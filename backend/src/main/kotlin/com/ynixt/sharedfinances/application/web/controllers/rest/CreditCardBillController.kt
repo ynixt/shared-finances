@@ -1,6 +1,5 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
-import com.sun.org.apache.xalan.internal.lib.ExsltDatetime.year
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.CreditCardBillDto
 import com.ynixt.sharedfinances.application.web.mapper.CreditCardBillDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
@@ -28,43 +26,45 @@ class CreditCardBillController(
     private val creditCardBillDtoMapper: CreditCardBillDtoMapper,
 ) {
     @GetMapping("/{id}/of/{year}/{month}")
-    fun getBillForMonth(
+    suspend fun getBillForMonth(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @PathVariable month: Int,
         @PathVariable year: Int,
-    ): Mono<CreditCardBillDto> =
+    ): ResponseEntity<CreditCardBillDto> =
         creditCardBillService
             .getBillForMonth(
                 userId = principalToken.principal.id,
                 creditCardId = id,
                 month = month,
                 year = year,
-            ).map(creditCardBillDtoMapper::toDto)
+            ).let { bill ->
+                ResponseEntity.ofNullable(bill?.let { creditCardBillDtoMapper.toDto(it) })
+            }
 
     @PutMapping("/{id}/closingDate/{closingDate}")
-    fun changeClosingDate(
+    suspend fun changeClosingDate(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @PathVariable closingDate: LocalDate,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         creditCardBillService
             .changeClosingDate(
                 userId = principalToken.principal.id,
                 creditCardId = id,
                 closingDate = closingDate,
-            ).map { ResponseEntity.noContent().build() }
+            ).let { ResponseEntity.noContent().build() }
 
     @PutMapping("/{id}/dueDate/{dueDate}")
-    fun changeDueDate(
+    suspend fun changeDueDate(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable id: UUID,
         @PathVariable dueDate: LocalDate,
-    ): Mono<ResponseEntity<Unit>> =
+    ): ResponseEntity<Unit> =
         creditCardBillService
             .changeDueDate(
                 userId = principalToken.principal.id,
                 creditCardId = id,
                 dueDate = dueDate,
-            ).map { ResponseEntity.noContent().build() }
+            ).let { ResponseEntity.noContent().build() }
 }

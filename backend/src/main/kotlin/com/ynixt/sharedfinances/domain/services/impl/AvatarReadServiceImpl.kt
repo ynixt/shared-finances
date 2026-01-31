@@ -2,9 +2,9 @@ package com.ynixt.sharedfinances.domain.services.impl
 
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.AvatarReadService
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
@@ -19,44 +19,42 @@ class AvatarReadServiceImpl(
     private val presigner: S3Presigner,
     @param:Value("\${app.s3.bucket}") private val bucket: String,
 ) : AvatarReadService {
-    override fun getAvatar(
+    override suspend fun getAvatar(
         ownerId: UUID,
         loggedUserId: UUID,
         expiresIn: Duration,
-    ): Mono<String> {
+    ): String? {
         val hasPermission =
             if (loggedUserId == ownerId) {
-                Mono.just(true)
+                true
             } else {
                 userRepository
                     .findAllUsersInSameGroup(loggedUserId)
                     .collectList()
                     .map { users -> users.find { ownerId == it.id } != null }
+                    .awaitSingle()
             }
 
-        return hasPermission.flatMap { has ->
-            if (!has) {
-                Mono.empty()
-            } else {
-                val key = "avatar/$ownerId"
+        return if (!hasPermission) {
+            null
+        } else {
+            val key = "avatar/$ownerId"
 
-                val getReq =
-                    GetObjectRequest
-                        .builder()
-                        .bucket(bucket)
-                        .key(key)
-                        .build()
+            val getReq =
+                GetObjectRequest
+                    .builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .build()
 
-                val presignReq =
-                    GetObjectPresignRequest
-                        .builder()
-                        .signatureDuration(expiresIn)
-                        .getObjectRequest(getReq)
-                        .build()
+            val presignReq =
+                GetObjectPresignRequest
+                    .builder()
+                    .signatureDuration(expiresIn)
+                    .getObjectRequest(getReq)
+                    .build()
 
-                val url = presigner.presignGetObject(presignReq).url().toString()
-                Mono.just(url)
-            }
+            presigner.presignGetObject(presignReq).url().toString()
         }
     }
 }

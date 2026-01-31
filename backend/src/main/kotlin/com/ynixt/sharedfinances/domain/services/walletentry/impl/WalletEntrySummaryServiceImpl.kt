@@ -12,8 +12,9 @@ import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntrySummaryService
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
@@ -24,36 +25,34 @@ class WalletEntrySummaryServiceImpl(
     private val userService: UserService,
     private val groupPermissionService: GroupPermissionService,
 ) : WalletEntrySummaryService {
-    override fun summary(
+    override suspend fun summary(
         userId: UUID,
         groupId: UUID?,
         request: SummaryEntryRequest,
-    ): Mono<EntrySummary> {
-        val permissionMono =
-            if (groupId != null) groupPermissionService.hasPermission(userId = userId, groupId = groupId) else Mono.just(true)
+    ): EntrySummary? {
+        val hasPermission =
+            if (groupId != null) groupPermissionService.hasPermission(userId = userId, groupId = groupId) else true
 
-        return permissionMono.flatMap { hasPermission ->
-            if (hasPermission) {
-                when (request.summaryType) {
-                    EntrySummaryType.BANK_ACCOUNT ->
-                        bankAccountSummary(
-                            userId = if (groupId == null) userId else null,
-                            groupId = groupId,
-                            request = request,
-                        )
+        return if (hasPermission) {
+            when (request.summaryType) {
+                EntrySummaryType.BANK_ACCOUNT ->
+                    bankAccountSummary(
+                        userId = if (groupId == null) userId else null,
+                        groupId = groupId,
+                        request = request,
+                    )
 
-                    else -> TODO()
-                }
-            } else {
-                Mono.empty()
+                else -> TODO()
             }
+        } else {
+            null
         }
     }
 
     // TODO creditCard -> need to get summary looking to closingDate instead of date
     // TODO dash -> need to get bankAccount summary and then sum on "projected" all creditCards
 
-    private fun bankAccountSummary(
+    private suspend fun bankAccountSummary(
         userId: UUID?,
         groupId: UUID?,
         request: SummaryEntryRequest,
@@ -66,7 +65,8 @@ class WalletEntrySummaryServiceImpl(
             maximumDate = request.maximumDate,
         ).collectList()
         .defaultIfEmpty(emptyList())
-        .flatMap { sumsNotGrouped ->
+        .awaitSingle()
+        .let { sumsNotGrouped ->
             var sums =
                 sumsNotGrouped
                     .groupBy { it.walletItemId }
@@ -75,51 +75,49 @@ class WalletEntrySummaryServiceImpl(
                     .toList()
 
             val walletItemsIds = sums.map { it.walletItemId }.toSet()
+            val walletItems = walletItemService.findAllByIdIn(walletItemsIds).toList()
+            val users = userService.findAllByIdIn(walletItems.map { it.userId }).toList()
 
-            walletItemService.findAllByIdIn(walletItemsIds).collectList().flatMap { walletItems ->
-                userService.findAllByIdIn(walletItems.mapNotNull { it.userId }).collectList().defaultIfEmpty(emptyList()).map { users ->
-                    val walletItemById = walletItems.associateBy { it.id!! }
-                    val userById = users.associateBy { it.id!! }
+            val walletItemById = walletItems.associateBy { it.id!! }
+            val userById = users.associateBy { it.id!! }
 
-                    walletItemById.values.forEach { it.user = userById[it.userId] }
-                    sums.forEach { it.walletItem = walletItemById[it.walletItemId] }
+            walletItemById.values.forEach { it.user = userById[it.userId] }
+            sums.forEach { it.walletItem = walletItemById[it.walletItemId] }
 
-                    if (groupId == null) {
-                        sums = sums.filter { it.walletItem!!.userId == userId }
-                    }
-
-                    val sumsGroupedByWalletItem = sums.groupBy { it.walletItem!! }
-
-                    var total = EntrySum.EMPTY
-                    var totalProjected = EntrySum.EMPTY
-                    var totalPeriod = EntrySum.EMPTY
-
-                    sums.forEach {
-                        total += it.sum
-                        totalProjected += it.projected
-                        totalPeriod += it.period
-                    }
-
-                    EntrySummary(
-                        total = total,
-                        totalProjected = totalProjected,
-                        totalPeriod = totalPeriod,
-                        grouped =
-                            sumsGroupedByWalletItem.map {
-                                EntrySummaryGrouped(
-                                    walletItem = it.key,
-                                    entries =
-                                        it.value.map { sumResult ->
-                                            EntrySummaryGroupedResult(
-                                                sum = sumResult.sum,
-                                                projected = sumResult.projected,
-                                                period = sumResult.period,
-                                            )
-                                        },
-                                )
-                            },
-                    )
-                }
+            if (groupId == null) {
+                sums = sums.filter { it.walletItem!!.userId == userId }
             }
+
+            val sumsGroupedByWalletItem = sums.groupBy { it.walletItem!! }
+
+            var total = EntrySum.EMPTY
+            var totalProjected = EntrySum.EMPTY
+            var totalPeriod = EntrySum.EMPTY
+
+            sums.forEach {
+                total += it.sum
+                totalProjected += it.projected
+                totalPeriod += it.period
+            }
+
+            EntrySummary(
+                total = total,
+                totalProjected = totalProjected,
+                totalPeriod = totalPeriod,
+                grouped =
+                    sumsGroupedByWalletItem.map {
+                        EntrySummaryGrouped(
+                            walletItem = it.key,
+                            entries =
+                                it.value.map { sumResult ->
+                                    EntrySummaryGroupedResult(
+                                        sum = sumResult.sum,
+                                        projected = sumResult.projected,
+                                        period = sumResult.period,
+                                    )
+                                },
+                        )
+                    },
+            )
         }
 }

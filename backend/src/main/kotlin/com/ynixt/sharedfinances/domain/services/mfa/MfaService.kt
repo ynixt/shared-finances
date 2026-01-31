@@ -1,7 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.mfa
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
-import reactor.core.publisher.Mono
 import java.net.InetAddress
 import java.util.UUID
 
@@ -11,17 +10,17 @@ interface MfaService {
         code: String,
     ): Boolean
 
-    fun generateNewChallenge(
+    suspend fun generateNewChallenge(
         userId: UUID,
         userAgent: String?,
         ip: InetAddress?,
-    ): Mono<UUID>
+    ): UUID
 
-    fun verifyChallenge(
+    suspend fun verifyChallenge(
         challengeId: UUID,
         code: String,
         ip: InetAddress?,
-    ): Mono<UserEntity>
+    ): UserEntity
 
-    fun expireOld(): Mono<Void>
+    suspend fun expireOld()
 }

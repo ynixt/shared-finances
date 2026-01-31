@@ -1,29 +1,28 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupCreditCardAssociationService {
-    fun findAllAllowedCreditCardsToAssociate(
+    suspend fun findAllAllowedCreditCardsToAssociate(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<CreditCard>>
+    ): List<CreditCard>
 
-    fun findAllAssociatedCreditCards(
+    suspend fun findAllAssociatedCreditCards(
         userId: UUID,
         groupId: UUID,
-    ): Mono<List<CreditCard>>
+    ): List<CreditCard>
 
-    fun associateCreditCard(
+    suspend fun associateCreditCard(
         userId: UUID,
         groupId: UUID,
         creditCardId: UUID,
-    ): Mono<Unit>
+    ): Boolean
 
-    fun unassociateCreditCard(
+    suspend fun unassociateCreditCard(
         userId: UUID,
         groupId: UUID,
         creditCardId: UUID,
-    ): Mono<Unit>
+    ): Boolean
 }

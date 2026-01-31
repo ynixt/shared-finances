@@ -9,11 +9,12 @@ import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.UserCategoryActionEventService
 import com.ynixt.sharedfinances.domain.services.categories.UserCategoryService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
+import kotlinx.coroutines.reactor.mono
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toMono
 import java.util.UUID
 
 @Service
@@ -23,13 +24,13 @@ class UserCategoryServiceImpl(
     private val userCategoryActionEventService: UserCategoryActionEventService,
 ) : CategoryService(repository),
     UserCategoryService {
-    override fun findAllCategories(
+    override suspend fun findAllCategories(
         userId: UUID,
         onlyRoot: Boolean,
         mountChildren: Boolean,
         query: String?,
         pageable: Pageable,
-    ): Mono<Page<WalletEntryCategoryEntity>> =
+    ): Page<WalletEntryCategoryEntity> =
         createPage(pageable, countFn = { repository.countByUserId(userId) }) {
             val items =
                 if (onlyRoot) {
@@ -61,65 +62,69 @@ class UserCategoryServiceImpl(
                 }
 
             if (mountChildren) {
-                mountChildren(items.collectList()).flatMapIterable { it }
+                mono { mountChildren(items.collectList().awaitSingle()) }.flatMapIterable { it }
             } else {
                 items
             }
         }
 
-    override fun findCategory(
+    override suspend fun findCategory(
         userId: UUID,
         id: UUID,
         mountChildren: Boolean,
-    ): Mono<WalletEntryCategoryEntity> =
+    ): WalletEntryCategoryEntity? =
         repository
             .findOneByIdAndUserId(
                 id = id,
                 userId = userId,
-            ).flatMap {
+            ).awaitSingleOrNull()
+            ?.let {
                 if (mountChildren) {
-                    mountChildren(listOf(it).toMono()).flatMap { list -> Mono.just(list[0]) }
+                    mountChildren(listOf(it)).firstOrNull()
                 } else {
-                    Mono.just(it)
+                    it
                 }
             }
 
-    override fun newCategory(
+    override suspend fun newCategory(
         userId: UUID,
         newCategoryRequest: NewCategoryRequest,
-    ): Mono<WalletEntryCategoryEntity> =
-        repository
-            .save(
-                WalletEntryCategoryEntity(
-                    userId = userId,
-                    name = newCategoryRequest.name,
-                    color = newCategoryRequest.color,
-                    groupId = null,
-                    parentId = newCategoryRequest.parentId,
-                ),
-            ).flatMap { saved ->
-                userCategoryActionEventService
-                    .sendInsertedCategory(
-                        category = saved,
+    ): WalletEntryCategoryEntity =
+        try {
+            repository
+                .save(
+                    WalletEntryCategoryEntity(
                         userId = userId,
-                    ).thenReturn(saved)
-            }.onErrorMap { t ->
-                if (databaseHelperService.isUniqueViolation(t, "idx_wallet_entry_category_user_id_name")) {
-                    DuplicatedCategoryException(
-                        userId = userId,
+                        name = newCategoryRequest.name,
+                        color = newCategoryRequest.color,
                         groupId = null,
-                        cause = t,
-                    )
-                } else {
-                    t
+                        parentId = newCategoryRequest.parentId,
+                    ),
+                ).awaitSingle()
+                .also { saved ->
+                    userCategoryActionEventService
+                        .sendInsertedCategory(
+                            category = saved,
+                            userId = userId,
+                        )
                 }
+        } catch (t: Throwable) {
+            throw if (databaseHelperService.isUniqueViolation(t, "idx_wallet_entry_category_user_id_name")) {
+                DuplicatedCategoryException(
+                    userId = userId,
+                    groupId = null,
+                    cause = t,
+                )
+            } else {
+                t
             }
+        }
 
-    override fun editCategory(
+    override suspend fun editCategory(
         userId: UUID,
         id: UUID,
         editCategory: EditCategoryRequest,
-    ): Mono<WalletEntryCategoryEntity> =
+    ): WalletEntryCategoryEntity? =
         repository
             .updateByUserId(
                 id = id,
@@ -127,27 +132,29 @@ class UserCategoryServiceImpl(
                 newName = editCategory.name,
                 newColor = editCategory.color,
                 newParentId = editCategory.parentId,
-            ).flatMap {
-                if (it > 0) {
-                    findCategory(userId = userId, id = id, mountChildren = false).flatMap { saved ->
+            ).awaitSingle()
+            .let { modifiedLines ->
+                if (modifiedLines > 0) {
+                    findCategory(userId = userId, id = id, mountChildren = false)?.also { saved ->
                         userCategoryActionEventService
                             .sendUpdatedCategory(
                                 category = saved,
                                 userId = userId,
-                            ).thenReturn(saved)
+                            )
                     }
                 } else {
-                    Mono.empty()
+                    null
                 }
             }
 
-    override fun deleteCategory(
+    override suspend fun deleteCategory(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean> =
+    ): Boolean =
         repository
             .deleteByIdAndUserId(
                 id = id,
                 userId = userId,
-            ).map { it > 0 }
+            ).awaitSingle()
+            .let { it > 0 }
 }

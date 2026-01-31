@@ -2,18 +2,17 @@ package com.ynixt.sharedfinances.domain.services.walletentry
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
-import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
 interface WalletEntryCreateService {
-    fun create(
+    suspend fun create(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-    ): Mono<MinimumWalletEntry>
+    ): MinimumWalletEntry?
 
-    fun createFromRecurrenceConfig(
+    suspend fun createFromRecurrenceConfig(
         recurrenceConfigId: UUID,
         date: LocalDate,
-    ): Mono<MinimumWalletEntry>
+    ): MinimumWalletEntry?
 }

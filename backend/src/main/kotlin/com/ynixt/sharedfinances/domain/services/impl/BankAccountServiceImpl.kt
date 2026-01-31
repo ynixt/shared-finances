@@ -9,11 +9,12 @@ import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -22,10 +23,10 @@ class BankAccountServiceImpl(
     private val bankAccountActionEventService: BankAccountActionEventService,
     private val bankAccountMapper: BankAccountMapper,
 ) : BankAccountService {
-    override fun findAllBanks(
+    override suspend fun findAllBanks(
         userId: UUID,
         pageable: Pageable,
-    ): Mono<Page<BankAccount>> =
+    ): Page<BankAccount> =
         createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.BANK_ACCOUNT) }) {
             walletItemRepository
                 .findAllByUserIdAndType(
@@ -36,10 +37,10 @@ class BankAccountServiceImpl(
         }
 
     @Transactional
-    override fun newBankAccount(
+    override suspend fun newBankAccount(
         userId: UUID,
         newBankAccountRequest: NewBankAccountRequest,
-    ): Mono<BankAccount> =
+    ): BankAccount =
         walletItemRepository
             .save(
                 bankAccountMapper.toEntity(
@@ -51,32 +52,34 @@ class BankAccountServiceImpl(
                         currency = newBankAccountRequest.currency,
                     ),
                 ),
-            ).flatMap { saved ->
-                bankAccountMapper.toModel(saved).let { savedModel ->
+            ).awaitSingle()
+            .let { saved ->
+                bankAccountMapper.toModel(saved).also { savedModel ->
                     bankAccountActionEventService
                         .sendInsertedBankAccount(
                             bankAccount = savedModel,
                             userId = userId,
-                        ).thenReturn(savedModel)
+                        )
                 }
             }
 
-    override fun findBankAccount(
+    override suspend fun findBankAccount(
         userId: UUID,
         id: UUID,
-    ): Mono<BankAccount> =
+    ): BankAccount? =
         walletItemRepository
             .findOneByIdAndUserId(
                 id = id,
                 userId = userId,
-            ).map(bankAccountMapper::toModel)
+            ).awaitSingleOrNull()
+            ?.let(bankAccountMapper::toModel)
 
     @Transactional
-    override fun editBankAccount(
+    override suspend fun editBankAccount(
         userId: UUID,
         id: UUID,
         editBankAccount: EditBankAccountRequest,
-    ): Mono<BankAccount> =
+    ): BankAccount? =
         walletItemRepository
             .updateBankAccount(
                 id = id,
@@ -84,39 +87,39 @@ class BankAccountServiceImpl(
                 newName = editBankAccount.newName,
                 newEnabled = editBankAccount.newEnabled,
                 newCurrency = editBankAccount.newCurrency,
-            ).flatMap {
-                if (it > 0) {
-                    findBankAccount(id = id, userId = userId).flatMap { saved ->
+            ).awaitSingle()
+            .let { modifiedLines ->
+                if (modifiedLines > 0) {
+                    findBankAccount(id = id, userId = userId)?.also { saved ->
                         bankAccountActionEventService
                             .sendInsertedBankAccount(
                                 bankAccount = saved,
                                 userId = userId,
-                            ).thenReturn(saved)
+                            )
                     }
                 } else {
-                    Mono.empty()
+                    null
                 }
             }
 
     @Transactional
-    override fun deleteBankAccount(
+    override suspend fun deleteBankAccount(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean> =
+    ): Boolean =
+        // TODO: only delete if has no wallet entry. Otherwise only disable.
         walletItemRepository
             .deleteByIdAndUserId(
                 id = id,
                 userId = userId,
-            ).flatMap { modifiedLines ->
-                if (modifiedLines > 0) {
-                    // TODO: only delete if has no wallet entry. Otherwise only disable.
+            ).awaitSingle()
+            .let { modifiedLines ->
+                (modifiedLines > 0).also {
                     bankAccountActionEventService
                         .sendDeletedBankAccount(
                             id = id,
                             userId = userId,
-                        ).thenReturn(true)
-                } else {
-                    Mono.just(false)
+                        )
                 }
             }
 }

@@ -2,26 +2,25 @@ package com.ynixt.sharedfinances.domain.services.mfa
 
 import com.ynixt.sharedfinances.application.web.dto.auth.mfa.ConfirmMfaResponseDto
 import com.ynixt.sharedfinances.application.web.dto.auth.mfa.EnableMfaResponseDto
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface MfaSettingsService {
-    fun enableMfaBegin(
+    suspend fun enableMfaBegin(
         userId: UUID,
         rawPassword: String,
-    ): Mono<EnableMfaResponseDto>
+    ): EnableMfaResponseDto
 
-    fun enableMfaConfirm(
+    suspend fun enableMfaConfirm(
         userId: UUID,
         enrollmentId: UUID,
         code: String,
-    ): Mono<ConfirmMfaResponseDto>
+    ): ConfirmMfaResponseDto
 
-    fun disableMfa(
+    suspend fun disableMfa(
         userId: UUID,
         rawPassword: String,
         code: String,
-    ): Mono<Unit>
+    )
 
-    fun generateNewRecoveryCodes(userId: UUID): Mono<List<String>>
+    suspend fun generateNewRecoveryCodes(userId: UUID): List<String>
 }

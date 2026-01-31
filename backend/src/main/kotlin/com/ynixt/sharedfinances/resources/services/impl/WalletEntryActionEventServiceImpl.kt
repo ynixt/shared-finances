@@ -7,30 +7,28 @@ import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEntryActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.impl.NewEventGroupInfo
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
 class WalletEntryActionEventServiceImpl(
     private val actionEventService: ActionEventService,
 ) : WalletEntryActionEventService {
-    override fun sendInsertedWalletEntry(
+    override suspend fun sendInsertedWalletEntry(
         userId: UUID,
         walletEntry: MinimumWalletEntry,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = walletEntry.id, // TODO
-                userId = userId,
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.WALLET_ENTRY,
-                groupInfo =
-                    if (walletEntry.groupId != null) {
-                        NewEventGroupInfo(
-                            groupId = walletEntry.groupId,
-                        )
-                    } else {
-                        null
-                    },
-            )
+    ) = actionEventService
+        .newEvent(
+            data = walletEntry.id, // TODO
+            userId = userId,
+            type = ActionEventType.INSERT,
+            category = ActionEventCategory.WALLET_ENTRY,
+            groupInfo =
+                if (walletEntry.groupId != null) {
+                    NewEventGroupInfo(
+                        groupId = walletEntry.groupId,
+                    )
+                } else {
+                    null
+                },
+        )
 }

@@ -8,7 +8,6 @@ import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupCategoryActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.impl.NewEventGroupInfo
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -16,52 +15,49 @@ class GroupCategoryActionEventServiceImpl(
     private val actionEventService: ActionEventService,
     private val mapper: CategoryDtoMapper,
 ) : GroupCategoryActionEventService {
-    override fun sendInsertedCategory(
+    override suspend fun sendInsertedCategory(
         userId: UUID,
         category: WalletEntryCategoryEntity,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = mapper.toDto(category),
-                userId = userId,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = category.groupId!!,
-                    ),
-                type = ActionEventType.INSERT,
-                category = ActionEventCategory.GROUP_CATEGORY,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = mapper.toDto(category),
+            userId = userId,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = category.groupId!!,
+                ),
+            type = ActionEventType.INSERT,
+            category = ActionEventCategory.GROUP_CATEGORY,
+        )
 
-    override fun sendUpdatedCategory(
+    override suspend fun sendUpdatedCategory(
         userId: UUID,
         category: WalletEntryCategoryEntity,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = mapper.toDto(category),
-                userId = userId,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = category.groupId!!,
-                    ),
-                type = ActionEventType.UPDATE,
-                category = ActionEventCategory.GROUP_CATEGORY,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = mapper.toDto(category),
+            userId = userId,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = category.groupId!!,
+                ),
+            type = ActionEventType.UPDATE,
+            category = ActionEventCategory.GROUP_CATEGORY,
+        )
 
-    override fun sendDeletedCategory(
+    override suspend fun sendDeletedCategory(
         userId: UUID,
         groupId: UUID,
         id: UUID,
-    ): Mono<Long> =
-        actionEventService
-            .newEvent(
-                data = id,
-                userId = userId,
-                groupInfo =
-                    NewEventGroupInfo(
-                        groupId = groupId,
-                    ),
-                type = ActionEventType.DELETE,
-                category = ActionEventCategory.GROUP_CATEGORY,
-            )
+    ) = actionEventService
+        .newEvent(
+            data = id,
+            userId = userId,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = groupId,
+                ),
+            type = ActionEventType.DELETE,
+            category = ActionEventCategory.GROUP_CATEGORY,
+        )
 }

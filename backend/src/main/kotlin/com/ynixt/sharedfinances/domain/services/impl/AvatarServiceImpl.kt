@@ -3,6 +3,8 @@ package com.ynixt.sharedfinances.domain.services.impl
 import com.ynixt.sharedfinances.domain.exceptions.http.HeavyFileException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidFileTypeException
 import com.ynixt.sharedfinances.domain.services.AvatarService
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.http.HttpStatus
@@ -41,10 +43,10 @@ class AvatarServiceImpl(
             .baseUrl("https://www.gravatar.com")
             .build()
 
-    override fun getPhotoFromGravatar(
+    override suspend fun getPhotoFromGravatar(
         email: String,
         userId: UUID,
-    ): Mono<String> {
+    ): String? {
         val normalized = email.trim().lowercase(Locale.ROOT)
         val md5Hex = md5Hex(normalized)
 
@@ -52,7 +54,7 @@ class AvatarServiceImpl(
         val gravatarPath = "/avatar/$md5Hex?s=$TARGET_SIZE&d=404&r=$rating"
 
         return downloadGravatar(gravatarPath)
-            .flatMap { bytesAndType ->
+            .let { bytesAndType ->
                 upload(
                     userId = userId,
                     bytes = bytesAndType.bytes,
@@ -61,7 +63,7 @@ class AvatarServiceImpl(
             }
     }
 
-    override fun deletePhoto(userId: UUID): Mono<Boolean> {
+    override suspend fun deletePhoto(userId: UUID): Boolean {
         val request =
             DeleteObjectRequest
                 .builder()
@@ -69,16 +71,16 @@ class AvatarServiceImpl(
                 .key("avatar/$userId")
                 .build()
 
-        return Mono
-            .fromFuture(s3.deleteObject(request))
-            .map { it.sdkHttpResponse().isSuccessful }
+        val deleteResponse = s3.deleteObject(request).await()
+
+        return deleteResponse.sdkHttpResponse().isSuccessful
     }
 
     private fun getExternalUrl(userId: UUID): String = "/private/external/$bucket/${getObjectKey(userId)}"
 
     private fun getObjectKey(userId: UUID): String = "avatar/$userId"
 
-    private fun downloadGravatar(path: String): Mono<BytesAndType> =
+    private suspend fun downloadGravatar(path: String): BytesAndType =
         gravatarClient
             .get()
             .uri(path)
@@ -100,12 +102,13 @@ class AvatarServiceImpl(
                     else -> resp.createException().flatMap { Mono.error(it) }
                 }
             }.timeout(Duration.ofSeconds(10))
+            .awaitSingle()
 
-    override fun upload(
+    override suspend fun upload(
         userId: UUID,
         bytes: ByteArray,
         contentType: String,
-    ): Mono<String> {
+    ): String {
         val req =
             PutObjectRequest
                 .builder()
@@ -115,15 +118,15 @@ class AvatarServiceImpl(
                 .contentLength(bytes.size.toLong())
                 .build()
 
-        return Mono
-            .fromFuture(s3.putObject(req, AsyncRequestBody.fromBytes(bytes)))
-            .thenReturn(getExternalUrl(userId))
+        s3.putObject(req, AsyncRequestBody.fromBytes(bytes)).await()
+
+        return getExternalUrl(userId)
     }
 
-    override fun upload(
+    override suspend fun upload(
         userId: UUID,
         file: FilePart,
-    ): Mono<String> {
+    ): String {
         val invalidImage =
             InvalidFileTypeException(
                 ImageFormat.entries.map { it.toString() }.toList(),
@@ -131,7 +134,7 @@ class AvatarServiceImpl(
 
         val declaredLen = file.headers().contentLength
         if (declaredLen > MAX_UPLOAD_BYTES) {
-            return Mono.error(HeavyFileException(MAX_UPLOAD_BYTES))
+            throw HeavyFileException(MAX_UPLOAD_BYTES)
         }
 
         return DataBufferUtils
@@ -174,6 +177,7 @@ class AvatarServiceImpl(
 
                 Mono.fromFuture(future)
             }.thenReturn(getExternalUrl(userId))
+            .awaitSingle()
     }
 
     private fun md5Hex(value: String): String {

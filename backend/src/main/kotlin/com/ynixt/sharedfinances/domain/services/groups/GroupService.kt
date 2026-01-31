@@ -6,56 +6,55 @@ import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
 interface GroupService {
-    fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>>
+    suspend fun findAllGroups(userId: UUID): List<GroupWithRole>
 
-    fun findGroup(
+    suspend fun findGroup(
         userId: UUID,
         id: UUID,
-    ): Mono<GroupWithRole>
+    ): GroupWithRole?
 
-    fun findGroupWithAssociatedItems(
+    suspend fun findGroupWithAssociatedItems(
         userId: UUID,
         id: UUID,
-    ): Mono<GroupWithRole>
+    ): GroupWithRole?
 
-    fun editGroup(
+    suspend fun editGroup(
         userId: UUID,
         id: UUID,
         request: EditGroupRequest,
-    ): Mono<GroupWithRole>
+    ): GroupWithRole?
 
-    fun deleteGroup(
+    suspend fun deleteGroup(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean>
+    ): Boolean
 
-    fun newGroup(
+    suspend fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
-    ): Mono<GroupEntity>
+    ): GroupEntity
 
-    fun findAllMembers(
+    suspend fun findAllMembers(
         userId: UUID,
         id: UUID,
-    ): Mono<List<GroupUserEntity>>
+    ): List<GroupUserEntity>
 
-    fun updateMemberRole(
+    suspend fun updateMemberRole(
         userId: UUID,
         id: UUID,
         memberId: UUID,
         newRole: UserGroupRole,
-    ): Mono<Boolean>
+    ): Boolean
 
-    fun addNewMember(
+    suspend fun addNewMember(
         userId: UUID,
         id: UUID,
         role: UserGroupRole = UserGroupRole.VIEWER,
-    ): Mono<Unit>
+    )
 
-    fun findAllByIdIn(id: Collection<UUID>): Flux<GroupEntity>
+    fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity>
 }

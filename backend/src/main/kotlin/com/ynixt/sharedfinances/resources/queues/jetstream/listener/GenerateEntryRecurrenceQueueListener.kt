@@ -22,7 +22,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactive.awaitSingle
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -111,7 +110,7 @@ class GenerateEntryRecurrenceQueueListener(
                 .createFromRecurrenceConfig(
                     recurrenceConfigId = request.entryRecurrenceConfigId,
                     date = request.date,
-                ).awaitSingle()
+                )
 
             msg.ack()
         } catch (e: Exception) {

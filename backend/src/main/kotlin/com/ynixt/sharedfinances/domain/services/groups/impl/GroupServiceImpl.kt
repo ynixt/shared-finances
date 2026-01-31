@@ -18,9 +18,10 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociatio
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.impl.EntityServiceImpl
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Service
@@ -35,8 +36,8 @@ class GroupServiceImpl(
     private val creditCardAssociationService: GroupCreditCardAssociationService,
 ) : EntityServiceImpl<GroupEntity, GroupEntity>(),
     GroupService {
-    override fun findAllGroups(userId: UUID): Mono<List<GroupWithRole>> =
-        repository.findAllByUserIdOrderByName(userId).collectList().map { list ->
+    override suspend fun findAllGroups(userId: UUID): List<GroupWithRole> =
+        repository.findAllByUserIdOrderByName(userId).collectList().awaitSingle().let { list ->
             list.map { groupWithRole ->
                 groupWithRole.apply {
                     this.permissions = groupPermissionService.getAllPermissionsForRole(groupWithRole.role)
@@ -45,209 +46,210 @@ class GroupServiceImpl(
         }
 
     @Transactional
-    override fun editGroup(
+    override suspend fun editGroup(
         userId: UUID,
         id: UUID,
         request: EditGroupRequest,
-    ): Mono<GroupWithRole> =
+    ): GroupWithRole? =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = id,
                 GroupPermissions.EDIT_GROUP,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
                     repository
                         .edit(id, request.name)
-                        .flatMap {
+                        .awaitSingle()
+                        .let {
                             findGroup(
                                 userId = userId,
                                 id = id,
                             )
-                        }.flatMap { g ->
+                        }?.also { g ->
                             groupActionEventService
                                 .sendUpdatedGroup(
                                     group = g,
                                     userId = userId,
-                                ).thenReturn(g)
+                                )
                         }
                 } else {
-                    Mono.empty()
+                    null
                 }
             }
 
     @Transactional
-    override fun deleteGroup(
+    override suspend fun deleteGroup(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean> =
+    ): Boolean =
         groupPermissionService
             .hasPermission(
                 userId = userId,
                 groupId = id,
                 GroupPermissions.EDIT_GROUP,
-            ).flatMap { hasPermission ->
+            ).let { hasPermission ->
                 if (hasPermission) {
-                    groupUserRepository.findAllMembers(id).map { it.userId }.collectList().flatMap { memberList ->
-                        repository.deleteById(id).flatMap { modifiedLines ->
+                    groupUserRepository.findAllMembers(id).map { it.userId }.collectList().awaitSingle().let { memberList ->
+                        repository.deleteById(id).awaitSingle().also { modifiedLines ->
                             if (modifiedLines > 0) {
                                 groupActionEventService
                                     .sendDeletedGroup(
                                         id = id,
                                         userId = userId,
                                         membersId = memberList.toList(),
-                                    ).thenReturn(true)
-                            } else {
-                                Mono.just(false)
+                                    )
                             }
+
+                            modifiedLines > 0
                         }
                     }
-                } else {
-                    Mono.empty()
                 }
-            }.switchIfEmpty(Mono.just(false))
 
-    override fun findGroup(
+                hasPermission
+            }
+
+    override suspend fun findGroup(
         userId: UUID,
         id: UUID,
-    ): Mono<GroupWithRole> =
+    ): GroupWithRole? =
         repository
             .findOneByUserIdAndId(
                 userId = userId,
                 id = id,
-            ).map { groupWithRole ->
+            ).awaitSingleOrNull()
+            ?.let { groupWithRole ->
                 groupWithRole.apply {
                     this.permissions = groupPermissionService.getAllPermissionsForRole(groupWithRole.role)
                 }
             }
 
-    override fun findGroupWithAssociatedItems(
+    override suspend fun findGroupWithAssociatedItems(
         userId: UUID,
         id: UUID,
-    ): Mono<GroupWithRole> =
+    ): GroupWithRole? =
         findGroup(userId, id)
-            .flatMap { group ->
-                groupBankAssociationService
-                    .findAllAssociatedBanks(
+            ?.let { group ->
+                val associatedBanks =
+                    groupBankAssociationService.findAllAssociatedBanks(
                         userId = userId,
                         groupId = id,
-                    ).map { associatedBanks ->
-                        group.copy(itemsAssociated = associatedBanks)
-                    }.switchIfEmpty(Mono.just(group))
-            }.flatMap { group ->
-                creditCardAssociationService
-                    .findAllAssociatedCreditCards(
+                    )
+
+                val associatedCreditCards =
+                    creditCardAssociationService.findAllAssociatedCreditCards(
                         userId = userId,
                         groupId = id,
-                    ).map { associatedCreditCards ->
-                        group.copy(
-                            itemsAssociated =
-                                if (group.itemsAssociated ==
-                                    null
-                                ) {
-                                    associatedCreditCards
-                                } else {
-                                    group.itemsAssociated + associatedCreditCards
-                                },
-                        )
-                    }.switchIfEmpty(Mono.just(group))
+                    )
+
+                group.copy(
+                    itemsAssociated = associatedBanks + associatedCreditCards,
+                )
             }
 
     @Transactional
-    override fun newGroup(
+    override suspend fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
-    ): Mono<GroupEntity> =
+    ): GroupEntity =
         repository
             .save(
                 GroupEntity(
                     name = newGroupRequest.name,
                 ),
-            ).flatMap { g ->
+            ).awaitSingle()
+            .let { group ->
                 groupUserRepository
                     .save(
                         GroupUserEntity(
                             userId = userId,
-                            groupId = g.id!!,
+                            groupId = group.id!!,
                             role = UserGroupRole.ADMIN,
                         ),
-                    ).thenReturn(g)
-            }.flatMap { g ->
+                    ).awaitSingle()
+
                 if (newGroupRequest.categories != null) {
                     groupCategoryService
                         .newCategories(
-                            groupId = g.id!!,
+                            groupId = group.id!!,
                             categories = newGroupRequest.categories,
-                        ).thenReturn(g)
-                } else {
-                    Mono.just(g)
+                        )
                 }
-            }.flatMap { g ->
+
                 groupActionEventService
                     .sendInsertedGroup(
-                        group = g,
+                        group = group,
                         userId = userId,
-                    ).thenReturn(g)
+                    )
+
+                group
             }
 
-    override fun findAllMembers(
+    override suspend fun findAllMembers(
         userId: UUID,
         id: UUID,
-    ): Mono<List<GroupUserEntity>> =
-        groupPermissionService.hasPermission(userId = userId, groupId = id).flatMap {
+    ): List<GroupUserEntity> =
+        groupPermissionService.hasPermission(userId = userId, groupId = id).let {
             if (it) {
                 groupUserRepository
                     .findAllMembers(
                         id,
                     ).collectList()
+                    .awaitSingle()
             } else {
-                Mono.empty()
+                emptyList()
             }
         }
 
-    override fun updateMemberRole(
+    override suspend fun updateMemberRole(
         userId: UUID,
         id: UUID,
         memberId: UUID,
         newRole: UserGroupRole,
-    ): Mono<Boolean> {
+    ): Boolean {
         require(memberId != id) { "User cannot changed his own role." }
 
-        return groupPermissionService.hasPermission(userId = userId, groupId = id, permission = GroupPermissions.CHANGE_ROLE).flatMap {
-            if (it) {
-                groupUserRepository
-                    .updateRole(
-                        userId = memberId,
-                        groupId = id,
-                        newRole = newRole,
-                    ).map { count -> count > 0 }
-            } else {
-                Mono.empty()
+        return groupPermissionService
+            .hasPermission(userId = userId, groupId = id, permission = GroupPermissions.CHANGE_ROLE)
+            .let {
+                if (it) {
+                    groupUserRepository
+                        .updateRole(
+                            userId = memberId,
+                            groupId = id,
+                            newRole = newRole,
+                        ).awaitSingle()
+                        .let { count -> count > 0 }
+                } else {
+                    false
+                }
             }
-        }
     }
 
-    override fun addNewMember(
+    override suspend fun addNewMember(
         userId: UUID,
         id: UUID,
         role: UserGroupRole,
-    ): Mono<Unit> =
-        groupUserRepository
-            .save(
-                GroupUserEntity(
-                    userId = userId,
-                    groupId = id,
-                    role = role,
-                ),
-            ).onErrorMap { t ->
-                if (databaseHelperService.isUniqueViolation(t, "idx_group_user_group_id_user_id")) {
-                    MemberAlreadyInGroupException(
+    ) {
+        try {
+            groupUserRepository
+                .save(
+                    GroupUserEntity(
                         userId = userId,
                         groupId = id,
-                        cause = t,
-                    )
-                } else {
-                    t
-                }
-            }.map { }
+                        role = role,
+                    ),
+                ).awaitSingle()
+        } catch (t: Throwable) {
+            throw if (databaseHelperService.isUniqueViolation(t, "idx_group_user_group_id_user_id")) {
+                MemberAlreadyInGroupException(
+                    userId = userId,
+                    groupId = id,
+                    cause = t,
+                )
+            } else {
+                t
+            }
+        }
+    }
 }

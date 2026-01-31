@@ -5,33 +5,32 @@ import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface BankAccountService {
-    fun findAllBanks(
+    suspend fun findAllBanks(
         userId: UUID,
         pageable: Pageable,
-    ): Mono<Page<BankAccount>>
+    ): Page<BankAccount>
 
-    fun findBankAccount(
+    suspend fun findBankAccount(
         userId: UUID,
         id: UUID,
-    ): Mono<BankAccount>
+    ): BankAccount?
 
-    fun newBankAccount(
+    suspend fun newBankAccount(
         userId: UUID,
         newBankAccountRequest: NewBankAccountRequest,
-    ): Mono<BankAccount>
+    ): BankAccount
 
-    fun editBankAccount(
+    suspend fun editBankAccount(
         userId: UUID,
         id: UUID,
         editBankAccount: EditBankAccountRequest,
-    ): Mono<BankAccount>
+    ): BankAccount?
 
-    fun deleteBankAccount(
+    suspend fun deleteBankAccount(
         userId: UUID,
         id: UUID,
-    ): Mono<Boolean>
+    ): Boolean
 }
