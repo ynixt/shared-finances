@@ -30,7 +30,7 @@ export class CreditCardBillService {
     date = date.subtract(daysBetweenDueAndClosing, 'day');
 
     if (dayjs(transactionDate).isAfter(date)) {
-      date = date.startOf('month').add(1, 'month');
+      date = dayjs(transactionDate).startOf('month').add(1, 'month');
     }
 
     return date.startOf('month');

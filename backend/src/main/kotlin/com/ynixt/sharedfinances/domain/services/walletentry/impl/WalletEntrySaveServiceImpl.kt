@@ -127,7 +127,7 @@ abstract class WalletEntrySaveServiceImpl(
 
         return EntryRecurrenceConfigEntity(
             name = newEntryRequest.name,
-            value = newEntryRequest.value,
+            value = newEntryRequest.valueFixedForType,
             categoryId = newEntryRequest.categoryId,
             userId = userId,
             groupId = newEntryRequest.groupId,

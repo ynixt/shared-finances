@@ -13,8 +13,8 @@ data class CreditCardBill(
     val closingDate: LocalDate,
     val paid: Boolean,
     val value: BigDecimal,
+    var startDate: LocalDate? = null,
 ) {
-    var startDate: LocalDate? = null
     val status: CreditCardBillStatus?
         get() {
             if (startDate == null) return null

@@ -103,6 +103,14 @@
           },
           "defaultConfiguration": "development"
         },
+        "test": {
+          "builder": "@angular-builders/custom-esbuild:unit-test",
+          "options": {
+            "tsConfig": "tsconfig.spec.json",
+            "buildTarget": "shared-finances:build:development",
+            "providersFile": "src/test-providers.ts"
+          }
+        },
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
         }

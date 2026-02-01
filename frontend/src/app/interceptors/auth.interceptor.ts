@@ -10,7 +10,7 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private tokenStateService: TokenStateService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if ((!req.url.startsWith('/api') && !req.url.startsWith('/private/external')) || req.url.startsWith('/api/open/auth/refresh')) {
+    if ((!req.url.startsWith('/api') && !req.url.startsWith('/private/external')) || req.url.startsWith('/api/open/auth')) {
       return next.handle(req);
     }
 

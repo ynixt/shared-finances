@@ -23,7 +23,7 @@ interface CreditCardBillService {
         creditCardId: UUID,
         month: Int,
         year: Int,
-    ): CreditCardBill?
+    ): CreditCardBill
 
     suspend fun changeClosingDate(
         userId: UUID,

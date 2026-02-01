@@ -14,4 +14,16 @@ interface EntryRecurrenceConfigRepository : EntityRepository<EntryRecurrenceConf
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
     ): Mono<Int>
+
+    fun findAllByNextExecutionBetweenAndOriginId(
+        start: LocalDate,
+        end: LocalDate,
+        originId: UUID,
+    ): Flux<EntryRecurrenceConfigEntity>
+
+    fun findAllByNextExecutionBetweenAndTargetId(
+        start: LocalDate,
+        end: LocalDate,
+        targetId: UUID,
+    ): Flux<EntryRecurrenceConfigEntity>
 }

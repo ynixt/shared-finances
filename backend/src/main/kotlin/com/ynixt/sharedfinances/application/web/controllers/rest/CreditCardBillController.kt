@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.wallet.creditCard.CreditCardBillDto
 import com.ynixt.sharedfinances.application.web.mapper.CreditCardBillDtoMapper
+import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -32,15 +33,19 @@ class CreditCardBillController(
         @PathVariable month: Int,
         @PathVariable year: Int,
     ): ResponseEntity<CreditCardBillDto> =
-        creditCardBillService
-            .getBillForMonth(
-                userId = principalToken.principal.id,
-                creditCardId = id,
-                month = month,
-                year = year,
-            ).let { bill ->
-                ResponseEntity.ofNullable(bill?.let { creditCardBillDtoMapper.toDto(it) })
-            }
+        try {
+            creditCardBillService
+                .getBillForMonth(
+                    userId = principalToken.principal.id,
+                    creditCardId = id,
+                    month = month,
+                    year = year,
+                ).let { bill ->
+                    ResponseEntity.ofNullable(creditCardBillDtoMapper.toDto(bill))
+                }
+        } catch (_: UnauthorizedException) {
+            ResponseEntity.notFound().build()
+        }
 
     @PutMapping("/{id}/closingDate/{closingDate}")
     suspend fun changeClosingDate(

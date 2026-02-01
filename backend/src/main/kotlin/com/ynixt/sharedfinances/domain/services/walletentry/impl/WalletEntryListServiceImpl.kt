@@ -59,6 +59,8 @@ class WalletEntryListServiceImpl(
 
         val hasNext = rawList.size > request.pageRequest.size
 
+        // TODO: load future from EntryRecurrenceConfigService
+
         return convertEntityToEntryListResponse(if (hasNext) rawList.subList(0, request.pageRequest.size) else rawList).let { items ->
             val lastItem = if (hasNext) items.lastOrNull() else null
 

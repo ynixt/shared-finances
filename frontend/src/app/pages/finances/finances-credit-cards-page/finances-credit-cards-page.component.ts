@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faArrowUpRightFromSquare, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
@@ -12,7 +12,6 @@ import { Card } from 'primeng/card';
 import { DataView, DataViewLazyLoadEvent } from 'primeng/dataview';
 import { Tooltip } from 'primeng/tooltip';
 
-import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { Page } from '../../../models/pagination';
 import { LocalCurrencyPipe } from '../../../pipes/local-currency.pipe';
@@ -38,7 +37,7 @@ import { UserActionEventService } from '../services/user-action-event.service';
   styleUrl: './finances-credit-cards-page.component.scss',
 })
 @UntilDestroy()
-export class FinancesCreditCardsPageComponent implements OnInit {
+export class FinancesCreditCardsPageComponent {
   readonly editFinanceIcon = faPenToSquare;
   readonly openFinanceIcon = faArrowUpRightFromSquare;
   readonly pageSize = 12;
@@ -55,10 +54,6 @@ export class FinancesCreditCardsPageComponent implements OnInit {
     userActionEventService.creditCardInserted$.pipe(untilDestroyed(this), throttleTime(100)).subscribe(this.creditCardInserted.bind(this));
     userActionEventService.creditCardUpdated$.pipe(untilDestroyed(this)).subscribe(this.creditCardUpdated.bind(this));
     userActionEventService.creditCardDeleted$.pipe(untilDestroyed(this)).subscribe(this.creditCardDeleted.bind(this));
-  }
-
-  ngOnInit() {
-    this.loadPage(0);
   }
 
   private async loadPage(page = 0) {

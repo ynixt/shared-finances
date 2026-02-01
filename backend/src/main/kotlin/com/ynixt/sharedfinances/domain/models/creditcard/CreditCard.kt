@@ -55,7 +55,7 @@ class CreditCard(
         date = date.minusDays(daysBetweenDueAndClosing.toLong())
 
         if (transactionDate.isAfter(date)) {
-            date = date.withDayOfMonth(1).plusMonths(1)
+            date = transactionDate.withDayOfMonth(1).plusMonths(1)
         }
 
         return date.withDayOfMonth(1)

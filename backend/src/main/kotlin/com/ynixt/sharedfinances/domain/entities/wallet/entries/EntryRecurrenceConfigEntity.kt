@@ -3,7 +3,6 @@ package com.ynixt.sharedfinances.domain.entities.wallet.entries
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
-import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Table
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -38,7 +37,4 @@ class EntryRecurrenceConfigEntity(
         groupId = groupId,
         tags = tags,
         observations = observations,
-    ) {
-    @Transient
-    val valueFixedForType: BigDecimal = type.fixValue(value)
-}
+    )

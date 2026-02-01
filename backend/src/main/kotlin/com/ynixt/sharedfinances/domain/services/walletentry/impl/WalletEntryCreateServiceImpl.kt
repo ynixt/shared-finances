@@ -142,7 +142,7 @@ class WalletEntryCreateServiceImpl(
                         name = config.name,
                         categoryId = config.categoryId,
                         date = date,
-                        value = config.valueFixedForType,
+                        value = config.value,
                         confirmed = false,
                         observations = config.observations,
                         tags = config.tags?.ifEmpty { null },
