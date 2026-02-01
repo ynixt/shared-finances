@@ -12,9 +12,11 @@ export abstract class SimpleControlValueAccessor<T> implements ControlValueAcces
   }
 
   onValueChange(value: T | undefined) {
-    this.writeValue(value);
-    this.onChange(value);
-    this.onTouched();
+    if (!this.valueEquals(value, this.value)) {
+      this.writeValue(value);
+      this.onChange(value);
+      this.onTouched();
+    }
   }
 
   registerOnChange(fn: any): void {
@@ -27,5 +29,9 @@ export abstract class SimpleControlValueAccessor<T> implements ControlValueAcces
 
   setDisabledState?(isDisabled: boolean): void {
     this.disabled = isDisabled;
+  }
+
+  valueEquals(valueA: T | undefined, valueB: T | undefined): boolean {
+    return valueA == valueB;
   }
 }

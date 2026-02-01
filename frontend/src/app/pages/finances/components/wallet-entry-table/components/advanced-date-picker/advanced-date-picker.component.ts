@@ -1,5 +1,5 @@
 import { TitleCasePipe } from '@angular/common';
-import { Component, ViewChild, ViewEncapsulation, computed, forwardRef, inject, input } from '@angular/core';
+import { Component, ViewChild, ViewEncapsulation, computed, forwardRef, inject, input, signal } from '@angular/core';
 import { FormBuilder, FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
@@ -48,9 +48,9 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
   readonly inputInline = input<boolean>(false);
   readonly inputClass = input<string | undefined>('w-56');
 
-  private internalIsToShowInput = false;
+  private internalIsToShowInput = signal(false);
 
-  readonly isToShowInput = computed(() => this.forceShowInput() || this.internalIsToShowInput);
+  readonly isToShowInput = computed(() => this.forceShowInput() || this.internalIsToShowInput());
 
   @ViewChild('datePicker') datePicker: DatePicker | undefined;
 
@@ -71,7 +71,7 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
 
       let isFullMonth = this.currentDateIsFullMonth(this.value);
 
-      this.internalIsToShowInput = !isFullMonth;
+      this.internalIsToShowInput.set(!isFullMonth);
     });
 
     this.dateFormControl.valueChanges.pipe(untilDestroyed(this), startWith(this.dateFormControl.value)).subscribe(value => {
@@ -85,7 +85,7 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
         sameMonth: true,
       });
 
-      this.internalIsToShowInput = false;
+      this.internalIsToShowInput.set(false);
     });
   }
 
@@ -94,6 +94,7 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
 
     if (this.value) {
       if (this.selectionMode() == 'range') {
+        // this.rangeDatesFormControl.value
         this.rangeDatesFormControl.setValue([this.value.startDate.toDate(), this.value.endDate!!.toDate()]);
       } else {
         this.dateFormControl.setValue(this.value.startDate.toDate());
@@ -105,7 +106,7 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
   }
 
   showInput() {
-    this.internalIsToShowInput = true;
+    this.internalIsToShowInput.set(true);
 
     setTimeout(() => {
       this.datePicker!!.toggle();
@@ -113,7 +114,7 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
   }
 
   datePickerClosed() {
-    this.internalIsToShowInput = !this.currentDateIsFullMonth();
+    this.internalIsToShowInput.set(!this.currentDateIsFullMonth());
   }
 
   previousMonth() {
@@ -144,6 +145,17 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
     } else if (this.dateFormControl.value != null) {
       this.dateFormControl.setValue(dayjs(this.dateFormControl.value).add(1, 'month').toDate());
     }
+  }
+
+  override valueEquals(valueA: DateRange | undefined, valueB: DateRange | undefined): boolean {
+    if (valueA == null && valueB == null) return true;
+    if (valueA == null || valueB == null) return false;
+
+    return (
+      (valueA.startDate.isSame(valueB.startDate) &&
+        ((valueA.endDate == null && valueB.endDate == null) || valueA.endDate?.isSame(valueB.endDate))) ??
+      false
+    );
   }
 
   private currentDateIsFullMonth(
