@@ -6,4 +6,8 @@ data class CursorPage<T>(
     val hasNext: Boolean,
 ) {
     fun <U> map(mapper: (T) -> U): CursorPage<U> = CursorPage(items.map(mapper), nextCursor, hasNext)
+
+    companion object {
+        fun <T> empty(): CursorPage<T> = CursorPage(emptyList(), null, false)
+    }
 }

@@ -13,11 +13,14 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEntryCursorFindAll
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
+import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceConfigService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryListService
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.util.UUID
 
 @Service
@@ -26,21 +29,67 @@ class WalletEntryListServiceImpl(
     private val walletItemMapper: WalletItemMapper,
     private val genericCategoryService: GenericCategoryService,
     private val groupService: GroupService,
+    private val groupPermissionService: GroupPermissionService,
     private val userService: UserService,
+    private val entryRecurrenceConfigService: EntryRecurrenceConfigService,
 ) : WalletEntryListService {
     override suspend fun list(
-        userId: UUID?,
+        userId: UUID,
         groupId: UUID?,
         request: ListEntryRequest,
     ): CursorPage<EntryListResponse> {
-        require(userId != null || groupId != null) { "Either userId or groupId must be provided" }
+        if (groupId != null) {
+            if (!groupPermissionService.hasPermission(
+                    userId = userId,
+                    groupId = groupId,
+                )
+            ) {
+                return CursorPage.empty()
+            }
+        }
+
+        val now = LocalDate.now()
+        var simulatedEntries: List<EntryListResponse> = emptyList()
+
+        if (!request.skipFuture || request.maximumDate != null && request.maximumDate > now) {
+            simulatedEntries =
+                if (request.billDate != null && request.walletItemId != null) {
+                    entryRecurrenceConfigService.simulateGenerationForCreditCard(
+                        userId = userId,
+                        groupId = groupId,
+                        walletId = request.walletItemId,
+                        billDate = request.billDate,
+                    )
+                } else {
+                    entryRecurrenceConfigService.simulateGeneration(
+                        userId = userId,
+                        groupId = groupId,
+                        walletId = request.walletItemId,
+                        minimumEndExecution = request.minimumDate,
+                        maximumNextExecution = request.maximumDate,
+                    )
+                }
+        }
+
+        val missingQtyAfterFuture = request.pageRequest.size - simulatedEntries.size
+
+        if (missingQtyAfterFuture <= 0 || request.billDate != null && request.billId == null) {
+            return CursorPage(
+                items = simulatedEntries,
+                hasNext = !(request.billDate != null && request.billId == null),
+                nextCursor =
+                    mapOf(
+                        "skipFuture" to true,
+                    ),
+            )
+        }
 
         val rawList =
             walletEntryRepository
                 .findAll(
-                    userId = userId,
+                    userId = if (groupId == null) userId else null,
                     groupId = groupId,
-                    limit = request.pageRequest.size + 1,
+                    limit = missingQtyAfterFuture + 1,
                     walletItemId = request.walletItemId,
                     minimumDate = request.minimumDate,
                     maximumDate = request.maximumDate,
@@ -57,20 +106,18 @@ class WalletEntryListServiceImpl(
                 ).collectList()
                 .awaitSingle()
 
-        val hasNext = rawList.size > request.pageRequest.size
+        val hasNext = rawList.size > missingQtyAfterFuture
 
-        // TODO: load future from EntryRecurrenceConfigService
-
-        return convertEntityToEntryListResponse(if (hasNext) rawList.subList(0, request.pageRequest.size) else rawList).let { items ->
+        return convertEntityToEntryListResponse(if (hasNext) rawList.subList(0, missingQtyAfterFuture) else rawList).let { items ->
             val lastItem = if (hasNext) items.lastOrNull() else null
 
             CursorPage(
-                items = items,
+                items = simulatedEntries + items,
                 hasNext = hasNext,
                 nextCursor =
                     lastItem?.let {
                         mapOf(
-                            "id" to it.id,
+                            "id" to it.id!!,
                             "date" to it.date,
                         )
                     },

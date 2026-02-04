@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.application.web.mapper.CreditCardBillDtoMapper
 import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
+import com.ynixt.sharedfinances.domain.services.CreditCardBillSummaryService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -24,6 +25,7 @@ import java.util.UUID
 )
 class CreditCardBillController(
     private val creditCardBillService: CreditCardBillService,
+    private val creditCardBillSummaryService: CreditCardBillSummaryService,
     private val creditCardBillDtoMapper: CreditCardBillDtoMapper,
 ) {
     @GetMapping("/{id}/of/{year}/{month}")
@@ -34,7 +36,7 @@ class CreditCardBillController(
         @PathVariable year: Int,
     ): ResponseEntity<CreditCardBillDto> =
         try {
-            creditCardBillService
+            creditCardBillSummaryService
                 .getBillForMonth(
                     userId = principalToken.principal.id,
                     creditCardId = id,

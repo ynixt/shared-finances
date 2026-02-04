@@ -7,7 +7,6 @@ import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.repositories.CreditCardBillRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.CreditCardService
-import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceConfigService
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
@@ -20,7 +19,6 @@ class CreditCardBillServiceImpl(
     private val creditCardBillRepository: CreditCardBillRepository,
     private val creditCardBillMapper: CreditCardBillMapper,
     private val creditCardService: CreditCardService,
-    private val entryRecurrenceConfigService: EntryRecurrenceConfigService,
 ) : CreditCardBillService {
     override suspend fun getOrCreateBill(
         creditCardId: UUID,
@@ -54,40 +52,6 @@ class CreditCardBillServiceImpl(
             }
         }
 
-    override suspend fun getBillForMonth(
-        userId: UUID,
-        creditCardId: UUID,
-        month: Int,
-        year: Int,
-    ): CreditCardBill {
-        val billDate = LocalDate.of(year, month, 1)
-
-        val bill =
-            getBillFromDatabaseOrSimulate(
-                userId = userId,
-                creditCardId = creditCardId,
-                billDate = billDate,
-            )
-
-        val previousBill =
-            getBillFromDatabaseOrSimulate(
-                userId = userId,
-                creditCardId = creditCardId,
-                billDate = billDate.minusMonths(1),
-            )
-
-        bill.startDate = previousBill.closingDate.plusDays(1)
-
-        val valuesFromFuture =
-            entryRecurrenceConfigService.getFutureValuesOfWalletItem(
-                walletIdId = creditCardId,
-                startDate = bill.startDate!!,
-                endDate = bill.closingDate.minusDays(1),
-            )
-
-        return bill.copy(value = bill.value + valuesFromFuture)
-    }
-
     override suspend fun changeClosingDate(
         userId: UUID,
         creditCardId: UUID,
@@ -109,7 +73,10 @@ class CreditCardBillServiceImpl(
         value: BigDecimal,
     ): Long = creditCardBillRepository.addValueById(id, value).awaitSingle()
 
-    private suspend fun getBillFromDatabaseOrSimulate(
+    override suspend fun findById(id: UUID): CreditCardBill? =
+        creditCardBillRepository.findById(id).awaitSingleOrNull()?.let(creditCardBillMapper::toModel)
+
+    override suspend fun getBillFromDatabaseOrSimulate(
         userId: UUID,
         creditCardId: UUID,
         billDate: LocalDate,

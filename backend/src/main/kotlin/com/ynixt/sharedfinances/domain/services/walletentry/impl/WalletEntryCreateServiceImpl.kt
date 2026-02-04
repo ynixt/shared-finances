@@ -5,17 +5,16 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceCo
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
-import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
-import com.ynixt.sharedfinances.domain.services.EntryRecurrenceService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEntryActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
@@ -70,7 +69,7 @@ class WalletEntryCreateServiceImpl(
                     id = recurrenceConfigId,
                     oldNextExecution = date,
                     nextExecution =
-                        entryRecurrenceService.calculateNextDate(
+                        entryRecurrenceService.calculateNextExecution(
                             lastExecution = date,
                             periodicity = config.periodicity,
                             qtyExecuted = config.qtyExecuted,
@@ -229,52 +228,19 @@ class WalletEntryCreateServiceImpl(
         return if (newEntryRequest.inFuture) {
             recurrenceConfig!!
         } else {
-            val installments = if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) newEntryRequest.installments!! else 1
-
             val entry =
-                if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) {
-                    var date: LocalDate = newEntryRequest.date
+                walletEntryRepository
+                    .save(
+                        requestToEntity(
+                            id = null,
+                            userId = userId,
+                            newEntryRequest = newEntryRequest,
+                            recurrenceConfig = recurrenceConfig,
+                            installment = if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) 1 else 0,
+                            date = newEntryRequest.date,
+                        ),
+                    ).awaitSingle()
 
-                    walletEntryRepository
-                        .saveAll(
-                            (1..installments).map {
-                                date =
-                                    when (newEntryRequest.periodicity!!) {
-                                        RecurrenceType.SINGLE -> throw IllegalArgumentException(
-                                            "Single recurrence is not allowed here.",
-                                        )
-
-                                        RecurrenceType.DAILY -> date.plusDays(it.toLong() - 1)
-                                        RecurrenceType.WEEKLY -> date.plusWeeks(it.toLong() - 1)
-                                        RecurrenceType.MONTHLY -> date.plusMonths(it.toLong() - 1)
-                                        RecurrenceType.YEARLY -> date.plusYears(it.toLong() - 1)
-                                    }
-
-                                requestToEntity(
-                                    id = null,
-                                    userId = userId,
-                                    newEntryRequest = newEntryRequest,
-                                    recurrenceConfig = recurrenceConfig,
-                                    installment = it,
-                                    date = date,
-                                )
-                            },
-                        ).collectList()
-                        .awaitSingle()
-                        .first()
-                } else {
-                    walletEntryRepository
-                        .save(
-                            requestToEntity(
-                                id = null,
-                                userId = userId,
-                                newEntryRequest = newEntryRequest,
-                                recurrenceConfig = recurrenceConfig,
-                                installment = null,
-                                date = newEntryRequest.date,
-                            ),
-                        ).awaitSingle()
-                }
             entry.also { updateBalance(newEntryRequest) }
         }
     }
@@ -292,7 +258,6 @@ class WalletEntryCreateServiceImpl(
                             userId = userId,
                             newEntryRequest = newEntryRequest,
                             qtyLimit = newEntryRequest.installments!!,
-                            qtyExecuted = if (newEntryRequest.inFuture) 0 else newEntryRequest.installments,
                         ),
                     ).awaitSingle()
 
@@ -304,7 +269,6 @@ class WalletEntryCreateServiceImpl(
                             userId = userId,
                             newEntryRequest = newEntryRequest,
                             qtyLimit = newEntryRequest.periodicityQtyLimit,
-                            qtyExecuted = if (newEntryRequest.inFuture) 0 else 1,
                         ),
                     ).awaitSingle()
 
@@ -317,7 +281,6 @@ class WalletEntryCreateServiceImpl(
                                 userId = userId,
                                 newEntryRequest = newEntryRequest,
                                 qtyLimit = 1,
-                                qtyExecuted = 0,
                             ),
                         ).awaitSingle()
                 } else {

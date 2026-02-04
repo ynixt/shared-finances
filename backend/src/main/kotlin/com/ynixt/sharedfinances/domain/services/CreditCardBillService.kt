@@ -18,13 +18,6 @@ interface CreditCardBillService {
         startValue: BigDecimal = BigDecimal.ZERO,
     ): CreditCardBillEntity
 
-    suspend fun getBillForMonth(
-        userId: UUID,
-        creditCardId: UUID,
-        month: Int,
-        year: Int,
-    ): CreditCardBill
-
     suspend fun changeClosingDate(
         userId: UUID,
         creditCardId: UUID,
@@ -41,4 +34,12 @@ interface CreditCardBillService {
         id: UUID,
         value: BigDecimal,
     ): Long
+
+    suspend fun findById(id: UUID): CreditCardBill?
+
+    suspend fun getBillFromDatabaseOrSimulate(
+        userId: UUID,
+        creditCardId: UUID,
+        billDate: LocalDate,
+    ): CreditCardBill
 }

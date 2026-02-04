@@ -6,7 +6,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
 
-interface CreditCardBillRepository {
+interface CreditCardBillRepository : EntityRepository<CreditCardBillEntity> {
     fun findOneByCreditCardIdAndBillDate(
         creditCardId: UUID,
         billDate: LocalDate,
@@ -17,8 +17,6 @@ interface CreditCardBillRepository {
         creditCardId: UUID,
         billDate: LocalDate,
     ): Mono<CreditCardBillEntity>
-
-    fun save(creditCardBillEntity: CreditCardBillEntity): Mono<CreditCardBillEntity>
 
     fun addValueById(
         id: UUID,

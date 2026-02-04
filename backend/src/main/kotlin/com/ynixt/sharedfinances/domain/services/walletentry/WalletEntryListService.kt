@@ -7,7 +7,7 @@ import java.util.UUID
 
 interface WalletEntryListService {
     suspend fun list(
-        userId: UUID?,
+        userId: UUID,
         groupId: UUID?,
         request: ListEntryRequest,
     ): CursorPage<EntryListResponse>

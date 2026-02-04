@@ -1,17 +1,20 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
-import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
+import com.ynixt.sharedfinances.domain.repositories.EntityRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.Repository
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
 interface EntryRecurrenceConfigSpringDataRepository :
-    EntryRecurrenceConfigRepository,
-    Repository<EntryRecurrenceConfigEntity, String> {
+    Repository<EntryRecurrenceConfigEntity, String>,
+    EntityRepository<EntryRecurrenceConfigEntity> {
+    fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<EntryRecurrenceConfigEntity>
+
     @Modifying
     @Query(
         """
@@ -26,7 +29,7 @@ interface EntryRecurrenceConfigSpringDataRepository :
                 and next_execution = :oldNextExecution
         """,
     )
-    override fun updateConfigCausedByExecution(
+    fun updateConfigCausedByExecution(
         id: UUID,
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,

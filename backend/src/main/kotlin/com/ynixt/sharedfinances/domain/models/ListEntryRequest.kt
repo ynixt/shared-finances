@@ -10,12 +10,13 @@ data class ListEntryRequest(
     val minimumDate: LocalDate?,
     val maximumDate: LocalDate?,
     val billId: UUID?,
+    val billDate: LocalDate?,
 ) {
     val lastId: UUID? = (pageRequest.nextCursor?.get("id") as String?)?.let { UUID.fromString(it) }
     val lastDate: LocalDate? = (pageRequest.nextCursor?.get("date") as String?)?.let { LocalDate.parse(it) }
+    val skipFuture: Boolean = pageRequest.nextCursor?.get("skipFuture") as Boolean? ?: false
 
     init {
-
         require(
             lastId == null && lastDate == null || lastId != null && lastDate != null,
         ) { "When sending a \"last\" you need to send both." }

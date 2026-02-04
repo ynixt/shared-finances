@@ -287,8 +287,6 @@ export class ViewCreditCardPageComponent {
         this.creditCard.daysBetweenDueAndClosing,
       );
 
-      console.log(billDate);
-
       this.dateControl.setValue({
         startDate: billDate,
         endDate: billDate,

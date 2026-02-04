@@ -10,7 +10,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 data class EntryListResponse(
-    val id: UUID,
+    val id: UUID?,
     val type: WalletEntryType,
     val name: String?,
     val value: BigDecimal,

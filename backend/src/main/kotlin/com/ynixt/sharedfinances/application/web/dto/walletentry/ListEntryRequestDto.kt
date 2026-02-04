@@ -11,4 +11,5 @@ data class ListEntryRequestDto(
     val minimumDate: LocalDate?,
     val maximumDate: LocalDate?,
     val billId: UUID?,
+    val billDate: LocalDate?,
 )

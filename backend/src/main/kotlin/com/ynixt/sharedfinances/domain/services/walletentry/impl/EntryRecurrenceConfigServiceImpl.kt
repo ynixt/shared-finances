@@ -1,36 +1,351 @@
 package com.ynixt.sharedfinances.domain.services.walletentry.impl
 
+import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
+import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.models.WalletItem
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
+import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
 import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
+import com.ynixt.sharedfinances.domain.services.CreditCardBillService
+import com.ynixt.sharedfinances.domain.services.UserService
+import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceConfigService
+import com.ynixt.sharedfinances.domain.util.FlowMergeSort
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
+import kotlin.collections.associateBy
 
 @Service
 class EntryRecurrenceConfigServiceImpl(
     private val entryRecurrenceConfigRepository: EntryRecurrenceConfigRepository,
+    private val genericCategoryService: GenericCategoryService,
+    private val groupService: GroupService,
+    private val userService: UserService,
+    private val walletItemService: WalletItemService,
+    private val creditCardBillService: CreditCardBillService,
 ) : EntryRecurrenceConfigService {
+    private val defaultSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
+
     override suspend fun getFutureValuesOfWalletItem(
-        walletIdId: UUID,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        walletId: UUID,
+        minimumEndExecution: LocalDate,
+        maximumNextExecution: LocalDate,
+        userId: UUID,
+        groupId: UUID?,
     ): BigDecimal =
-        merge(
+        findAllEntryByWalletId(
+            minimumEndExecution = fixStartDate(minimumEndExecution),
+            maximumNextExecution = maximumNextExecution,
+            walletId = walletId,
+            userId = if (groupId == null) userId else null,
+            groupId = groupId,
+        ).toList().sumOf { if (it.originId == walletId) it.value else it.value.negate() }
+
+    override suspend fun getFutureValuesOCreditCard(
+        bill: CreditCardBill,
+        userId: UUID,
+        groupId: UUID?,
+        walletId: UUID,
+    ): BigDecimal =
+        simulateGenerationForCreditCard(
+            bill = bill,
+            walletId = walletId,
+            userId = userId,
+            groupId = groupId,
+        ).sumOf { if (it.origin.id == walletId) it.value else it.value.negate() }
+
+    override suspend fun simulateGenerationForCreditCard(
+        billDate: LocalDate,
+        userId: UUID,
+        groupId: UUID?,
+        walletId: UUID,
+    ): List<EntryListResponse> {
+        val bill =
+            creditCardBillService.getBillFromDatabaseOrSimulate(
+                userId = userId,
+                creditCardId = walletId,
+                billDate = billDate,
+            )
+
+        val previousBill =
+            creditCardBillService.getBillFromDatabaseOrSimulate(
+                userId = userId,
+                creditCardId = walletId,
+                billDate = billDate.minusMonths(1),
+            )
+
+        bill.startDate = previousBill.closingDate
+
+        return simulateGenerationForCreditCard(
+            bill = bill,
+            userId = userId,
+            groupId = groupId,
+            walletId = walletId,
+        )
+    }
+
+    override suspend fun simulateGenerationForCreditCard(
+        bill: CreditCardBill,
+        userId: UUID,
+        groupId: UUID?,
+        walletId: UUID?,
+    ): List<EntryListResponse> {
+        require(bill.startDate != null)
+
+        return simulateGeneration(
+            minimumEndExecution = bill.startDate,
+            maximumNextExecution = bill.closingDate.minusDays(1),
+            userId = userId,
+            groupId = groupId,
+            walletId = walletId,
+        )
+    }
+
+    override suspend fun simulateGeneration(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userId: UUID,
+        groupId: UUID?,
+        walletId: UUID?,
+    ): List<EntryListResponse> {
+        val fixedStartDate = fixStartDate(minimumEndExecution)
+
+        val configs =
+            when {
+                walletId != null -> {
+                    findAllEntryByWalletId(
+                        minimumEndExecution = fixedStartDate,
+                        maximumNextExecution = maximumNextExecution,
+                        walletId = walletId,
+                        userId = if (groupId == null) userId else null,
+                        groupId = groupId,
+                        sort = defaultSort,
+                    )
+                }
+
+                groupId != null -> {
+                    findAllEntryByGroupId(
+                        minimumEndExecution = fixedStartDate,
+                        maximumNextExecution = maximumNextExecution,
+                        groupId = groupId,
+                        sort = defaultSort,
+                    )
+                }
+
+                else -> {
+                    findAllEntryByUserId(
+                        minimumEndExecution = fixedStartDate,
+                        maximumNextExecution = maximumNextExecution,
+                        userId = userId,
+                        sort = defaultSort,
+                    )
+                }
+            }.toList()
+
+        val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
+        val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
+        val users = userService.findAllByIdIn(configs.mapNotNull { config -> config.userId }.toSet()).toList()
+        val walletItems =
+            walletItemService
+                .findAllByIdIn(
+                    (
+                        configs.map { config -> config.originId } + configs.mapNotNull { config -> config.targetId }
+                    ).toSet(),
+                ).toList()
+
+        return simulateGeneration(
+            configs = configs,
+            walletItemsById = walletItems.associateBy { it.id!! },
+            userById = users.associateBy { it.id!! },
+            categoriesById = categories.associateBy { it.id!! },
+            groupById = groups.associateBy { it.id!! },
+        ).sortedWith(
+            compareByDescending<EntryListResponse> { it.date }
+                .thenByDescending { it.id },
+        )
+    }
+
+    private fun findAllEntryByWalletId(
+        minimumEndExecution: LocalDate? = null,
+        maximumNextExecution: LocalDate? = null,
+        walletId: UUID,
+        userId: UUID? = null,
+        groupId: UUID? = null,
+        sort: Sort = Sort.unsorted(),
+    ): Flow<EntryRecurrenceConfigEntity> {
+        require((userId != null) xor (groupId != null))
+
+        val originFlow =
             entryRecurrenceConfigRepository
-                .findAllByNextExecutionBetweenAndOriginId(
-                    start = startDate,
-                    end = endDate,
-                    originId = walletIdId,
-                ).asFlow(),
+                .findAll(
+                    minimumEndExecution = minimumEndExecution,
+                    maximumNextExecution = maximumNextExecution,
+                    originId = walletId,
+                    targetId = null,
+                    userId = userId,
+                    groupId = groupId,
+                    sort = sort,
+                ).asFlow()
+
+        val targetFlow =
             entryRecurrenceConfigRepository
-                .findAllByNextExecutionBetweenAndTargetId(
-                    start = startDate,
-                    end = endDate,
-                    targetId = walletIdId,
-                ).asFlow(),
-        ).toList().sumOf { if (it.originId == walletIdId) it.value else it.value.negate() }
+                .findAll(
+                    minimumEndExecution = minimumEndExecution,
+                    maximumNextExecution = maximumNextExecution,
+                    originId = null,
+                    targetId = walletId,
+                    userId = userId,
+                    groupId = groupId,
+                    sort = sort,
+                ).asFlow()
+
+        return if (sort.isUnsorted) {
+            merge(originFlow, targetFlow)
+        } else {
+            val comparator = entryRecurrenceComparator(sort)
+            FlowMergeSort.mergeSorted(originFlow, targetFlow, comparator)
+        }
+    }
+
+    private fun entryRecurrenceComparator(sort: Sort): Comparator<EntryRecurrenceConfigEntity> {
+        require(sort.isSorted)
+
+        val orders = sort.toList()
+
+        return Comparator { x, y ->
+            for (o in orders) {
+                val cmp = compareByOrder(x, y, o)
+                if (cmp != 0) return@Comparator cmp
+            }
+            0
+        }
+    }
+
+    private fun compareByOrder(
+        a: EntryRecurrenceConfigEntity,
+        b: EntryRecurrenceConfigEntity,
+        order: Sort.Order,
+    ): Int {
+        val (va, vb) =
+            when (order.property) {
+                "nextExecution" -> a.nextExecution to b.nextExecution
+                "id" -> a.id to b.id
+
+                else -> error("Sort property not supported: '${order.property}'")
+            }
+
+        val nullsFirst =
+            when (order.nullHandling) {
+                Sort.NullHandling.NULLS_FIRST -> true
+                Sort.NullHandling.NULLS_LAST -> false
+                Sort.NullHandling.NATIVE -> false // escolha padrão (ajuste se preferir)
+            }
+
+        val base = compareNullable(va as Comparable<Any>?, vb as Comparable<Any>?, nullsFirst)
+
+        return if (order.isAscending) base else -base
+    }
+
+    private fun <T : Comparable<T>> compareNullable(
+        a: T?,
+        b: T?,
+        nullsFirst: Boolean,
+    ): Int {
+        if (a === b) return 0
+        if (a == null) return if (nullsFirst) -1 else 1
+        if (b == null) return if (nullsFirst) 1 else -1
+        return a.compareTo(b)
+    }
+
+    private fun findAllEntryByUserId(
+        minimumEndExecution: LocalDate? = null,
+        maximumNextExecution: LocalDate? = null,
+        userId: UUID,
+        sort: Sort = Sort.unsorted(),
+    ): Flow<EntryRecurrenceConfigEntity> =
+        entryRecurrenceConfigRepository
+            .findAll(
+                minimumEndExecution = minimumEndExecution,
+                maximumNextExecution = maximumNextExecution,
+                originId = null,
+                targetId = null,
+                userId = userId,
+                groupId = null,
+                sort = sort,
+            ).asFlow()
+
+    private fun findAllEntryByGroupId(
+        minimumEndExecution: LocalDate? = null,
+        maximumNextExecution: LocalDate? = null,
+        groupId: UUID,
+        sort: Sort = Sort.unsorted(),
+    ): Flow<EntryRecurrenceConfigEntity> =
+        entryRecurrenceConfigRepository
+            .findAll(
+                minimumEndExecution = minimumEndExecution,
+                maximumNextExecution = maximumNextExecution,
+                originId = null,
+                targetId = null,
+                userId = null,
+                groupId = groupId,
+                sort = sort,
+            ).asFlow()
+
+    private suspend fun simulateGeneration(
+        configs: List<EntryRecurrenceConfigEntity>,
+        walletItemsById: Map<UUID, WalletItem>,
+        userById: Map<UUID, UserEntity>,
+        groupById: Map<UUID, GroupEntity>,
+        categoriesById: Map<UUID, WalletEntryCategoryEntity>,
+    ): List<EntryListResponse> =
+        configs.map {
+            val installment =
+                if (it.paymentType ==
+                    PaymentType.INSTALLMENTS
+                ) {
+                    it.qtyExecuted + 1
+                } else {
+                    null
+                }
+
+            val origin = walletItemsById[it.originId]!!
+            val target = it.targetId?.let { targetId -> walletItemsById[targetId]!! }
+            val user = it.userId?.let { userId -> userById[userId]!! }
+            val group = it.groupId?.let { groupId -> groupById[groupId]!! }
+            val category = it.categoryId?.let { categoryId -> categoriesById[categoryId]!! }
+
+            EntryListResponse(
+                id = null,
+                type = it.type,
+                name = it.name,
+                value = it.value,
+                category = category,
+                user = user,
+                group = group,
+                tags = emptyList(),
+                date = it.nextExecution!!,
+                observations = it.observations,
+                recurrenceConfigId = it.id!!,
+                confirmed = false,
+                currency = origin.currency,
+                installment = installment,
+                origin = origin,
+                target = target,
+            )
+        }
+
+    private fun fixStartDate(startDate: LocalDate?): LocalDate? =
+        if (startDate == null || startDate.isBefore(LocalDate.now().plusDays(1))) LocalDate.now().plusDays(1) else startDate
 }

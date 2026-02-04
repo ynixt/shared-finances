@@ -14,9 +14,9 @@ import com.ynixt.sharedfinances.domain.exceptions.http.TargetNotFoundException
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
-import com.ynixt.sharedfinances.domain.services.EntryRecurrenceService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceService
 import java.time.LocalDate
 import java.util.UUID
 
@@ -119,11 +119,11 @@ abstract class WalletEntrySaveServiceImpl(
         id: UUID?,
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-        qtyExecuted: Int = 1,
         qtyLimit: Int?,
     ): EntryRecurrenceConfigEntity {
-        val lastExecution = LocalDate.now()
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
+        val qtyExecuted = if (newEntryRequest.inFuture) 0 else 1
+        val lastExecution: LocalDate? = if (qtyExecuted == 0) null else LocalDate.now()
 
         return EntryRecurrenceConfigEntity(
             name = newEntryRequest.name,
@@ -142,11 +142,22 @@ abstract class WalletEntrySaveServiceImpl(
             qtyLimit = qtyLimit,
             lastExecution = lastExecution,
             nextExecution =
-                entryRecurrenceService.calculateNextDate(
-                    lastExecution = lastExecution,
+                if (lastExecution == null) {
+                    newEntryRequest.date
+                } else {
+                    entryRecurrenceService.calculateNextExecution(
+                        lastExecution = lastExecution,
+                        periodicity = periodicity,
+                        qtyExecuted = qtyExecuted,
+                        qtyLimit = qtyLimit,
+                    )
+                },
+            endExecution =
+                entryRecurrenceService.calculateEndDate(
+                    lastExecution = lastExecution ?: newEntryRequest.date,
                     periodicity = periodicity,
                     qtyExecuted = qtyExecuted,
-                    qtyLimit = qtyLimit,
+                    qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
                 ),
         ).also {
             it.id = id

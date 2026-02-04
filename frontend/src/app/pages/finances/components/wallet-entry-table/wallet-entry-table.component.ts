@@ -6,6 +6,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faDollarSign } from '@fortawesome/free-solid-svg-icons';
 import { TranslatePipe } from '@ngx-translate/core';
 
+import dayjs from 'dayjs';
 import { ButtonDirective } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 import { Skeleton } from 'primeng/skeleton';
@@ -58,6 +59,7 @@ export class WalletEntryTableComponent {
   readonly loading = input<boolean>(false);
   readonly dateRange = input<DateRange | undefined>(undefined);
   readonly creditCardBillId = input<string | undefined | null>(undefined);
+  readonly creditCardBillDate = input<dayjs.Dayjs | undefined>(undefined);
   readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
   readonly noWalletEntryFoundDynamicMessage = computed(() => {
     if (this.noWalletEntryFoundMessage() == null) {
@@ -107,13 +109,7 @@ export class WalletEntryTableComponent {
       | undefined,
   ): Promise<CursorPage<EntryForListDto>> => {
     const billId = this.creditCardBillId();
-
-    if (billId === null)
-      return {
-        items: [],
-        hasNext: false,
-        nextCursor: undefined,
-      };
+    const billDate = this.creditCardBillDate();
 
     return await this.walletEntryService.listWalletEntries(
       {
@@ -123,6 +119,7 @@ export class WalletEntryTableComponent {
       {
         walletItemId,
         billId,
+        billDate: billDate?.format(ONLY_DATE_FORMAT),
         minimumDate: dateRange?.startDate?.format(ONLY_DATE_FORMAT),
         maximumDate: dateRange?.endDate?.format(ONLY_DATE_FORMAT),
       },

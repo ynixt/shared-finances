@@ -12,7 +12,7 @@ export interface EntryForListDto {
   currency: string;
   date: string;
   group?: GroupDto | null;
-  id: string;
+  id?: string | null;
   installment?: number | null;
   name?: string | null;
   observations?: string | null;

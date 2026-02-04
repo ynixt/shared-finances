@@ -17,8 +17,9 @@ CREATE TABLE entry_recurrence_config (
     observations TEXT,
     qty_Executed INT NOT NULL,
     qty_limit INT,
-    last_execution DATE NOT NULL,
+    last_execution DATE,
     next_execution DATE,
+    end_execution DATE,
     CONSTRAINT fk_entry_rec_cfg_category FOREIGN KEY (category_id) REFERENCES wallet_entry_category(id) ON DELETE SET NULL,
     CONSTRAINT fk_entry_rec_cfg_user FOREIGN KEY (user_id) REFERENCES "users"(id) ON DELETE SET NULL,
     CONSTRAINT fk_entry_rec_cfg_group FOREIGN KEY ("group_id") REFERENCES "group"(id) ON DELETE SET NULL,
@@ -26,6 +27,6 @@ CREATE TABLE entry_recurrence_config (
     CONSTRAINT fk_w_target FOREIGN KEY (target_id) REFERENCES wallet_item(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_entry_recurrence_config_user ON entry_recurrence_config(user_id) WHERE user_id IS NOT NULL;
-CREATE INDEX idx_entry_recurrence_config_group ON entry_recurrence_config(group_id)  WHERE group_id IS NOT NULL;
+CREATE INDEX idx_entry_recurrence_config_user ON entry_recurrence_config(user_id, next_execution, end_execution) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_entry_recurrence_config_group ON entry_recurrence_config(group_id, next_execution, end_execution)  WHERE group_id IS NOT NULL;
 CREATE INDEX idx_entry_recurrence_config_next_exec ON entry_recurrence_config(next_execution) WHERE next_execution IS NOT NULL;

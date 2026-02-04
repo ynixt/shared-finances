@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import org.springframework.data.domain.Sort
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDate
@@ -15,15 +16,13 @@ interface EntryRecurrenceConfigRepository : EntityRepository<EntryRecurrenceConf
         nextExecution: LocalDate?,
     ): Mono<Int>
 
-    fun findAllByNextExecutionBetweenAndOriginId(
-        start: LocalDate,
-        end: LocalDate,
-        originId: UUID,
-    ): Flux<EntryRecurrenceConfigEntity>
-
-    fun findAllByNextExecutionBetweenAndTargetId(
-        start: LocalDate,
-        end: LocalDate,
-        targetId: UUID,
+    fun findAll(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        originId: UUID?,
+        targetId: UUID?,
+        userId: UUID?,
+        groupId: UUID?,
+        sort: Sort = Sort.unsorted(),
     ): Flux<EntryRecurrenceConfigEntity>
 }

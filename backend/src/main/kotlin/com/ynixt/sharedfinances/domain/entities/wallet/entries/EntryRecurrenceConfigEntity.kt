@@ -24,8 +24,9 @@ class EntryRecurrenceConfigEntity(
     val paymentType: PaymentType,
     val qtyExecuted: Int,
     val qtyLimit: Int?,
-    val lastExecution: LocalDate,
+    val lastExecution: LocalDate?,
     val nextExecution: LocalDate?,
+    val endExecution: LocalDate?,
 ) : MinimumWalletEntry(
         type = type,
         originId = originId,

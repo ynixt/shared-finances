@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.application.web.jobs
 
-import com.ynixt.sharedfinances.domain.services.EntryRecurrenceService
+import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceService
 import kotlinx.coroutines.reactor.mono
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled

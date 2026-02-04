@@ -401,7 +401,7 @@ export class NewTransactionPageComponent {
         originBillDate: this.form.value.originBill?.toISOString(),
         originId: this.form.value.origin!!.id,
         paymentType: this.form.value.paymentType!!,
-        periodicity: this.form.value.periodicity,
+        periodicity: this.form.value.paymentType!! == PaymentType__Obj.UNIQUE ? RecurrenceType__Obj.SINGLE : this.form.value.periodicity,
         periodicityQtyLimit: this.form.value.periodicityQtyLimit,
         tags: this.form.value.tags,
         targetBillDate: this.form.value.targetBill == null ? null : dayjs(this.form.value.targetBill).format(ONLY_DATE_FORMAT),
