@@ -11,7 +11,7 @@
 
   @if (dateRange != null) {
     <div class="flex flex-col h-full">
-      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-8">
+      <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 mb-4">
         @let totalBalance = summary?.total?.balance;
         @let totalPeriodBalance = summary?.totalPeriod?.balance;
         @let totalPeriodRevenue = summary?.totalPeriod?.revenue;
@@ -50,30 +50,59 @@
         >
         </app-dashboard-card>
 
-        <app-dashboard-card
-          [titleKey]="'financesPage.transactionsPage.summary.totalProjectedRevenue' | translate"
-          [value]="totalProjectedRevenue == null ? undefined : (totalProjectedRevenue | localCurrency: bankAccount.currency)"
-          [faIcon]="projectedIcon"
-          [valueCssColorClass]="(totalProjectedRevenue ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
-        >
-        </app-dashboard-card>
-        <app-dashboard-card
-          [titleKey]="'financesPage.transactionsPage.summary.totalProjectedExpense' | translate"
-          [value]="totalProjectedExpense == null ? undefined : (totalProjectedExpense | localCurrency: bankAccount.currency)"
-          [faIcon]="projectedIcon"
-          [valueCssColorClass]="(totalProjectedExpense ?? 0) <= 0 ? 'text-green-700' : 'text-red-700'"
-        >
-        </app-dashboard-card>
-        <app-dashboard-card
-          [titleKey]="'financesPage.transactionsPage.summary.totalProjectedBalance' | translate"
-          [value]="totalProjectedBalance == null ? undefined : (totalProjectedBalance | localCurrency: bankAccount.currency)"
-          [faIcon]="projectedIcon"
-          [valueCssColorClass]="(totalProjectedBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
-        >
-        </app-dashboard-card>
+        @if (!dateRangeOnlyOnPast) {
+          <app-dashboard-card
+            [titleKey]="'financesPage.transactionsPage.summary.totalProjectedRevenue' | translate"
+            [value]="totalProjectedRevenue == null ? undefined : (totalProjectedRevenue | localCurrency: bankAccount.currency)"
+            [faIcon]="projectedIcon"
+            [valueCssColorClass]="(totalProjectedRevenue ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+          >
+          </app-dashboard-card>
+          <app-dashboard-card
+            [titleKey]="'financesPage.transactionsPage.summary.totalProjectedExpense' | translate"
+            [value]="totalProjectedExpense == null ? undefined : (totalProjectedExpense | localCurrency: bankAccount.currency)"
+            [faIcon]="projectedIcon"
+            [valueCssColorClass]="(totalProjectedExpense ?? 0) <= 0 ? 'text-green-700' : 'text-red-700'"
+          >
+          </app-dashboard-card>
+          <app-dashboard-card
+            [titleKey]="'financesPage.transactionsPage.summary.totalProjectedBalance' | translate"
+            [value]="totalProjectedBalance == null ? undefined : (totalProjectedBalance | localCurrency: bankAccount.currency)"
+            [faIcon]="projectedIcon"
+            [valueCssColorClass]="(totalProjectedBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+          >
+          </app-dashboard-card>
+        }
       </div>
 
-      <app-wallet-entry-table class="flex-1" [dateRange]="dateRange" [walletItemId]="bankAccount.id!!"></app-wallet-entry-table>
+      @if (!dateRangeOnlyOnPast) {
+        <div class="grid gap-4 grid-cols-1 md:grid-cols-2 mb-4">
+          <app-dashboard-card
+            [titleKey]="'financesPage.transactionsPage.summary.balanceAtEndOfPeriod' | translate"
+            [value]="
+            totalBalance == null || totalProjectedBalance == null
+              ? undefined
+              : (totalBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
+          "
+            [faIcon]="projectedIcon"
+            [valueCssColorClass]="(totalBalance ?? 0) + (totalProjectedBalance ?? 0) > 0 ? 'text-green-700' : 'text-red-700'"
+          >
+          </app-dashboard-card>
+          <app-dashboard-card
+            [titleKey]="'financesPage.transactionsPage.summary.diffAtEndOfPeriod' | translate"
+            [value]="
+            totalPeriodBalance == null || totalProjectedBalance == null
+              ? undefined
+              : (totalPeriodBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
+          "
+            [faIcon]="projectedIcon"
+            [valueCssColorClass]="(totalPeriodBalance ?? 0) + (totalProjectedBalance ?? 0) > 0 ? 'text-green-700' : 'text-red-700'"
+          >
+          </app-dashboard-card>
+        </div>
+      }
+
+      <app-wallet-entry-table class="flex-1 mt-4" [dateRange]="dateRange" [walletItemId]="bankAccount.id!!"></app-wallet-entry-table>
     </div>
   }
 }

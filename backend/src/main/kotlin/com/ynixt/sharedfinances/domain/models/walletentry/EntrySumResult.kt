@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.domain.models.walletentry
 
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import java.math.BigDecimal
 import java.util.UUID
@@ -22,6 +23,18 @@ data class EntrySumResult(
     val creditCardBillId: UUID?,
 ) {
     var walletItem: WalletItem? = null
+    var user: UserEntity? = null
+
+    companion object {
+        fun empty(walletItemId: UUID) =
+            EntrySumResult(
+                sum = EntrySum.EMPTY,
+                period = EntrySum.EMPTY,
+                projected = EntrySum.EMPTY,
+                walletItemId = walletItemId,
+                creditCardBillId = null,
+            )
+    }
 }
 
 operator fun EntrySum.plus(other: EntrySum): EntrySum =

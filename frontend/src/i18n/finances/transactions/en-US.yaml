@@ -35,3 +35,5 @@ financesPage:
       totalProjectedRevenue: Projected period revenue
       totalProjectedExpense: Projected period expense
       totalProjectedBalance: Projected period diff
+      balanceAtEndOfPeriod: Balance at end of period
+      diffAtEndOfPeriod: Diff at end of period

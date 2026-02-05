@@ -8,6 +8,9 @@ import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
+import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
+import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
+import com.ynixt.sharedfinances.domain.models.walletentry.plus
 import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.UserService
@@ -57,32 +60,32 @@ class EntryRecurrenceConfigServiceImpl(
         bill: CreditCardBill,
         userId: UUID,
         groupId: UUID?,
-        walletId: UUID,
+        walletItemId: UUID,
     ): BigDecimal =
         simulateGenerationForCreditCard(
             bill = bill,
-            walletId = walletId,
+            walletItemId = walletItemId,
             userId = userId,
             groupId = groupId,
-        ).sumOf { if (it.origin.id == walletId) it.value else it.value.negate() }
+        ).sumOf { if (it.origin.id == walletItemId) it.value else it.value.negate() }
 
     override suspend fun simulateGenerationForCreditCard(
         billDate: LocalDate,
         userId: UUID,
         groupId: UUID?,
-        walletId: UUID,
+        walletItemId: UUID,
     ): List<EntryListResponse> {
         val bill =
             creditCardBillService.getBillFromDatabaseOrSimulate(
                 userId = userId,
-                creditCardId = walletId,
+                creditCardId = walletItemId,
                 billDate = billDate,
             )
 
         val previousBill =
             creditCardBillService.getBillFromDatabaseOrSimulate(
                 userId = userId,
-                creditCardId = walletId,
+                creditCardId = walletItemId,
                 billDate = billDate.minusMonths(1),
             )
 
@@ -92,7 +95,7 @@ class EntryRecurrenceConfigServiceImpl(
             bill = bill,
             userId = userId,
             groupId = groupId,
-            walletId = walletId,
+            walletItemId = walletItemId,
         )
     }
 
@@ -100,7 +103,7 @@ class EntryRecurrenceConfigServiceImpl(
         bill: CreditCardBill,
         userId: UUID,
         groupId: UUID?,
-        walletId: UUID?,
+        walletItemId: UUID?,
     ): List<EntryListResponse> {
         require(bill.startDate != null)
 
@@ -109,26 +112,26 @@ class EntryRecurrenceConfigServiceImpl(
             maximumNextExecution = bill.closingDate.minusDays(1),
             userId = userId,
             groupId = groupId,
-            walletId = walletId,
+            walletItemId = walletItemId,
         )
     }
 
     override suspend fun simulateGeneration(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
-        userId: UUID,
+        userId: UUID?,
         groupId: UUID?,
-        walletId: UUID?,
+        walletItemId: UUID?,
     ): List<EntryListResponse> {
         val fixedStartDate = fixStartDate(minimumEndExecution)
 
         val configs =
             when {
-                walletId != null -> {
+                walletItemId != null -> {
                     findAllEntryByWalletId(
                         minimumEndExecution = fixedStartDate,
                         maximumNextExecution = maximumNextExecution,
-                        walletId = walletId,
+                        walletId = walletItemId,
                         userId = if (groupId == null) userId else null,
                         groupId = groupId,
                         sort = defaultSort,
@@ -144,7 +147,7 @@ class EntryRecurrenceConfigServiceImpl(
                     )
                 }
 
-                else -> {
+                userId != null -> {
                     findAllEntryByUserId(
                         minimumEndExecution = fixedStartDate,
                         maximumNextExecution = maximumNextExecution,
@@ -152,6 +155,8 @@ class EntryRecurrenceConfigServiceImpl(
                         sort = defaultSort,
                     )
                 }
+
+                else -> TODO()
             }.toList()
 
         val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
@@ -175,6 +180,76 @@ class EntryRecurrenceConfigServiceImpl(
             compareByDescending<EntryListResponse> { it.date }
                 .thenByDescending { it.id },
         )
+    }
+
+    override suspend fun simulateGenerationAsEntrySumResult(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userId: UUID?,
+        groupId: UUID?,
+        walletItemId: UUID?,
+    ): List<EntrySumResult> {
+        val resultByWalletId = mutableMapOf<UUID, EntrySumResult>()
+
+        simulateGeneration(
+            userId = userId,
+            groupId = groupId,
+            walletItemId = walletItemId,
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+        ).forEach {
+            if (!resultByWalletId.containsKey(it.origin.id)) {
+                resultByWalletId[it.origin.id!!] = EntrySumResult.empty(it.origin.id!!)
+            }
+
+            val projected =
+                EntrySum(
+                    balance = it.value,
+                    revenue = if (it.value >= BigDecimal.ZERO) it.value else BigDecimal.ZERO,
+                    expense = if (it.value < BigDecimal.ZERO) it.value.negate() else BigDecimal.ZERO,
+                )
+
+            it.origin.let { origin ->
+                resultByWalletId[origin.id!!] = resultByWalletId[origin.id!!]!! +
+                    EntrySumResult(
+                        sum = EntrySum.EMPTY,
+                        period = EntrySum.EMPTY,
+                        projected = projected,
+                        walletItemId = origin.id!!,
+                        creditCardBillId = null,
+                    ).also { result ->
+                        result.walletItem = origin
+                        result.user = it.user
+                    }
+            }
+
+            it.target?.let { target ->
+                if (!resultByWalletId.containsKey(target.id)) {
+                    resultByWalletId[target.id!!] = EntrySumResult.empty(target.id!!)
+                }
+
+                val projectedInverse =
+                    projected.copy(
+                        balance = projected.balance.negate(),
+                        revenue = projected.expense,
+                        expense = projected.revenue,
+                    )
+
+                resultByWalletId[target.id!!] = resultByWalletId[target.id!!]!! +
+                    EntrySumResult(
+                        sum = projectedInverse,
+                        period = EntrySum.EMPTY,
+                        projected = projectedInverse,
+                        walletItemId = target.id!!,
+                        creditCardBillId = null,
+                    ).also { result ->
+                        result.walletItem = target
+                        result.user = it.user
+                    }
+            }
+        }
+
+        return resultByWalletId.values.toList()
     }
 
     private fun findAllEntryByWalletId(

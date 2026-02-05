@@ -60,6 +60,7 @@ export class ViewBankAccountPageComponent {
   titleBarButtons: FinancesTitleBarExtraButton[] = [];
   dateRange: DateRange | undefined = undefined;
   summary: EntrySummaryDto | undefined = undefined;
+  dateRangeOnlyOnPast = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -82,6 +83,7 @@ export class ViewBankAccountPageComponent {
 
     this.dateControl.valueChanges.pipe(untilDestroyed(this), startWith(this.dateControl.value)).subscribe(date => {
       this.dateRange = date == null ? undefined : date;
+      this.dateRangeOnlyOnPast = this.dateRange?.endDate?.isBefore(dayjs()) ?? false;
       this.getSummary();
     });
   }

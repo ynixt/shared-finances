@@ -57,14 +57,14 @@ class WalletEntryListServiceImpl(
                     entryRecurrenceConfigService.simulateGenerationForCreditCard(
                         userId = userId,
                         groupId = groupId,
-                        walletId = request.walletItemId,
+                        walletItemId = request.walletItemId,
                         billDate = request.billDate,
                     )
                 } else {
                     entryRecurrenceConfigService.simulateGeneration(
                         userId = userId,
                         groupId = groupId,
-                        walletId = request.walletItemId,
+                        walletItemId = request.walletItemId,
                         minimumEndExecution = request.minimumDate,
                         maximumNextExecution = request.maximumDate,
                     )

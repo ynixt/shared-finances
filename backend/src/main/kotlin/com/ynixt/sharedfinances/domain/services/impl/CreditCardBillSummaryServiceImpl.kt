@@ -40,7 +40,7 @@ class CreditCardBillSummaryServiceImpl(
         val valuesFromFuture =
             entryRecurrenceConfigService.getFutureValuesOCreditCard(
                 bill = bill,
-                walletId = creditCardId,
+                walletItemId = creditCardId,
                 userId = userId,
                 groupId = null,
             )

@@ -36,3 +36,5 @@ financesPage:
       totalProjectedRevenue: Receitas projetadas do período
       totalProjectedExpense: Despesas projetadas do período
       totalProjectedBalance: Alterações projetadas do período
+      balanceAtEndOfPeriod: Saldo no fim do período
+      diffAtEndOfPeriod: Alteração do fim do período

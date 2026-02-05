@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.services.walletentry
 
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
+import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
@@ -19,28 +20,36 @@ interface EntryRecurrenceConfigService {
         bill: CreditCardBill,
         userId: UUID,
         groupId: UUID?,
-        walletId: UUID,
+        walletItemId: UUID,
     ): BigDecimal
 
     suspend fun simulateGeneration(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
-        userId: UUID,
+        userId: UUID?,
         groupId: UUID?,
-        walletId: UUID?,
+        walletItemId: UUID?,
     ): List<EntryListResponse>
+
+    suspend fun simulateGenerationAsEntrySumResult(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userId: UUID?,
+        groupId: UUID?,
+        walletItemId: UUID?,
+    ): List<EntrySumResult>
 
     suspend fun simulateGenerationForCreditCard(
         billDate: LocalDate,
         userId: UUID,
         groupId: UUID?,
-        walletId: UUID,
+        walletItemId: UUID,
     ): List<EntryListResponse>
 
     suspend fun simulateGenerationForCreditCard(
         bill: CreditCardBill,
         userId: UUID,
         groupId: UUID?,
-        walletId: UUID?,
+        walletItemId: UUID?,
     ): List<EntryListResponse>
 }
