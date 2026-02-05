@@ -29,6 +29,7 @@ import {
   CreditCardBillDto,
   CreditCardDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
+import { EntryForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { CreditCardBillStatus__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
@@ -43,6 +44,7 @@ import {
 import { WalletEntryTableComponent } from '../../components/wallet-entry-table/wallet-entry-table.component';
 import { CreditCardBillService } from '../../services/credit-card-bill.service';
 import { CreditCardService } from '../../services/credit-card.service';
+import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 
 @Component({
@@ -156,6 +158,7 @@ export class ViewCreditCardPageComponent {
     private errorMessageService: ErrorMessageService,
     private walletEntryService: WalletEntryService,
     private creditCardBillService: CreditCardBillService,
+    private userActionEventService: UserActionEventService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -171,6 +174,8 @@ export class ViewCreditCardPageComponent {
       this.dateRange = date == null ? undefined : date;
       this.getCreditCardBill();
     });
+
+    this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
   }
 
   openEditClosingDateDialog() {
@@ -249,11 +254,11 @@ export class ViewCreditCardPageComponent {
     this.dialogToEditDueDayIsVisible = false;
   }
 
-  private async getCreditCardBill(): Promise<CreditCardBillDto | undefined> {
+  private async getCreditCardBill(force = false): Promise<CreditCardBillDto | undefined> {
     if (
       this.dateRange == null ||
       this.creditCard == null ||
-      (this.currentFilter?.creditCard === this.creditCard.id && this.currentFilter?.billDate.isSame(this.dateRange.startDate))
+      (!force && this.currentFilter?.creditCard === this.creditCard.id && this.currentFilter?.billDate.isSame(this.dateRange.startDate))
     ) {
       return undefined;
     }
@@ -321,5 +326,28 @@ export class ViewCreditCardPageComponent {
 
   private goToNotFound() {
     return this.router.navigateByUrl('/not-found');
+  }
+
+  private newTransactionInserted(dto: EntryForListDto) {
+    // TODO: improve this
+
+    const bill = this.creditCardBill();
+    const billDate = bill?.billDate == null ? undefined : dayjs(bill?.billDate);
+
+    if (
+      this.dateRange == null ||
+      this.creditCard == null ||
+      (dto.origin.id != this.creditCard.id && dto.target?.id != this.creditCard.id) ||
+      bill == null ||
+      billDate == null
+    )
+      return;
+
+    if (
+      (dto.originBillDate && billDate.isSame(dayjs(dto.originBillDate))) ||
+      (dto.targetBillDate && billDate.isSame(dayjs(dto.targetBillDate)))
+    ) {
+      this.getCreditCardBill(true);
+    }
   }
 }

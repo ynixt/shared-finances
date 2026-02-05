@@ -20,7 +20,13 @@ abstract class MinimumWalletEntry(
     val value: BigDecimal,
     val tags: List<String>?,
     val observations: String?,
-) : AuditedEntity()
+) : AuditedEntity() {
+    @Transient
+    var origin: WalletItemEntity? = null
+
+    @Transient
+    var target: WalletItemEntity? = null
+}
 
 @Table("wallet_entry")
 class WalletEntryEntity(
@@ -53,8 +59,8 @@ class WalletEntryEntity(
         observations = observations,
     ) {
     @Transient
-    var origin: WalletItemEntity? = null
+    var originBill: CreditCardBillEntity? = null
 
     @Transient
-    var target: WalletItemEntity? = null
+    var targetBill: CreditCardBillEntity? = null
 }

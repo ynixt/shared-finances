@@ -13,7 +13,7 @@ import { MessageService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
-import { EntrySummaryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EntryForListDto, EntrySummaryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
@@ -25,6 +25,7 @@ import {
 } from '../../components/wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 import { WalletEntryTableComponent } from '../../components/wallet-entry-table/wallet-entry-table.component';
 import { BankAccountService } from '../../services/bank-account.service';
+import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 
 @Component({
@@ -70,6 +71,7 @@ export class ViewBankAccountPageComponent {
     private translateService: TranslateService,
     private errorMessageService: ErrorMessageService,
     private walletEntryService: WalletEntryService,
+    private userActionEventService: UserActionEventService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -86,6 +88,8 @@ export class ViewBankAccountPageComponent {
       this.dateRangeOnlyOnPast = this.dateRange?.endDate?.isBefore(dayjs()) ?? false;
       this.getSummary();
     });
+
+    this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
   }
 
   private async getSummary() {
@@ -134,5 +138,23 @@ export class ViewBankAccountPageComponent {
 
   private goToNotFound() {
     return this.router.navigateByUrl('/not-found');
+  }
+
+  private newTransactionInserted(dto: EntryForListDto) {
+    // TODO: improve this
+
+    if (
+      this.dateRange == null ||
+      this.bankAccount == null ||
+      (dto.origin.id != this.bankAccount.id && dto.target?.id != this.bankAccount.id)
+    )
+      return;
+
+    if (
+      (this.dateRange.startDate.isBefore(dto.date) || this.dateRange.startDate.isSame(dto.date)) &&
+      (this.dateRange.endDate == null || this.dateRange.endDate.isAfter(dto.date) || this.dateRange.endDate.isSame(dto.date))
+    ) {
+      this.getSummary();
+    }
   }
 }

@@ -80,10 +80,10 @@
           <app-dashboard-card
             [titleKey]="'financesPage.transactionsPage.summary.balanceAtEndOfPeriod' | translate"
             [value]="
-            totalBalance == null || totalProjectedBalance == null
-              ? undefined
-              : (totalBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
-          "
+              totalBalance == null || totalProjectedBalance == null
+                ? undefined
+                : (totalBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
+            "
             [faIcon]="projectedIcon"
             [valueCssColorClass]="(totalBalance ?? 0) + (totalProjectedBalance ?? 0) > 0 ? 'text-green-700' : 'text-red-700'"
           >
@@ -91,10 +91,10 @@
           <app-dashboard-card
             [titleKey]="'financesPage.transactionsPage.summary.diffAtEndOfPeriod' | translate"
             [value]="
-            totalPeriodBalance == null || totalProjectedBalance == null
-              ? undefined
-              : (totalPeriodBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
-          "
+              totalPeriodBalance == null || totalProjectedBalance == null
+                ? undefined
+                : (totalPeriodBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
+            "
             [faIcon]="projectedIcon"
             [valueCssColorClass]="(totalPeriodBalance ?? 0) + (totalProjectedBalance ?? 0) > 0 ? 'text-green-700' : 'text-red-700'"
           >

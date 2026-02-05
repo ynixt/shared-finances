@@ -2,10 +2,14 @@ package com.ynixt.sharedfinances.domain.services.walletentry.impl
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
@@ -38,6 +42,7 @@ class EntryRecurrenceConfigServiceImpl(
     private val userService: UserService,
     private val walletItemService: WalletItemService,
     private val creditCardBillService: CreditCardBillService,
+    private val walletItemMapper: WalletItemMapper,
 ) : EntryRecurrenceConfigService {
     private val defaultSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
 
@@ -386,41 +391,112 @@ class EntryRecurrenceConfigServiceImpl(
         categoriesById: Map<UUID, WalletEntryCategoryEntity>,
     ): List<EntryListResponse> =
         configs.map {
-            val installment =
-                if (it.paymentType ==
-                    PaymentType.INSTALLMENTS
-                ) {
-                    it.qtyExecuted + 1
-                } else {
-                    null
-                }
-
             val origin = walletItemsById[it.originId]!!
             val target = it.targetId?.let { targetId -> walletItemsById[targetId]!! }
             val user = it.userId?.let { userId -> userById[userId]!! }
             val group = it.groupId?.let { groupId -> groupById[groupId]!! }
             val category = it.categoryId?.let { categoryId -> categoriesById[categoryId]!! }
 
-            EntryListResponse(
-                id = null,
-                type = it.type,
-                name = it.name,
-                value = it.value,
-                category = category,
-                user = user,
-                group = group,
-                tags = emptyList(),
-                date = it.nextExecution!!,
-                observations = it.observations,
-                recurrenceConfigId = it.id!!,
-                confirmed = false,
-                currency = origin.currency,
-                installment = installment,
+            simulateGeneration(
+                config = it,
                 origin = origin,
                 target = target,
+                user = user,
+                group = group,
+                category = category,
+                simulateBillForRecurrence = false,
             )
         }
 
+    override suspend fun simulateGeneration(
+        config: EntryRecurrenceConfigEntity,
+        origin: WalletItem,
+        target: WalletItem?,
+        user: UserEntity?,
+        group: GroupEntity?,
+        category: WalletEntryCategoryEntity?,
+        simulateBillForRecurrence: Boolean,
+    ): EntryListResponse {
+        val installment =
+            if (config.paymentType ==
+                PaymentType.INSTALLMENTS
+            ) {
+                config.qtyExecuted + 1
+            } else {
+                null
+            }
+
+        val originBill =
+            if (simulateBillForRecurrence &&
+                config.origin?.type == WalletItemType.CREDIT_CARD &&
+                config.nextExecution != null
+            ) {
+                config.origin?.let { origin ->
+                    simulateBill(origin, config.nextExecution, config.userId)
+                }
+            } else {
+                null
+            }
+
+        val targetBill =
+            if (simulateBillForRecurrence &&
+                config.target?.type == WalletItemType.CREDIT_CARD &&
+                config.nextExecution != null
+            ) {
+                config.target?.let { target ->
+                    simulateBill(target, config.nextExecution, config.userId)
+                }
+            } else {
+                null
+            }
+
+        return EntryListResponse(
+            id = null,
+            type = config.type,
+            name = config.name,
+            value = config.value,
+            category = category,
+            user = user,
+            group = group,
+            tags = emptyList(),
+            date = config.nextExecution!!,
+            observations = config.observations,
+            recurrenceConfigId = config.id!!,
+            confirmed = false,
+            currency = origin.currency,
+            installment = installment,
+            origin = origin,
+            target = target,
+            originBillDate = originBill?.billDate,
+            originBillId = originBill?.id,
+            targetBillDate = targetBill?.billDate,
+            targetBillId = targetBill?.id,
+        )
+    }
+
     private fun fixStartDate(startDate: LocalDate?): LocalDate? =
         if (startDate == null || startDate.isBefore(LocalDate.now().plusDays(1))) LocalDate.now().plusDays(1) else startDate
+
+    private suspend fun simulateBill(
+        walletItemEntity: WalletItemEntity,
+        nextExecution: LocalDate?,
+        userId: UUID?,
+    ): CreditCardBill? {
+        if (nextExecution == null || userId == null) return null
+
+        val creditCard = walletItemMapper.toModel(walletItemEntity)
+
+        return if (creditCard is CreditCard) {
+            val billDate = creditCard.getBestBill(nextExecution)
+            val dueDate = creditCard.getDueDate(billDate)
+
+            creditCardBillService.getBillFromDatabaseOrSimulate(
+                userId = userId,
+                creditCardId = creditCard.id!!,
+                billDate = dueDate.withDayOfMonth(1),
+            )
+        } else {
+            null
+        }
+    }
 }

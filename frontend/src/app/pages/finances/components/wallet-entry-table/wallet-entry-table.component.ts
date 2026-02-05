@@ -1,9 +1,10 @@
-import { NgClass, formatDate } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, computed, effect, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faDollarSign } from '@fortawesome/free-solid-svg-icons';
+import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
@@ -18,6 +19,7 @@ import { EntryForListDto } from '../../../../models/generated/com/ynixt/sharedfi
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../../pipes/local-date.pipe';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
+import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 import { DateRange } from './components/advanced-date-picker/advanced-date-picker.component';
 import { EntryDescriptionComponent } from './components/entry-description/entry-description.component';
@@ -46,9 +48,11 @@ import { EntryTypeComponent } from './components/entry-type/entry-type.component
   templateUrl: './wallet-entry-table.component.html',
   styleUrl: './wallet-entry-table.component.scss',
 })
+@UntilDestroy()
 export class WalletEntryTableComponent {
   readonly walletEntryService = inject(WalletEntryService);
   readonly localDatePipeService = inject(LocalDatePipeService);
+  readonly userActionEventService = inject(UserActionEventService);
 
   readonly pageSize = 30;
   readonly pages: Map<number, CursorPage<EntryForListDto>> = new Map();
@@ -82,21 +86,16 @@ export class WalletEntryTableComponent {
 
   constructor() {
     effect(async () => {
-      const walletItemId = this.walletItemId();
-      const dateRange = this.dateRange();
+      const wId = this.walletItemId();
+      const dRange = this.dateRange();
       const isLoading = this.loading();
 
       if (isLoading) return;
 
-      this.currentPageNumber = 0;
-      this.page = undefined;
-      this.pages.clear();
-
-      const page = await this.entryFetcher(walletItemId, dateRange);
-
-      this.page = page;
-      this.pages.set(0, page);
+      await this.loadInitialData();
     });
+
+    this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
   }
 
   entryFetcher = async (
@@ -137,6 +136,41 @@ export class WalletEntryTableComponent {
       const page = await this.entryFetcher(this.walletItemId(), this.dateRange(), nextCursor);
       this.page = page;
       this.pages.set(++this.currentPageNumber, page);
+    }
+  }
+
+  private async loadInitialData() {
+    this.currentPageNumber = 0;
+    this.page = undefined;
+    this.pages.clear();
+
+    const page = await this.entryFetcher(this.walletItemId(), this.dateRange());
+
+    this.page = page;
+    this.pages.set(0, page);
+  }
+
+  private async reload() {
+    await this.loadInitialData();
+  }
+
+  private newTransactionInserted(dto: EntryForListDto) {
+    // TODO: improve this
+
+    const dateRange = this.dateRange();
+    const walletItemId = this.walletItemId();
+    const creditCardBillDate = this.creditCardBillDate();
+
+    if (dateRange == null || walletItemId == null || (dto.origin.id != walletItemId && dto.target?.id != walletItemId)) return;
+
+    if (
+      (creditCardBillDate != null &&
+        ((dto.originBillDate && creditCardBillDate.isSame(dayjs(dto.originBillDate))) ||
+          (dto.targetBillDate && creditCardBillDate.isSame(dayjs(dto.targetBillDate))))) ||
+      ((dateRange.startDate.isBefore(dto.date) || dateRange.startDate.isSame(dto.date)) &&
+        (dateRange.endDate == null || dateRange.endDate.isAfter(dto.date) || dateRange.endDate.isSame(dto.date)))
+    ) {
+      this.reload();
     }
   }
 

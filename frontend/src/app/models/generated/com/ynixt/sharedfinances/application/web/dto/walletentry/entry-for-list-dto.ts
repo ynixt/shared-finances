@@ -17,9 +17,13 @@ export interface EntryForListDto {
   name?: string | null;
   observations?: string | null;
   origin: WalletItemForEntryListDto;
+  originBillDate?: string | null;
+  originBillId?: string | null;
   recurrenceConfigId?: string | null;
   tags?: Array<string> | null;
   target?: WalletItemForEntryListDto | null;
+  targetBillDate?: string | null;
+  targetBillId?: string | null;
   type: WalletEntryType;
   user?: UserSimpleDto | null;
   value: number;

@@ -2,6 +2,8 @@ package com.ynixt.sharedfinances.domain.services.walletentry.impl
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
@@ -125,7 +127,19 @@ class WalletEntryListServiceImpl(
         }
     }
 
-    private suspend fun convertEntityToEntryListResponse(items: List<WalletEntryEntity>): List<EntryListResponse> {
+    override suspend fun convertEntityToEntryListResponse(
+        item: MinimumWalletEntry,
+        simulateBillForRecurrence: Boolean,
+    ): EntryListResponse =
+        convertEntityToEntryListResponse(
+            listOf(item),
+            simulateBillForRecurrence,
+        ).first()
+
+    override suspend fun convertEntityToEntryListResponse(
+        items: List<MinimumWalletEntry>,
+        simulateBillForRecurrence: Boolean,
+    ): List<EntryListResponse> {
         val categoriesIds = items.filter { it.categoryId != null }.map { it.categoryId!! }.toSet()
         val groupsIds = items.filter { it.groupId != null }.map { it.groupId!! }.toSet()
 
@@ -156,34 +170,56 @@ class WalletEntryListServiceImpl(
                     categoriesById = categoriesById,
                     groupsById = groupsById,
                     usersById = usersById,
+                    simulateBillForRecurrence = simulateBillForRecurrence,
                 )
             }
         }
     }
 
-    private fun createEntryListResponse(
-        entry: WalletEntryEntity,
+    private suspend fun createEntryListResponse(
+        entry: MinimumWalletEntry,
         walletEntriesById: Map<UUID, WalletItem>,
         categoriesById: Map<UUID, WalletEntryCategoryEntity>,
         groupsById: Map<UUID, GroupEntity>,
         usersById: Map<UUID, UserEntity>,
+        simulateBillForRecurrence: Boolean,
     ): EntryListResponse =
-        EntryListResponse(
-            id = entry.id!!,
-            type = entry.type,
-            name = entry.name,
-            value = entry.value,
-            category = entry.categoryId?.let { categoriesById[it] },
-            user = entry.userId?.let { usersById[it] },
-            group = entry.groupId?.let { groupsById[it] },
-            tags = entry.tags,
-            observations = entry.observations,
-            origin = entry.originId.let { walletEntriesById[it]!! }.also { it.user = usersById[it.userId] },
-            target = entry.targetId?.let { walletEntriesById[it] }?.also { it.user = usersById[it.userId] },
-            date = entry.date,
-            confirmed = entry.confirmed,
-            installment = entry.installment,
-            recurrenceConfigId = entry.recurrenceConfigId,
-            currency = entry.origin!!.currency,
-        )
+        when (entry) {
+            is WalletEntryEntity ->
+                EntryListResponse(
+                    id = entry.id!!,
+                    type = entry.type,
+                    name = entry.name,
+                    value = entry.value,
+                    category = entry.categoryId?.let { categoriesById[it] },
+                    user = entry.userId?.let { usersById[it] },
+                    group = entry.groupId?.let { groupsById[it] },
+                    tags = entry.tags,
+                    observations = entry.observations,
+                    origin = entry.originId.let { walletEntriesById[it]!! }.also { it.user = usersById[it.userId] },
+                    target = entry.targetId?.let { walletEntriesById[it] }?.also { it.user = usersById[it.userId] },
+                    date = entry.date,
+                    confirmed = entry.confirmed,
+                    installment = entry.installment,
+                    recurrenceConfigId = entry.recurrenceConfigId,
+                    currency = entry.origin!!.currency,
+                    originBillId = entry.originBillId,
+                    originBillDate = entry.originBill?.billDate,
+                    targetBillId = entry.targetBillId,
+                    targetBillDate = entry.targetBill?.billDate,
+                )
+
+            is EntryRecurrenceConfigEntity ->
+                entryRecurrenceConfigService.simulateGeneration(
+                    config = entry,
+                    origin = entry.originId.let { walletEntriesById[it]!! }.also { it.user = usersById[it.userId] },
+                    target = entry.targetId?.let { walletEntriesById[it] }?.also { it.user = usersById[it.userId] },
+                    user = entry.userId?.let { usersById[it] },
+                    group = entry.groupId?.let { groupsById[it] },
+                    category = entry.categoryId?.let { categoriesById[it] },
+                    simulateBillForRecurrence = simulateBillForRecurrence,
+                )
+
+            else -> TODO()
+        }
 }

@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceCo
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
@@ -34,6 +35,7 @@ class WalletEntryCreateServiceImpl(
     entryRecurrenceService: EntryRecurrenceService,
     private val entryRecurrenceConfigRepository: EntryRecurrenceConfigRepository,
     private val walletEntryActionEventService: WalletEntryActionEventService,
+    private val walletItemMapper: WalletItemMapper,
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
         walletItemService = walletItemService,
@@ -241,7 +243,15 @@ class WalletEntryCreateServiceImpl(
                         ),
                     ).awaitSingle()
 
-            entry.also { updateBalance(newEntryRequest) }
+            entry.also {
+                updateBalance(newEntryRequest)
+
+                it.originBill = newEntryRequest.originBill
+                it.targetBill = newEntryRequest.targetBill
+            }
+        }.also {
+            it.origin = newEntryRequest.origin?.let { origin -> walletItemMapper.fromModel(origin) }
+            it.target = newEntryRequest.target?.let { target -> walletItemMapper.fromModel(target) }
         }
     }
 

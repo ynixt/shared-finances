@@ -26,4 +26,8 @@ data class EntryListResponse(
     val installment: Int?,
     val recurrenceConfigId: UUID?,
     val currency: String,
+    val originBillId: UUID?,
+    val targetBillId: UUID?,
+    val originBillDate: LocalDate?,
+    val targetBillDate: LocalDate?,
 )

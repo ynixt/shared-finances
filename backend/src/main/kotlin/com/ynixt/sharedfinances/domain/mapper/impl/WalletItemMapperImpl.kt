@@ -6,6 +6,8 @@ import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
 import com.ynixt.sharedfinances.domain.mapper.CreditCardMapper
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
+import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import org.springframework.stereotype.Component
 
 @Component
@@ -17,5 +19,12 @@ class WalletItemMapperImpl(
         when (from.type) {
             WalletItemType.BANK_ACCOUNT -> bankAccountMapper.toModel(from)
             WalletItemType.CREDIT_CARD -> creditCardMapper.toModel(from)
+        }
+
+    override fun fromModel(from: WalletItem): WalletItemEntity =
+        when (from) {
+            is BankAccount -> bankAccountMapper.toEntity(from)
+            is CreditCard -> creditCardMapper.toEntity(from)
+            else -> TODO()
         }
 }

@@ -1,5 +1,10 @@
 package com.ynixt.sharedfinances.domain.services.walletentry
 
+import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
+import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
@@ -52,4 +57,14 @@ interface EntryRecurrenceConfigService {
         groupId: UUID?,
         walletItemId: UUID?,
     ): List<EntryListResponse>
+
+    suspend fun simulateGeneration(
+        config: EntryRecurrenceConfigEntity,
+        origin: WalletItem,
+        target: WalletItem?,
+        user: UserEntity?,
+        group: GroupEntity?,
+        category: WalletEntryCategoryEntity?,
+        simulateBillForRecurrence: Boolean,
+    ): EntryListResponse
 }

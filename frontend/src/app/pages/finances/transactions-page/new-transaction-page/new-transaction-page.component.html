@@ -13,6 +13,7 @@
           @let controlSelected = typeControl.value == typeButton.value;
 
           <button
+            type="button"
             (click)="typeControl.setValue(typeButton.value)"
             pButton
             [severity]="typeButton.severity"

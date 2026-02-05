@@ -6,6 +6,7 @@ import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfi
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
+import { EntryForListDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { ActionEventCategory } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { TokenStateService } from '../../../services/token-state.service';
 import { ActionEventService } from './action-event.service';
@@ -31,6 +32,8 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly creditCardDeleted$: Observable<string>;
 
   readonly groupInserted$: Observable<GroupDto>;
+
+  readonly transactionInserted$: Observable<EntryForListDto>;
 
   constructor(tokenStateService: TokenStateService, zone: NgZone) {
     super(tokenStateService, zone, '/api/sse/user-events');
@@ -84,6 +87,14 @@ export class UserActionEventService extends ActionEventService implements OnDest
     this.groupInserted$ = baseGroup$.pipe(
       filter(e => e.type === 'INSERT'),
       map(e => e.data as GroupDto),
+    );
+
+    // --- Transaction ---
+    const baseTransaction = this.streamOf<UserActionEventDto>('WALLET_ENTRY').pipe(notGroupFilter);
+
+    this.transactionInserted$ = baseTransaction.pipe(
+      filter(e => e.type === 'INSERT'),
+      map(e => e.data as EntryForListDto),
     );
   }
 }
