@@ -6,9 +6,21 @@
           @for (item of items; track item; let first = $first) {
             <div class="col-span-12">
               <div class="flex flex-col p-6 gap-4" [ngClass]="{ 'border-t border-surface-200 dark:border-surface-700': !first }">
-                <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex flex-wrap gap-4 items-center text-gray-400 text-sm">
                   <app-entry-type [entry]="item" class="table-item"></app-entry-type>
                   <app-entry-status [entry]="item" class="table-item"></app-entry-status>
+
+                  @if (item.installment != null) {
+                    <span class="table-item">{{
+                      'financesPage.transactionsPage.installmentValue'
+                        | translate: { installment: item.installment, installments: item?.recurrenceConfig?.qtyLimit ?? item.installment }
+                    }}</span>
+                  }
+                  <!--                  @else if (item.recurrenceConfig?.paymentType == 'RECURRING') {-->
+                  <!--                    <span class="table-item">{{-->
+                  <!--                      'financesPage.transactionsPage.recurringValue' | translate: { value: item.recurrenceConfig.qtyExecuted + 1 }-->
+                  <!--                      }}</span>-->
+                  <!--                  }-->
                 </div>
 
                 @if (item.name != null && item.name != '') {

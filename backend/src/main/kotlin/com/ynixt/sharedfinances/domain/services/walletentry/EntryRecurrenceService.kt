@@ -18,5 +18,10 @@ interface EntryRecurrenceService {
         qtyLimit: Int?,
     ): LocalDate?
 
+    fun calculateNextDate(
+        lastExecution: LocalDate,
+        periodicity: RecurrenceType,
+    ): LocalDate
+
     suspend fun queueAllPendingOfExecution(): Int
 }

@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.models.walletentry
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.WalletItem
@@ -25,6 +26,7 @@ data class EntryListResponse(
     val confirmed: Boolean,
     val installment: Int?,
     val recurrenceConfigId: UUID?,
+    val recurrenceConfig: EntryRecurrenceConfigEntity?,
     val currency: String,
     val originBillId: UUID?,
     val targetBillId: UUID?,

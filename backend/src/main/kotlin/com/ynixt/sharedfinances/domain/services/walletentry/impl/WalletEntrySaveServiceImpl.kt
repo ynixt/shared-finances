@@ -11,6 +11,7 @@ import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupNotFoundException
 import com.ynixt.sharedfinances.domain.exceptions.http.OriginNotFoundException
 import com.ynixt.sharedfinances.domain.exceptions.http.TargetNotFoundException
+import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
@@ -124,6 +125,9 @@ abstract class WalletEntrySaveServiceImpl(
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
         val qtyExecuted = if (newEntryRequest.inFuture) 0 else 1
         val lastExecution: LocalDate? = if (qtyExecuted == 0) null else LocalDate.now()
+        val nextExecution = lastExecution ?: newEntryRequest.date
+        val nextOriginBillDate = newEntryRequest.originBill?.billDate
+        val nextTargetBillDate = newEntryRequest.targetBill?.billDate
 
         return EntryRecurrenceConfigEntity(
             name = newEntryRequest.name,
@@ -154,11 +158,37 @@ abstract class WalletEntrySaveServiceImpl(
                 },
             endExecution =
                 entryRecurrenceService.calculateEndDate(
-                    lastExecution = lastExecution ?: newEntryRequest.date,
+                    lastExecution = nextExecution,
                     periodicity = periodicity,
                     qtyExecuted = qtyExecuted,
                     qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
                 ),
+            nextOriginBillDate = nextOriginBillDate,
+            lastOriginBillDate =
+                if (nextOriginBillDate == null) {
+                    null
+                } else {
+                    entryRecurrenceService
+                        .calculateEndDate(
+                            lastExecution = nextOriginBillDate,
+                            periodicity = periodicity,
+                            qtyExecuted = qtyExecuted,
+                            qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
+                        )?.withStartOfMonth()
+                },
+            nextTargetBillDate = nextTargetBillDate,
+            lastTargetBillDate =
+                if (nextTargetBillDate == null) {
+                    null
+                } else {
+                    entryRecurrenceService
+                        .calculateEndDate(
+                            lastExecution = nextTargetBillDate,
+                            periodicity = periodicity,
+                            qtyExecuted = qtyExecuted,
+                            qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
+                        )?.withStartOfMonth()
+                },
         ).also {
             it.id = id
         }

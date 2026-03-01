@@ -13,6 +13,10 @@ CREATE TABLE entry_recurrence_config (
     group_id UUID,
     origin_id UUID NOT NULL,
     target_id UUID,
+    next_origin_bill_date DATE,
+    last_origin_bill_date DATE,
+    next_target_bill_date DATE,
+    last_target_bill_date DATE,
     tags TEXT[],
     observations TEXT,
     qty_Executed INT NOT NULL,
@@ -28,5 +32,11 @@ CREATE TABLE entry_recurrence_config (
 );
 
 CREATE INDEX idx_entry_recurrence_config_user ON entry_recurrence_config(user_id, next_execution, end_execution) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_entry_recurrence_config_user_origin_bill ON entry_recurrence_config(user_id, next_origin_bill_date, last_origin_bill_date) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_entry_recurrence_config_user_target_bill ON entry_recurrence_config(user_id, next_target_bill_date, last_target_bill_date) WHERE user_id IS NOT NULL;
+
 CREATE INDEX idx_entry_recurrence_config_group ON entry_recurrence_config(group_id, next_execution, end_execution)  WHERE group_id IS NOT NULL;
+CREATE INDEX idx_entry_recurrence_config_group_origin_bill ON entry_recurrence_config(group_id, next_origin_bill_date, last_origin_bill_date) WHERE group_id IS NOT NULL;
+CREATE INDEX idx_entry_recurrence_config_group_target_bill ON entry_recurrence_config(group_id, next_target_bill_date, last_target_bill_date) WHERE group_id IS NOT NULL;
+
 CREATE INDEX idx_entry_recurrence_config_next_exec ON entry_recurrence_config(next_execution) WHERE next_execution IS NOT NULL;

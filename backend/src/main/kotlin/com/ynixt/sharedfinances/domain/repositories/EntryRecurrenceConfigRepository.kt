@@ -14,11 +14,14 @@ interface EntryRecurrenceConfigRepository : EntityRepository<EntryRecurrenceConf
         id: UUID,
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
+        nextOriginBillDate: LocalDate?,
+        nextTargetBillDate: LocalDate?,
     ): Mono<Int>
 
     fun findAll(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
+        billDate: LocalDate?,
         originId: UUID?,
         targetId: UUID?,
         userId: UUID?,

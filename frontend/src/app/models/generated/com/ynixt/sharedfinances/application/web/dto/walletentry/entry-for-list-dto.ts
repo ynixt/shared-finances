@@ -19,6 +19,7 @@ export interface EntryForListDto {
   origin: WalletItemForEntryListDto;
   originBillDate?: string | null;
   originBillId?: string | null;
+  recurrenceConfig?: any | null;
   recurrenceConfigId?: string | null;
   tags?: Array<string> | null;
   target?: WalletItemForEntryListDto | null;

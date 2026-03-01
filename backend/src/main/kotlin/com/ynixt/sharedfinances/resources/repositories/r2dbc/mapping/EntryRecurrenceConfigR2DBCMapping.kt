@@ -33,6 +33,10 @@ class EntryRecurrenceConfigR2DBCMapping {
                 qtyExecuted = row.get("${columnPrefix}qty_executed", Int::class.javaObjectType)!!,
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
                 periodicity = RecurrenceType.valueOf(row.get("${columnPrefix}periodicity", String::class.java)!!),
+                nextOriginBillDate = row.get("${columnPrefix}next_origin_bill_date", LocalDate::class.java),
+                lastOriginBillDate = row.get("${columnPrefix}last_origin_bill_date", LocalDate::class.java),
+                nextTargetBillDate = row.get("${columnPrefix}next_target_bill_date", LocalDate::class.java),
+                lastTargetBillDate = row.get("${columnPrefix}last_target_bill_date", LocalDate::class.java),
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

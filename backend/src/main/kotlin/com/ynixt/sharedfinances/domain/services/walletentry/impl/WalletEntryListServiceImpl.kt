@@ -69,6 +69,7 @@ class WalletEntryListServiceImpl(
                         walletItemId = request.walletItemId,
                         minimumEndExecution = request.minimumDate,
                         maximumNextExecution = request.maximumDate,
+                        billDate = null,
                     )
                 }
         }
@@ -142,9 +143,16 @@ class WalletEntryListServiceImpl(
     ): List<EntryListResponse> {
         val categoriesIds = items.filter { it.categoryId != null }.map { it.categoryId!! }.toSet()
         val groupsIds = items.filter { it.groupId != null }.map { it.groupId!! }.toSet()
+        val recurrenceConfigIds =
+            items
+                .filter {
+                    it is WalletEntryEntity && it.recurrenceConfigId != null
+                }.map { (it as WalletEntryEntity).recurrenceConfigId!! }
+                .toSet()
 
         val categories = genericCategoryService.findAllByIdIn(categoriesIds).toList()
         val groups = groupService.findAllByIdIn(groupsIds).toList()
+        val recurrenceConfigs = entryRecurrenceConfigService.findAllByIdIn(recurrenceConfigIds).toList()
 
         val walletEntries =
             (
@@ -162,6 +170,7 @@ class WalletEntryListServiceImpl(
             val categoriesById = categories.associateBy { it.id!! }
             val groupsById = groups.associateBy { it.id!! }
             val usersById = users.associateBy { it.id!! }
+            val recurrenceConfigById = recurrenceConfigs.associateBy { it.id!! }
 
             items.map { entry ->
                 createEntryListResponse(
@@ -170,6 +179,7 @@ class WalletEntryListServiceImpl(
                     categoriesById = categoriesById,
                     groupsById = groupsById,
                     usersById = usersById,
+                    recurrenceConfigById = recurrenceConfigById,
                     simulateBillForRecurrence = simulateBillForRecurrence,
                 )
             }
@@ -182,6 +192,7 @@ class WalletEntryListServiceImpl(
         categoriesById: Map<UUID, WalletEntryCategoryEntity>,
         groupsById: Map<UUID, GroupEntity>,
         usersById: Map<UUID, UserEntity>,
+        recurrenceConfigById: Map<UUID, EntryRecurrenceConfigEntity>,
         simulateBillForRecurrence: Boolean,
     ): EntryListResponse =
         when (entry) {
@@ -202,6 +213,7 @@ class WalletEntryListServiceImpl(
                     confirmed = entry.confirmed,
                     installment = entry.installment,
                     recurrenceConfigId = entry.recurrenceConfigId,
+                    recurrenceConfig = entry.recurrenceConfigId?.let { recurrenceConfigById[it] },
                     currency = entry.origin!!.currency,
                     originBillId = entry.originBillId,
                     originBillDate = entry.originBill?.billDate,

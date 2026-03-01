@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceCo
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
@@ -21,6 +22,7 @@ import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.impl.EntityServiceImpl
 import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceConfigService
 import com.ynixt.sharedfinances.domain.util.FlowMergeSort
 import kotlinx.coroutines.flow.Flow
@@ -31,19 +33,22 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.collections.associateBy
 
 @Service
 class EntryRecurrenceConfigServiceImpl(
-    private val entryRecurrenceConfigRepository: EntryRecurrenceConfigRepository,
+    override val repository: EntryRecurrenceConfigRepository,
     private val genericCategoryService: GenericCategoryService,
     private val groupService: GroupService,
     private val userService: UserService,
     private val walletItemService: WalletItemService,
     private val creditCardBillService: CreditCardBillService,
     private val walletItemMapper: WalletItemMapper,
-) : EntryRecurrenceConfigService {
+) : EntityServiceImpl<EntryRecurrenceConfigEntity, EntryRecurrenceConfigEntity>(),
+    EntryRecurrenceConfigService {
     private val defaultSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
 
     override suspend fun getFutureValuesOfWalletItem(
@@ -87,15 +92,6 @@ class EntryRecurrenceConfigServiceImpl(
                 billDate = billDate,
             )
 
-        val previousBill =
-            creditCardBillService.getBillFromDatabaseOrSimulate(
-                userId = userId,
-                creditCardId = walletItemId,
-                billDate = billDate.minusMonths(1),
-            )
-
-        bill.startDate = previousBill.closingDate
-
         return simulateGenerationForCreditCard(
             bill = bill,
             userId = userId,
@@ -109,17 +105,15 @@ class EntryRecurrenceConfigServiceImpl(
         userId: UUID,
         groupId: UUID?,
         walletItemId: UUID?,
-    ): List<EntryListResponse> {
-        require(bill.startDate != null)
-
-        return simulateGeneration(
-            minimumEndExecution = bill.startDate,
-            maximumNextExecution = bill.closingDate.minusDays(1),
+    ): List<EntryListResponse> =
+        simulateGeneration(
+            minimumEndExecution = null,
+            maximumNextExecution = null,
             userId = userId,
             groupId = groupId,
             walletItemId = walletItemId,
+            billDate = bill.billDate,
         )
-    }
 
     override suspend fun simulateGeneration(
         minimumEndExecution: LocalDate?,
@@ -127,6 +121,7 @@ class EntryRecurrenceConfigServiceImpl(
         userId: UUID?,
         groupId: UUID?,
         walletItemId: UUID?,
+        billDate: LocalDate?,
     ): List<EntryListResponse> {
         val fixedStartDate = fixStartDate(minimumEndExecution)
 
@@ -139,6 +134,7 @@ class EntryRecurrenceConfigServiceImpl(
                         walletId = walletItemId,
                         userId = if (groupId == null) userId else null,
                         groupId = groupId,
+                        billDate = billDate,
                         sort = defaultSort,
                     )
                 }
@@ -175,17 +171,61 @@ class EntryRecurrenceConfigServiceImpl(
                     ).toSet(),
                 ).toList()
 
-        return simulateGeneration(
-            configs = configs,
-            walletItemsById = walletItems.associateBy { it.id!! },
-            userById = users.associateBy { it.id!! },
-            categoriesById = categories.associateBy { it.id!! },
-            groupById = groups.associateBy { it.id!! },
-        ).sortedWith(
-            compareByDescending<EntryListResponse> { it.date }
-                .thenByDescending { it.id },
+        return fixInstallment(
+            simulateGeneration(
+                configs = configs,
+                walletItemsById = walletItems.associateBy { it.id!! },
+                userById = users.associateBy { it.id!! },
+                categoriesById = categories.associateBy { it.id!! },
+                groupById = groups.associateBy { it.id!! },
+            ).sortedWith(
+                compareByDescending<EntryListResponse> { it.date }
+                    .thenByDescending { it.id },
+            ),
+            askedBillDate = billDate,
+            askedDate = fixedStartDate,
         )
     }
+
+    private fun fixInstallment(
+        entries: List<EntryListResponse>,
+        askedBillDate: LocalDate?,
+        askedDate: LocalDate?,
+    ): List<EntryListResponse> =
+        entries.map {
+            var correctedInstallment = it.installment
+
+            if (correctedInstallment != null && it.recurrenceConfig != null) {
+                if (askedBillDate != null) {
+                    val nextBillDate = it.recurrenceConfig.nextOriginBillDate ?: it.recurrenceConfig.nextTargetBillDate
+                    val diff =
+                        ChronoUnit.MONTHS.between(
+                            YearMonth.from(nextBillDate),
+                            YearMonth.from(askedBillDate),
+                        )
+
+                    if (diff > 0) {
+                        correctedInstallment += diff.toInt()
+                    }
+                } else {
+                    val diff =
+                        ChronoUnit.MONTHS.between(
+                            YearMonth.from(it.recurrenceConfig.nextExecution),
+                            YearMonth.from(askedDate),
+                        )
+
+                    if (diff > 0) {
+                        correctedInstallment += diff.toInt()
+                    }
+                }
+
+                it.copy(
+                    installment = correctedInstallment,
+                )
+            } else {
+                it
+            }
+        }
 
     override suspend fun simulateGenerationAsEntrySumResult(
         minimumEndExecution: LocalDate?,
@@ -202,6 +242,7 @@ class EntryRecurrenceConfigServiceImpl(
             walletItemId = walletItemId,
             minimumEndExecution = minimumEndExecution,
             maximumNextExecution = maximumNextExecution,
+            billDate = null,
         ).forEach {
             if (!resultByWalletId.containsKey(it.origin.id)) {
                 resultByWalletId[it.origin.id!!] = EntrySumResult.empty(it.origin.id!!)
@@ -260,6 +301,7 @@ class EntryRecurrenceConfigServiceImpl(
     private fun findAllEntryByWalletId(
         minimumEndExecution: LocalDate? = null,
         maximumNextExecution: LocalDate? = null,
+        billDate: LocalDate? = null,
         walletId: UUID,
         userId: UUID? = null,
         groupId: UUID? = null,
@@ -268,10 +310,11 @@ class EntryRecurrenceConfigServiceImpl(
         require((userId != null) xor (groupId != null))
 
         val originFlow =
-            entryRecurrenceConfigRepository
+            repository
                 .findAll(
                     minimumEndExecution = minimumEndExecution,
                     maximumNextExecution = maximumNextExecution,
+                    billDate = billDate,
                     originId = walletId,
                     targetId = null,
                     userId = userId,
@@ -280,10 +323,11 @@ class EntryRecurrenceConfigServiceImpl(
                 ).asFlow()
 
         val targetFlow =
-            entryRecurrenceConfigRepository
+            repository
                 .findAll(
                     minimumEndExecution = minimumEndExecution,
                     maximumNextExecution = maximumNextExecution,
+                    billDate = billDate,
                     originId = null,
                     targetId = walletId,
                     userId = userId,
@@ -355,10 +399,11 @@ class EntryRecurrenceConfigServiceImpl(
         userId: UUID,
         sort: Sort = Sort.unsorted(),
     ): Flow<EntryRecurrenceConfigEntity> =
-        entryRecurrenceConfigRepository
+        repository
             .findAll(
                 minimumEndExecution = minimumEndExecution,
                 maximumNextExecution = maximumNextExecution,
+                billDate = null,
                 originId = null,
                 targetId = null,
                 userId = userId,
@@ -372,10 +417,11 @@ class EntryRecurrenceConfigServiceImpl(
         groupId: UUID,
         sort: Sort = Sort.unsorted(),
     ): Flow<EntryRecurrenceConfigEntity> =
-        entryRecurrenceConfigRepository
+        repository
             .findAll(
                 minimumEndExecution = minimumEndExecution,
                 maximumNextExecution = maximumNextExecution,
+                billDate = null,
                 originId = null,
                 targetId = null,
                 userId = null,
@@ -444,7 +490,7 @@ class EntryRecurrenceConfigServiceImpl(
                 config.nextExecution != null
             ) {
                 config.target?.let { target ->
-                    simulateBill(target, config.nextExecution, config.userId)
+                    simulateBill(target, config.nextExecution, config.userId) //
                 }
             } else {
                 null
@@ -462,6 +508,7 @@ class EntryRecurrenceConfigServiceImpl(
             date = config.nextExecution!!,
             observations = config.observations,
             recurrenceConfigId = config.id!!,
+            recurrenceConfig = config,
             confirmed = false,
             currency = origin.currency,
             installment = installment,
@@ -479,21 +526,20 @@ class EntryRecurrenceConfigServiceImpl(
 
     private suspend fun simulateBill(
         walletItemEntity: WalletItemEntity,
-        nextExecution: LocalDate?,
+        billDate: LocalDate?,
         userId: UUID?,
     ): CreditCardBill? {
-        if (nextExecution == null || userId == null) return null
+        if (billDate == null || userId == null) return null
 
         val creditCard = walletItemMapper.toModel(walletItemEntity)
 
         return if (creditCard is CreditCard) {
-            val billDate = creditCard.getBestBill(nextExecution)
             val dueDate = creditCard.getDueDate(billDate)
 
             creditCardBillService.getBillFromDatabaseOrSimulate(
                 userId = userId,
                 creditCardId = creditCard.id!!,
-                billDate = dueDate.withDayOfMonth(1),
+                billDate = dueDate.withStartOfMonth(),
             )
         } else {
             null

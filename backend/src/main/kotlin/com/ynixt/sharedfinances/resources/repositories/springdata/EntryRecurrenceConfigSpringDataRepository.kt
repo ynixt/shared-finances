@@ -23,6 +23,8 @@ interface EntryRecurrenceConfigSpringDataRepository :
                 last_execution = next_execution,
                 next_execution = :nextExecution,
                 qty_executed = qty_executed + 1,
+                next_origin_bill_date = :nextOriginBillDate,
+                next_target_bill_date = :nextTargetBillDate,
                 updated_at = CURRENT_TIMESTAMP
             where
                 id = :id
@@ -33,5 +35,7 @@ interface EntryRecurrenceConfigSpringDataRepository :
         id: UUID,
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
+        nextOriginBillDate: LocalDate?,
+        nextTargetBillDate: LocalDate?,
     ): Mono<Int>
 }

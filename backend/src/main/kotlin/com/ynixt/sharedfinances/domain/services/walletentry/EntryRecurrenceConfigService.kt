@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
+import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
@@ -34,6 +35,7 @@ interface EntryRecurrenceConfigService {
         userId: UUID?,
         groupId: UUID?,
         walletItemId: UUID?,
+        billDate: LocalDate?,
     ): List<EntryListResponse>
 
     suspend fun simulateGenerationAsEntrySumResult(
@@ -67,4 +69,6 @@ interface EntryRecurrenceConfigService {
         category: WalletEntryCategoryEntity?,
         simulateBillForRecurrence: Boolean,
     ): EntryListResponse
+
+    fun findAllByIdIn(ids: Collection<UUID>): Flow<EntryRecurrenceConfigEntity>
 }

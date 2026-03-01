@@ -26,16 +26,21 @@ class EntryRecurrenceConfigRepositoryImpl(
         id: UUID,
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
+        nextOriginBillDate: LocalDate?,
+        nextTargetBillDate: LocalDate?,
     ): Mono<Int> =
         springDataRepository.updateConfigCausedByExecution(
             id = id,
             oldNextExecution = oldNextExecution,
             nextExecution = nextExecution,
+            nextOriginBillDate = nextOriginBillDate,
+            nextTargetBillDate = nextTargetBillDate,
         )
 
     override fun findAll(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
+        billDate: LocalDate?,
         originId: UUID?,
         targetId: UUID?,
         userId: UUID?,
@@ -45,6 +50,7 @@ class EntryRecurrenceConfigRepositoryImpl(
         r2dbcRepository.findAll(
             minimumEndExecution = minimumEndExecution,
             maximumNextExecution = maximumNextExecution,
+            billDate = billDate,
             originId = originId,
             targetId = targetId,
             userId = userId,

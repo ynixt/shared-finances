@@ -27,6 +27,10 @@ class EntryRecurrenceConfigEntity(
     val lastExecution: LocalDate?,
     val nextExecution: LocalDate?,
     val endExecution: LocalDate?,
+    val nextOriginBillDate: LocalDate?,
+    val lastOriginBillDate: LocalDate?,
+    val nextTargetBillDate: LocalDate?,
+    val lastTargetBillDate: LocalDate?,
 ) : MinimumWalletEntry(
         type = type,
         originId = originId,

@@ -64,7 +64,7 @@ class EntryRecurrenceServiceImpl(
         return itemsFlow.toList().size
     }
 
-    private fun calculateNextDate(
+    override fun calculateNextDate(
         lastExecution: LocalDate,
         periodicity: RecurrenceType,
     ): LocalDate =

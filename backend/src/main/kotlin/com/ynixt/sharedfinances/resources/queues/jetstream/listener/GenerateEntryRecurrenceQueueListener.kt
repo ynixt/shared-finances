@@ -114,6 +114,7 @@ class GenerateEntryRecurrenceQueueListener(
 
             msg.ack()
         } catch (e: Exception) {
+            logger.error("Error processing message: ${e.message}", e)
             handleProcessingFailure(js, msg, e)
         }
     }

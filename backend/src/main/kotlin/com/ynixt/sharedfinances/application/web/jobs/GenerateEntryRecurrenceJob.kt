@@ -13,6 +13,7 @@ class GenerateEntryRecurrenceJob(
 ) {
     private val logger = LoggerFactory.getLogger(GenerateEntryRecurrenceJob::class.java)
 
+//    @Scheduled(cron = "0 0/1 * * * *")
     @Scheduled(cron = "0 0 0 * * *")
     fun job() {
         logger.info("Generating entry recurrence job started")

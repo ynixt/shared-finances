@@ -22,6 +22,7 @@ class EntryRecurrenceConfigR2DBCRepository(
     fun findAll(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
+        billDate: LocalDate?,
         originId: UUID?,
         targetId: UUID?,
         userId: UUID?,
@@ -43,8 +44,24 @@ class EntryRecurrenceConfigR2DBCRepository(
             sql += "(entry_config.next_execution <= :maximumNextExecution) and "
         }
 
-        if (originId != null) sql += "entry_config.origin_id = :originId and "
-        if (targetId != null) sql += "entry_config.target_id = :targetId and "
+        if (originId != null) {
+            sql += "entry_config.origin_id = :originId and "
+
+            if (billDate != null) {
+                sql += "(entry_config.next_origin_bill_date <= :billDate) and "
+                sql += "(entry_config.last_origin_bill_date >= :billDate  OR entry_config.last_origin_bill_date is null) and "
+            }
+        }
+
+        if (targetId != null) {
+            sql += "entry_config.target_id = :targetId and "
+
+            if (billDate != null) {
+                sql += "(entry_config.next_target_bill_date <= :billDate) and "
+                sql += "(entry_config.last_target_bill_date >= :billDate OR entry_config.last_target_bill_date is null) and "
+            }
+        }
+
         if (userId != null) sql += "entry_config.user_id = :userId and "
         if (groupId != null) sql += "entry_config.group_id = :groupId and "
 
@@ -81,6 +98,10 @@ class EntryRecurrenceConfigR2DBCRepository(
         if (maximumNextExecution != null) spec = spec.bind("maximumNextExecution", maximumNextExecution)
         if (originId != null) spec = spec.bind("originId", originId)
         if (targetId != null) spec = spec.bind("targetId", targetId)
+        if (billDate != null && (originId != null || targetId != null)) {
+            spec = spec.bind("billDate", billDate)
+        }
+
         if (userId != null) spec = spec.bind("userId", userId)
         if (groupId != null) spec = spec.bind("groupId", groupId)
 

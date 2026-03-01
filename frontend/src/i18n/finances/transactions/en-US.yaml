@@ -28,6 +28,8 @@ financesPage:
     noWalletEntryFound:
       title: 'No transaction was found in {{date}}.'
       subtitle: How about sending a new one?
+    installmentValue: 'Installment {{installment}} of {{installments}}'
+    #    recurringValue: 'Recurring #{{value}}'
     summary:
       balance: Balance
       totalPeriodRevenue: Period revenue

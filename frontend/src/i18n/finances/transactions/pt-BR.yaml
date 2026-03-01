@@ -28,6 +28,8 @@ financesPage:
     noWalletEntryFound:
       title: 'Nenhuma transação foi encontrada em {{date}}.'
       subtitle: Que tal enviar uma nova?
+    installmentValue: 'Parcela {{installment}} de {{installments}}'
+    #    recurringValue: 'Recorrência #{{value}}'
     summary:
       balance: Saldo
       totalPeriodRevenue: Receitas do período

@@ -5,6 +5,8 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceCo
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.isSameMonthYear
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
@@ -66,24 +68,40 @@ class WalletEntryCreateServiceImpl(
         val config = entryRecurrenceConfigRepository.findById(recurrenceConfigId).awaitSingle()
 
         val linesModified =
-            entryRecurrenceConfigRepository
-                .updateConfigCausedByExecution(
-                    id = recurrenceConfigId,
-                    oldNextExecution = date,
-                    nextExecution =
-                        entryRecurrenceService.calculateNextExecution(
-                            lastExecution = date,
-                            periodicity = config.periodicity,
-                            qtyExecuted = config.qtyExecuted,
-                            qtyLimit = config.qtyLimit,
-                        ),
-                ).awaitSingle()
+            entryRecurrenceService
+                .calculateNextExecution(
+                    lastExecution = date,
+                    periodicity = config.periodicity,
+                    qtyExecuted = config.qtyExecuted,
+                    qtyLimit = config.qtyLimit,
+                ).let { nextExecution ->
+                    entryRecurrenceConfigRepository
+                        .updateConfigCausedByExecution(
+                            id = recurrenceConfigId,
+                            oldNextExecution = date,
+                            nextExecution = nextExecution,
+                            nextOriginBillDate =
+                                if (nextExecution ==
+                                    null
+                                ) {
+                                    null
+                                } else {
+                                    calculateNextBillDate(config.nextOriginBillDate!!, config.periodicity)
+                                },
+                            nextTargetBillDate =
+                                if (nextExecution ==
+                                    null
+                                ) {
+                                    null
+                                } else {
+                                    calculateNextBillDate(config.nextTargetBillDate!!, config.periodicity)
+                                },
+                        ).awaitSingle()
+                }
 
         if (linesModified == 0 || config.userId == null) {
             return null
         }
-
-        val executionDate = config.nextExecution!!
 
         val walletItems =
             walletItemService
@@ -96,8 +114,7 @@ class WalletEntryCreateServiceImpl(
 
         val originBill =
             if (origin is CreditCard) {
-                val billDate = origin.getBestBill(executionDate)
-                val dueDate = origin.getDueDate(billDate)
+                val dueDate = origin.getDueDate(config.nextOriginBillDate!!)
                 creditCardBillService
                     .getOrCreateBill(
                         creditCardId = origin.id!!,
@@ -110,8 +127,7 @@ class WalletEntryCreateServiceImpl(
 
         val targetBill =
             if (target != null && target is CreditCard) {
-                val billDate = target.getBestBill(executionDate)
-                val dueDate = target.getDueDate(billDate)
+                val dueDate = target.getDueDate(config.nextTargetBillDate!!)
                 creditCardBillService
                     .getOrCreateBill(
                         creditCardId = target.id!!,
@@ -153,6 +169,12 @@ class WalletEntryCreateServiceImpl(
                         targetBillId = targetBill?.id,
                     ),
                 ).awaitSingle()
+                .also { saved ->
+                    saved.origin = walletItemMapper.fromModel(origin)
+                    saved.target = target?.let { walletItemMapper.fromModel(it) }
+                    saved.originBill = originBill
+                    saved.targetBill = targetBill
+                }
 
         updateBalance(
             entry = walletEntrySaved,
@@ -165,6 +187,19 @@ class WalletEntryCreateServiceImpl(
         walletEntryActionEventService.sendInsertedWalletEntry(config.userId, walletEntrySaved)
 
         return walletEntrySaved
+    }
+
+    private fun calculateNextBillDate(
+        billDate: LocalDate,
+        periodicity: RecurrenceType,
+    ): LocalDate {
+        val candidate =
+            entryRecurrenceService.calculateNextDate(
+                lastExecution = billDate,
+                periodicity = periodicity,
+            )
+
+        return if (candidate.isSameMonthYear(billDate)) billDate else candidate.withDayOfMonth(1)
     }
 
     private suspend fun updateBalance(newEntryRequest: NewEntryRequest) =

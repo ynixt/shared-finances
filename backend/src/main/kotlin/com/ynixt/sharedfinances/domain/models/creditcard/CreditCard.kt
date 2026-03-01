@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.models.creditcard
 
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import java.math.BigDecimal
 import java.time.DayOfWeek
@@ -46,7 +47,7 @@ class CreditCard(
     fun getClosingDate(dueDate: LocalDate): LocalDate = dueDate.minusDays(daysBetweenDueAndClosing.toLong())
 
     fun getBestBill(transactionDate: LocalDate): LocalDate {
-        var date = transactionDate.withDayOfMonth(1).withDayOfMonth(dueDay.coerceIn(1, transactionDate.lengthOfMonth()))
+        var date = transactionDate.withStartOfMonth().withDayOfMonth(dueDay.coerceIn(1, transactionDate.lengthOfMonth()))
 
         if (dueOnNextBusinessDay) {
             date = skipWeekend(date)
@@ -55,10 +56,10 @@ class CreditCard(
         date = date.minusDays(daysBetweenDueAndClosing.toLong())
 
         if (transactionDate.isAfter(date)) {
-            date = transactionDate.withDayOfMonth(1).plusMonths(1)
+            date = transactionDate.withStartOfMonth().plusMonths(1)
         }
 
-        return date.withDayOfMonth(1)
+        return date.withStartOfMonth()
     }
 
     private fun skipWeekend(date: LocalDate): LocalDate =
