@@ -5,7 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
 
-import { EntryForListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EventForListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 
 enum Status {
   PENDING,
@@ -21,7 +21,7 @@ enum Status {
   standalone: true,
 })
 export class EntryStatusComponent {
-  readonly entry = input<EntryForListDto | undefined>(undefined);
+  readonly entry = input<EventForListDto | undefined>(undefined);
 
   status = computed<Status | undefined>(() => {
     const entry = this.entry();
@@ -73,7 +73,7 @@ export class EntryStatusComponent {
     return undefined;
   });
 
-  private transactionIsInFuture(entry: EntryForListDto): boolean {
+  private transactionIsInFuture(entry: EventForListDto): boolean {
     return dayjs(entry.date, 'YYYY-MM-DD').isAfter(dayjs());
   }
 }

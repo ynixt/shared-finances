@@ -3,7 +3,7 @@ package com.ynixt.sharedfinances.domain.services.walletentry.impl
 import com.ynixt.sharedfinances.application.web.dto.GenerateEntryRecurrenceRequestDto
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.queue.producer.GenerateEntryRecurrenceQueueProducer
-import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceService
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
@@ -12,7 +12,7 @@ import java.time.LocalDate
 
 @Service
 class EntryRecurrenceServiceImpl(
-    private val repository: EntryRecurrenceConfigRepository,
+    private val repository: RecurrenceEventRepository,
     private val queueProducer: GenerateEntryRecurrenceQueueProducer,
 ) : EntryRecurrenceService {
     override fun calculateNextExecution(

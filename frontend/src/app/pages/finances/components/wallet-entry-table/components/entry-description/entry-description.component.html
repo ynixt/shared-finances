@@ -1,15 +1,15 @@
-@let currentEntry = entry();
+@let currentEntry = event();
 
 @if (currentEntry != null) {
   <div class="flex flex-col gap-4 leading-none">
     <div class="flex flex-wrap lg:flex-nowrap gap-2 h-full">
       <a [href]="originLink()">
-        <app-entry-chip [text]="currentEntry.origin.name" [icon]="originIcon()"></app-entry-chip>
+        <app-entry-chip [text]="currentEntry.entries[0].walletItem.name" [icon]="originIcon()"></app-entry-chip>
       </a>
 
-      @if (currentEntry.target != null) {
+      @if (currentEntry.entries.length > 1) {
         <a [href]="targetLink()">
-          <app-entry-chip [text]="currentEntry.target.name" [icon]="targetIcon()"></app-entry-chip>
+          <app-entry-chip [text]="currentEntry.entries[1].walletItem.name" [icon]="targetIcon()"></app-entry-chip>
         </a>
       }
 

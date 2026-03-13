@@ -8,38 +8,42 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
 
-@Table("entry_recurrence_config")
-class EntryRecurrenceConfigEntity(
+@Table("recurrence_event")
+class RecurrenceEventEntity(
     name: String?,
-    value: BigDecimal,
     categoryId: UUID?,
     userId: UUID?,
     groupId: UUID?,
     tags: List<String>?,
     observations: String?,
     type: WalletEntryType,
-    originId: UUID,
-    targetId: UUID?,
     val periodicity: RecurrenceType,
-    val paymentType: PaymentType,
+    paymentType: PaymentType,
     val qtyExecuted: Int,
     val qtyLimit: Int?,
     val lastExecution: LocalDate?,
     val nextExecution: LocalDate?,
     val endExecution: LocalDate?,
-    val nextOriginBillDate: LocalDate?,
-    val lastOriginBillDate: LocalDate?,
-    val nextTargetBillDate: LocalDate?,
-    val lastTargetBillDate: LocalDate?,
-) : MinimumWalletEntry(
+) : MinimumWalletEventEntity(
         type = type,
-        originId = originId,
-        targetId = targetId,
         name = name,
-        value = value,
         categoryId = categoryId,
         userId = userId,
         groupId = groupId,
         tags = tags,
         observations = observations,
+        paymentType = paymentType,
+    )
+
+@Table("recurrence_entry")
+class RecurrenceEntryEntity(
+    value: BigDecimal,
+    walletEventId: UUID,
+    walletItemId: UUID,
+    val nextBillDate: LocalDate?,
+    val lastBillDate: LocalDate?,
+) : MinimumWalletEntryEntity(
+        value = value,
+        walletEventId = walletEventId,
+        walletItemId = walletItemId,
     )

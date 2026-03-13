@@ -13,7 +13,6 @@ import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceConfigService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntrySummaryService
-import io.lettuce.core.KillArgs.Builder.user
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.stereotype.Service

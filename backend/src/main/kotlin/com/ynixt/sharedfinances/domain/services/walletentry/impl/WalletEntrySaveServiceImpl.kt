@@ -1,8 +1,10 @@
 package com.ynixt.sharedfinances.domain.services.walletentry.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
@@ -14,10 +16,15 @@ import com.ynixt.sharedfinances.domain.exceptions.http.TargetNotFoundException
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceService
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactor.awaitSingle
 import java.time.LocalDate
 import java.util.UUID
 
@@ -26,6 +33,8 @@ abstract class WalletEntrySaveServiceImpl(
     protected val walletItemService: WalletItemService,
     protected val creditCardBillService: CreditCardBillService,
     protected val entryRecurrenceService: EntryRecurrenceService,
+    protected val recurrenceEventRepository: RecurrenceEventRepository,
+    protected val recurrenceEntryRepository: RecurrenceEntryRepository,
 ) {
     protected suspend fun loadRelationships(
         userId: UUID,
@@ -87,41 +96,77 @@ abstract class WalletEntrySaveServiceImpl(
         return hasGroupPermission && hasOriginPermission && hasTargetPermission && hasCategoryPermission
     }
 
-    protected fun requestToEntity(
+    protected fun requestToEventEntity(
         id: UUID?,
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-        recurrenceConfig: EntryRecurrenceConfigEntity?,
+        recurrenceConfig: RecurrenceEventEntity?,
         installment: Int?,
         date: LocalDate = newEntryRequest.date,
-    ): WalletEntryEntity =
-        WalletEntryEntity(
+    ): WalletEventEntity =
+        WalletEventEntity(
             type = newEntryRequest.type,
             userId = if (newEntryRequest.groupId == null) userId else null,
             groupId = newEntryRequest.groupId,
-            originId = newEntryRequest.originId,
-            targetId = newEntryRequest.targetId,
             name = newEntryRequest.name,
             categoryId = newEntryRequest.categoryId,
             date = date,
-            value = newEntryRequest.valueFixedForType,
             confirmed = newEntryRequest.confirmed,
             observations = newEntryRequest.observations,
             tags = newEntryRequest.tags?.ifEmpty { null },
             installment = installment,
-            recurrenceConfigId = recurrenceConfig?.id,
-            originBillId = newEntryRequest.originBill?.id,
-            targetBillId = newEntryRequest.targetBill?.id,
+            recurrenceEventId = recurrenceConfig?.id,
+            paymentType = newEntryRequest.paymentType,
         ).also {
             it.id = id
         }
 
-    protected fun requestToRecurrenceEntity(
+    protected fun requestToEntryEntity(
+        id: UUID?,
+        event: WalletEventEntity,
+        newEntryRequest: NewEntryRequest,
+    ): List<WalletEntryEntity> {
+        val entries =
+            mutableListOf(
+                WalletEntryEntity(
+                    walletEventId = event.id!!,
+                    value =
+                        if (newEntryRequest.type ==
+                            WalletEntryType.TRANSFER
+                        ) {
+                            newEntryRequest.value.unaryMinus()
+                        } else {
+                            newEntryRequest.valueFixedForType
+                        },
+                    walletItemId = newEntryRequest.originId,
+                    billId = newEntryRequest.originBill?.id,
+                ).also {
+                    it.id = id
+                },
+            )
+
+        if (newEntryRequest.type == WalletEntryType.TRANSFER) {
+            entries.add(
+                WalletEntryEntity(
+                    walletEventId = event.id!!,
+                    value = newEntryRequest.value,
+                    walletItemId = newEntryRequest.targetId!!,
+                    billId = newEntryRequest.targetBill?.id,
+                ).also {
+                    it.id = id
+                },
+            )
+        }
+
+        return entries
+    }
+
+    protected suspend fun requestToRecurrenceEntity(
         id: UUID?,
         userId: UUID,
         newEntryRequest: NewEntryRequest,
         qtyLimit: Int?,
-    ): EntryRecurrenceConfigEntity {
+    ): RecurrenceEventEntity {
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
         val qtyExecuted = if (newEntryRequest.inFuture) 0 else 1
         val lastExecution: LocalDate? = if (qtyExecuted == 0) null else LocalDate.now()
@@ -129,69 +174,99 @@ abstract class WalletEntrySaveServiceImpl(
         val nextOriginBillDate = newEntryRequest.originBill?.billDate
         val nextTargetBillDate = newEntryRequest.targetBill?.billDate
 
-        return EntryRecurrenceConfigEntity(
-            name = newEntryRequest.name,
-            value = newEntryRequest.valueFixedForType,
-            categoryId = newEntryRequest.categoryId,
-            userId = userId,
-            groupId = newEntryRequest.groupId,
-            tags = newEntryRequest.tags,
-            observations = newEntryRequest.observations,
-            type = newEntryRequest.type,
-            originId = newEntryRequest.originId,
-            targetId = newEntryRequest.targetId,
-            periodicity = periodicity,
-            paymentType = newEntryRequest.paymentType,
-            qtyExecuted = qtyExecuted,
-            qtyLimit = qtyLimit,
-            lastExecution = lastExecution,
-            nextExecution =
-                if (lastExecution == null) {
-                    newEntryRequest.date
-                } else {
-                    entryRecurrenceService.calculateNextExecution(
-                        lastExecution = lastExecution,
-                        periodicity = periodicity,
-                        qtyExecuted = qtyExecuted,
-                        qtyLimit = qtyLimit,
-                    )
-                },
-            endExecution =
-                entryRecurrenceService.calculateEndDate(
-                    lastExecution = nextExecution,
+        return recurrenceEventRepository
+            .save(
+                RecurrenceEventEntity(
+                    name = newEntryRequest.name,
+                    categoryId = newEntryRequest.categoryId,
+                    userId = userId,
+                    groupId = newEntryRequest.groupId,
+                    tags = newEntryRequest.tags,
+                    observations = newEntryRequest.observations,
+                    type = newEntryRequest.type,
                     periodicity = periodicity,
+                    paymentType = newEntryRequest.paymentType,
                     qtyExecuted = qtyExecuted,
-                    qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
-                ),
-            nextOriginBillDate = nextOriginBillDate,
-            lastOriginBillDate =
-                if (nextOriginBillDate == null) {
-                    null
-                } else {
-                    entryRecurrenceService
-                        .calculateEndDate(
-                            lastExecution = nextOriginBillDate,
+                    qtyLimit = qtyLimit,
+                    lastExecution = lastExecution,
+                    nextExecution =
+                        if (lastExecution == null) {
+                            newEntryRequest.date
+                        } else {
+                            entryRecurrenceService.calculateNextExecution(
+                                lastExecution = lastExecution,
+                                periodicity = periodicity,
+                                qtyExecuted = qtyExecuted,
+                                qtyLimit = qtyLimit,
+                            )
+                        },
+                    endExecution =
+                        entryRecurrenceService.calculateEndDate(
+                            lastExecution = nextExecution,
                             periodicity = periodicity,
                             qtyExecuted = qtyExecuted,
                             qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
-                        )?.withStartOfMonth()
+                        ),
+                ).also {
+                    it.id = id
                 },
-            nextTargetBillDate = nextTargetBillDate,
-            lastTargetBillDate =
-                if (nextTargetBillDate == null) {
-                    null
-                } else {
-                    entryRecurrenceService
-                        .calculateEndDate(
-                            lastExecution = nextTargetBillDate,
-                            periodicity = periodicity,
-                            qtyExecuted = qtyExecuted,
-                            qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
-                        )?.withStartOfMonth()
-                },
-        ).also {
-            it.id = id
-        }
+            ).awaitSingle()
+            .also { savedRecurrence ->
+                val entries = mutableListOf<RecurrenceEntryEntity>()
+
+                entries.add(
+                    RecurrenceEntryEntity(
+                        value =
+                            if (newEntryRequest.type ==
+                                WalletEntryType.TRANSFER
+                            ) {
+                                newEntryRequest.value.unaryMinus()
+                            } else {
+                                newEntryRequest.valueFixedForType
+                            },
+                        walletEventId = savedRecurrence.id!!,
+                        walletItemId = newEntryRequest.originId,
+                        nextBillDate = nextOriginBillDate,
+                        lastBillDate =
+                            if (nextOriginBillDate == null) {
+                                null
+                            } else {
+                                entryRecurrenceService
+                                    .calculateEndDate(
+                                        lastExecution = nextOriginBillDate,
+                                        periodicity = periodicity,
+                                        qtyExecuted = qtyExecuted,
+                                        qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
+                                    )?.withStartOfMonth()
+                            },
+                    ),
+                )
+
+                if (newEntryRequest.type == WalletEntryType.TRANSFER) {
+                    entries.add(
+                        RecurrenceEntryEntity(
+                            value = newEntryRequest.value,
+                            walletEventId = savedRecurrence.id!!,
+                            walletItemId = newEntryRequest.targetId!!,
+                            nextBillDate = nextTargetBillDate,
+                            lastBillDate =
+                                if (nextTargetBillDate == null) {
+                                    null
+                                } else {
+                                    entryRecurrenceService
+                                        .calculateEndDate(
+                                            lastExecution = nextTargetBillDate,
+                                            periodicity = periodicity,
+                                            qtyExecuted = qtyExecuted,
+                                            qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
+                                        )?.withStartOfMonth()
+                                },
+                        ),
+                    )
+                }
+
+                savedRecurrence.entries = recurrenceEntryRepository.saveAll(entries).asFlow().toList()
+            }
     }
 
     private suspend fun <ID, ENTITY : Any> NewEntryRequest.attachRequired(

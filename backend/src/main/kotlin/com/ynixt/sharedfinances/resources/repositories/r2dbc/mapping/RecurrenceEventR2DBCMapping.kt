@@ -1,31 +1,27 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import io.r2dbc.spi.Row
-import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
 
-class EntryRecurrenceConfigR2DBCMapping {
+class RecurrenceEventR2DBCMapping {
     companion object {
-        fun entryRecurrenceConfigFromRow(
+        fun recurrenceEventFromRow(
             row: Row,
-            columnPrefix: String = "entry_config_",
-        ): EntryRecurrenceConfigEntity =
-            EntryRecurrenceConfigEntity(
+            columnPrefix: String = "recurrence_event_",
+        ): RecurrenceEventEntity =
+            RecurrenceEventEntity(
                 name = row.get("${columnPrefix}name", String::class.java),
                 type = WalletEntryType.valueOf(row.get("${columnPrefix}type", String::class.java)!!),
-                value = row.get("${columnPrefix}value", BigDecimal::class.java)!!,
                 categoryId = row.get("${columnPrefix}category_id", UUID::class.java),
                 userId = row.get("${columnPrefix}user_id", UUID::class.java),
                 groupId = row.get("${columnPrefix}group_id", UUID::class.java),
                 tags = row.get("${columnPrefix}tags", Array::class.java)?.map { it as String },
                 observations = row.get("${columnPrefix}observations", String::class.java),
-                originId = row.get("${columnPrefix}origin_id", UUID::class.java)!!,
-                targetId = row.get("${columnPrefix}target_id", UUID::class.java),
                 lastExecution = row.get("${columnPrefix}last_execution", LocalDate::class.java),
                 nextExecution = row.get("${columnPrefix}next_execution", LocalDate::class.java),
                 endExecution = row.get("${columnPrefix}end_execution", LocalDate::class.java),
@@ -33,10 +29,6 @@ class EntryRecurrenceConfigR2DBCMapping {
                 qtyExecuted = row.get("${columnPrefix}qty_executed", Int::class.javaObjectType)!!,
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
                 periodicity = RecurrenceType.valueOf(row.get("${columnPrefix}periodicity", String::class.java)!!),
-                nextOriginBillDate = row.get("${columnPrefix}next_origin_bill_date", LocalDate::class.java),
-                lastOriginBillDate = row.get("${columnPrefix}last_origin_bill_date", LocalDate::class.java),
-                nextTargetBillDate = row.get("${columnPrefix}next_target_bill_date", LocalDate::class.java),
-                lastTargetBillDate = row.get("${columnPrefix}last_target_bill_date", LocalDate::class.java),
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

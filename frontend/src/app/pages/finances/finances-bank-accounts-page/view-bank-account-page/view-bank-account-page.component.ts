@@ -13,7 +13,7 @@ import { MessageService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { BankAccountDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
-import { EntryForListDto, EntrySummaryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EntrySummaryDto, EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
@@ -140,14 +140,10 @@ export class ViewBankAccountPageComponent {
     return this.router.navigateByUrl('/not-found');
   }
 
-  private newTransactionInserted(dto: EntryForListDto) {
+  private newTransactionInserted(dto: EventForListDto) {
     // TODO: improve this
 
-    if (
-      this.dateRange == null ||
-      this.bankAccount == null ||
-      (dto.origin.id != this.bankAccount.id && dto.target?.id != this.bankAccount.id)
-    )
+    if (this.dateRange == null || this.bankAccount == null || dto.entries.find(e => e.walletItemId == this.bankAccount!!.id) == null)
       return;
 
     if (

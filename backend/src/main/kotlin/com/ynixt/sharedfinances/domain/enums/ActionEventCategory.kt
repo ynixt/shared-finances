@@ -9,5 +9,5 @@ enum class ActionEventCategory {
     USER_CATEGORY,
     GROUP_CATEGORY,
 
-    WALLET_ENTRY,
+    WALLET_EVENT,
 }

@@ -3,7 +3,7 @@ import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesom
 import { faArrowRightArrowLeft, faArrowTrendDown, faArrowTrendUp } from '@fortawesome/free-solid-svg-icons';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { EntryForListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EventForListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { WalletEntryType, WalletEntryType__Obj } from '../../../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LangService } from '../../../../../../services/lang.service';
 
@@ -17,7 +17,7 @@ import { LangService } from '../../../../../../services/lang.service';
 export class EntryTypeComponent {
   readonly translateService = inject(TranslateService);
   readonly langService = inject(LangService);
-  readonly entry = input<EntryForListDto | undefined>(undefined);
+  readonly entry = input<EventForListDto | undefined>(undefined);
 
   type = computed<WalletEntryType | undefined>(() => {
     const entry = this.entry();

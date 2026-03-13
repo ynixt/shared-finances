@@ -9,9 +9,11 @@ enum class WalletEntryType {
     ;
 
     fun fixValue(value: BigDecimal): BigDecimal =
-        if (this == TRANSFER || this == EXPENSE) {
+        if (this == EXPENSE) {
             value.unaryMinus()
-        } else {
+        } else if (this == REVENUE) {
             value.abs()
+        } else {
+            value
         }
 }

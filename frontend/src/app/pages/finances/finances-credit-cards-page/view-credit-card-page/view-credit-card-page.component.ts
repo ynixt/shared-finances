@@ -29,7 +29,7 @@ import {
   CreditCardBillDto,
   CreditCardDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
-import { EntryForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { CreditCardBillStatus__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
@@ -328,7 +328,7 @@ export class ViewCreditCardPageComponent {
     return this.router.navigateByUrl('/not-found');
   }
 
-  private newTransactionInserted(dto: EntryForListDto) {
+  private newTransactionInserted(dto: EventForListDto) {
     // TODO: improve this
 
     const bill = this.creditCardBill();
@@ -337,16 +337,13 @@ export class ViewCreditCardPageComponent {
     if (
       this.dateRange == null ||
       this.creditCard == null ||
-      (dto.origin.id != this.creditCard.id && dto.target?.id != this.creditCard.id) ||
+      dto.entries.find(e => e.walletItemId == this.creditCard!!.id) == null ||
       bill == null ||
       billDate == null
     )
       return;
 
-    if (
-      (dto.originBillDate && billDate.isSame(dayjs(dto.originBillDate))) ||
-      (dto.targetBillDate && billDate.isSame(dayjs(dto.targetBillDate)))
-    ) {
+    if (dto.entries.find(e => e.billDate && billDate.isSame(dayjs(e.billDate))) != null) {
       this.getCreditCardBill(true);
     }
   }

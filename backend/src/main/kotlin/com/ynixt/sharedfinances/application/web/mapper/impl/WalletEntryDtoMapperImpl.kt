@@ -1,26 +1,23 @@
 package com.ynixt.sharedfinances.application.web.mapper.impl
 
-import com.ynixt.sharedfinances.application.web.dto.walletentry.EntryForListDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySumDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryGroupedDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryGroupedResultDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.EventForListDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ListEntryRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.SummaryEntryRequestDto
-import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
-import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
-import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletItemDtoMapper
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.SummaryEntryRequest
-import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummary
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGrouped
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGroupedResult
+import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
@@ -28,18 +25,13 @@ import tech.mappie.api.builtin.collections.IterableToListMapper
 
 @Component
 class WalletEntryDtoMapperImpl(
-    userDtoMapper: UserDtoMapper,
-    categoryDtoMapper: CategoryDtoMapper,
-    groupDtoMapper: GroupDtoMapper,
     walletItemDtoMapper: WalletItemDtoMapper,
 ) : WalletEntryDtoMapper {
-    private val entryListMapper = EntryListMapper(userDtoMapper, categoryDtoMapper, groupDtoMapper, walletItemDtoMapper)
     private val entrySummaryGroupedDtoMapper = EntrySummaryGroupedDtoMapper(walletItemDtoMapper)
     private val fromSummaryModelToDtoMapper = FromSummaryModelToDtoMapper(entrySummaryGroupedDtoMapper)
+    private val fromEntryResponseToDtoMapper = FromEntryResponseToDtoMapper(walletItemDtoMapper)
 
     override fun fromNewDtoToNewRequest(from: NewEntryDto): NewEntryRequest = FromNewDtoMapper.map(from)
-
-    override fun fromListResponseToListDto(from: EntryListResponse): EntryForListDto = entryListMapper.map(from)
 
     override fun fromEntryListRequestDtoToModel(from: ListEntryRequestDto): ListEntryRequest =
         FromEntryListRequestDtoToModelMapper.map(from)
@@ -48,6 +40,9 @@ class WalletEntryDtoMapperImpl(
         FromEntrySummaryRequestDtoToModelMapper.map(from)
 
     override fun fromSummaryModelToDto(from: EntrySummary): EntrySummaryDto = fromSummaryModelToDtoMapper.map(from)
+
+    override fun fromEntryResponseToDto(from: EventListResponse.EntryResponse): EventForListDto.EntryResponseDto =
+        fromEntryResponseToDtoMapper.map(from)
 
     private object FromNewDtoMapper : ObjectMappie<NewEntryDto, NewEntryRequest>() {
         override fun map(from: NewEntryDto) =
@@ -80,6 +75,15 @@ class WalletEntryDtoMapperImpl(
             }
     }
 
+    private class FromEntryResponseToDtoMapper(
+        private val walletEntryDtoMapper: WalletItemDtoMapper,
+    ) : ObjectMappie<EventListResponse.EntryResponse, EventForListDto.EntryResponseDto>() {
+        override fun map(from: EventListResponse.EntryResponse) =
+            mapping {
+                to::walletItem fromProperty from::walletItem transform { walletEntryDtoMapper.entityToWalletItemForEntryListDto(it) }
+            }
+    }
+
     private object EntrySumDtoMapper : ObjectMappie<EntrySum, EntrySumDto>() {
         override fun map(from: EntrySum) =
             mapping {
@@ -102,22 +106,6 @@ class WalletEntryDtoMapperImpl(
                 to::sum fromProperty from::sum via EntrySumDtoMapper
                 to::projected fromProperty from::projected via EntrySumDtoMapper
                 to::period fromProperty from::period via EntrySumDtoMapper
-            }
-    }
-
-    private class EntryListMapper(
-        private val userDtoMapper: UserDtoMapper,
-        private val categoryDtoMapper: CategoryDtoMapper,
-        private val groupDtoMapper: GroupDtoMapper,
-        private val walletItemDtoMapper: WalletItemDtoMapper,
-    ) : ObjectMappie<EntryListResponse, EntryForListDto>() {
-        override fun map(from: EntryListResponse) =
-            mapping {
-                to::category fromProperty from::category transform { it?.let { categoryDtoMapper.toDto(it) } }
-                to::user fromProperty from::user transform { it?.let { userDtoMapper.tSimpleDto(it) } }
-                to::group fromProperty from::group transform { it?.let { groupDtoMapper.toDto(it) } }
-                to::origin fromProperty from::origin transform { walletItemDtoMapper.entityToWalletItemForEntryListDto(it) }
-                to::target fromProperty from::target transform { it?.let { walletItemDtoMapper.entityToWalletItemForEntryListDto(it) } }
             }
     }
 }

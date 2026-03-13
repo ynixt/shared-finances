@@ -15,7 +15,7 @@ import { TableModule } from 'primeng/table';
 
 import { InfinitePaginatorComponent } from '../../../../components/infinite-paginator/infinite-paginator.component';
 import { CursorPage } from '../../../../models/cursor-pagination';
-import { EntryForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../../pipes/local-date.pipe';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
@@ -55,10 +55,10 @@ export class WalletEntryTableComponent {
   readonly userActionEventService = inject(UserActionEventService);
 
   readonly pageSize = 30;
-  readonly pages: Map<number, CursorPage<EntryForListDto>> = new Map();
+  readonly pages: Map<number, CursorPage<EventForListDto>> = new Map();
   readonly skeletons = Array.from({ length: this.pageSize > 10 ? 10 : this.pageSize }, (_, i) => i + 1);
   currentPageNumber = 0;
-  page: CursorPage<EntryForListDto> | undefined;
+  page: CursorPage<EventForListDto> | undefined;
 
   readonly loading = input<boolean>(false);
   readonly dateRange = input<DateRange | undefined>(undefined);
@@ -106,7 +106,7 @@ export class WalletEntryTableComponent {
           [p: string]: any;
         }
       | undefined,
-  ): Promise<CursorPage<EntryForListDto>> => {
+  ): Promise<CursorPage<EventForListDto>> => {
     const billId = this.creditCardBillId();
     const billDate = this.creditCardBillDate();
 
@@ -154,19 +154,17 @@ export class WalletEntryTableComponent {
     await this.loadInitialData();
   }
 
-  private newTransactionInserted(dto: EntryForListDto) {
+  private newTransactionInserted(dto: EventForListDto) {
     // TODO: improve this
 
     const dateRange = this.dateRange();
     const walletItemId = this.walletItemId();
     const creditCardBillDate = this.creditCardBillDate();
 
-    if (dateRange == null || walletItemId == null || (dto.origin.id != walletItemId && dto.target?.id != walletItemId)) return;
+    if (dateRange == null || walletItemId == null || dto.entries.find(e => e.walletItemId == walletItemId) == null) return;
 
     if (
-      (creditCardBillDate != null &&
-        ((dto.originBillDate && creditCardBillDate.isSame(dayjs(dto.originBillDate))) ||
-          (dto.targetBillDate && creditCardBillDate.isSame(dayjs(dto.targetBillDate))))) ||
+      (creditCardBillDate != null && dto.entries.find(e => e.billDate && creditCardBillDate.isSame(dayjs(e.billDate))) != null) ||
       ((dateRange.startDate.isBefore(dto.date) || dateRange.startDate.isSame(dto.date)) &&
         (dateRange.endDate == null || dateRange.endDate.isAfter(dto.date) || dateRange.endDate.isSame(dto.date)))
     ) {

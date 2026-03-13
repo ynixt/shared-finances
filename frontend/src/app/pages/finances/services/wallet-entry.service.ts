@@ -5,8 +5,8 @@ import { lastValueFrom, take } from 'rxjs';
 
 import { CursorPage, CursorPageRequest } from '../../../models/cursor-pagination';
 import {
-  EntryForListDto,
   EntrySummaryDto,
+  EventForListDto,
   ListEntryRequestDto,
   NewEntryDto,
   SummaryEntryRequestDto,
@@ -36,12 +36,12 @@ export class WalletEntryService {
     throw new UserMissingError();
   }
 
-  async listWalletEntries(pageRequest?: CursorPageRequest, request?: ListEntryRequestDto): Promise<CursorPage<EntryForListDto>> {
+  async listWalletEntries(pageRequest?: CursorPageRequest, request?: ListEntryRequestDto): Promise<CursorPage<EventForListDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
       return lastValueFrom(
-        this.cursorPaginationService.post<EntryForListDto>(`/api/wallet-entries/list`, pageRequest, undefined, request).pipe(take(1)),
+        this.cursorPaginationService.post<EventForListDto>(`/api/wallet-entries/list`, pageRequest, undefined, request).pipe(take(1)),
       );
     }
 

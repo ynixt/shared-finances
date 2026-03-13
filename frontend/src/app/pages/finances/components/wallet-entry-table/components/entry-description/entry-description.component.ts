@@ -4,7 +4,7 @@ import { faHashtag, faTag } from '@fortawesome/free-solid-svg-icons';
 import { faBuildingColumns, faCreditCard } from '@fortawesome/free-solid-svg-icons';
 
 import { WalletItemForEntryListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
-import { EntryForListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { EventForListDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { WalletItemType__Obj } from '../../../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { EntryChipComponent } from './entry-chip/entry-chip.component';
 
@@ -18,48 +18,48 @@ import { EntryChipComponent } from './entry-chip/entry-chip.component';
 export class EntryDescriptionComponent {
   readonly categoryIcon = faTag;
   readonly tagIcon = faHashtag;
-  readonly entry = input<EntryForListDto | undefined>(undefined);
+  readonly event = input<EventForListDto | undefined>(undefined);
   readonly inGroup = input<boolean>(false);
 
   readonly originIcon = computed(() => {
-    const entry = this.entry();
+    const event = this.event();
 
-    if (entry == null) return undefined;
+    if (event == null) return undefined;
 
-    return this.getIconForWalletItem(entry.origin);
+    return this.getIconForWalletItem(event.entries[0].walletItem);
   });
 
   readonly targetIcon = computed(() => {
-    const entry = this.entry();
+    const event = this.event();
 
-    if (entry == null || entry.target == null) return undefined;
+    if (event == null || event.entries.length < 2) return undefined;
 
-    return this.getIconForWalletItem(entry.target);
+    return this.getIconForWalletItem(event.entries[1].walletItem);
   });
 
   readonly originLink = computed(() => {
-    const entry = this.entry();
+    const event = this.event();
 
-    if (entry == null) return undefined;
+    if (event == null) return undefined;
 
-    return this.getLinkForWalletItem(entry.origin, this.inGroup());
+    return this.getLinkForWalletItem(event.entries[0].walletItem, this.inGroup());
   });
 
   readonly targetLink = computed(() => {
-    const entry = this.entry();
+    const event = this.event();
 
-    if (entry == null || entry.target == null) return undefined;
+    if (event == null || event.entries.length < 2) return undefined;
 
-    return this.getLinkForWalletItem(entry.target, this.inGroup());
+    return this.getLinkForWalletItem(event.entries[1].walletItem, this.inGroup());
   });
 
   readonly categoryLink = computed(() => {
-    const entry = this.entry();
+    const event = this.event();
     const inGroup = this.inGroup();
 
-    if (entry == null || !entry.category) return undefined;
+    if (event == null || !event.category) return undefined;
 
-    return inGroup ? 'TODO' : `/app/transactions?category=${entry.category.id}`;
+    return inGroup ? 'TODO' : `/app/transactions?category=${event.category.id}`;
   });
 
   getTagLink = (tagId: string, inGroup: boolean) => {

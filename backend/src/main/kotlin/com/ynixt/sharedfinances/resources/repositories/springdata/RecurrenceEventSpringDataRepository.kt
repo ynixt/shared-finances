@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.resources.repositories.springdata
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.repositories.EntityRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
@@ -10,21 +10,19 @@ import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
-interface EntryRecurrenceConfigSpringDataRepository :
-    Repository<EntryRecurrenceConfigEntity, String>,
-    EntityRepository<EntryRecurrenceConfigEntity> {
-    fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<EntryRecurrenceConfigEntity>
+interface RecurrenceEventSpringDataRepository :
+    Repository<RecurrenceEventEntity, String>,
+    EntityRepository<RecurrenceEventEntity> {
+    fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity>
 
     @Modifying
     @Query(
         """
-            update entry_recurrence_config
+            update recurrence_event
             set
                 last_execution = next_execution,
                 next_execution = :nextExecution,
                 qty_executed = qty_executed + 1,
-                next_origin_bill_date = :nextOriginBillDate,
-                next_target_bill_date = :nextTargetBillDate,
                 updated_at = CURRENT_TIMESTAMP
             where
                 id = :id
@@ -35,7 +33,5 @@ interface EntryRecurrenceConfigSpringDataRepository :
         id: UUID,
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
-        nextOriginBillDate: LocalDate?,
-        nextTargetBillDate: LocalDate?,
     ): Mono<Int>
 }

@@ -2,23 +2,24 @@ package com.ynixt.sharedfinances.domain.services.walletentry.impl
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.WalletItem
-import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
-import com.ynixt.sharedfinances.domain.repositories.WalletEntryCursorFindAll
-import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
+import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
+import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
+import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceConfigService
-import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryListService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
@@ -26,20 +27,20 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Service
-class WalletEntryListServiceImpl(
-    private val walletEntryRepository: WalletEntryRepository,
+class WalletEventListServiceImpl(
+    private val walletEventRepository: WalletEventRepository,
     private val walletItemMapper: WalletItemMapper,
     private val genericCategoryService: GenericCategoryService,
     private val groupService: GroupService,
     private val groupPermissionService: GroupPermissionService,
     private val userService: UserService,
     private val entryRecurrenceConfigService: EntryRecurrenceConfigService,
-) : WalletEntryListService {
+) : WalletEventListService {
     override suspend fun list(
         userId: UUID,
         groupId: UUID?,
         request: ListEntryRequest,
-    ): CursorPage<EntryListResponse> {
+    ): CursorPage<EventListResponse> {
         if (groupId != null) {
             if (!groupPermissionService.hasPermission(
                     userId = userId,
@@ -51,7 +52,7 @@ class WalletEntryListServiceImpl(
         }
 
         val now = LocalDate.now()
-        var simulatedEntries: List<EntryListResponse> = emptyList()
+        var simulatedEntries: List<EventListResponse> = emptyList()
 
         if (!request.skipFuture || request.maximumDate != null && request.maximumDate > now) {
             simulatedEntries =
@@ -88,7 +89,7 @@ class WalletEntryListServiceImpl(
         }
 
         val rawList =
-            walletEntryRepository
+            walletEventRepository
                 .findAll(
                     userId = if (groupId == null) userId else null,
                     groupId = groupId,
@@ -99,7 +100,7 @@ class WalletEntryListServiceImpl(
                     billId = request.billId,
                     cursor =
                         if (request.lastId != null && request.lastDate != null) {
-                            WalletEntryCursorFindAll(
+                            WalletEventCursorFindAll(
                                 maximumId = request.lastId,
                                 maximumDate = request.lastDate,
                             )
@@ -129,25 +130,25 @@ class WalletEntryListServiceImpl(
     }
 
     override suspend fun convertEntityToEntryListResponse(
-        item: MinimumWalletEntry,
+        event: MinimumWalletEventEntity,
         simulateBillForRecurrence: Boolean,
-    ): EntryListResponse =
+    ): EventListResponse =
         convertEntityToEntryListResponse(
-            listOf(item),
+            listOf(event),
             simulateBillForRecurrence,
         ).first()
 
     override suspend fun convertEntityToEntryListResponse(
-        items: List<MinimumWalletEntry>,
+        events: List<MinimumWalletEventEntity>,
         simulateBillForRecurrence: Boolean,
-    ): List<EntryListResponse> {
-        val categoriesIds = items.filter { it.categoryId != null }.map { it.categoryId!! }.toSet()
-        val groupsIds = items.filter { it.groupId != null }.map { it.groupId!! }.toSet()
+    ): List<EventListResponse> {
+        val categoriesIds = events.filter { it.categoryId != null }.map { it.categoryId!! }.toSet()
+        val groupsIds = events.filter { it.groupId != null }.map { it.groupId!! }.toSet()
         val recurrenceConfigIds =
-            items
+            events
                 .filter {
-                    it is WalletEntryEntity && it.recurrenceConfigId != null
-                }.map { (it as WalletEntryEntity).recurrenceConfigId!! }
+                    it is WalletEventEntity && it.recurrenceEventId != null
+                }.map { (it as WalletEventEntity).recurrenceEventId!! }
                 .toSet()
 
         val categories = genericCategoryService.findAllByIdIn(categoriesIds).toList()
@@ -156,14 +157,11 @@ class WalletEntryListServiceImpl(
 
         val walletEntries =
             (
-                items.map { it.origin } +
-                    items
-                        .filter { it.target != null }
-                        .map { it.target!! }
+                events.flatMap { it.entries!! }.filter { it.walletItem != null }.map { it.walletItem }
             ).map { walletItemMapper.toModel(it!!) }
                 .toSet()
 
-        val userIds = (items.map { it.userId } + walletEntries.map { it.userId }).filter { it != null }.mapNotNull { it }.toSet()
+        val userIds = (events.map { it.userId } + walletEntries.map { it.userId }).filterNotNull().map { it }.toSet()
 
         return userService.findAllByIdIn(userIds).toList().let { users ->
             val walletEntriesById = walletEntries.associateBy { it.id!! }
@@ -172,10 +170,10 @@ class WalletEntryListServiceImpl(
             val usersById = users.associateBy { it.id!! }
             val recurrenceConfigById = recurrenceConfigs.associateBy { it.id!! }
 
-            items.map { entry ->
+            events.map { entry ->
                 createEntryListResponse(
-                    entry = entry,
-                    walletEntriesById = walletEntriesById,
+                    event = entry,
+                    walletItemById = walletEntriesById,
                     categoriesById = categoriesById,
                     groupsById = groupsById,
                     usersById = usersById,
@@ -187,51 +185,71 @@ class WalletEntryListServiceImpl(
     }
 
     private suspend fun createEntryListResponse(
-        entry: MinimumWalletEntry,
-        walletEntriesById: Map<UUID, WalletItem>,
+        event: MinimumWalletEventEntity,
+        walletItemById: Map<UUID, WalletItem>,
         categoriesById: Map<UUID, WalletEntryCategoryEntity>,
         groupsById: Map<UUID, GroupEntity>,
         usersById: Map<UUID, UserEntity>,
-        recurrenceConfigById: Map<UUID, EntryRecurrenceConfigEntity>,
+        recurrenceConfigById: Map<UUID, RecurrenceEventEntity>,
         simulateBillForRecurrence: Boolean,
-    ): EntryListResponse =
-        when (entry) {
-            is WalletEntryEntity ->
-                EntryListResponse(
-                    id = entry.id!!,
-                    type = entry.type,
-                    name = entry.name,
-                    value = entry.value,
-                    category = entry.categoryId?.let { categoriesById[it] },
-                    user = entry.userId?.let { usersById[it] },
-                    group = entry.groupId?.let { groupsById[it] },
-                    tags = entry.tags,
-                    observations = entry.observations,
-                    origin = entry.originId.let { walletEntriesById[it]!! }.also { it.user = usersById[it.userId] },
-                    target = entry.targetId?.let { walletEntriesById[it] }?.also { it.user = usersById[it.userId] },
-                    date = entry.date,
-                    confirmed = entry.confirmed,
-                    installment = entry.installment,
-                    recurrenceConfigId = entry.recurrenceConfigId,
-                    recurrenceConfig = entry.recurrenceConfigId?.let { recurrenceConfigById[it] },
-                    currency = entry.origin!!.currency,
-                    originBillId = entry.originBillId,
-                    originBillDate = entry.originBill?.billDate,
-                    targetBillId = entry.targetBillId,
-                    targetBillDate = entry.targetBill?.billDate,
-                )
+    ): EventListResponse {
+        val entries = event.entries!!
 
-            is EntryRecurrenceConfigEntity ->
+        walletItemById.forEach { entry -> entry.value.user = usersById[entry.value.userId] }
+
+        val originEntry = entries.first()
+        val targetEntry = entries.getOrNull(1)
+
+        val user = event.userId?.let { usersById[it] }
+        val group = event.groupId?.let { groupsById[it] }
+        val category = event.categoryId?.let { categoriesById[it] }
+
+        return when (event) {
+            is WalletEventEntity -> {
+                val originEntryCasted = originEntry as WalletEntryEntity
+                val targetEntryCasted = targetEntry as WalletEntryEntity?
+
+                EventListResponse(
+                    id = event.id!!,
+                    type = event.type,
+                    name = event.name,
+                    entries =
+                        entries.map { originalEntry ->
+                            val entry = (originalEntry as WalletEntryEntity)
+
+                            EventListResponse.EntryResponse(
+                                value = entry.value,
+                                walletItemId = entry.walletItemId,
+                                walletItem = walletItemById[entry.walletItemId]!!,
+                                billDate = entry.bill?.billDate,
+                                billId = entry.billId,
+                            )
+                        },
+                    category = category,
+                    user = user,
+                    group = group,
+                    tags = event.tags,
+                    observations = event.observations,
+                    date = event.date,
+                    confirmed = event.confirmed,
+                    installment = event.installment,
+                    recurrenceConfigId = event.recurrenceEventId,
+                    recurrenceConfig = event.recurrenceEventId?.let { recurrenceConfigById[it] },
+                    currency = entries.first().walletItem!!.currency,
+                )
+            }
+
+            is RecurrenceEventEntity ->
                 entryRecurrenceConfigService.simulateGeneration(
-                    config = entry,
-                    origin = entry.originId.let { walletEntriesById[it]!! }.also { it.user = usersById[it.userId] },
-                    target = entry.targetId?.let { walletEntriesById[it] }?.also { it.user = usersById[it.userId] },
-                    user = entry.userId?.let { usersById[it] },
-                    group = entry.groupId?.let { groupsById[it] },
-                    category = entry.categoryId?.let { categoriesById[it] },
+                    config = event,
+                    walletItems = entries.map { walletItemById[it.walletItemId]!! },
+                    user = user,
+                    group = group,
+                    category = category,
                     simulateBillForRecurrence = simulateBillForRecurrence,
                 )
 
             else -> TODO()
         }
+    }
 }

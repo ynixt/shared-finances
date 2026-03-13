@@ -1,9 +1,9 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.EntryRecurrenceConfigEntity
-import com.ynixt.sharedfinances.domain.repositories.EntryRecurrenceConfigRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.EntryRecurrenceConfigR2DBCRepository
-import com.ynixt.sharedfinances.resources.repositories.springdata.EntryRecurrenceConfigSpringDataRepository
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.RecurrenceEventR2DBCRepository
+import com.ynixt.sharedfinances.resources.repositories.springdata.RecurrenceEventSpringDataRepository
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
@@ -12,47 +12,41 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Repository
-class EntryRecurrenceConfigRepositoryImpl(
-    springDataRepository: EntryRecurrenceConfigSpringDataRepository,
-    private val r2dbcRepository: EntryRecurrenceConfigR2DBCRepository,
-) : EntityRepositoryImpl<EntryRecurrenceConfigSpringDataRepository, EntryRecurrenceConfigEntity>(
+class RecurrenceEventRepositoryImpl(
+    springDataRepository: RecurrenceEventSpringDataRepository,
+    private val r2dbcRepository: RecurrenceEventR2DBCRepository,
+) : EntityRepositoryImpl<RecurrenceEventSpringDataRepository, RecurrenceEventEntity>(
         springDataRepository,
     ),
-    EntryRecurrenceConfigRepository {
-    override fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<EntryRecurrenceConfigEntity> =
+    RecurrenceEventRepository {
+    override fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity> =
         springDataRepository.findAllByNextExecutionLessThanEqual(nextExecution)
 
     override fun updateConfigCausedByExecution(
         id: UUID,
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
-        nextOriginBillDate: LocalDate?,
-        nextTargetBillDate: LocalDate?,
     ): Mono<Int> =
         springDataRepository.updateConfigCausedByExecution(
             id = id,
             oldNextExecution = oldNextExecution,
             nextExecution = nextExecution,
-            nextOriginBillDate = nextOriginBillDate,
-            nextTargetBillDate = nextTargetBillDate,
         )
 
     override fun findAll(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
         billDate: LocalDate?,
-        originId: UUID?,
-        targetId: UUID?,
+        walletItemId: UUID?,
         userId: UUID?,
         groupId: UUID?,
         sort: Sort,
-    ): Flux<EntryRecurrenceConfigEntity> =
+    ): Flux<RecurrenceEventEntity> =
         r2dbcRepository.findAll(
             minimumEndExecution = minimumEndExecution,
             maximumNextExecution = maximumNextExecution,
             billDate = billDate,
-            originId = originId,
-            targetId = targetId,
+            walletItemId = walletItemId,
             userId = userId,
             groupId = groupId,
             sort = sort,

@@ -30,12 +30,15 @@
                 <div class="flex flex-wrap gap-4 items-center">
                   <span class="table-item">{{ item.date | localDate: 'shortDate' }}</span>
 
-                  <span class="table-item {{ item.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
-                    item.value | localCurrency: item.currency
+                  @let wdId = walletItemId();
+                  @let entry = wdId == null ? item.entries[0] : (wdId == item.entries[0].walletItemId ? item.entries[0] : item.entries[1]);
+
+                  <span class="table-item {{ entry.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
+                    entry.value | localCurrency: item.currency
                   }}</span>
                 </div>
 
-                <app-entry-description [entry]="item"></app-entry-description>
+                <app-entry-description [event]="item"></app-entry-description>
               </div>
             </div>
           }

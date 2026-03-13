@@ -1,25 +1,25 @@
 package com.ynixt.sharedfinances.domain.services.walletentry
 
-import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEntry
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
-import com.ynixt.sharedfinances.domain.models.walletentry.EntryListResponse
+import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import java.util.UUID
 
-interface WalletEntryListService {
+interface WalletEventListService {
     suspend fun list(
         userId: UUID,
         groupId: UUID?,
         request: ListEntryRequest,
-    ): CursorPage<EntryListResponse>
+    ): CursorPage<EventListResponse>
 
     suspend fun convertEntityToEntryListResponse(
-        items: List<MinimumWalletEntry>,
+        events: List<MinimumWalletEventEntity>,
         simulateBillForRecurrence: Boolean = false,
-    ): List<EntryListResponse>
+    ): List<EventListResponse>
 
     suspend fun convertEntityToEntryListResponse(
-        item: MinimumWalletEntry,
+        event: MinimumWalletEventEntity,
         simulateBillForRecurrence: Boolean = false,
-    ): EntryListResponse
+    ): EventListResponse
 }
