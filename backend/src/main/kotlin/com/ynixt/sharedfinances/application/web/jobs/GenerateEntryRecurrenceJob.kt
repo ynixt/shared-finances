@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.application.web.jobs
 
-import com.ynixt.sharedfinances.domain.services.walletentry.EntryRecurrenceService
+import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import kotlinx.coroutines.reactor.mono
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -9,7 +9,7 @@ import reactor.core.scheduler.Schedulers
 
 @Component
 class GenerateEntryRecurrenceJob(
-    private val entryRecurrenceService: EntryRecurrenceService,
+    private val recurrenceService: RecurrenceService,
 ) {
     private val logger = LoggerFactory.getLogger(GenerateEntryRecurrenceJob::class.java)
 
@@ -18,7 +18,7 @@ class GenerateEntryRecurrenceJob(
     fun job() {
         logger.info("Generating entry recurrence job started")
         mono {
-            entryRecurrenceService
+            recurrenceService
                 .queueAllPendingOfExecution()
         }.subscribeOn(Schedulers.boundedElastic())
             .doOnSuccess { logger.info("Generating entry recurrence job successfully enqueued $it entries") }
