@@ -11,9 +11,9 @@ interface EntityRepository<T : Any> {
 
     fun existsById(id: UUID): Mono<Boolean>
 
-    fun save(entity: T): Mono<T>
+    fun <S : T> save(entity: S): Mono<S>
 
-    fun saveAll(entity: Iterable<T>): Flux<T>
+    fun <S : T> saveAll(entity: Iterable<S>): Flux<S>
 
     fun findAllByIdIn(id: Collection<UUID>): Flux<T>
 }

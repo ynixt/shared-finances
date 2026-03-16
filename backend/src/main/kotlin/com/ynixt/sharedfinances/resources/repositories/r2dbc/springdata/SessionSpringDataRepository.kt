@@ -1,9 +1,9 @@
-package com.ynixt.sharedfinances.resources.repositories.springdata
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata
 
 import com.ynixt.sharedfinances.domain.entities.SessionEntity
 import com.ynixt.sharedfinances.domain.repositories.SessionRepository
-import org.springframework.data.repository.Repository
+import org.springframework.data.r2dbc.repository.R2dbcRepository
 
 interface SessionSpringDataRepository :
     SessionRepository,
-    Repository<SessionEntity, String>
+    R2dbcRepository<SessionEntity, String>

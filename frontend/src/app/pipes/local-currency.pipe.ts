@@ -15,7 +15,7 @@ export class LocalCurrencyPipe implements PipeTransform {
     this.localeService.locale$.pipe(untilDestroyed(this)).subscribe(l => (this.locale = l));
   }
 
-  transform(value: number | null | undefined, currencyCode?: string, minimumFractionDigits = 2) {
+  transform(value: number | null | undefined | string, currencyCode?: string, minimumFractionDigits = 2) {
     return this.localCurrencyPipeService.transform(value, currencyCode, minimumFractionDigits, this.locale);
   }
 }
@@ -24,8 +24,11 @@ export class LocalCurrencyPipe implements PipeTransform {
 export class LocalCurrencyPipeService {
   constructor(private localeService: LocaleService) {}
 
-  transform(value: number | null | undefined, currencyCode?: string, minimumFractionDigits = 2, locale?: string): string {
-    if (value == null) return '';
+  transform(valueStr: number | null | undefined | string, currencyCode?: string, minimumFractionDigits = 2, locale?: string): string {
+    if (valueStr == null) return '';
+
+    const value = typeof valueStr === 'string' ? parseFloat(valueStr) : valueStr;
+
     const code = currencyCode || 'USD';
     return new Intl.NumberFormat(locale ?? this.localeService.locale, {
       style: 'currency',

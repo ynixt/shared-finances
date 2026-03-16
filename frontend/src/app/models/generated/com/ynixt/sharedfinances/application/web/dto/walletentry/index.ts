@@ -5,4 +5,5 @@ export * from './entry-summary-grouped-result-dto';
 export * from './event-for-list-dto';
 export * from './list-entry-request-dto';
 export * from './new-entry-dto';
+export * from './recurrence-event-dto';
 export * from './summary-entry-request-dto';

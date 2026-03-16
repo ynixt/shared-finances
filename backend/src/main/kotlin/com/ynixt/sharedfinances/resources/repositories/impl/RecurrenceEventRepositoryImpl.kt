@@ -2,8 +2,8 @@ package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.RecurrenceEventR2DBCRepository
-import com.ynixt.sharedfinances.resources.repositories.springdata.RecurrenceEventSpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.RecurrenceEventDatabaseClientRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventSpringDataRepository
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
@@ -14,7 +14,7 @@ import java.util.UUID
 @Repository
 class RecurrenceEventRepositoryImpl(
     springDataRepository: RecurrenceEventSpringDataRepository,
-    private val r2dbcRepository: RecurrenceEventR2DBCRepository,
+    private val dcRepository: RecurrenceEventDatabaseClientRepository,
 ) : EntityRepositoryImpl<RecurrenceEventSpringDataRepository, RecurrenceEventEntity>(
         springDataRepository,
     ),
@@ -42,7 +42,7 @@ class RecurrenceEventRepositoryImpl(
         groupId: UUID?,
         sort: Sort,
     ): Flux<RecurrenceEventEntity> =
-        r2dbcRepository.findAll(
+        dcRepository.findAll(
             minimumEndExecution = minimumEndExecution,
             maximumNextExecution = maximumNextExecution,
             billDate = billDate,

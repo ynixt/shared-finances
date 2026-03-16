@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.resources.repositories.r2dbc
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
@@ -9,9 +9,9 @@ import reactor.core.publisher.Flux
 import java.util.UUID
 
 @Repository
-class GroupUsersR2DBCRepository(
+class GroupUsersDatabaseClientRepository(
     private val dbClient: DatabaseClient,
-) : R2BDCGenericRepository() {
+) : DatabaseClientRepository() {
     fun findAllMembers(groupId: UUID): Flux<GroupUserEntity> {
         val sql =
             """

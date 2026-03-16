@@ -31,7 +31,7 @@
                   <span class="table-item">{{ item.date | localDate: 'shortDate' }}</span>
 
                   @let wdId = walletItemId();
-                  @let entry = wdId == null ? item.entries[0] : (wdId == item.entries[0].walletItemId ? item.entries[0] : item.entries[1]);
+                  @let entry = wdId == null ? item.entries[0] : wdId == item.entries[0].walletItemId ? item.entries[0] : item.entries[1];
 
                   <span class="table-item {{ entry.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
                     entry.value | localCurrency: item.currency

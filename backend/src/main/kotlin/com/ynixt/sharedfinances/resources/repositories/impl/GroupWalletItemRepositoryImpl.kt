@@ -4,8 +4,8 @@ import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.GroupWalletItemR2DBCRepository
-import com.ynixt.sharedfinances.resources.repositories.springdata.GroupWalletItemSpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.GroupWalletItemDatabaseClientRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.GroupWalletItemSpringDataRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
@@ -15,13 +15,13 @@ import java.util.UUID
 @Repository
 class GroupWalletItemRepositoryImpl(
     private val springDataRepository: GroupWalletItemSpringDataRepository,
-    private val r2DBCRepository: GroupWalletItemR2DBCRepository,
+    private val dcRepository: GroupWalletItemDatabaseClientRepository,
 ) : GroupWalletItemRepository {
     override fun findAllByGroupIdAndEnabled(
         groupId: UUID,
         enabled: Boolean,
         pageable: Pageable,
-    ): Flux<WalletItemEntity> = r2DBCRepository.findAllByGroupIdAndEnabled(groupId, enabled, pageable)
+    ): Flux<WalletItemEntity> = dcRepository.findAllByGroupIdAndEnabled(groupId, enabled, pageable)
 
     override fun countByGroupId(
         groupId: UUID,
@@ -38,10 +38,10 @@ class GroupWalletItemRepositoryImpl(
     override fun findAllAllowedForGroup(
         groupId: UUID,
         type: WalletItemType,
-    ): Flux<WalletItemEntity> = r2DBCRepository.findAllAllowedForGroup(groupId, type)
+    ): Flux<WalletItemEntity> = dcRepository.findAllAllowedForGroup(groupId, type)
 
     override fun findAllAssociatedToGroup(
         groupId: UUID,
         type: WalletItemType,
-    ): Flux<WalletItemEntity> = r2DBCRepository.findAllAssociatedToGroup(groupId, type)
+    ): Flux<WalletItemEntity> = dcRepository.findAllAssociatedToGroup(groupId, type)
 }

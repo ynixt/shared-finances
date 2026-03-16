@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.resources.repositories.r2dbc
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
@@ -12,9 +12,9 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Repository
-class WalletEventR2DBCRepository(
+class WalletEventDatabaseClientRepository(
     private val dbClient: DatabaseClient,
-) : R2BDCGenericRepository() {
+) : DatabaseClientRepository() {
     fun findAll(
         userId: UUID?,
         groupId: UUID?,
@@ -100,7 +100,14 @@ class WalletEventR2DBCRepository(
                     .bufferUntilChanged { it.first.id!! }
                     .map { pairs ->
                         val event = pairs.first().first
-                        event.entries = pairs.map { it.second }
+
+                        event.entries =
+                            pairs.map { it.second }.also {
+                                it.forEach { entry ->
+                                    entry.event = event
+                                }
+                            }
+
                         event
                     }
             }

@@ -388,6 +388,11 @@ export class NewTransactionPageComponent {
     }
 
     this.submitting = true;
+    let value = this.form.value.value!!;
+
+    if (this.form.value.paymentType == PaymentType__Obj.INSTALLMENTS && this.form.value.valueType == ValueType.TOTAL) {
+      value = this.calculatedValueControl.value!!;
+    }
 
     try {
       await this.walletEntryService.createWalletEntry({
@@ -407,7 +412,7 @@ export class NewTransactionPageComponent {
         targetBillDate: this.form.value.targetBill == null ? null : dayjs(this.form.value.targetBill).format(ONLY_DATE_FORMAT),
         targetId: this.form.value.target?.id,
         type: this.form.value.type!!,
-        value: this.form.value.value!!,
+        value: parseFloat(value.toFixed(2)),
       });
       // await this.router.navigate(['..'], { relativeTo: this.route });
       this.submitting = false; // TODO

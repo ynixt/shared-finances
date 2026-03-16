@@ -5,6 +5,7 @@ import { GroupDto } from '../groups/group-dto';
 import { UserSimpleDto } from '../user/user-simple-dto';
 import { CategoryDto } from '../wallet/category/category-dto';
 import { EntryResponseDto } from './EventForListDto/entry-response-dto';
+import { RecurrenceEventDto } from './recurrence-event-dto';
 
 export interface EventForListDto {
   category?: CategoryDto | null;
@@ -17,7 +18,7 @@ export interface EventForListDto {
   installment?: number | null;
   name?: string | null;
   observations?: string | null;
-  recurrenceConfig?: any | null;
+  recurrenceConfig?: RecurrenceEventDto | null;
   recurrenceConfigId?: string | null;
   tags?: Array<string> | null;
   type: WalletEntryType;

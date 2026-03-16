@@ -1,10 +1,10 @@
-package com.ynixt.sharedfinances.resources.repositories.springdata
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.repositories.CreditCardBillRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.Repository
+import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -12,7 +12,7 @@ import java.util.UUID
 
 interface CreditCardBillSpringDataRepository :
     CreditCardBillRepository,
-    Repository<CreditCardBillEntity, String> {
+    R2dbcRepository<CreditCardBillEntity, String> {
     @Query(
         """
             select bill.*

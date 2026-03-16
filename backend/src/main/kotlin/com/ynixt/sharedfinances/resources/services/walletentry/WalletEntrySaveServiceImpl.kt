@@ -168,11 +168,32 @@ abstract class WalletEntrySaveServiceImpl(
         qtyLimit: Int?,
     ): RecurrenceEventEntity {
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
-        val qtyExecuted = if (newEntryRequest.inFuture) 0 else 1
-        val lastExecution: LocalDate? = if (qtyExecuted == 0) null else LocalDate.now()
-        val nextExecution = lastExecution ?: newEntryRequest.date
-        val nextOriginBillDate = newEntryRequest.originBill?.billDate
-        val nextTargetBillDate = newEntryRequest.targetBill?.billDate
+
+        val alreadyExecuted = !newEntryRequest.inFuture
+        val qtyExecuted = if (alreadyExecuted) 1 else 0
+
+        val lastExecution: LocalDate? = if (alreadyExecuted) LocalDate.now() else null
+
+        val requestOriginBillDate = newEntryRequest.originBill?.billDate
+        val requestTargetBillDate = newEntryRequest.targetBill?.billDate
+
+        val nextOriginBillDate =
+            if (requestOriginBillDate == null) {
+                null
+            } else if (alreadyExecuted) {
+                recurrenceService.calculateNextExecution(requestOriginBillDate, periodicity, qtyExecuted, qtyLimit)
+            } else {
+                requestOriginBillDate
+            }
+
+        val nextTargetBillDate =
+            if (requestTargetBillDate == null) {
+                null
+            } else if (alreadyExecuted) {
+                recurrenceService.calculateNextExecution(requestTargetBillDate, periodicity, qtyExecuted, qtyLimit)
+            } else {
+                requestTargetBillDate
+            }
 
         return recurrenceEventRepository
             .save(
@@ -190,19 +211,19 @@ abstract class WalletEntrySaveServiceImpl(
                     qtyLimit = qtyLimit,
                     lastExecution = lastExecution,
                     nextExecution =
-                        if (lastExecution == null) {
-                            newEntryRequest.date
-                        } else {
+                        if (alreadyExecuted) {
                             recurrenceService.calculateNextExecution(
-                                lastExecution = lastExecution,
+                                lastExecution = lastExecution!!,
                                 periodicity = periodicity,
                                 qtyExecuted = qtyExecuted,
                                 qtyLimit = qtyLimit,
                             )
+                        } else {
+                            newEntryRequest.date
                         },
                     endExecution =
                         recurrenceService.calculateEndDate(
-                            lastExecution = nextExecution,
+                            lastExecution = lastExecution ?: newEntryRequest.date,
                             periodicity = periodicity,
                             qtyExecuted = qtyExecuted,
                             qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
@@ -228,15 +249,15 @@ abstract class WalletEntrySaveServiceImpl(
                         walletItemId = newEntryRequest.originId,
                         nextBillDate = nextOriginBillDate,
                         lastBillDate =
-                            if (nextOriginBillDate == null) {
+                            if (requestOriginBillDate == null) {
                                 null
                             } else {
                                 recurrenceService
                                     .calculateEndDate(
-                                        lastExecution = nextOriginBillDate,
+                                        lastExecution = requestOriginBillDate,
                                         periodicity = periodicity,
                                         qtyExecuted = qtyExecuted,
-                                        qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
+                                        qtyLimit = qtyLimit?.let { if (alreadyExecuted) it else it - 1 },
                                     )?.withStartOfMonth()
                             },
                     ),
@@ -258,14 +279,19 @@ abstract class WalletEntrySaveServiceImpl(
                                             lastExecution = nextTargetBillDate,
                                             periodicity = periodicity,
                                             qtyExecuted = qtyExecuted,
-                                            qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
+                                            qtyLimit = qtyLimit?.let { if (alreadyExecuted) it else it - 1 },
                                         )?.withStartOfMonth()
                                 },
                         ),
                     )
                 }
 
-                savedRecurrence.entries = recurrenceEntryRepository.saveAll(entries).asFlow().toList()
+                savedRecurrence.entries =
+                    recurrenceEntryRepository.saveAll(entries).asFlow().toList().also { entries ->
+                        entries.forEach { entry ->
+                            entry.event = savedRecurrence
+                        }
+                    }
             }
     }
 

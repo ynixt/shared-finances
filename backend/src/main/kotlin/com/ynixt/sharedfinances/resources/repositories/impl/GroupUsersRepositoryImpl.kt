@@ -3,8 +3,8 @@ package com.ynixt.sharedfinances.resources.repositories.impl
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.GroupUsersR2DBCRepository
-import com.ynixt.sharedfinances.resources.repositories.springdata.GroupUsersSpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.GroupUsersDatabaseClientRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.GroupUsersSpringDataRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -12,7 +12,7 @@ import java.util.UUID
 
 @Repository
 class GroupUsersRepositoryImpl(
-    private val r2dbcRepository: GroupUsersR2DBCRepository,
+    private val dcRepository: GroupUsersDatabaseClientRepository,
     private val springDataRepository: GroupUsersSpringDataRepository,
 ) : GroupUsersRepository {
     override fun countByGroupIdAndUserId(
@@ -27,7 +27,7 @@ class GroupUsersRepositoryImpl(
 
     override fun save(groupUser: GroupUserEntity): Mono<GroupUserEntity> = springDataRepository.save(groupUser)
 
-    override fun findAllMembers(groupId: UUID): Flux<GroupUserEntity> = r2dbcRepository.findAllMembers(groupId)
+    override fun findAllMembers(groupId: UUID): Flux<GroupUserEntity> = dcRepository.findAllMembers(groupId)
 
     override fun updateRole(
         userId: UUID,

@@ -1,17 +1,17 @@
-package com.ynixt.sharedfinances.resources.repositories.springdata
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata
 
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.Repository
+import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.util.UUID
 
 interface WalletItemSpringDataRepository :
     WalletItemRepository,
-    Repository<WalletItemEntity, String> {
+    R2dbcRepository<WalletItemEntity, String> {
     @Modifying
     @Query(
         """

@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.application.web.mapper.impl
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EventForListDto
 import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
+import com.ynixt.sharedfinances.application.web.mapper.RecurrenceEventDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEventDtoMapper
@@ -16,8 +17,16 @@ class WalletEventDtoMapperImpl(
     categoryDtoMapper: CategoryDtoMapper,
     groupDtoMapper: GroupDtoMapper,
     walletEntryDtoMapper: WalletEntryDtoMapper,
+    recurrenceEventDtoMapper: RecurrenceEventDtoMapper,
 ) : WalletEventDtoMapper {
-    private val entryListMapper = EntryListMapper(userDtoMapper, categoryDtoMapper, groupDtoMapper, walletEntryDtoMapper)
+    private val entryListMapper =
+        EntryListMapper(
+            userDtoMapper,
+            categoryDtoMapper,
+            groupDtoMapper,
+            walletEntryDtoMapper,
+            recurrenceEventDtoMapper,
+        )
 
     override fun fromListResponseToListDto(from: EventListResponse): EventForListDto = entryListMapper.map(from)
 
@@ -26,6 +35,7 @@ class WalletEventDtoMapperImpl(
         private val categoryDtoMapper: CategoryDtoMapper,
         private val groupDtoMapper: GroupDtoMapper,
         private val walletEntryDtoMapper: WalletEntryDtoMapper,
+        private val recurrenceEventDtoMapper: RecurrenceEventDtoMapper,
     ) : ObjectMappie<EventListResponse, EventForListDto>() {
         override fun map(from: EventListResponse) =
             mapping {
@@ -35,6 +45,7 @@ class WalletEventDtoMapperImpl(
                 to::entries fromProperty from::entries transform {
                     it.map { item -> walletEntryDtoMapper.fromEntryResponseToDto(item) }
                 }
+                to::recurrenceConfig fromProperty from::recurrenceConfig transform { it?.let { recurrenceEventDtoMapper.toDto(it) } }
             }
     }
 }

@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.isSameMonthYear
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
@@ -72,21 +73,27 @@ class WalletEntryCreateServiceImpl(
         recurrenceConfigId: UUID,
         date: LocalDate,
     ): MinimumWalletEventEntity? {
-        val config = recurrenceEventRepository.findById(recurrenceConfigId).awaitSingle()
+        val event = recurrenceEventRepository.findById(recurrenceConfigId).awaitSingle()
+
         val entries =
             recurrenceEntryRepository.findAllByWalletEventId(recurrenceConfigId).asFlow().toList().also {
-                config.entries = it
+                event.entries =
+                    it.also {
+                        it.forEach { entry ->
+                            entry.event = event
+                        }
+                    }
             }
 
-        require(config.entries!!.isNotEmpty())
+        require(event.entries!!.isNotEmpty())
 
         val nextExecution =
-            this@WalletEntryCreateServiceImpl.recurrenceService
+            recurrenceService
                 .calculateNextExecution(
                     lastExecution = date,
-                    periodicity = config.periodicity,
-                    qtyExecuted = config.qtyExecuted,
-                    qtyLimit = config.qtyLimit,
+                    periodicity = event.periodicity,
+                    qtyExecuted = event.qtyExecuted + 1,
+                    qtyLimit = event.qtyLimit,
                 )
 
         val linesModified =
@@ -97,12 +104,11 @@ class WalletEntryCreateServiceImpl(
                     nextExecution = nextExecution,
                 ).awaitSingle()
 
-        if (linesModified == 0 || config.userId == null) {
+        if (linesModified == 0 || event.userId == null) {
             return null
         }
 
         entries
-            .filter { entryTemplate -> entryTemplate.nextBillDate != null }
             .map { entryTemplate ->
                 recurrenceEntryRepository.updateNextBillDate(
                     id = entryTemplate.id!!,
@@ -110,7 +116,7 @@ class WalletEntryCreateServiceImpl(
                         if (nextExecution == null) {
                             null
                         } else {
-                            calculateNextBillDate(entryTemplate.nextBillDate!!, config.periodicity)
+                            calculateNextBillDate(entryTemplate.nextBillDate!!, event.periodicity)
                         },
                 )
             }.also {
@@ -118,10 +124,10 @@ class WalletEntryCreateServiceImpl(
             }
 
         val installment =
-            if (config.paymentType ==
+            if (event.paymentType ==
                 PaymentType.INSTALLMENTS
             ) {
-                config.qtyExecuted + 1
+                event.qtyExecuted + 1
             } else {
                 null
             }
@@ -130,18 +136,18 @@ class WalletEntryCreateServiceImpl(
             walletEventRepository
                 .save(
                     WalletEventEntity(
-                        type = config.type,
-                        userId = config.userId,
-                        groupId = config.groupId,
-                        name = config.name,
-                        categoryId = config.categoryId,
+                        type = event.type,
+                        userId = event.userId,
+                        groupId = event.groupId,
+                        name = event.name,
+                        categoryId = event.categoryId,
                         date = date,
                         confirmed = false,
-                        observations = config.observations,
-                        tags = config.tags?.ifEmpty { null },
+                        observations = event.observations,
+                        tags = event.tags?.ifEmpty { null },
                         installment = installment,
-                        recurrenceEventId = config.id,
-                        paymentType = config.paymentType,
+                        recurrenceEventId = event.id,
+                        paymentType = event.paymentType,
                     ),
                 ).awaitSingle()
 
@@ -188,12 +194,13 @@ class WalletEntryCreateServiceImpl(
                     entries.forEachIndexed { index, saved ->
                         saved.walletItem = walletItemMapper.fromModel(walletItems[index])
                         saved.bill = bills[index]
+                        saved.event = walletEventSaved
 
                         updateBalance(saved)
                     }
                 }
 
-        walletEventActionEventService.sendInsertedWalletEvent(config.userId, walletEventSaved)
+        walletEventActionEventService.sendInsertedWalletEvent(event.userId, walletEventSaved)
 
         return walletEventSaved
     }
@@ -212,7 +219,17 @@ class WalletEntryCreateServiceImpl(
     }
 
     private suspend fun updateBalance(entry: WalletEntryEntity) {
-        walletItemService.addBalanceById(entry.walletItemId, entry.value)
+        val event = entry.event!! as WalletEventEntity
+
+        if (event.paymentType == PaymentType.INSTALLMENTS && entry.walletItem!!.type == WalletItemType.CREDIT_CARD) {
+            if (event.installment == 1) {
+                val installments = event.recurrenceEvent!!.qtyLimit!!
+
+                walletItemService.addBalanceById(entry.walletItemId, entry.value.multiply(installments.toBigDecimal()))
+            }
+        } else {
+            walletItemService.addBalanceById(entry.walletItemId, entry.value)
+        }
 
         if (entry.billId != null) {
             creditCardBillService.addValueById(
@@ -234,7 +251,7 @@ class WalletEntryCreateServiceImpl(
             createNowWithoutCheckPermissions(
                 userId = userId,
                 newEntryRequest = newEntryRequest,
-                recurrenceConfig = recurrenceConfig,
+                recurrenceEvent = recurrenceConfig,
             )
         }.also {
             it.entries!!.forEachIndexed { index, entity ->
@@ -255,7 +272,7 @@ class WalletEntryCreateServiceImpl(
     private suspend fun createNowWithoutCheckPermissions(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-        recurrenceConfig: RecurrenceEventEntity?,
+        recurrenceEvent: RecurrenceEventEntity?,
     ): MinimumWalletEventEntity {
         val event =
             walletEventRepository
@@ -264,11 +281,13 @@ class WalletEntryCreateServiceImpl(
                         id = null,
                         userId = userId,
                         newEntryRequest = newEntryRequest,
-                        recurrenceConfig = recurrenceConfig,
+                        recurrenceConfig = recurrenceEvent,
                         installment = if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) 1 else null,
                         date = newEntryRequest.date,
                     ),
                 ).awaitSingle()
+
+        event.recurrenceEvent = recurrenceEvent
 
         event.entries =
             walletEntryRepository
@@ -280,10 +299,16 @@ class WalletEntryCreateServiceImpl(
                     ),
                 ).asFlow()
                 .toList()
+                .also {
+                    it.forEach { entry ->
+                        entry.event = event
+                    }
+                }
 
         return event.also {
             it.entries!!.filterIsInstance<WalletEntryEntity>().forEachIndexed { index, entry ->
                 entry.bill = if (index == 0) newEntryRequest.originBill else newEntryRequest.targetBill
+                entry.walletItem = walletItemMapper.fromModel(if (index == 0) newEntryRequest.origin!! else newEntryRequest.target!!)
 
                 updateBalance(entry)
             }

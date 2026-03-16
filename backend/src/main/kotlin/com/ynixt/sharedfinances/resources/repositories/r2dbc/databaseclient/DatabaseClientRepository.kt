@@ -1,8 +1,8 @@
-package com.ynixt.sharedfinances.resources.repositories.r2dbc
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import org.springframework.data.domain.Pageable
 
-abstract class R2BDCGenericRepository {
+abstract class DatabaseClientRepository {
     protected fun pageableToSortQuery(
         pageable: Pageable,
         allowedSortColumns: Set<String>,

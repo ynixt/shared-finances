@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.resources.repositories.r2dbc
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.RecurrenceEntryR2DBCMapping
@@ -12,9 +12,9 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Repository
-class RecurrenceEventR2DBCRepository(
+class RecurrenceEventDatabaseClientRepository(
     private val dbClient: DatabaseClient,
-) : R2BDCGenericRepository() {
+) : DatabaseClientRepository() {
     private val validSortColumns =
         mapOf(
             "nextExecution" to "re.next_execution",
@@ -128,7 +128,14 @@ class RecurrenceEventR2DBCRepository(
                     .bufferUntilChanged { it.first.id!! }
                     .map { pairs ->
                         val event = pairs.first().first
-                        event.entries = pairs.map { it.second }
+
+                        event.entries =
+                            pairs.map { it.second }.also {
+                                it.forEach { entry ->
+                                    entry.event = event
+                                }
+                            }
+
                         event
                     }
             }

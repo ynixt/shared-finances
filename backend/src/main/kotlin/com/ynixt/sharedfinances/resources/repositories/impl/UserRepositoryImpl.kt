@@ -2,8 +2,8 @@ package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.UserR2DBCRepository
-import com.ynixt.sharedfinances.resources.repositories.springdata.UserSpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.entitytemplate.UserEntityTemplateRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.UserSpringDataRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -12,7 +12,7 @@ import java.util.UUID
 @Repository
 class UserRepositoryImpl(
     userSpringDataRepository: UserSpringDataRepository,
-    private val userR2DBCRepository: UserR2DBCRepository,
+    private val userEntityTemplateRepository: UserEntityTemplateRepository,
 ) : EntityRepositoryImpl<UserSpringDataRepository, UserEntity>(userSpringDataRepository),
     UserRepository {
     override fun findOneByEmail(email: String): Mono<UserEntity> = springDataRepository.findOneByEmail(email)
@@ -46,5 +46,5 @@ class UserRepositoryImpl(
 
     override fun disableMfa(userId: UUID): Mono<Int> = springDataRepository.disableMfa(userId)
 
-    override fun insert(user: UserEntity): Mono<UserEntity> = userR2DBCRepository.insert(user)
+    override fun insert(user: UserEntity): Mono<UserEntity> = userEntityTemplateRepository.insert(user)
 }

@@ -3,8 +3,8 @@ package com.ynixt.sharedfinances.resources.repositories.impl
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.WalletEventR2DBCRepository
-import com.ynixt.sharedfinances.resources.repositories.springdata.WalletEventSpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.WalletEventDatabaseClientRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventSpringDataRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -14,7 +14,7 @@ import java.util.UUID
 @Repository
 class WalletEventRepositoryImpl(
     private val springDataRepository: WalletEventSpringDataRepository,
-    private val r2dbcRepository: WalletEventR2DBCRepository,
+    private val dcRepository: WalletEventDatabaseClientRepository,
 ) : WalletEventRepository {
     override fun save(walletEntry: WalletEventEntity): Mono<WalletEventEntity> = springDataRepository.save(walletEntry)
 
@@ -30,7 +30,7 @@ class WalletEventRepositoryImpl(
         billId: UUID?,
         cursor: WalletEventCursorFindAll?,
     ): Flux<WalletEventEntity> =
-        r2dbcRepository.findAll(
+        dcRepository.findAll(
             userId = userId,
             groupId = groupId,
             limit = limit,

@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.resources.repositories.r2dbc
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
@@ -10,9 +10,9 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Repository
-class WalletEntryR2DBCRepository(
+class WalletEntryDatabaseClientRepository(
     private val dbClient: DatabaseClient,
-) : R2BDCGenericRepository() {
+) : DatabaseClientRepository() {
     fun sumForBankAccountSummary(
         userId: UUID?,
         groupId: UUID?,

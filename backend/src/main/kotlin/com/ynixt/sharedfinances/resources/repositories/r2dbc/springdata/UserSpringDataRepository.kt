@@ -1,16 +1,16 @@
-package com.ynixt.sharedfinances.resources.repositories.springdata
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.repositories.EntityRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.Repository
+import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface UserSpringDataRepository :
-    Repository<UserEntity, String>,
+    R2dbcRepository<UserEntity, String>,
     EntityRepository<UserEntity> {
     fun findOneByEmail(email: String): Mono<UserEntity>
 

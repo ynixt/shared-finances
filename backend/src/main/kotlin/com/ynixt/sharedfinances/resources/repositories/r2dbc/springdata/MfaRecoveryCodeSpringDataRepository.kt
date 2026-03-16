@@ -1,15 +1,15 @@
-package com.ynixt.sharedfinances.resources.repositories.springdata
+package com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata
 
 import com.ynixt.sharedfinances.domain.entities.mfa.MfaRecoveryCodeEntity
 import com.ynixt.sharedfinances.domain.repositories.MfaRecoveryCodeRepository
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.Repository
+import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface MfaRecoveryCodeSpringDataRepository :
     MfaRecoveryCodeRepository,
-    Repository<MfaRecoveryCodeEntity, String> {
+    R2dbcRepository<MfaRecoveryCodeEntity, String> {
     @Query(
         """
         delete 

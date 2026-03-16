@@ -5,10 +5,14 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory
 import org.springframework.data.redis.core.ReactiveRedisTemplate
+import org.springframework.data.redis.repository.configuration.EnableRedisRepositories
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
 
 @Configuration
+@EnableRedisRepositories(
+    basePackages = ["com.ynixt.sharedfinances.resources.repositories.redis"],
+)
 class RedisConfig {
     @Bean
     @Primary

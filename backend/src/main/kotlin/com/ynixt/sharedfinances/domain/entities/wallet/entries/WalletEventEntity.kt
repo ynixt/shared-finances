@@ -47,7 +47,10 @@ class WalletEventEntity(
         tags = tags,
         observations = observations,
         paymentType = paymentType,
-    )
+    ) {
+    @Transient
+    var recurrenceEvent: RecurrenceEventEntity? = null
+}
 
 abstract class MinimumWalletEntryEntity(
     val value: BigDecimal,
@@ -56,6 +59,9 @@ abstract class MinimumWalletEntryEntity(
 ) : AuditedEntity() {
     @Transient
     var walletItem: WalletItemEntity? = null
+
+    @Transient
+    var event: MinimumWalletEventEntity? = null
 }
 
 @Table("wallet_entry")
