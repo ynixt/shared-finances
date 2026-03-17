@@ -17,8 +17,6 @@ import {
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { startWith } from 'rxjs';
-
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
@@ -44,6 +42,7 @@ import {
 import { WalletEntryTableComponent } from '../../components/wallet-entry-table/wallet-entry-table.component';
 import { CreditCardBillService } from '../../services/credit-card-bill.service';
 import { CreditCardService } from '../../services/credit-card.service';
+import { readDateRangeFromQueryParams, syncDateQueryParams } from '../../services/date-query-params.util';
 import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 
@@ -85,6 +84,7 @@ export class ViewCreditCardPageComponent {
   titleBarButtons: FinancesTitleBarExtraButton[] = [];
   creditCard: CreditCardDto | undefined = undefined;
   creditCardBill = signal<CreditCardBillDto | undefined>(undefined);
+  openBillDate = signal<dayjs.Dayjs | undefined>(undefined);
 
   dateRange: DateRange | undefined = undefined;
   dialogToEditClosingDayIsVisible = false;
@@ -170,12 +170,21 @@ export class ViewCreditCardPageComponent {
       }
     });
 
-    this.dateControl.valueChanges.pipe(untilDestroyed(this), startWith(this.dateControl.value)).subscribe(date => {
-      this.dateRange = date == null ? undefined : date;
-      this.getCreditCardBill();
-    });
+    this.dateControl.valueChanges.pipe(untilDestroyed(this)).subscribe(date => this.applyDateRange(date ?? undefined, true));
 
     this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+  }
+
+  private applyDateRange(dateRange: DateRange | undefined, syncUrl: boolean) {
+    this.dateRange = dateRange;
+
+    if (syncUrl) {
+      console.log(this.openBillDate()!!);
+
+      void syncDateQueryParams(this.route, this.router, dateRange, 'single', this.openBillDate()!!);
+    }
+
+    void this.getCreditCardBill();
   }
 
   openEditClosingDateDialog() {
@@ -285,20 +294,10 @@ export class ViewCreditCardPageComponent {
     try {
       this.creditCard = await this.creditCardService.getCreditCard(id);
 
-      const billDate = this.creditCardBillService.getBestBill(
-        dayjs(),
-        this.creditCard.dueDay,
-        this.creditCard.dueOnNextBusinessDay,
-        this.creditCard.daysBetweenDueAndClosing,
-      );
-
-      this.dateControl.setValue({
-        startDate: billDate,
-        endDate: billDate,
-        sameMonth: true,
-      });
-
-      await this.getCreditCardBill();
+      const defaultRange = this.getDefaultDateRange();
+      const initialDateRange = readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'single') ?? defaultRange;
+      this.dateControl.setValue(initialDateRange, { emitEvent: false });
+      this.applyDateRange(initialDateRange, false);
 
       this.titleBarButtons = [
         {
@@ -346,5 +345,22 @@ export class ViewCreditCardPageComponent {
     if (dto.entries.find(e => e.billDate && billDate.isSame(dayjs(e.billDate))) != null) {
       this.getCreditCardBill(true);
     }
+  }
+
+  private getDefaultDateRange(): DateRange {
+    const billDate = this.creditCardBillService.getBestBill(
+      dayjs(),
+      this.creditCard!!.dueDay,
+      this.creditCard!!.dueOnNextBusinessDay,
+      this.creditCard!!.daysBetweenDueAndClosing,
+    );
+
+    this.openBillDate.set(billDate);
+
+    return {
+      startDate: billDate,
+      endDate: billDate,
+      sameMonth: true,
+    };
   }
 }

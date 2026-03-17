@@ -6,8 +6,6 @@ import { faArrowTrendDown, faArrowTrendUp, faChartSimple, faClock, faDollarSign,
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { startWith } from 'rxjs';
-
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -25,6 +23,7 @@ import {
 } from '../../components/wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 import { WalletEntryTableComponent } from '../../components/wallet-entry-table/wallet-entry-table.component';
 import { BankAccountService } from '../../services/bank-account.service';
+import { createMonthDateRange, readDateRangeFromQueryParams, syncDateQueryParams } from '../../services/date-query-params.util';
 import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 
@@ -51,11 +50,7 @@ export class ViewBankAccountPageComponent {
   readonly expensesIcon = faArrowTrendDown;
   readonly projectedIcon = faClock;
 
-  readonly dateControl = new FormControl<DateRange | undefined>({
-    startDate: dayjs().startOf('month'),
-    endDate: dayjs().endOf('month'),
-    sameMonth: true,
-  });
+  readonly dateControl = new FormControl<DateRange | undefined>(undefined);
 
   bankAccount: BankAccountDto | null = null;
   titleBarButtons: FinancesTitleBarExtraButton[] = [];
@@ -83,13 +78,25 @@ export class ViewBankAccountPageComponent {
       }
     });
 
-    this.dateControl.valueChanges.pipe(untilDestroyed(this), startWith(this.dateControl.value)).subscribe(date => {
-      this.dateRange = date == null ? undefined : date;
-      this.dateRangeOnlyOnPast = this.dateRange?.endDate?.isBefore(dayjs()) ?? false;
-      this.getSummary();
-    });
+    const initialDateRange =
+      readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'range') ?? createMonthDateRange(dayjs(), 'range');
+    this.dateControl.setValue(initialDateRange, { emitEvent: false });
+    this.applyDateRange(initialDateRange, false);
+
+    this.dateControl.valueChanges.pipe(untilDestroyed(this)).subscribe(date => this.applyDateRange(date ?? undefined, true));
 
     this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+  }
+
+  private applyDateRange(dateRange: DateRange | undefined, syncUrl: boolean) {
+    this.dateRange = dateRange;
+    this.dateRangeOnlyOnPast = this.dateRange?.endDate?.isBefore(dayjs()) ?? false;
+
+    if (syncUrl) {
+      void syncDateQueryParams(this.route, this.router, dateRange, 'range');
+    }
+
+    void this.getSummary();
   }
 
   private async getSummary() {
