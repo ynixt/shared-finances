@@ -77,7 +77,7 @@
     <app-wallet-entry-table
       class="flex-1"
       [creditCardBillId]="currentCreditCardBill?.id"
-      [creditCardBillDate]="dateControl?.value?.startDate"
+      [creditCardBillDate]="dateControl.value?.startDate"
       [loading]="currentCreditCardBill == null"
       [walletItemId]="creditCard.id!!"
       [noWalletEntryFoundMessage]="dateRange?.startDate | localDate: 'MMMM, yyyy'"
