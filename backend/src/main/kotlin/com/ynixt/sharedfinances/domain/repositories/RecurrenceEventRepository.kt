@@ -10,6 +10,11 @@ import java.util.UUID
 interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
     fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity>
 
+    fun deleteAllByWalletItemIdAndUserId(
+        walletItemId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
     fun updateConfigCausedByExecution(
         id: UUID,
         oldNextExecution: LocalDate,

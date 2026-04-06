@@ -9,6 +9,8 @@ import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.bankaccount.EditBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
@@ -27,6 +29,8 @@ import java.util.UUID
 @Service
 class BankAccountServiceImpl(
     private val walletItemRepository: WalletItemRepository,
+    private val walletEventRepository: WalletEventRepository,
+    private val recurrenceEventRepository: RecurrenceEventRepository,
     private val bankAccountActionEventService: BankAccountActionEventService,
     private val bankAccountMapper: BankAccountMapper,
     private val walletEntryCreateService: WalletEntryCreateService,
@@ -122,22 +126,35 @@ class BankAccountServiceImpl(
     override suspend fun deleteBankAccount(
         userId: UUID,
         id: UUID,
-    ): Boolean =
+    ): Boolean {
         // TODO: only delete if has no wallet entry. Otherwise only disable.
-        walletItemRepository
-            .deleteByIdAndUserId(
-                id = id,
+        walletEventRepository
+            .deleteAllByWalletItemIdAndUserId(
+                walletItemId = id,
                 userId = userId,
             ).awaitSingle()
-            .let { modifiedLines ->
-                (modifiedLines > 0).also {
-                    bankAccountActionEventService
-                        .sendDeletedBankAccount(
-                            id = id,
-                            userId = userId,
-                        )
-                }
-            }
+
+        recurrenceEventRepository
+            .deleteAllByWalletItemIdAndUserId(
+                walletItemId = id,
+                userId = userId,
+            ).awaitSingle()
+
+        val modifiedLines =
+            walletItemRepository
+                .deleteByIdAndUserId(
+                    id = id,
+                    userId = userId,
+                ).awaitSingle()
+
+        return (modifiedLines > 0).also {
+            bankAccountActionEventService
+                .sendDeletedBankAccount(
+                    id = id,
+                    userId = userId,
+                )
+        }
+    }
 
     private suspend fun createInitialEntry(
         userId: UUID,

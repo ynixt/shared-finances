@@ -5,6 +5,8 @@ import com.ynixt.sharedfinances.domain.mapper.CreditCardMapper
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.EditCreditCardRequest
 import com.ynixt.sharedfinances.domain.models.creditcard.NewCreditCardRequest
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
@@ -20,6 +22,8 @@ import java.util.UUID
 @Service
 class CreditCardServiceImpl(
     private val walletItemRepository: WalletItemRepository,
+    private val walletEventRepository: WalletEventRepository,
+    private val recurrenceEventRepository: RecurrenceEventRepository,
     private val creditCardActionEventService: CreditCardActionEventService,
     private val creditCardMapper: CreditCardMapper,
 ) : CreditCardService {
@@ -109,6 +113,18 @@ class CreditCardServiceImpl(
         id: UUID,
     ): Boolean {
         // TODO: only delete if has no wallet entry. Otherwise only disable.
+        walletEventRepository
+            .deleteAllByWalletItemIdAndUserId(
+                walletItemId = id,
+                userId = userId,
+            ).awaitSingle()
+
+        recurrenceEventRepository
+            .deleteAllByWalletItemIdAndUserId(
+                walletItemId = id,
+                userId = userId,
+            ).awaitSingle()
+
         val modifiedLines =
             walletItemRepository
                 .deleteByIdAndUserId(id = id, userId = userId)

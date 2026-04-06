@@ -22,6 +22,15 @@ class RecurrenceEventRepositoryImpl(
     override fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity> =
         springDataRepository.findAllByNextExecutionLessThanEqual(nextExecution)
 
+    override fun deleteAllByWalletItemIdAndUserId(
+        walletItemId: UUID,
+        userId: UUID,
+    ): Mono<Long> =
+        springDataRepository.deleteAllByWalletItemIdAndUserId(
+            walletItemId = walletItemId,
+            userId = userId,
+        )
+
     override fun updateConfigCausedByExecution(
         id: UUID,
         oldNextExecution: LocalDate,

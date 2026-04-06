@@ -16,6 +16,11 @@ interface WalletEventRepository {
 
     fun saveAll(walletEntry: Iterable<WalletEventEntity>): Flux<WalletEventEntity>
 
+    fun deleteAllByWalletItemIdAndUserId(
+        walletItemId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
     fun findAll(
         userId: UUID?,
         groupId: UUID?,

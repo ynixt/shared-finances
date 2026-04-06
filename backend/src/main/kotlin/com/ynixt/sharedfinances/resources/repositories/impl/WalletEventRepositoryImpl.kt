@@ -20,6 +20,15 @@ class WalletEventRepositoryImpl(
 
     override fun saveAll(walletEntry: Iterable<WalletEventEntity>): Flux<WalletEventEntity> = springDataRepository.saveAll(walletEntry)
 
+    override fun deleteAllByWalletItemIdAndUserId(
+        walletItemId: UUID,
+        userId: UUID,
+    ): Mono<Long> =
+        springDataRepository.deleteAllByWalletItemIdAndUserId(
+            walletItemId = walletItemId,
+            userId = userId,
+        )
+
     override fun findAll(
         userId: UUID?,
         groupId: UUID?,

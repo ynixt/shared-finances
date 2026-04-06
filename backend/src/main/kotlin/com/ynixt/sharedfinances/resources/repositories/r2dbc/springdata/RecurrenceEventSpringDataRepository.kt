@@ -18,6 +18,25 @@ interface RecurrenceEventSpringDataRepository :
     @Modifying
     @Query(
         """
+            delete from recurrence_event re
+            where re.id in (
+                select distinct ren.wallet_event_id
+                from recurrence_entry ren
+                join wallet_item wi on wi.id = ren.wallet_item_id
+                where
+                    ren.wallet_item_id = :walletItemId
+                    and wi.user_id = :userId
+            )
+        """,
+    )
+    fun deleteAllByWalletItemIdAndUserId(
+        walletItemId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
             update recurrence_event
             set
                 last_execution = next_execution,
