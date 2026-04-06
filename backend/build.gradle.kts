@@ -5,7 +5,7 @@ import io.github.ynixt.anothertypescriptgenerator.GenerateTypescriptInterfacesTa
 plugins {
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.spring") version "2.3.0"
-    id("org.springframework.boot") version "4.0.2"
+    id("org.springframework.boot") version "4.0.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("io.github.ynixt.another-typescript-generator") version "1.2.0"
     id("tech.mappie.plugin") version "2.3.0-2.3.1"
@@ -17,7 +17,7 @@ version = "3.0.0"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
