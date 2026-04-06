@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 
@@ -19,6 +20,7 @@ import java.util.UUID
 class RecurrenceServiceImpl(
     override val repository: RecurrenceEventRepository,
     private val queueProducer: GenerateEntryRecurrenceQueueProducer,
+    private val clock: Clock,
 ) : EntityServiceImpl<RecurrenceEventEntity, RecurrenceEventEntity>(),
     RecurrenceService {
     override fun findAllEntryByWalletId(
@@ -113,7 +115,7 @@ class RecurrenceServiceImpl(
     }
 
     override suspend fun queueAllPendingOfExecution(): Int {
-        val itemsFlow = repository.findAllByNextExecutionLessThanEqual(LocalDate.now()).asFlow()
+        val itemsFlow = repository.findAllByNextExecutionLessThanEqual(LocalDate.now(clock)).asFlow()
 
         itemsFlow.collect {
             queueProducer.send(

@@ -37,5 +37,6 @@ data class NewEntryRequest(
     val category: WalletEntryCategoryEntity? = null,
 ) {
     val valueFixedForType: BigDecimal = type.fixValue(value)
-    val inFuture = date.isAfter(LocalDate.now())
+
+    fun isInFuture(today: LocalDate): Boolean = date.isAfter(today)
 }

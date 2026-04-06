@@ -28,6 +28,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.collections.ifEmpty
@@ -44,6 +45,7 @@ class WalletEntryCreateServiceImpl(
     recurrenceEntryRepository: RecurrenceEntryRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
     private val walletItemMapper: WalletItemMapper,
+    clock: Clock,
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
         walletItemService = walletItemService,
@@ -51,6 +53,7 @@ class WalletEntryCreateServiceImpl(
         recurrenceService = recurrenceService,
         recurrenceEventRepository = recurrenceEventRepository,
         recurrenceEntryRepository = recurrenceEntryRepository,
+        clock = clock,
     ),
     WalletEntryCreateService {
     @Transactional
@@ -244,8 +247,9 @@ class WalletEntryCreateServiceImpl(
         newEntryRequest: NewEntryRequest,
     ): MinimumWalletEventEntity {
         val recurrenceConfig = createRecurrenceConfig(userId, newEntryRequest)
+        val isInFuture = newEntryRequest.isInFuture(LocalDate.now(clock))
 
-        return if (newEntryRequest.inFuture) {
+        return if (isInFuture) {
             recurrenceConfig!!
         } else {
             createNowWithoutCheckPermissions(
@@ -337,7 +341,7 @@ class WalletEntryCreateServiceImpl(
                 )
 
             else -> {
-                if (newEntryRequest.inFuture) {
+                if (newEntryRequest.isInFuture(LocalDate.now(clock))) {
                     requestToRecurrenceEntity(
                         id = null,
                         userId = userId,

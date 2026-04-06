@@ -25,6 +25,7 @@ import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.Recurrenc
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 
@@ -35,6 +36,7 @@ abstract class WalletEntrySaveServiceImpl(
     protected val recurrenceService: RecurrenceService,
     protected val recurrenceEventRepository: RecurrenceEventRepository,
     protected val recurrenceEntryRepository: RecurrenceEntryRepository,
+    protected val clock: Clock,
 ) {
     protected suspend fun loadRelationships(
         userId: UUID,
@@ -169,10 +171,11 @@ abstract class WalletEntrySaveServiceImpl(
     ): RecurrenceEventEntity {
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
 
-        val alreadyExecuted = !newEntryRequest.inFuture
+        val now = LocalDate.now(clock)
+        val alreadyExecuted = !newEntryRequest.isInFuture(now)
         val qtyExecuted = if (alreadyExecuted) 1 else 0
 
-        val lastExecution: LocalDate? = if (alreadyExecuted) LocalDate.now() else null
+        val lastExecution: LocalDate? = if (alreadyExecuted) now else null
 
         val requestOriginBillDate = newEntryRequest.originBill?.billDate
         val requestTargetBillDate = newEntryRequest.targetBill?.billDate
