@@ -10,7 +10,7 @@ import java.time.Duration
 
 @Configuration
 class NatsConfig {
-    @Value("nats://\${NATS_HOST}:\${NATS_PORT}")
+    @Value($$"${app.nats.url}")
     private lateinit var natsUrl: String
 
     @Bean(destroyMethod = "close")

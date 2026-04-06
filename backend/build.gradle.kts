@@ -25,6 +25,79 @@ repositories {
     mavenCentral()
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjsr305=strict")
+    }
+}
+
+sourceSets {
+    create("integrationTest") {
+        compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
+        runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
+    }
+}
+
+val integrationTestTask =
+    tasks.register("integrationTest", Test::class) {
+        description = "Runs the integration tests."
+        group = "verification"
+
+        testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+        classpath = sourceSets["integrationTest"].runtimeClasspath
+
+        shouldRunAfter(tasks.named("test"))
+    }
+
+fun loadEnvFile(envFile: File): Map<String, String> {
+    if (!envFile.exists()) return emptyMap()
+    return envFile
+        .readLines()
+        .asSequence()
+        .map(String::trim)
+        .filter { it.isNotBlank() && !it.startsWith("#") }
+        .mapNotNull { line ->
+            val separatorIndex = line.indexOf('=')
+            if (separatorIndex <= 0) return@mapNotNull null
+            val key = line.substring(0, separatorIndex).trim()
+            val value = line.substring(separatorIndex + 1).trim().removeSurrounding("\"")
+            key to value
+        }.toMap()
+}
+
+val integrationEnvFile =
+    listOf(
+        file("../test.env"),
+        file("test.env"),
+    ).firstOrNull { it.exists() }
+
+integrationTestTask.configure {
+    if (integrationEnvFile != null) {
+        environment(loadEnvFile(integrationEnvFile))
+    }
+}
+
+val integrationTestImplementation: Configuration by configurations.getting {
+    extendsFrom(configurations.implementation.get())
+    extendsFrom(configurations.testImplementation.get())
+}
+
+configurations["integrationTestRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
+tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
+    outputPath = "../frontend/src/app/models/generated"
+    classPackages =
+        listOf(
+            "com.ynixt.sharedfinances.application.web.dto",
+            "com.ynixt.sharedfinances.domain.enums",
+        )
+    generateEnumObject = true
+}
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
@@ -67,30 +140,20 @@ dependencies {
     runtimeOnly("org.postgresql:r2dbc-postgresql")
     runtimeOnly("org.bouncycastle:bcprov-jdk18on:1.80")
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("io.projectreactor:reactor-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
 
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
-    }
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
-
-tasks.named<GenerateTypescriptInterfacesTask>("generateTypescriptInterfaces") {
-    outputPath = "../frontend/src/app/models/generated"
-    classPackages =
-        listOf(
-            "com.ynixt.sharedfinances.application.web.dto",
-            "com.ynixt.sharedfinances.domain.enums",
-        )
-    generateEnumObject = true
+    integrationTestImplementation("org.springframework.boot:spring-boot-testcontainers")
+    integrationTestImplementation(platform("org.testcontainers:testcontainers-bom:2.0.4"))
+    integrationTestImplementation("org.testcontainers:testcontainers")
+    integrationTestImplementation("org.testcontainers:testcontainers-r2dbc")
+    integrationTestImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    integrationTestImplementation("org.testcontainers:testcontainers-postgresql")
+    integrationTestImplementation("com.redis:testcontainers-redis:2.2.4")
+    integrationTestImplementation("io.github.amadeusitgroup.testcontainers:nats:1.0.12")
 }

@@ -6,11 +6,9 @@
       <module name="Backend.main" options="-parameters" />
       <module name="Backend.test" options="-parameters" />
       <module name="com.ynixt.shared-finances" options="-parameters" />
+      <module name="com.ynixt.shared-finances.integrationTest" options="-parameters" />
       <module name="com.ynixt.shared-finances.main" options="-parameters" />
       <module name="com.ynixt.shared-finances.test" options="-parameters" />
     </option>
-  </component>
-  <component name="TypeScriptCompiler">
-    <option name="useTypesFromServer" value="true" />
   </component>
 </project>

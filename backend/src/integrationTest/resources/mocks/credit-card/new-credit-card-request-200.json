@@ -1,0 +1,8 @@
+{
+  "name": "Cartão IT",
+  "currency": "BRL",
+  "totalLimit": 2500.50,
+  "dueDay": 12,
+  "daysBetweenDueAndClosing": 7,
+  "dueOnNextBusinessDay": true
+}

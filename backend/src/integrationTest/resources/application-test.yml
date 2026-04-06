@@ -1,5 +1,4 @@
 server:
-  port: ${APP_PORT}
   http2:
     enabled: true
 
@@ -7,9 +6,9 @@ spring:
   application:
     name: shared-finances
   r2dbc:
-    url: r2dbc:${POSTGRES_APP_CONNECTION_STRING}
-    username: ${POSTGRES_APP_USER}
-    password: ${POSTGRES_APP_PASSWORD}
+    url: mock
+    username: mock
+    password: mock
     pool:
       initial-size: 5
       max-size: 20
@@ -19,17 +18,18 @@ spring:
       validation-query: SELECT 1
       acquire-retry: 2
   flyway:
-    url: jdbc:${POSTGRES_APP_CONNECTION_STRING}
-    user: ${POSTGRES_APP_USER}
-    password: ${POSTGRES_APP_PASSWORD}
+    url: mock
+    user: mock
+    password: mock
     locations: classpath:db/migration
     baseline-on-migrate: true
     fail-on-missing-locations: false
+    clean-disabled: false
   data:
     redis:
-      host: ${REDIS_APP_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
+      host: mock
+      port: 1
+      password: mock
       database: 0
       ssl:
         enabled: false
@@ -44,10 +44,6 @@ spring:
   web:
     error:
       include-message: always
-#  graphql:
-#    graphiql:
-#      enabled: true
-#      path: /open/graphiql
 
 springdoc:
   show-actuator: true
@@ -61,17 +57,9 @@ management:
     web:
       base-path: /open/actuator
 
-logging:
-  level:
-    #org.springframework.web: TRACE
-#    org.springframework.security: TRACE
-#    reactor.netty.http.server: DEBUG
-    io.r2dbc.postgresql.QUERY: DEBUG
-    io.r2dbc.postgresql.PARAM: DEBUG
-
 app:
   nats:
-    url: nats://${NATS_HOST}:${NATS_PORT}
+    url: mock
   invitationExpirationMinutes: ${APP_INVITATION_EXPIRATION_MINUTES:15}
   security:
     jwt:
