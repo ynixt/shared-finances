@@ -15,23 +15,36 @@ class WalletScenarioWhen internal constructor(
     private val context: WalletScenarioContext,
     private val resolver: WalletScenarioResolver,
 ) {
-    suspend fun expense(
+    suspend fun revenue(
         value: Number,
         originId: UUID? = null,
         date: LocalDate,
-        name: String = "Expense",
+        name: String = "Revenue",
         confirmed: Boolean = true,
-        billDate: LocalDate? = null,
-    ) = createExpense(
-        value = value,
-        originId = originId,
-        date = date,
-        name = name,
-        confirmed = confirmed,
-        billDate = billDate,
-    )
+    ) {
+        val userId = resolver.ensureUser()
+        val resolvedOrigin = resolver.resolveExpenseOrigin(originId = originId, date = date)
 
-    suspend fun createExpense(
+        val created =
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest =
+                    NewEntryRequest(
+                        type = WalletEntryType.REVENUE,
+                        originId = resolvedOrigin.originId,
+                        date = date,
+                        value = value.toBigDecimalSafe(),
+                        name = name,
+                        confirmed = confirmed,
+                        paymentType = PaymentType.UNIQUE,
+                        originBillDate = resolvedOrigin.billDate,
+                    ),
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
+    }
+
+    suspend fun expense(
         value: Number,
         originId: UUID? = null,
         date: LocalDate,
@@ -59,20 +72,6 @@ class WalletScenarioWhen internal constructor(
     }
 
     suspend fun installmentPurchase(
-        total: Number,
-        installments: Int,
-        originId: UUID? = null,
-        date: LocalDate,
-        name: String = "Installment purchase",
-    ) = createInstallmentPurchase(
-        total = total,
-        installments = installments,
-        originId = originId,
-        date = date,
-        name = name,
-    )
-
-    suspend fun createInstallmentPurchase(
         total: Number,
         installments: Int,
         originId: UUID? = null,
@@ -110,22 +109,15 @@ class WalletScenarioWhen internal constructor(
         context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
     }
 
-    suspend fun advance(to: LocalDate) = advanceTime(to)
-
-    suspend fun advanceTime(to: LocalDate) {
+    fun advanceTime(to: LocalDate) {
         runtime.clock.setDate(to)
     }
-
-    suspend fun advanceToNextRecurrenceExecution(recurrenceConfigId: UUID? = null) =
-        advanceTimeToNextRecurrenceExecution(recurrenceConfigId)
 
     suspend fun advanceTimeToNextRecurrenceExecution(recurrenceConfigId: UUID? = null) {
         runtime.clock.setDate(resolver.getNextRecurrenceExecutionDate(recurrenceConfigId))
     }
 
-    suspend fun runRecurrence() = runRecurrenceCycle()
-
-    suspend fun runRecurrenceCycle() {
+    suspend fun runRecurrence() {
         runtime.recurrenceService.queueAllPendingOfExecution()
 
         while (true) {

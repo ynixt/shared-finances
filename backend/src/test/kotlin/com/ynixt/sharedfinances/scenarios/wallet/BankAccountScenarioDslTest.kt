@@ -37,4 +37,46 @@ class BankAccountScenarioDslTest {
             }
         }
     }
+
+    @Test
+    fun `should only apply future revenue to bank account balance after recurrence execution`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val futureDate = today.plusDays(5)
+        val initialBalance = BigDecimal("1000.00")
+        val revenueValue = BigDecimal("200.00")
+        val expectedBalanceAfterExecution = initialBalance.add(revenueValue)
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccount(
+                    name = "Conta Principal",
+                    balance = initialBalance,
+                    currency = "BRL",
+                )
+            }
+
+            `when` {
+                revenue(
+                    value = revenueValue,
+                    date = futureDate,
+                    name = "Lucro Futuro",
+                    confirmed = true,
+                )
+            }
+
+            then {
+                balanceShouldBe(expected = initialBalance)
+            }
+
+            `when` {
+                advanceTime(to = futureDate)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(expected = expectedBalanceAfterExecution)
+            }
+        }
+    }
 }

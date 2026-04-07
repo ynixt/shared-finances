@@ -60,7 +60,7 @@ class CreditCardScenarioDslTest {
             }
 
             `when` {
-                advanceToNextRecurrenceExecution()
+                advanceTimeToNextRecurrenceExecution()
                 runRecurrence()
             }
 
@@ -71,7 +71,7 @@ class CreditCardScenarioDslTest {
             }
 
             `when` {
-                advanceToNextRecurrenceExecution()
+                advanceTimeToNextRecurrenceExecution()
                 runRecurrence()
             }
 
@@ -83,7 +83,7 @@ class CreditCardScenarioDslTest {
             }
 
             `when` {
-                advance(to = billDate4)
+                advanceTime(to = billDate4)
                 runRecurrence()
             }
 
