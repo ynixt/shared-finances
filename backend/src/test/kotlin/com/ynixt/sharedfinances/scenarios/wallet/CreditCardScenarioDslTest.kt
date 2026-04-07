@@ -141,7 +141,7 @@ class CreditCardScenarioDslTest {
                 expense(
                     value = expenseValue,
                     date = today,
-                    name = "Farmacia",
+                    name = "Pharmacy",
                     billDate = expectedBillDate,
                 )
             }

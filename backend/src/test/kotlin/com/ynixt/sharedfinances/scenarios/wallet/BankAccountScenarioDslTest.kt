@@ -17,7 +17,7 @@ class BankAccountScenarioDslTest {
             given {
                 user(defaultCurrency = "BRL")
                 bankAccount(
-                    name = "Conta Principal",
+                    name = "Main Account",
                     balance = initialBalance,
                     currency = "BRL",
                 )
@@ -27,7 +27,7 @@ class BankAccountScenarioDslTest {
                 expense(
                     value = expenseValue,
                     date = today,
-                    name = "Supermercado",
+                    name = "Supermarket",
                     confirmed = true,
                 )
             }
@@ -50,7 +50,7 @@ class BankAccountScenarioDslTest {
             given {
                 user(defaultCurrency = "BRL")
                 bankAccount(
-                    name = "Conta Principal",
+                    name = "Main Account",
                     balance = initialBalance,
                     currency = "BRL",
                 )
@@ -60,7 +60,7 @@ class BankAccountScenarioDslTest {
                 revenue(
                     value = revenueValue,
                     date = futureDate,
-                    name = "Lucro Futuro",
+                    name = "Future Profit",
                     confirmed = true,
                 )
             }

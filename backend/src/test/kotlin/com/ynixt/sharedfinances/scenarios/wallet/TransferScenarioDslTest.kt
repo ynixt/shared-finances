@@ -41,7 +41,7 @@ class TransferScenarioDslTest {
                 user(defaultCurrency = "BRL")
                 bankAccountId =
                     bankAccount(
-                        name = "Conta Principal",
+                        name = "Main Account",
                         balance = initialBalance,
                         currency = "BRL",
                     )
@@ -59,7 +59,7 @@ class TransferScenarioDslTest {
                 transfer(
                     value = transferValue,
                     date = today,
-                    name = "Pagamento de fatura",
+                    name = "Bill Payment",
                     confirmed = true,
                     originId = bankAccountId,
                     targetId = creditCardId,
@@ -107,7 +107,7 @@ class TransferScenarioDslTest {
                 user(defaultCurrency = "BRL")
                 bankAccountId =
                     bankAccount(
-                        name = "Conta Principal",
+                        name = "Main Account",
                         balance = initialBankBalance,
                         currency = "BRL",
                     )
@@ -127,7 +127,7 @@ class TransferScenarioDslTest {
                     date = today,
                     originId = creditCardId,
                     targetId = bankAccountId,
-                    name = "Saque do cartão",
+                    name = "Card Cash Withdrawal",
                     confirmed = true,
                 )
             }
