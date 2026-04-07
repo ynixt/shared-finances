@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.services.BankAccountServiceImpl
@@ -27,6 +28,7 @@ import java.time.LocalDate
 
 internal class ScenarioRuntime(
     initialDate: LocalDate,
+    private val groupService: GroupService = NoOpGroupService(),
 ) {
     val queueProducer = InMemoryGenerateEntryRecurrenceQueueProducer()
     val clock = MutableScenarioClock(initialDate)
@@ -73,7 +75,7 @@ internal class ScenarioRuntime(
         WalletEntryCreateServiceImpl(
             walletEventRepository = walletEventRepository,
             walletEntryRepository = walletEntryRepository,
-            groupService = NoOpGroupService(),
+            groupService = groupService,
             walletItemService = walletItemService,
             creditCardBillService = creditCardBillService,
             recurrenceService = recurrenceService,

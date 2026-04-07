@@ -17,7 +17,7 @@ internal class UserScenarioSetupOps(
         lang: String = "en",
         defaultCurrency: String = "USD",
         tmz: String = "UTC",
-    ) {
+    ): UUID {
         val created =
             runtime.userService.createUser(
                 RegisterDto(
@@ -31,7 +31,9 @@ internal class UserScenarioSetupOps(
                 ),
             )
 
-        context.currentUserId = requireNotNull(created.id)
+        val userId = requireNotNull(created.id)
+        context.currentUserId = userId
         context.currentCurrency = created.defaultCurrency
+        return userId
     }
 }

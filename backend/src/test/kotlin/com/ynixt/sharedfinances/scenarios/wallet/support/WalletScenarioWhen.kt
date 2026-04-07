@@ -113,6 +113,7 @@ class WalletScenarioWhen internal constructor(
     suspend fun transfer(
         value: Number,
         date: LocalDate,
+        groupId: UUID? = null,
         originId: UUID,
         targetId: UUID,
         name: String = "Transfer",
@@ -148,22 +149,25 @@ class WalletScenarioWhen internal constructor(
                 null
             }
 
-        runtime.walletEntryCreateService.create(
-            userId = userId,
-            newEntryRequest =
-                NewEntryRequest(
-                    type = WalletEntryType.TRANSFER,
-                    originId = originId,
-                    targetId = targetId,
-                    date = date,
-                    value = value.toBigDecimalSafe(),
-                    name = name,
-                    confirmed = confirmed,
-                    paymentType = PaymentType.UNIQUE,
-                    originBillDate = resolvedOriginBillDate,
-                    targetBillDate = resolvedTargetBillDate,
-                ),
-        )
+        requireNotNull(
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest =
+                    NewEntryRequest(
+                        type = WalletEntryType.TRANSFER,
+                        groupId = groupId,
+                        originId = originId,
+                        targetId = targetId,
+                        date = date,
+                        value = value.toBigDecimalSafe(),
+                        name = name,
+                        confirmed = confirmed,
+                        paymentType = PaymentType.UNIQUE,
+                        originBillDate = resolvedOriginBillDate,
+                        targetBillDate = resolvedTargetBillDate,
+                    ),
+            ),
+        ) { "Transfer was rejected due to insufficient permissions for selected group/origin/target" }
     }
 
     fun advanceTime(to: LocalDate) {

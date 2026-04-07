@@ -1,5 +1,7 @@
 package com.ynixt.sharedfinances.scenarios.wallet.support
 
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.scenarios.support.NoOpGroupService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.user.support.UserScenarioSetupOps
 import kotlinx.coroutines.runBlocking
@@ -7,18 +9,20 @@ import java.time.LocalDate
 
 fun walletScenario(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
+    groupService: GroupService = NoOpGroupService(),
     block: suspend WalletScenarioDsl.() -> Unit,
 ): WalletScenarioDsl =
     runBlocking {
-        WalletScenarioDsl(initialDate).apply {
+        WalletScenarioDsl(initialDate = initialDate, groupService = groupService).apply {
             block()
         }
     }
 
 class WalletScenarioDsl(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
+    groupService: GroupService = NoOpGroupService(),
 ) {
-    private val runtime = ScenarioRuntime(initialDate)
+    private val runtime = ScenarioRuntime(initialDate = initialDate, groupService = groupService)
     private val context = WalletScenarioContext()
     private val userSetupOps = UserScenarioSetupOps(runtime = runtime, context = context)
 
