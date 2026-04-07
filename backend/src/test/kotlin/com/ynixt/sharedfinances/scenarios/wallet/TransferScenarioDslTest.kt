@@ -139,4 +139,115 @@ class TransferScenarioDslTest {
             }
         }
     }
+
+    @Test
+    fun `should create transfer between credit cards and use correct bill date for each card`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val transferValue = BigDecimal("100.00")
+        val originLimit = BigDecimal("3000.00")
+        val targetLimit = BigDecimal("1500.00")
+        val originDueDay = 8
+        val originDaysBetweenDueAndClosing = 1
+        val targetDueDay = 20
+        val targetDaysBetweenDueAndClosing = 5
+        val dueOnNextBusinessDay = false
+
+        lateinit var originCreditCardId: UUID
+        lateinit var targetCreditCardId: UUID
+
+        val expectedOriginCardModel =
+            CreditCard(
+                name = "Expected Origin Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = originLimit,
+                balance = originLimit,
+                dueDay = originDueDay,
+                daysBetweenDueAndClosing = originDaysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+        val expectedTargetCardModel =
+            CreditCard(
+                name = "Expected Target Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = targetLimit,
+                balance = targetLimit,
+                dueDay = targetDueDay,
+                daysBetweenDueAndClosing = targetDaysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+
+        val expectedOriginBillDate = expectedOriginCardModel.getBestBill(today)
+        val expectedTargetBillDate = expectedTargetCardModel.getBestBill(today)
+        check(expectedOriginBillDate != expectedTargetBillDate) {
+            "Expected different bill dates for origin and target cards"
+        }
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                originCreditCardId =
+                    creditCard(
+                        name = "Origin Card",
+                        limit = originLimit,
+                        currency = "BRL",
+                        dueDay = originDueDay,
+                        daysBetweenDueAndClosing = originDaysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+                targetCreditCardId =
+                    creditCard(
+                        name = "Target Card",
+                        limit = targetLimit,
+                        currency = "BRL",
+                        dueDay = targetDueDay,
+                        daysBetweenDueAndClosing = targetDaysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                transfer(
+                    value = transferValue,
+                    date = today,
+                    originId = originCreditCardId,
+                    targetId = targetCreditCardId,
+                    name = "Card to Card Transfer",
+                    confirmed = true,
+                )
+            }
+
+            then {
+                billValueShouldBe(
+                    expected = transferValue.unaryMinus(),
+                    billDate = expectedOriginBillDate,
+                    creditCardId = originCreditCardId,
+                )
+                billShouldNotExist(
+                    billDate = expectedTargetBillDate,
+                    creditCardId = originCreditCardId,
+                )
+                billValueShouldBe(
+                    expected = transferValue,
+                    billDate = expectedTargetBillDate,
+                    creditCardId = targetCreditCardId,
+                )
+                billShouldNotExist(
+                    billDate = expectedOriginBillDate,
+                    creditCardId = targetCreditCardId,
+                )
+                availableLimitShouldBe(
+                    expected = originLimit.subtract(transferValue),
+                    creditCardId = originCreditCardId,
+                )
+                availableLimitShouldBe(
+                    expected = targetLimit.add(transferValue),
+                    creditCardId = targetCreditCardId,
+                )
+            }
+        }
+    }
 }
