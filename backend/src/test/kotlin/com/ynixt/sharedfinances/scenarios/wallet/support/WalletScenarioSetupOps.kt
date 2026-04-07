@@ -20,7 +20,7 @@ internal class WalletScenarioSetupOps(
         name: String = "Bank Account",
         balance: Number = BigDecimal.ZERO,
         currency: String = context.currentCurrency,
-    ) {
+    ): UUID {
         val userId = resolver.ensureUser()
         val account =
             runtime.bankAccountService.newBankAccount(
@@ -32,7 +32,9 @@ internal class WalletScenarioSetupOps(
                         currency = currency,
                     ),
             )
-        context.currentBankAccountId = requireNotNull(account.id)
+        return requireNotNull(account.id).also { id ->
+            context.currentBankAccountId = id
+        }
     }
 
     suspend fun createCreditCard(
@@ -42,7 +44,7 @@ internal class WalletScenarioSetupOps(
         dueDay: Int = 10,
         daysBetweenDueAndClosing: Int = 7,
         dueOnNextBusinessDay: Boolean = true,
-    ) {
+    ): UUID {
         val userId = resolver.ensureUser()
         val card =
             runtime.creditCardService.create(
@@ -57,7 +59,9 @@ internal class WalletScenarioSetupOps(
                         dueOnNextBusinessDay = dueOnNextBusinessDay,
                     ),
             )
-        context.currentCreditCardId = requireNotNull(card.id)
+        return requireNotNull(card.id).also { id ->
+            context.currentCreditCardId = id
+        }
     }
 
     suspend fun createCreditCardBill(

@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.scenarios.wallet.support
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
@@ -107,6 +108,62 @@ class WalletScenarioWhen internal constructor(
             )
 
         context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
+    }
+
+    suspend fun transfer(
+        value: Number,
+        date: LocalDate,
+        originId: UUID,
+        targetId: UUID,
+        name: String = "Transfer",
+        confirmed: Boolean = true,
+        originBillDate: LocalDate? = null,
+        targetBillDate: LocalDate? = null,
+    ) {
+        val userId = resolver.ensureUser()
+
+        require(originId != targetId) {
+            "Origin and target should be different for transfer"
+        }
+
+        val origin =
+            requireNotNull(runtime.walletItemService.findOne(originId)) {
+                "Wallet item $originId was not found"
+            }
+        val target =
+            requireNotNull(runtime.walletItemService.findOne(targetId)) {
+                "Wallet item $targetId was not found"
+            }
+
+        val resolvedOriginBillDate =
+            if (origin is CreditCard) {
+                originBillDate ?: origin.getBestBill(date)
+            } else {
+                null
+            }
+        val resolvedTargetBillDate =
+            if (target is CreditCard) {
+                targetBillDate ?: target.getBestBill(date)
+            } else {
+                null
+            }
+
+        runtime.walletEntryCreateService.create(
+            userId = userId,
+            newEntryRequest =
+                NewEntryRequest(
+                    type = WalletEntryType.TRANSFER,
+                    originId = originId,
+                    targetId = targetId,
+                    date = date,
+                    value = value.toBigDecimalSafe(),
+                    name = name,
+                    confirmed = confirmed,
+                    paymentType = PaymentType.UNIQUE,
+                    originBillDate = resolvedOriginBillDate,
+                    targetBillDate = resolvedTargetBillDate,
+                ),
+        )
     }
 
     fun advanceTime(to: LocalDate) {
