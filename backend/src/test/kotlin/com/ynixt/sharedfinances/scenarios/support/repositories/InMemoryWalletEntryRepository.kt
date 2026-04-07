@@ -1,9 +1,9 @@
-package com.ynixt.sharedfinances.scenario.support.repositories
+package com.ynixt.sharedfinances.scenarios.support.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
-import com.ynixt.sharedfinances.scenario.support.nowOffset
+import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDate

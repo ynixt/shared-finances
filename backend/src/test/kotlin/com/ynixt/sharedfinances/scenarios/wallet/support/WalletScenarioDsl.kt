@@ -1,7 +1,7 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
-import com.ynixt.sharedfinances.scenario.support.ScenarioRuntime
-import com.ynixt.sharedfinances.scenario.user.support.UserScenarioSetupOps
+import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
+import com.ynixt.sharedfinances.scenarios.user.support.UserScenarioSetupOps
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 

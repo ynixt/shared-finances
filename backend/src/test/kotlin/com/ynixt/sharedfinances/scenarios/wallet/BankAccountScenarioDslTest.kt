@@ -1,6 +1,6 @@
-package com.ynixt.sharedfinances.scenario.wallet
+package com.ynixt.sharedfinances.scenarios.wallet
 
-import com.ynixt.sharedfinances.scenario.wallet.support.walletScenario
+import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate

@@ -1,6 +1,6 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
-import com.ynixt.sharedfinances.scenario.support.ScenarioContext
+import com.ynixt.sharedfinances.scenarios.support.ScenarioContext
 import java.util.UUID
 
 internal class WalletScenarioContext(

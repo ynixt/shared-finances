@@ -1,11 +1,11 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
-import com.ynixt.sharedfinances.scenario.support.ScenarioRuntime
-import com.ynixt.sharedfinances.scenario.support.util.toBigDecimalSafe
+import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
+import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.util.UUID

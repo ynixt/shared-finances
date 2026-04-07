@@ -1,8 +1,8 @@
-package com.ynixt.sharedfinances.scenario.user.support
+package com.ynixt.sharedfinances.scenarios.user.support
 
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
-import com.ynixt.sharedfinances.scenario.support.ScenarioContext
-import com.ynixt.sharedfinances.scenario.support.ScenarioRuntime
+import com.ynixt.sharedfinances.scenarios.support.ScenarioContext
+import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import java.util.UUID
 
 internal class UserScenarioSetupOps(

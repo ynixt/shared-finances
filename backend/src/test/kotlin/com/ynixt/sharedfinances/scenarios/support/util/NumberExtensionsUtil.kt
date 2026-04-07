@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.scenario.support.util
+package com.ynixt.sharedfinances.scenarios.support.util
 
 import java.math.BigDecimal
 

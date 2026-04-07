@@ -1,6 +1,6 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
-import com.ynixt.sharedfinances.scenario.user.support.UserScenarioSetupOps
+import com.ynixt.sharedfinances.scenarios.user.support.UserScenarioSetupOps
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID

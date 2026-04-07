@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.scenario.support
+package com.ynixt.sharedfinances.scenarios.support
 
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
@@ -16,13 +16,13 @@ import com.ynixt.sharedfinances.resources.services.UserServiceImpl
 import com.ynixt.sharedfinances.resources.services.WalletItemServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryCreateServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.recurrence.RecurrenceServiceImpl
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryCreditCardBillRepository
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryRecurrenceEntryRepository
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryRecurrenceEventRepository
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryUserRepository
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryWalletEntryRepository
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryWalletEventRepository
-import com.ynixt.sharedfinances.scenario.support.repositories.InMemoryWalletItemRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryCreditCardBillRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEntryRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEventRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import java.time.LocalDate
 
 internal class ScenarioRuntime(

@@ -1,6 +1,6 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
-import com.ynixt.sharedfinances.scenario.support.util.toBigDecimalSafe
+import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
 import java.util.UUID

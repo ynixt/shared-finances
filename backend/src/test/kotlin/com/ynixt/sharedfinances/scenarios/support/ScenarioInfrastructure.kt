@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.scenario.support
+package com.ynixt.sharedfinances.scenarios.support
 
 import com.ynixt.sharedfinances.application.web.dto.GenerateEntryRecurrenceRequestDto
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity

@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
@@ -7,7 +7,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
-import com.ynixt.sharedfinances.scenario.support.ScenarioRuntime
+import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import java.time.LocalDate
 import java.util.UUID

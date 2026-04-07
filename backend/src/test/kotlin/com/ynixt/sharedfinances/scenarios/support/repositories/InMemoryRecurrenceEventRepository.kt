@@ -1,8 +1,8 @@
-package com.ynixt.sharedfinances.scenario.support.repositories
+package com.ynixt.sharedfinances.scenarios.support.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
-import com.ynixt.sharedfinances.scenario.support.nowOffset
+import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import org.springframework.data.domain.Sort
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -15,7 +15,7 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
     override fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity> =
         Flux.fromIterable(
             data.values.filter {
-                it.nextExecution != null && (it.nextExecution!!.isBefore(nextExecution) || it.nextExecution == nextExecution)
+                it.nextExecution != null && (it.nextExecution.isBefore(nextExecution) || it.nextExecution == nextExecution)
             },
         )
 
@@ -62,8 +62,8 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
                 .asSequence()
                 .filter { userId == null || it.userId == userId }
                 .filter { groupId == null || it.groupId == groupId }
-                .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution!!.isAfter(maximumNextExecution)) }
-                .filter { minimumEndExecution == null || (it.endExecution != null && !it.endExecution!!.isBefore(minimumEndExecution)) }
+                .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution.isAfter(maximumNextExecution)) }
+                .filter { minimumEndExecution == null || (it.endExecution != null && !it.endExecution.isBefore(minimumEndExecution)) }
                 .toList()
         return Flux.fromIterable(filtered)
     }

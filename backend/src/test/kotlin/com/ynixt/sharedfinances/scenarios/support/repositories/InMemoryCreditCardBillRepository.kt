@@ -1,8 +1,8 @@
-package com.ynixt.sharedfinances.scenario.support.repositories
+package com.ynixt.sharedfinances.scenarios.support.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.repositories.CreditCardBillRepository
-import com.ynixt.sharedfinances.scenario.support.nowOffset
+import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.math.BigDecimal

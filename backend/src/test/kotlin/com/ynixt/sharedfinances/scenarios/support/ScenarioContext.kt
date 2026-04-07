@@ -1,4 +1,4 @@
-package com.ynixt.sharedfinances.scenario.support
+package com.ynixt.sharedfinances.scenarios.support
 
 import java.util.UUID
 

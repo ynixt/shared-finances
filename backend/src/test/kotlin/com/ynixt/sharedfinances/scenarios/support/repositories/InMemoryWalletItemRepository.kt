@@ -1,9 +1,9 @@
-package com.ynixt.sharedfinances.scenario.support.repositories
+package com.ynixt.sharedfinances.scenarios.support.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
-import com.ynixt.sharedfinances.scenario.support.nowOffset
+import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono

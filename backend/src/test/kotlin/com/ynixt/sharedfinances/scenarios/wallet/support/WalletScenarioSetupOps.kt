@@ -1,9 +1,9 @@
-package com.ynixt.sharedfinances.scenario.wallet.support
+package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.models.bankaccount.NewBankAccountRequest
 import com.ynixt.sharedfinances.domain.models.creditcard.NewCreditCardRequest
-import com.ynixt.sharedfinances.scenario.support.ScenarioRuntime
-import com.ynixt.sharedfinances.scenario.support.util.toBigDecimalSafe
+import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
+import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.UUID
