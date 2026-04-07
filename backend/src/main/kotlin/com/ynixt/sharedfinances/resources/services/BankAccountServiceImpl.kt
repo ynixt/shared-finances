@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 
@@ -34,6 +35,7 @@ class BankAccountServiceImpl(
     private val bankAccountActionEventService: BankAccountActionEventService,
     private val bankAccountMapper: BankAccountMapper,
     private val walletEntryCreateService: WalletEntryCreateService,
+    private val clock: Clock,
 ) : BankAccountService {
     override suspend fun findAllBanks(
         userId: UUID,
@@ -167,7 +169,7 @@ class BankAccountServiceImpl(
                 NewEntryRequest(
                     type = if (newBankAccountRequest.balance > BigDecimal.ZERO) WalletEntryType.REVENUE else WalletEntryType.EXPENSE,
                     originId = bankAccountEntity.id!!,
-                    date = LocalDate.now(),
+                    date = LocalDate.now(clock),
                     value = newBankAccountRequest.balance,
                     confirmed = true,
                     paymentType = PaymentType.UNIQUE,

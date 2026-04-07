@@ -149,6 +149,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     integrationTestImplementation("org.springframework.boot:spring-boot-testcontainers")
+    integrationTestImplementation("org.springframework.boot:spring-boot-data-r2dbc-test")
     integrationTestImplementation(platform("org.testcontainers:testcontainers-bom:2.0.4"))
     integrationTestImplementation("org.testcontainers:testcontainers")
     integrationTestImplementation("org.testcontainers:testcontainers-r2dbc")
