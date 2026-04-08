@@ -78,7 +78,7 @@ abstract class WalletEntrySaveServiceImpl(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
     ): Boolean {
-        val hasGroupPermission = newEntryRequest.group == null || newEntryRequest.group.permissions.contains(GroupPermissions.NEW_ENTRY)
+        val hasGroupPermission = newEntryRequest.group == null || newEntryRequest.group.permissions.contains(GroupPermissions.SEND_ENTRIES)
         val hasOriginPermission: Boolean
         val hasTargetPermission: Boolean
         val hasCategoryPermission: Boolean
