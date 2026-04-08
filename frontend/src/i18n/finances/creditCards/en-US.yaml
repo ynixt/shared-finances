@@ -8,6 +8,7 @@ financesPage:
     dueDay: Due day
     daysBetweenDueAndClosing: Days between due and closing
     dueOnNextBusinessDay: Due on next business day
+    empty: No credit cards found.
     newCreditCardPage:
       title: New credit card
       successMessage: Credit card created successfully

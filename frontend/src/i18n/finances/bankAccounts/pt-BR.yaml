@@ -4,6 +4,7 @@ financesPage:
     name: Nome da conta
     currency: Moeda
     balance: Saldo
+    empty: Nenhuma conta bancária encontrada.
     newBankAccountPage:
       title: Nova conta bancária
       initialBalance: Saldo inicial

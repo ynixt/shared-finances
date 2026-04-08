@@ -8,6 +8,7 @@ financesPage:
     dueDay: Dia de vencimento
     daysBetweenDueAndClosing: Dias entre fechamento e vencimento
     dueOnNextBusinessDay: Vencimento no próximo dia útil
+    empty: Nenhum cartão de crédito encontrado.
     newCreditCardPage:
       title: Novo cartão de crédito
       successMessage: Cartão de crédito criado com sucesso

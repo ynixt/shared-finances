@@ -4,6 +4,7 @@ financesPage:
     name: Account name
     currency: Currency
     balance: Balance
+    empty: No bank account found.
     newBankAccountPage:
       title: New bank account
       initialBalance: Initial balance
