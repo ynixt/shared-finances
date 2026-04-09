@@ -2,24 +2,39 @@ package com.ynixt.sharedfinances.scenarios.support
 
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.ScheduledExecutionManagerService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryRemovalService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
+import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceOccurrenceSimulationService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import com.ynixt.sharedfinances.resources.services.BankAccountServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardBillServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardServiceImpl
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
 import com.ynixt.sharedfinances.resources.services.WalletItemServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.ScheduledExecutionManagerServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryCreateServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryEditServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryRemovalServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.WalletEventListServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.recurrence.RecurrenceOccurrenceSimulationServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.recurrence.RecurrenceServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.recurrence.RecurrenceSimulationServiceImpl
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryCreditCardBillRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEventRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceSeriesRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
@@ -36,8 +51,23 @@ internal class ScenarioRuntime(
     private val walletItemRepository = InMemoryWalletItemRepository()
     private val walletEventRepository = InMemoryWalletEventRepository()
     private val walletEntryRepository = InMemoryWalletEntryRepository()
-    val recurrenceEventRepository: RecurrenceEventRepository = InMemoryRecurrenceEventRepository()
+    private val recurrenceEventRepositoryRaw = InMemoryRecurrenceEventRepository()
     private val recurrenceEntryRepository = InMemoryRecurrenceEntryRepository()
+    private val recurrenceSeriesRepositoryRaw =
+        InMemoryRecurrenceSeriesRepository { seriesId ->
+            val recurrenceEventIds = recurrenceEventRepositoryRaw.findIdsBySeriesId(seriesId)
+            if (recurrenceEventIds.isEmpty()) {
+                return@InMemoryRecurrenceSeriesRepository
+            }
+
+            recurrenceEntryRepository.deleteAllByWalletEventIds(recurrenceEventIds)
+            val walletEventIds = walletEventRepository.findIdsByRecurrenceEventIds(recurrenceEventIds)
+            walletEntryRepository.deleteAllByWalletEventIds(walletEventIds)
+            walletEventRepository.deleteAllByRecurrenceEventIds(recurrenceEventIds)
+            recurrenceEventRepositoryRaw.deleteAllBySeriesId(seriesId)
+        }
+    val recurrenceEventRepository: RecurrenceEventRepository = recurrenceEventRepositoryRaw
+    val recurrenceSeriesRepository: RecurrenceSeriesRepository = recurrenceSeriesRepositoryRaw
     private val userRepository = InMemoryUserRepository()
     val creditCardBillRepository = InMemoryCreditCardBillRepository(walletItemRepository)
 
@@ -45,6 +75,8 @@ internal class ScenarioRuntime(
     private val creditCardMapper = ScenarioCreditCardMapper()
     val creditCardBillMapper: CreditCardBillMapper = ScenarioCreditCardBillMapper()
     private val walletItemMapper = ScenarioWalletItemMapper(bankAccountMapper, creditCardMapper)
+    private val genericCategoryService: GenericCategoryService = NoOpGenericCategoryService()
+    val walletEventActionEventService = RecordingWalletEventActionEventService()
 
     val walletItemService: WalletItemService = WalletItemServiceImpl(walletItemRepository, walletItemMapper)
 
@@ -71,6 +103,50 @@ internal class ScenarioRuntime(
             creditCardService = creditCardService,
         )
 
+    val userService: UserService =
+        UserServiceImpl(
+            repository = userRepository,
+            passwordEncoder = ScenarioPasswordEncoder(),
+            databaseHelperService = NoOpDatabaseHelperService(),
+            avatarService = NoOpAvatarService(),
+        )
+
+    val recurrenceOccurrenceSimulationService: RecurrenceOccurrenceSimulationService =
+        RecurrenceOccurrenceSimulationServiceImpl(
+            creditCardBillService = creditCardBillService,
+        )
+
+    val recurrenceSimulationService: RecurrenceSimulationService =
+        RecurrenceSimulationServiceImpl(
+            genericCategoryService = genericCategoryService,
+            groupService = groupService,
+            userService = userService,
+            walletItemService = walletItemService,
+            creditCardBillService = creditCardBillService,
+            walletItemMapper = walletItemMapper,
+            recurrenceService = recurrenceService,
+            recurrenceOccurrenceSimulationService = recurrenceOccurrenceSimulationService,
+            recurrenceSeriesRepository = recurrenceSeriesRepository,
+            clock = clock,
+        )
+
+    val walletEventListService: WalletEventListService =
+        WalletEventListServiceImpl(
+            walletEventRepository = walletEventRepository,
+            walletEntryRepository = walletEntryRepository,
+            recurrenceEntryRepository = recurrenceEntryRepository,
+            creditCardBillRepository = creditCardBillRepository,
+            walletItemMapper = walletItemMapper,
+            walletItemService = walletItemService,
+            genericCategoryService = genericCategoryService,
+            groupService = groupService,
+            groupPermissionService = ScenarioGroupPermissionService(groupService),
+            userService = userService,
+            recurrenceSeriesRepository = recurrenceSeriesRepository,
+            recurrenceSimulationService = recurrenceSimulationService,
+            recurrenceService = recurrenceService,
+        )
+
     val walletEntryCreateService: WalletEntryCreateService =
         WalletEntryCreateServiceImpl(
             walletEventRepository = walletEventRepository,
@@ -80,9 +156,51 @@ internal class ScenarioRuntime(
             creditCardBillService = creditCardBillService,
             recurrenceService = recurrenceService,
             recurrenceEventRepository = recurrenceEventRepository,
+            recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
-            walletEventActionEventService = NoOpWalletEventActionEventService(),
+            walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
+            clock = clock,
+        )
+
+    val walletEntryEditService: WalletEntryEditService =
+        WalletEntryEditServiceImpl(
+            walletEventRepository = walletEventRepository,
+            walletEntryRepository = walletEntryRepository,
+            groupService = groupService,
+            walletItemService = walletItemService,
+            creditCardBillService = creditCardBillService,
+            recurrenceService = recurrenceService,
+            recurrenceEventRepository = recurrenceEventRepository,
+            recurrenceSeriesRepository = recurrenceSeriesRepository,
+            recurrenceEntryRepository = recurrenceEntryRepository,
+            walletEventActionEventService = walletEventActionEventService,
+            walletItemMapper = walletItemMapper,
+            clock = clock,
+        )
+
+    val walletEntryRemovalService: WalletEntryRemovalService =
+        WalletEntryRemovalServiceImpl(
+            walletEventRepository = walletEventRepository,
+            walletEntryRepository = walletEntryRepository,
+            groupService = groupService,
+            walletItemService = walletItemService,
+            creditCardBillService = creditCardBillService,
+            recurrenceService = recurrenceService,
+            recurrenceEventRepository = recurrenceEventRepository,
+            recurrenceSeriesRepository = recurrenceSeriesRepository,
+            recurrenceEntryRepository = recurrenceEntryRepository,
+            walletEventActionEventService = walletEventActionEventService,
+            walletItemMapper = walletItemMapper,
+            clock = clock,
+        )
+
+    val scheduledExecutionManagerService: ScheduledExecutionManagerService =
+        ScheduledExecutionManagerServiceImpl(
+            recurrenceSimulationService = recurrenceSimulationService,
+            walletEventRepository = walletEventRepository,
+            walletEventListService = walletEventListService,
+            groupPermissionService = ScenarioGroupPermissionService(groupService),
             clock = clock,
         )
 
@@ -95,13 +213,5 @@ internal class ScenarioRuntime(
             bankAccountMapper = bankAccountMapper,
             walletEntryCreateService = walletEntryCreateService,
             clock = clock,
-        )
-
-    val userService: UserService =
-        UserServiceImpl(
-            repository = userRepository,
-            passwordEncoder = ScenarioPasswordEncoder(),
-            databaseHelperService = NoOpDatabaseHelperService(),
-            avatarService = NoOpAvatarService(),
         )
 }

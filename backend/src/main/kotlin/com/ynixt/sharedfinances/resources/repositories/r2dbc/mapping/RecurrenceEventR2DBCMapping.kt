@@ -29,6 +29,8 @@ class RecurrenceEventR2DBCMapping {
                 qtyExecuted = row.get("${columnPrefix}qty_executed", Int::class.javaObjectType)!!,
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
                 periodicity = RecurrenceType.valueOf(row.get("${columnPrefix}periodicity", String::class.java)!!),
+                seriesId = row.get("${columnPrefix}series_id", UUID::class.java)!!,
+                seriesOffset = row.get("${columnPrefix}series_offset", Int::class.javaObjectType)!!,
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

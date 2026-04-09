@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceSeriesEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
@@ -126,6 +127,7 @@ abstract class RepositoryDataR2dbcTestSupport : IntegrationTestContainers() {
         endExecution: LocalDate?,
         qtyExecuted: Int = 0,
         qtyLimit: Int? = 12,
+        seriesId: UUID = UUID.randomUUID(),
     ): RecurrenceEventEntity =
         RecurrenceEventEntity(
             name = name,
@@ -142,7 +144,19 @@ abstract class RepositoryDataR2dbcTestSupport : IntegrationTestContainers() {
             lastExecution = null,
             nextExecution = nextExecution,
             endExecution = endExecution,
+            seriesId = seriesId,
+            seriesOffset = 0,
         )
+
+    protected fun newRecurrenceSeries(
+        id: UUID,
+        qtyTotal: Int?,
+    ): RecurrenceSeriesEntity =
+        RecurrenceSeriesEntity(
+            qtyTotal = qtyTotal,
+        ).also {
+            it.id = id
+        }
 
     protected fun newRecurrenceEntry(
         walletEventId: UUID,

@@ -2,8 +2,11 @@ package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
+import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
@@ -16,6 +19,18 @@ class WalletScenarioWhen internal constructor(
     private val context: WalletScenarioContext,
     private val resolver: WalletScenarioResolver,
 ) {
+    suspend fun createEntry(newEntryRequest: NewEntryRequest) {
+        val userId = resolver.ensureUser()
+        val created =
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest = newEntryRequest,
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
+    }
+
     suspend fun revenue(
         value: Number,
         originId: UUID? = null,
@@ -43,6 +58,7 @@ class WalletScenarioWhen internal constructor(
             )
 
         context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
     }
 
     suspend fun expense(
@@ -56,20 +72,23 @@ class WalletScenarioWhen internal constructor(
         val userId = resolver.ensureUser()
         val resolvedOrigin = resolver.resolveExpenseOrigin(originId = originId, date = date, billDate = billDate)
 
-        runtime.walletEntryCreateService.create(
-            userId = userId,
-            newEntryRequest =
-                NewEntryRequest(
-                    type = WalletEntryType.EXPENSE,
-                    originId = resolvedOrigin.originId,
-                    date = date,
-                    value = value.toBigDecimalSafe(),
-                    name = name,
-                    confirmed = confirmed,
-                    paymentType = PaymentType.UNIQUE,
-                    originBillDate = resolvedOrigin.billDate,
-                ),
-        )
+        val created =
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest =
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = resolvedOrigin.originId,
+                        date = date,
+                        value = value.toBigDecimalSafe(),
+                        name = name,
+                        confirmed = confirmed,
+                        paymentType = PaymentType.UNIQUE,
+                        originBillDate = resolvedOrigin.billDate,
+                    ),
+            )
+
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
     }
 
     suspend fun installmentPurchase(
@@ -108,6 +127,7 @@ class WalletScenarioWhen internal constructor(
             )
 
         context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
     }
 
     suspend fun transfer(
@@ -149,26 +169,133 @@ class WalletScenarioWhen internal constructor(
                 null
             }
 
-        requireNotNull(
-            runtime.walletEntryCreateService.create(
-                userId = userId,
-                newEntryRequest =
-                    NewEntryRequest(
-                        type = WalletEntryType.TRANSFER,
-                        groupId = groupId,
-                        originId = originId,
-                        targetId = targetId,
-                        date = date,
-                        value = value.toBigDecimalSafe(),
-                        name = name,
-                        confirmed = confirmed,
-                        paymentType = PaymentType.UNIQUE,
-                        originBillDate = resolvedOriginBillDate,
-                        targetBillDate = resolvedTargetBillDate,
-                    ),
-            ),
-        ) { "Transfer was rejected due to insufficient permissions for selected group/origin/target" }
+        val created =
+            requireNotNull(
+                runtime.walletEntryCreateService.create(
+                    userId = userId,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.TRANSFER,
+                            groupId = groupId,
+                            originId = originId,
+                            targetId = targetId,
+                            date = date,
+                            value = value.toBigDecimalSafe(),
+                            name = name,
+                            confirmed = confirmed,
+                            paymentType = PaymentType.UNIQUE,
+                            originBillDate = resolvedOriginBillDate,
+                            targetBillDate = resolvedTargetBillDate,
+                        ),
+                ),
+            ) { "Transfer was rejected due to insufficient permissions for selected group/origin/target" }
+
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
     }
+
+    suspend fun editOneOff(
+        newEntryRequest: NewEntryRequest,
+        walletEventId: UUID? = null,
+    ) {
+        val userId = resolver.ensureUser()
+        val edited =
+            runtime.walletEntryEditService.editOneOff(
+                userId = userId,
+                walletEventId = walletEventId ?: resolver.requireLastWalletEventId(),
+                request = newEntryRequest,
+            )
+
+        context.lastWalletEventId = resolver.extractWalletEventId(edited)
+    }
+
+    suspend fun editScheduled(
+        occurrenceDate: LocalDate,
+        scope: ScheduledEditScope,
+        newEntryRequest: NewEntryRequest,
+        recurrenceConfigId: UUID? = null,
+    ) {
+        val userId = resolver.ensureUser()
+
+        val edited =
+            runtime.walletEntryEditService.editScheduled(
+                userId = userId,
+                recurrenceConfigId = recurrenceConfigId ?: resolver.requireRecurrenceEntity().id!!,
+                request =
+                    EditScheduledEntryRequest(
+                        occurrenceDate = occurrenceDate,
+                        scope = scope,
+                        entry = newEntryRequest,
+                    ),
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(edited)
+        context.lastWalletEventId = resolver.extractWalletEventId(edited)
+    }
+
+    suspend fun deleteOneOff(walletEventId: UUID? = null) {
+        val userId = resolver.ensureUser()
+        val deleted =
+            runtime.walletEntryRemovalService.deleteOneOff(
+                userId = userId,
+                walletEventId = walletEventId ?: resolver.requireLastWalletEventId(),
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(deleted)
+        context.lastWalletEventId = resolver.extractWalletEventId(deleted)
+    }
+
+    suspend fun deleteScheduled(
+        occurrenceDate: LocalDate,
+        scope: ScheduledEditScope? = null,
+        recurrenceConfigId: UUID? = null,
+    ) {
+        val userId = resolver.ensureUser()
+        val deleted =
+            runtime.walletEntryRemovalService.deleteScheduled(
+                userId = userId,
+                recurrenceConfigId = recurrenceConfigId ?: resolver.requireRecurrenceEntity().id!!,
+                request =
+                    DeleteScheduledEntryRequest(
+                        occurrenceDate = occurrenceDate,
+                        scope = scope,
+                    ),
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(deleted)
+        context.lastWalletEventId = resolver.extractWalletEventId(deleted)
+    }
+
+    suspend fun clearPublishedEvents() {
+        runtime.walletEventActionEventService.clear()
+    }
+
+    suspend fun fetchWalletEventById(walletEventId: UUID? = null) {
+        context.lastFetchedWalletEvent = resolver.fetchWalletEventById(walletEventId)
+    }
+
+    suspend fun fetchScheduledByRecurrenceConfigId(recurrenceConfigId: UUID? = null) {
+        context.lastFetchedScheduledWalletEvent = resolver.fetchScheduledEventByRecurrenceConfigId(recurrenceConfigId)
+    }
+
+    fun lastWalletEventId(): UUID = resolver.requireLastWalletEventId()
+
+    suspend fun runRecurrence() {
+        runtime.recurrenceService.queueAllPendingOfExecution()
+
+        while (true) {
+            val queued = runtime.queueProducer.poll() ?: break
+            val created =
+                runtime.walletEntryCreateService.createFromRecurrenceConfig(
+                    recurrenceConfigId = queued.entryRecurrenceConfigId,
+                    date = queued.date,
+                )
+            context.lastRecurrenceConfigId = queued.entryRecurrenceConfigId
+            context.lastWalletEventId = resolver.extractWalletEventId(created)
+        }
+    }
+
+    suspend fun scheduledManagerCount(filter: com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter): Int =
+        resolver.listScheduledExecutions(filter)
 
     fun advanceTime(to: LocalDate) {
         runtime.clock.setDate(to)
@@ -176,18 +303,5 @@ class WalletScenarioWhen internal constructor(
 
     suspend fun advanceTimeToNextRecurrenceExecution(recurrenceConfigId: UUID? = null) {
         runtime.clock.setDate(resolver.getNextRecurrenceExecutionDate(recurrenceConfigId))
-    }
-
-    suspend fun runRecurrence() {
-        runtime.recurrenceService.queueAllPendingOfExecution()
-
-        while (true) {
-            val queued = runtime.queueProducer.poll() ?: break
-            runtime.walletEntryCreateService.createFromRecurrenceConfig(
-                recurrenceConfigId = queued.entryRecurrenceConfigId,
-                date = queued.date,
-            )
-            context.lastRecurrenceConfigId = queued.entryRecurrenceConfigId
-        }
     }
 }

@@ -1,5 +1,7 @@
 package com.ynixt.sharedfinances.application.web.mapper.impl
 
+import com.ynixt.sharedfinances.application.web.dto.walletentry.DeleteScheduledEntryDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.EditScheduledEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySumDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryGroupedDto
@@ -7,18 +9,22 @@ import com.ynixt.sharedfinances.application.web.dto.walletentry.EntrySummaryGrou
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EventForListDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ListEntryRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.ScheduledExecutionManagerRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.SummaryEntryRequestDto
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletItemDtoMapper
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.SummaryEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummary
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGrouped
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGroupedResult
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.ScheduledExecutionManagerRequest
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
 import tech.mappie.api.builtin.collections.IterableToListMapper
@@ -38,6 +44,16 @@ class WalletEntryDtoMapperImpl(
 
     override fun fromEntrySummaryRequestDtoToModel(from: SummaryEntryRequestDto): SummaryEntryRequest =
         FromEntrySummaryRequestDtoToModelMapper.map(from)
+
+    override fun fromEditScheduledDtoToModel(from: EditScheduledEntryDto): EditScheduledEntryRequest =
+        FromEditScheduledDtoToModelMapper.map(from)
+
+    override fun fromDeleteScheduledDtoToModel(from: DeleteScheduledEntryDto): DeleteScheduledEntryRequest =
+        FromDeleteScheduledDtoToModelMapper.map(from)
+
+    override fun fromScheduledExecutionManagerRequestDtoToModel(
+        from: ScheduledExecutionManagerRequestDto,
+    ): ScheduledExecutionManagerRequest = FromScheduledExecutionManagerRequestDtoToModelMapper.map(from)
 
     override fun fromSummaryModelToDto(from: EntrySummary): EntrySummaryDto = fromSummaryModelToDtoMapper.map(from)
 
@@ -59,6 +75,26 @@ class WalletEntryDtoMapperImpl(
 
     private object FromEntrySummaryRequestDtoToModelMapper : ObjectMappie<SummaryEntryRequestDto, SummaryEntryRequest>() {
         override fun map(from: SummaryEntryRequestDto) =
+            mapping {
+            }
+    }
+
+    private object FromEditScheduledDtoToModelMapper : ObjectMappie<EditScheduledEntryDto, EditScheduledEntryRequest>() {
+        override fun map(from: EditScheduledEntryDto) =
+            mapping {
+                to::entry fromProperty from::entry via FromNewDtoMapper
+            }
+    }
+
+    private object FromDeleteScheduledDtoToModelMapper : ObjectMappie<DeleteScheduledEntryDto, DeleteScheduledEntryRequest>() {
+        override fun map(from: DeleteScheduledEntryDto) =
+            mapping {
+            }
+    }
+
+    private object FromScheduledExecutionManagerRequestDtoToModelMapper :
+        ObjectMappie<ScheduledExecutionManagerRequestDto, ScheduledExecutionManagerRequest>() {
+        override fun map(from: ScheduledExecutionManagerRequestDto) =
             mapping {
             }
     }

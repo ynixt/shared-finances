@@ -33,7 +33,8 @@ class RecurrenceOccurrenceSimulationServiceImpl(
 
     private data class SimulationState(
         val executionDate: LocalDate,
-        val installment: Int?,
+        val localInstallment: Int?,
+        val globalInstallment: Int?,
         val billDateByWalletItemId: Map<UUID, LocalDate?>,
     )
 
@@ -53,10 +54,12 @@ class RecurrenceOccurrenceSimulationServiceImpl(
                 byDate = askedBillDate == null && maximumDate != null,
                 byBillDate = askedBillDate != null && askedWalletItemId != null,
             )
+        val localInstallment = if (config.paymentType == PaymentType.INSTALLMENTS) config.qtyExecuted + 1 else null
         val initialState =
             SimulationState(
                 executionDate = initialExecutionDate,
-                installment = if (config.paymentType == PaymentType.INSTALLMENTS) config.qtyExecuted + 1 else null,
+                localInstallment = localInstallment,
+                globalInstallment = localInstallment?.let { config.seriesOffset + it },
                 billDateByWalletItemId = recurrenceEntries.associate { it.walletItemId to it.nextBillDate },
             )
 
@@ -165,7 +168,7 @@ class RecurrenceOccurrenceSimulationServiceImpl(
             return true
         }
 
-        if (config.qtyLimit != null && state.installment != null && state.installment >= config.qtyLimit) {
+        if (config.qtyLimit != null && state.localInstallment != null && state.localInstallment >= config.qtyLimit) {
             return true
         }
 
@@ -187,7 +190,8 @@ class RecurrenceOccurrenceSimulationServiceImpl(
     ): SimulationState =
         SimulationState(
             executionDate = calculateNextDate(state.executionDate, periodicity),
-            installment = state.installment?.plus(1),
+            localInstallment = state.localInstallment?.plus(1),
+            globalInstallment = state.globalInstallment?.plus(1),
             billDateByWalletItemId =
                 state.billDateByWalletItemId.mapValues { (_, billDate) ->
                     if (billDate == null) null else calculateNextBillDate(billDate, periodicity)
@@ -244,7 +248,7 @@ class RecurrenceOccurrenceSimulationServiceImpl(
     private fun SimulationState.toOccurrence(): SimulatedOccurrence =
         SimulatedOccurrence(
             executionDate = executionDate,
-            installment = installment,
+            installment = globalInstallment,
             billDateByWalletItemId = billDateByWalletItemId,
         )
 }

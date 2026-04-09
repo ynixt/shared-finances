@@ -16,6 +16,18 @@ class WalletEventRepositoryImpl(
     private val springDataRepository: WalletEventSpringDataRepository,
     private val dcRepository: WalletEventDatabaseClientRepository,
 ) : WalletEventRepository {
+    override fun findById(id: UUID): Mono<WalletEventEntity> = springDataRepository.findById(id.toString())
+
+    override fun deleteById(id: UUID): Mono<Long> = springDataRepository.deleteById(id.toString()).thenReturn(1L)
+
+    override fun findOneByRecurrenceEventIdAndDate(
+        recurrenceEventId: UUID,
+        date: LocalDate,
+    ): Mono<WalletEventEntity> = springDataRepository.findOneByRecurrenceEventIdAndDate(recurrenceEventId, date)
+
+    override fun findAllByRecurrenceEventId(recurrenceEventId: UUID): Flux<WalletEventEntity> =
+        springDataRepository.findAllByRecurrenceEventId(recurrenceEventId)
+
     override fun save(walletEntry: WalletEventEntity): Mono<WalletEventEntity> = springDataRepository.save(walletEntry)
 
     override fun saveAll(walletEntry: Iterable<WalletEventEntity>): Flux<WalletEventEntity> = springDataRepository.saveAll(walletEntry)

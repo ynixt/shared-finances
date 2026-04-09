@@ -15,6 +15,7 @@ import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.plus
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
@@ -24,9 +25,12 @@ import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.Recurrenc
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 
@@ -40,6 +44,8 @@ class RecurrenceSimulationServiceImpl(
     private val walletItemMapper: WalletItemMapper,
     private val recurrenceService: RecurrenceService,
     private val recurrenceOccurrenceSimulationService: RecurrenceOccurrenceSimulationService,
+    private val recurrenceSeriesRepository: RecurrenceSeriesRepository,
+    private val clock: Clock,
 ) : RecurrenceSimulationService {
     private val defaultSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
 
@@ -154,8 +160,10 @@ class RecurrenceSimulationServiceImpl(
                 else -> TODO()
             }.toList()
 
+        hydrateSeriesTotals(configs)
+
         val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
-        val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
+        val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.groupId }.toSet()).toList()
         val users = userService.findAllByIdIn(configs.mapNotNull { config -> config.userId }.toSet()).toList()
         val walletItems = walletItemService.findAllByIdIn(configs.flatMap { it.entries!! }.map { it.walletItemId }.toSet()).toList()
 
@@ -308,13 +316,17 @@ class RecurrenceSimulationServiceImpl(
         simulatedInstallment: Int?,
         simulatedBillDateByWalletItemId: Map<UUID, LocalDate?>?,
     ): EventListResponse {
+        if (config.seriesQtyTotal == null) {
+            config.seriesQtyTotal = recurrenceSeriesRepository.findById(config.seriesId).awaitSingleOrNull()?.qtyTotal
+        }
+
         val installment =
             if (simulatedInstallment != null) {
                 simulatedInstallment
             } else if (config.paymentType ==
                 PaymentType.INSTALLMENTS
             ) {
-                config.qtyExecuted + 1
+                config.seriesOffset + config.qtyExecuted + 1
             } else {
                 null
             }
@@ -365,7 +377,12 @@ class RecurrenceSimulationServiceImpl(
     }
 
     private fun fixStartDate(startDate: LocalDate?): LocalDate? =
-        if (startDate == null || startDate.isBefore(LocalDate.now().plusDays(1))) LocalDate.now().plusDays(1) else startDate
+        LocalDate
+            .now(clock)
+            .plusDays(1)
+            .let { minimum ->
+                if (startDate == null || startDate.isBefore(minimum)) minimum else startDate
+            }
 
     private suspend fun simulateBill(
         walletItem: WalletItem,
@@ -383,6 +400,23 @@ class RecurrenceSimulationServiceImpl(
             )
         } else {
             null
+        }
+    }
+
+    private suspend fun hydrateSeriesTotals(configs: List<RecurrenceEventEntity>) {
+        if (configs.isEmpty()) {
+            return
+        }
+
+        val seriesById =
+            recurrenceSeriesRepository
+                .findAllByIdIn(configs.map { it.seriesId }.toSet())
+                .collectList()
+                .awaitSingle()
+                .associateBy { it.id!! }
+
+        configs.forEach { config ->
+            config.seriesQtyTotal = seriesById[config.seriesId]?.qtyTotal
         }
     }
 }

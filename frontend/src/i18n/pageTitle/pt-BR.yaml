@@ -27,3 +27,5 @@ pageTitle:
   associateCreditCardGroup: Associar cartão de crédito ao grupo
   transactions: Transações
   newTransaction: Nova transação
+  editTransaction: Editar transação
+  scheduleManager: Gerenciador de agendamentos

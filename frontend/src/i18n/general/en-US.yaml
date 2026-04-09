@@ -17,6 +17,7 @@ general:
   success: Success
   new: New
   edit: Edit
+  actions: Actions
   open: Open
   enabled: Enabled
   delete: Delete

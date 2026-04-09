@@ -3,9 +3,9 @@ import { Component, computed, effect, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faDollarSign } from '@fortawesome/free-solid-svg-icons';
+import { faDollarSign, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
 import { ButtonDirective } from 'primeng/button';
@@ -16,6 +16,7 @@ import { TableModule } from 'primeng/table';
 import { InfinitePaginatorComponent } from '../../../../components/infinite-paginator/infinite-paginator.component';
 import { CursorPage } from '../../../../models/cursor-pagination';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { ScheduledEditScope } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../../pipes/local-date.pipe';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
@@ -53,6 +54,7 @@ export class WalletEntryTableComponent {
   readonly walletEntryService = inject(WalletEntryService);
   readonly localDatePipeService = inject(LocalDatePipeService);
   readonly userActionEventService = inject(UserActionEventService);
+  private readonly translateService = inject(TranslateService);
 
   readonly pageSize = 30;
   readonly pages: Map<number, CursorPage<EventForListDto>> = new Map();
@@ -65,6 +67,7 @@ export class WalletEntryTableComponent {
   readonly creditCardBillId = input<string | undefined | null>(undefined);
   readonly creditCardBillDate = input<dayjs.Dayjs | undefined>(undefined);
   readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
+  scopeSelectionEntry: EventForListDto | null = null;
   readonly noWalletEntryFoundDynamicMessage = computed(() => {
     if (this.noWalletEntryFoundMessage() == null) {
       return this.dateRangeText();
@@ -96,6 +99,9 @@ export class WalletEntryTableComponent {
     });
 
     this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+    this.userActionEventService.transactionUpdated$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+    this.userActionEventService.transactionDeleted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+    this.userActionEventService.resyncRequired$.pipe(untilDestroyed(this)).subscribe(() => void this.reload());
   }
 
   entryFetcher = async (
@@ -172,5 +178,109 @@ export class WalletEntryTableComponent {
     }
   }
 
+  canEdit(entry: EventForListDto): boolean {
+    return entry.id != null || entry.recurrenceConfigId != null;
+  }
+
+  canDelete(entry: EventForListDto): boolean {
+    return entry.id != null || entry.recurrenceConfigId != null;
+  }
+
+  editRouterLink(entry: EventForListDto): string[] {
+    if (entry.recurrenceConfigId != null && entry.id == null) {
+      return ['/app/transactions/scheduler-manager/edit', entry.recurrenceConfigId];
+    }
+
+    return ['/app/transactions/edit', entry.id!!];
+  }
+
+  editQueryParams(entry: EventForListDto): { [key: string]: any } | undefined {
+    if (entry.recurrenceConfigId != null && entry.id == null) {
+      return { withFuture: true };
+    }
+
+    return undefined;
+  }
+
+  startDelete(entry: EventForListDto) {
+    if (!this.canDelete(entry)) {
+      return;
+    }
+
+    if (entry.recurrenceConfigId != null && this.shouldAskScope(entry)) {
+      this.scopeSelectionEntry = entry;
+      return;
+    }
+
+    if (entry.recurrenceConfigId != null) {
+      void this.deleteScheduled(entry);
+      return;
+    }
+
+    if (entry.id != null) {
+      void this.deleteOneOff(entry.id);
+    }
+  }
+
+  cancelScopeSelection() {
+    this.scopeSelectionEntry = null;
+  }
+
+  chooseOnlyThis() {
+    const selectedEntry = this.scopeSelectionEntry;
+    if (selectedEntry == null) {
+      return;
+    }
+
+    void this.deleteScheduled(selectedEntry, 'ONLY_THIS');
+  }
+
+  chooseThisAndFuture() {
+    const selectedEntry = this.scopeSelectionEntry;
+    if (selectedEntry == null) {
+      return;
+    }
+
+    void this.deleteScheduled(selectedEntry, 'THIS_AND_FUTURE');
+  }
+
+  chooseAllSeries() {
+    const selectedEntry = this.scopeSelectionEntry;
+    if (selectedEntry == null) {
+      return;
+    }
+
+    void this.deleteScheduled(selectedEntry, 'ALL_SERIES');
+  }
+
+  private shouldAskScope(entry: EventForListDto): boolean {
+    return entry.recurrenceConfig?.paymentType !== 'UNIQUE';
+  }
+
+  private async deleteOneOff(id: string) {
+    if (!window.confirm(this.translateService.instant('financesPage.transactionsPage.deleteConfirm'))) {
+      return;
+    }
+
+    await this.walletEntryService.deleteWalletEntry(id);
+    await this.reload();
+  }
+
+  private async deleteScheduled(entry: EventForListDto, scope?: ScheduledEditScope) {
+    if (entry.recurrenceConfigId == null) {
+      return;
+    }
+
+    await this.walletEntryService.deleteScheduledEntry(entry.recurrenceConfigId, {
+      occurrenceDate: dayjs(entry.date).format(ONLY_DATE_FORMAT),
+      scope: entry.recurrenceConfig?.paymentType === 'UNIQUE' ? undefined : scope,
+    });
+
+    this.cancelScopeSelection();
+    await this.reload();
+  }
+
   protected readonly newTransactionButtonIcon = faDollarSign;
+  protected readonly editTransactionButtonIcon = faPenToSquare;
+  protected readonly deleteTransactionButtonIcon = faTrashCan;
 }

@@ -11,4 +11,7 @@ data class WalletItemForEntryListDto(
     val user: UserSimpleDto?,
     val currency: String,
     val type: WalletItemType,
+    val dueDay: Int?,
+    val dueOnNextBusinessDay: Boolean?,
+    val daysBetweenDueAndClosing: Int?,
 )

@@ -1,40 +1,35 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 
-import { catchError, from, switchMap, take, throwError } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
-import { TokenStateService } from '../services/token-state.service';
+
+const AUTH_RETRY_CONTEXT = new HttpContextToken<boolean>(() => false);
 
 export const apiAuthInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const tokenStateService = inject(TokenStateService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      const isApiRequest =
-        req.url.includes('/api') &&
-        !req.url.includes('/api/users/current') &&
-        !req.url.includes('/api/open/auth') &&
-        !req.url.includes('/api/auth');
-
       const isUnauthorized = error.status === 401;
+      const alreadyRetried = req.context.get(AUTH_RETRY_CONTEXT);
 
-      if (!isApiRequest || !isUnauthorized) {
+      if (!isUnauthorized || !isEligibleForRefresh(req.url) || alreadyRetried) {
         return throwError(() => error);
       }
 
-      return from(authService.loadUser()).pipe(
-        switchMap(() => tokenStateService.token$.pipe(take(1))),
-        switchMap(newToken => {
-          if (newToken == null) {
+      return from(authService.refreshSessionFromUnauthorized()).pipe(
+        switchMap(refreshedToken => {
+          if (refreshedToken == null) {
             return throwError(() => error);
           }
 
           const authReq = req.clone({
             setHeaders: {
-              Authorization: `Bearer ${newToken}`,
+              Authorization: `Bearer ${refreshedToken}`,
             },
+            context: req.context.set(AUTH_RETRY_CONTEXT, true),
           });
 
           return next(authReq);
@@ -44,3 +39,23 @@ export const apiAuthInterceptor: HttpInterceptorFn = (req, next) => {
     }),
   );
 };
+
+function isEligibleForRefresh(url: string): boolean {
+  if (!url.includes('/api')) {
+    return false;
+  }
+
+  if (url.includes('/api/open/auth')) {
+    return false;
+  }
+
+  if (url.includes('/api/auth')) {
+    return false;
+  }
+
+  if (url.includes('/api/users/current')) {
+    return false;
+  }
+
+  return true;
+}

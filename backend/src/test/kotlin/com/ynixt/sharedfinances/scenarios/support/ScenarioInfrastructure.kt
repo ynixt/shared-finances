@@ -6,6 +6,9 @@ import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
+import com.ynixt.sharedfinances.domain.enums.ActionEventType
+import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
@@ -25,6 +28,8 @@ import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
+import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -97,6 +102,54 @@ internal class NoOpWalletEventActionEventService : WalletEventActionEventService
         userId: UUID,
         walletEvent: MinimumWalletEventEntity,
     ) {}
+
+    override suspend fun sendUpdatedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) {}
+
+    override suspend fun sendDeletedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) {}
+}
+
+internal class RecordingWalletEventActionEventService : WalletEventActionEventService {
+    data class PublishedEvent(
+        val type: ActionEventType,
+        val userId: UUID,
+        val walletEvent: MinimumWalletEventEntity,
+    )
+
+    private val events = mutableListOf<PublishedEvent>()
+
+    val publishedEvents: List<PublishedEvent>
+        get() = events.toList()
+
+    override suspend fun sendInsertedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) {
+        events.add(PublishedEvent(type = ActionEventType.INSERT, userId = userId, walletEvent = walletEvent))
+    }
+
+    override suspend fun sendUpdatedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) {
+        events.add(PublishedEvent(type = ActionEventType.UPDATE, userId = userId, walletEvent = walletEvent))
+    }
+
+    override suspend fun sendDeletedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) {
+        events.add(PublishedEvent(type = ActionEventType.DELETE, userId = userId, walletEvent = walletEvent))
+    }
+
+    fun clear() {
+        events.clear()
+    }
 }
 
 internal class NoOpCreditCardActionEventService : CreditCardActionEventService {
@@ -181,6 +234,35 @@ internal class NoOpGroupService : GroupService {
     ) {}
 
     override fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity> = emptyFlow()
+}
+
+internal class NoOpGenericCategoryService : GenericCategoryService {
+    override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> = emptyFlow()
+}
+
+internal class ScenarioGroupPermissionService(
+    private val groupService: GroupService,
+) : GroupPermissionService {
+    override suspend fun hasPermission(
+        userId: UUID,
+        groupId: UUID,
+        permission: GroupPermissions?,
+    ): Boolean {
+        val group = groupService.findGroup(userId, groupId) ?: return false
+        return permission == null || group.permissions.contains(permission)
+    }
+
+    override fun getAllPermissionsForRole(role: UserGroupRole): Set<GroupPermissions> =
+        when (role) {
+            UserGroupRole.ADMIN -> GroupPermissions.entries.toSet()
+            UserGroupRole.EDITOR ->
+                setOf(
+                    GroupPermissions.SEND_ENTRIES,
+                    GroupPermissions.ADD_BANK_ACCOUNT,
+                )
+
+            else -> emptySet()
+        }
 }
 
 internal class InMemoryGenerateEntryRecurrenceQueueProducer : GenerateEntryRecurrenceQueueProducer {

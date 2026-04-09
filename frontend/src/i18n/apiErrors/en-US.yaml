@@ -2,6 +2,7 @@ apiErrors:
   memberAlreadyInGroup: User is already on this group.
   bankAccountAlreadyInGroup: Bank account is already associated to this group.
   duplicatedCategory: This name is already in use in another category.
+  invalidRecurrenceQtyLimit: 'Requested quantity ({{requestedQtyLimit}}) cannot be lower than already executed ({{alreadyExecuted}}).'
   login:
     invalidCredentials: Invalid credentials
   generic:

@@ -12,6 +12,21 @@ import java.util.UUID
 internal class InMemoryWalletEntryRepository : WalletEntryRepository {
     private val data = linkedMapOf<UUID, WalletEntryEntity>()
 
+    fun deleteAllByWalletEventIds(walletEventIds: Set<UUID>): Int {
+        val initial = data.size
+        data.entries.removeIf { (_, entry) -> walletEventIds.contains(entry.walletEventId) }
+        return initial - data.size
+    }
+
+    override fun findAllByWalletEventId(walletEventId: UUID): Flux<WalletEntryEntity> =
+        Flux.fromIterable(data.values.filter { it.walletEventId == walletEventId })
+
+    override fun deleteAllByWalletEventId(walletEventId: UUID): Mono<Int> {
+        val initial = data.size
+        data.entries.removeIf { (_, entry) -> entry.walletEventId == walletEventId }
+        return Mono.just(initial - data.size)
+    }
+
     override fun sumForBankAccountSummary(
         userId: UUID?,
         groupId: UUID?,

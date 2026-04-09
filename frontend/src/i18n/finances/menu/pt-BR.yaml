@@ -2,6 +2,7 @@ financesPage:
   menu:
     overview: Visão Geral
     newTransaction: Nova Transação
+    scheduleManager: Gerenciador de agendamentos
     registrations: Cadastros
     bankAccounts: Contas bancárias
     creditCards: Cartões de crédito

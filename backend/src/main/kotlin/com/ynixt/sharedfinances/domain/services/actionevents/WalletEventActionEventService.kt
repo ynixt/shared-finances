@@ -8,4 +8,14 @@ interface WalletEventActionEventService {
         userId: UUID,
         walletEvent: MinimumWalletEventEntity,
     )
+
+    suspend fun sendUpdatedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    )
+
+    suspend fun sendDeletedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    )
 }

@@ -11,6 +11,12 @@ import java.util.UUID
 internal class InMemoryRecurrenceEntryRepository : RecurrenceEntryRepository {
     private val data = linkedMapOf<UUID, RecurrenceEntryEntity>()
 
+    fun deleteAllByWalletEventIds(walletEventIds: Set<UUID>): Int {
+        val initial = data.size
+        data.entries.removeIf { (_, entry) -> walletEventIds.contains(entry.walletEventId) }
+        return initial - data.size
+    }
+
     override fun updateNextBillDate(
         id: UUID,
         nextBillDate: LocalDate?,

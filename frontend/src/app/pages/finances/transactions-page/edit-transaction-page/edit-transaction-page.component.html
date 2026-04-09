@@ -1,0 +1,16 @@
+@if (loading()) {
+  <p-progress-spinner></p-progress-spinner>
+} @else if (entry() != null) {
+  <div class="finances-page edit-transaction-page">
+    <app-finances-title-bar [title]="'financesPage.transactionsPage.editTransactionPage.title' | translate" closeRouterLink="..">
+    </app-finances-title-bar>
+
+    <app-transaction-form
+      mode="edit"
+      [submitting]="submitting()"
+      [initialEntry]="entry()!"
+      [withFuture]="withFuture() && isRecurring()"
+      (formSubmitted)="submit($event)"
+    ></app-transaction-form>
+  </div>
+}

@@ -12,12 +12,27 @@ import java.util.UUID
 internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
     private val data = linkedMapOf<UUID, RecurrenceEventEntity>()
 
+    fun findIdsBySeriesId(seriesId: UUID): Set<UUID> =
+        data.values
+            .filter { it.seriesId == seriesId }
+            .mapNotNull { it.id }
+            .toSet()
+
+    fun deleteAllBySeriesId(seriesId: UUID): Long {
+        val initial = data.size
+        data.entries.removeIf { (_, value) -> value.seriesId == seriesId }
+        return (initial - data.size).toLong()
+    }
+
     override fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity> =
         Flux.fromIterable(
             data.values.filter {
                 it.nextExecution != null && (it.nextExecution.isBefore(nextExecution) || it.nextExecution == nextExecution)
             },
         )
+
+    override fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity> =
+        Flux.fromIterable(data.values.filter { it.seriesId == seriesId })
 
     override fun deleteAllByWalletItemIdAndUserId(
         walletItemId: UUID,
@@ -63,7 +78,7 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
                 .filter { userId == null || it.userId == userId }
                 .filter { groupId == null || it.groupId == groupId }
                 .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution.isAfter(maximumNextExecution)) }
-                .filter { minimumEndExecution == null || (it.endExecution != null && !it.endExecution.isBefore(minimumEndExecution)) }
+                .filter { minimumEndExecution == null || (it.endExecution == null || !it.endExecution.isBefore(minimumEndExecution)) }
                 .toList()
         return Flux.fromIterable(filtered)
     }
@@ -108,10 +123,13 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
             lastExecution = lastExecution,
             nextExecution = nextExecution,
             endExecution = current.endExecution,
+            seriesId = current.seriesId,
+            seriesOffset = current.seriesOffset,
         ).also {
             it.id = current.id
             it.entries = current.entries
             it.createdAt = current.createdAt
             it.updatedAt = nowOffset()
+            it.seriesQtyTotal = current.seriesQtyTotal
         }
 }

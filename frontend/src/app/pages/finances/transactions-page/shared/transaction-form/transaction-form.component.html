@@ -1,0 +1,244 @@
+<form [formGroup]="form" class="flex flex-col gap-4" (ngSubmit)="submit()">
+  @if (showRecurringScopeHint()) {
+    <div
+      class="rounded-xl border px-3 py-2 text-sm"
+      [class]="isRecurringWithFuture() ? 'border-cyan-300 bg-cyan-50 text-cyan-800' : 'border-slate-200 bg-slate-50 text-slate-700'"
+    >
+      @if (isRecurringWithFuture()) {
+        {{ 'financesPage.transactionsPage.editScope.thisAndFutureHint' | translate }}
+        <a [routerLink]="[]" [queryParams]="{ withFuture: false }" queryParamsHandling="merge">{{
+          'financesPage.transactionsPage.editScope.toEditOnlyThisClickHere' | translate
+        }}</a>
+      } @else {
+        {{ 'financesPage.transactionsPage.editScope.onlyThisHint' | translate }}
+        <a [routerLink]="[]" [queryParams]="{ withFuture: true }" queryParamsHandling="merge">{{
+          'financesPage.transactionsPage.editScope.toEditThisAndFutureClickHere' | translate
+        }}</a>
+      }
+    </div>
+  }
+
+  @let isTransfer = typeControl.value === WalletEntryType.TRANSFER;
+
+  <div class="flex justify-center">
+    <div class="transaction-type-buttons mb-4 grid w-full lg:w-5/6 xl:w-3/4 md:grid-cols-3">
+      @for (typeButton of transactionTypeOptions; track typeButton) {
+        @let controlSelected = typeControl.value == typeButton.value;
+
+        <button
+          type="button"
+          (click)="onTypeOptionClick(typeButton.value)"
+          pButton
+          [severity]="typeButton.severity"
+          [class]="typeButton.styleClass"
+          [disabled]="isTypeOptionDisabled(typeButton.value) || typeControl.disabled"
+          [class.opacity-60]="isTypeOptionDisabled(typeButton.value)"
+          [class.font-semibold]="controlSelected"
+          [class.inset-shadow-sm]="controlSelected"
+          [class.text-shadow-lg]="controlSelected"
+          [class.border-double]="controlSelected"
+          [class.border-4]="controlSelected"
+          [class.border-black]="controlSelected"
+        >
+          @if (controlSelected) {
+            <i class="pi pi-check"></i>
+          } @else {
+            <i class="pi" style="width: 16px"></i>
+          }
+          {{ typeButton.label | translate }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <label class="flex flex-col gap-2">
+    <span>{{ 'financesPage.transactionsPage.confirmed' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+    <p-toggleswitch formControlName="confirmed"></p-toggleswitch>
+  </label>
+
+  <label class="flex flex-col gap-2">
+    <span>{{ 'financesPage.transactionsPage.group' | translate }}</span>
+    <app-paged-select [optionsGetter]="loadGroups.bind(this)" formControlName="group" [filterInMemory]="true"></app-paged-select>
+  </label>
+
+  <div class="grid md:grid-cols-{{ isTransfer ? 2 : 1 }} gap-2">
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.origin' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+      <app-wallet-item-picker [group]="selectedGroup" formControlName="origin"></app-wallet-item-picker>
+    </label>
+
+    @if (isTransfer) {
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.target' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <app-wallet-item-picker [group]="selectedGroup" formControlName="target"></app-wallet-item-picker>
+      </label>
+    }
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-2">
+    <label class="flex flex-col gap-2">
+      <span>{{ 'general.name' | translate }}</span>
+      <input pInputText formControlName="name" />
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.transactionsPage.category' | translate }}</span>
+      <app-category-picker formControlName="category" [groupId]="selectedGroup?.id"></app-category-picker>
+    </label>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-2">
+    <label class="flex flex-col gap-2">
+      <span
+        >{{ 'financesPage.transactionsPage.value' | translate }}
+
+        @let sublabel = valueSublabel;
+        @if (sublabel.length > 0) {
+          <span class="mr-1">({{ sublabel | translate }})</span>
+        }
+
+        <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <p-input-number
+        mode="currency"
+        [currency]="currentOrigin?.currency ?? user()?.defaultCurrency ?? 'USD'"
+        formControlName="value"
+        [showButtons]="true"
+        [min]="0.01"
+        [step]="10"
+        fluid
+      ></p-input-number>
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'general.date' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+      <app-date-picker formControlName="date"></app-date-picker>
+    </label>
+
+    @if (currentOriginIsCreditCard) {
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.' + (isTransfer ? 'originBill' : 'bill') | translate }}
+          @if (shouldRequireOriginBill()) {
+            <app-required-field-asterisk></app-required-field-asterisk>
+          }
+        </span>
+        <app-date-picker formControlName="originBill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
+      </label>
+    }
+
+    @if (currentTargetIsCreditCard) {
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.targetBill' | translate }}
+          @if (shouldRequireTargetBill()) {
+            <app-required-field-asterisk></app-required-field-asterisk>
+          }
+          ></span
+        >
+        <app-date-picker formControlName="targetBill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
+      </label>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+    <div class="flex gap-2">
+      <label class="flex flex-col gap-2 w-full">
+        <span
+          >{{ 'financesPage.transactionsPage.paymentType' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <p-select-button
+          [options]="paymentTypeOptions"
+          optionValue="value"
+          optionDisabled="disabled"
+          formControlName="paymentType"
+          [allowEmpty]="false"
+          fluid
+        >
+          <ng-template #item let-item>
+            <span>{{ item.label | translate }}</span>
+          </ng-template>
+        </p-select-button>
+      </label>
+    </div>
+
+    @if (currentPaymentType === PaymentType.INSTALLMENTS) {
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.valueType' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <app-i18n-select formControlName="valueType" [options]="valueTypeOptions"></app-i18n-select>
+      </label>
+    }
+
+    @if (currentPaymentType === PaymentType.RECURRING) {
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.periodicity' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <app-i18n-select formControlName="periodicity" [options]="recurrenceTypeOptions"></app-i18n-select>
+      </label>
+    }
+  </div>
+
+  @if (currentPaymentType === PaymentType.INSTALLMENTS) {
+    <div class="grid md:grid-cols-3 gap-2">
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.installments' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <p-input-number formControlName="installments" [min]="2" [max]="720" [showButtons]="true" fluid></p-input-number>
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.periodicity' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <app-i18n-select formControlName="periodicity" [options]="recurrenceTypeOptions"></app-i18n-select>
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.valueTypes.' + calculatedValueType | translate }}
+
+          @let sublabel = calculatedValueSublabel;
+          @if (sublabel.length > 0) {
+            <span class="mr">({{ sublabel | translate }})</span>
+          }
+        </span>
+        <p-input-number
+          mode="currency"
+          [currency]="currentOrigin?.currency ?? user()?.defaultCurrency ?? 'USD'"
+          formControlName="calculatedValue"
+          fluid
+        ></p-input-number>
+      </label>
+    </div>
+  }
+
+  @if (currentPaymentType === PaymentType.RECURRING) {
+    <div class="grid md:grid-cols-2 gap-2">
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.periodicityQtyLimit' | translate }}
+
+          @let sublabel = calculatedValueSublabel;
+          @if (sublabel.length > 0) {
+            <span class="mr">({{ sublabel | translate }})</span>
+          }
+        </span>
+        <p-input-number formControlName="periodicityQtyLimit" [showButtons]="true" [min]="2" fluid></p-input-number>
+      </label>
+    </div>
+  }
+
+  <label class="flex flex-col gap-2">
+    <span>{{ 'financesPage.transactionsPage.observations' | translate }}</span>
+    <app-textarea [rows]="2" [autoResize]="true" formControlName="observations" [maxLength]="512"></app-textarea>
+  </label>
+
+  <label class="flex flex-col gap-2">
+    <span>{{ 'financesPage.transactionsPage.tags' | translate }}</span>
+    <app-chip-editor formControlName="tags" [maxLength]="50"></app-chip-editor>
+  </label>
+
+  <button class="mt-4" pButton type="submit" [loading]="submitting()" [disabled]="form.invalid">{{ submitLabel() | translate }}</button>
+</form>

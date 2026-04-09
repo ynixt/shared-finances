@@ -33,10 +33,18 @@ export class AuthService {
       const currentUser = this.userService.user();
 
       // current user can be different from null even if firstUserLoad is false, because user can be received from another browser tab
-      if (!currentUser && this.firstUserLoad) {
-        this.firstUserLoad = false;
-        this.loadUser();
+      if (currentUser != null || !this.firstUserLoad) {
+        return;
       }
+
+      this.firstUserLoad = false;
+
+      if (token == null) {
+        this.userService.changeUser(null);
+        return;
+      }
+
+      void this.loadUser().catch(() => undefined);
     });
 
     this.tokenSyncService.onLoginMessage.pipe(untilDestroyed(this)).subscribe(msg => {
@@ -47,15 +55,12 @@ export class AuthService {
       }, 0);
     });
 
-    this.tokenSyncService.onLogoutMessage.pipe(untilDestroyed(this)).subscribe(async msg => {
-      let returnTo = this.activatedRoute.snapshot.queryParamMap.get('return_to');
-
-      if (returnTo == null && this.router.url != '/login' && this.router.url != '/app') {
-        returnTo = this.router.url;
-      }
+    this.tokenSyncService.onLogoutMessage.pipe(untilDestroyed(this)).subscribe(async _msg => {
+      const returnTo = this.activatedRoute.snapshot.queryParamMap.get('return_to') ?? this.resolveCurrentProtectedReturnTo();
 
       await this.logout({
         returnTo: returnTo == null ? undefined : returnTo,
+        sync: false,
         callHttpLogout: false,
       });
     });
@@ -71,7 +76,15 @@ export class AuthService {
       this.userService.changeUser(user);
     } catch (err) {
       this.userService.changeUser(null, err);
-      this.logout({ ignoreError: true, sync: false });
+      const token = await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
+      if (token != null) {
+        await this.logout({
+          ignoreError: true,
+          sync: true,
+          callHttpLogout: false,
+          returnTo: this.resolveCurrentProtectedReturnTo(),
+        });
+      }
       throw err;
     }
   }
@@ -156,14 +169,11 @@ export class AuthService {
       }
     }
 
-    if (token != null) {
-      if (args.sync) {
-        await this.changeTokenAndSync(null);
-      } else {
-        this.tokenStateService.changeToken(token);
-      }
+    if (token != null && args.sync) {
+      this.tokenSyncService.postLogoutMessage();
     }
 
+    this.tokenStateService.changeToken(null);
     this.userService.changeUser(null);
 
     if (this.guardInspector.hasCanActivateInHierarchy(authGuard)) {
@@ -181,6 +191,14 @@ export class AuthService {
     this.navigateAfterLoginSuccess();
   }
 
+  async refreshSessionFromUnauthorized(): Promise<string | null> {
+    try {
+      return await this.refreshJwt();
+    } catch {
+      return null;
+    }
+  }
+
   private async refreshJwt(): Promise<string | null> {
     try {
       const response = await this.authHttpService.refreshJwt();
@@ -190,7 +208,7 @@ export class AuthService {
       await this.logout({
         sync: true,
         callHttpLogout: false,
-        returnTo: window.location.pathname,
+        returnTo: this.resolveCurrentProtectedReturnTo(),
       });
       throw err;
     }
@@ -211,7 +229,8 @@ export class AuthService {
   }
 
   private navigateAfterLoginSuccess() {
-    return this.router.navigateByUrl(this.activeRoute.snapshot.queryParamMap.get('return_to') ?? '/app');
+    const returnTo = this.resolveReturnToFromQuery();
+    return this.router.navigateByUrl(returnTo ?? '/app');
   }
 
   private async navigateAfterLogoutSuccess(return_to: string | undefined) {
@@ -221,5 +240,33 @@ export class AuthService {
         return_to,
       },
     });
+  }
+
+  private resolveCurrentProtectedReturnTo(): string | undefined {
+    const url = this.router.url?.length > 0 ? this.router.url : `${window.location.pathname}${window.location.search}`;
+
+    if (url.startsWith('/app') || url.startsWith('/welcome')) {
+      return url;
+    }
+
+    return undefined;
+  }
+
+  private resolveReturnToFromQuery(): string | undefined {
+    const rawReturnTo = this.activeRoute.snapshot.queryParamMap.get('return_to');
+
+    if (rawReturnTo == null || rawReturnTo.trim().length === 0) {
+      return undefined;
+    }
+
+    if (!rawReturnTo.startsWith('/')) {
+      return undefined;
+    }
+
+    if (rawReturnTo.startsWith('/login') || rawReturnTo.startsWith('/register')) {
+      return undefined;
+    }
+
+    return rawReturnTo;
   }
 }

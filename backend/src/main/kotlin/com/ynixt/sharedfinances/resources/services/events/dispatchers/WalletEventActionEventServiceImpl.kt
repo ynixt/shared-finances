@@ -20,11 +20,39 @@ class WalletEventActionEventServiceImpl(
     override suspend fun sendInsertedWalletEvent(
         userId: UUID,
         walletEvent: MinimumWalletEventEntity,
+    ) = send(
+        userId = userId,
+        walletEvent = walletEvent,
+        type = ActionEventType.INSERT,
+    )
+
+    override suspend fun sendUpdatedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) = send(
+        userId = userId,
+        walletEvent = walletEvent,
+        type = ActionEventType.UPDATE,
+    )
+
+    override suspend fun sendDeletedWalletEvent(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+    ) = send(
+        userId = userId,
+        walletEvent = walletEvent,
+        type = ActionEventType.DELETE,
+    )
+
+    private suspend fun send(
+        userId: UUID,
+        walletEvent: MinimumWalletEventEntity,
+        type: ActionEventType,
     ) = actionEventService
         .newEvent(
             data = mapper.fromListResponseToListDto(walletEventListService.convertEntityToEntryListResponse(walletEvent, true)),
             userId = userId,
-            type = ActionEventType.INSERT,
+            type = type,
             category = ActionEventCategory.WALLET_EVENT,
             groupInfo =
                 if (walletEvent.groupId != null) {

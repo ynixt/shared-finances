@@ -5,10 +5,13 @@ import { lastValueFrom, take } from 'rxjs';
 
 import { CursorPage, CursorPageRequest } from '../../../models/cursor-pagination';
 import {
+  DeleteScheduledEntryDto,
+  EditScheduledEntryDto,
   EntrySummaryDto,
   EventForListDto,
   ListEntryRequestDto,
   NewEntryDto,
+  ScheduledExecutionManagerRequestDto,
   SummaryEntryRequestDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { CursorPaginationService } from '../../../services/cursor-pagination.service';
@@ -36,6 +39,70 @@ export class WalletEntryService {
     throw new UserMissingError();
   }
 
+  async editWalletEntry(id: string, request: NewEntryDto): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.put<void>(`/api/wallet-entries/${id}`, request).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async editScheduledEntry(recurrenceConfigId: string, request: EditScheduledEntryDto): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.put<void>(`/api/wallet-entries/scheduled/${recurrenceConfigId}`, request).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async deleteWalletEntry(id: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.delete<void>(`/api/wallet-entries/${id}`).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async deleteScheduledEntry(recurrenceConfigId: string, request: DeleteScheduledEntryDto): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.delete<void>(`/api/wallet-entries/scheduled/${recurrenceConfigId}`, { body: request }).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async getWalletEntryById(id: string): Promise<EventForListDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.http.get<EventForListDto>(`/api/wallet-entries/${id}`).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async getScheduledEntryByRecurrenceConfigId(recurrenceConfigId: string): Promise<EventForListDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.http.get<EventForListDto>(`/api/wallet-entries/scheduled/${recurrenceConfigId}`).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
   async listWalletEntries(pageRequest?: CursorPageRequest, request?: ListEntryRequestDto): Promise<CursorPage<EventForListDto>> {
     const user = await this.userService.getUser();
 
@@ -43,6 +110,16 @@ export class WalletEntryService {
       return lastValueFrom(
         this.cursorPaginationService.post<EventForListDto>(`/api/wallet-entries/list`, pageRequest, undefined, request).pipe(take(1)),
       );
+    }
+
+    throw new UserMissingError();
+  }
+
+  async listScheduledExecutions(request?: ScheduledExecutionManagerRequestDto): Promise<EventForListDto[]> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.http.post<EventForListDto[]>(`/api/wallet-entries/scheduled-executions/list`, request ?? {}).pipe(take(1)));
     }
 
     throw new UserMissingError();

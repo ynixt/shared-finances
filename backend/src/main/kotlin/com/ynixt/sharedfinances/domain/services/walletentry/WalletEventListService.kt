@@ -13,6 +13,16 @@ interface WalletEventListService {
         request: ListEntryRequest,
     ): CursorPage<EventListResponse>
 
+    suspend fun findById(
+        userId: UUID,
+        walletEventId: UUID,
+    ): EventListResponse?
+
+    suspend fun findScheduledByRecurrenceConfigId(
+        userId: UUID,
+        recurrenceConfigId: UUID,
+    ): EventListResponse?
+
     suspend fun convertEntityToEntryListResponse(
         events: List<MinimumWalletEventEntity>,
         simulateBillForRecurrence: Boolean = false,

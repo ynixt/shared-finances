@@ -27,3 +27,5 @@ pageTitle:
   associateCreditCardGroup: Associate credit card to group
   transactions: Transactions
   newTransaction: New transaction
+  editTransaction: Edit transaction
+  scheduleManager: Schedule manager

@@ -1,3 +1,5 @@
+export * from './delete-scheduled-entry-dto';
+export * from './edit-scheduled-entry-dto';
 export * from './entry-sum-dto';
 export * from './entry-summary-dto';
 export * from './entry-summary-grouped-dto';
@@ -6,4 +8,5 @@ export * from './event-for-list-dto';
 export * from './list-entry-request-dto';
 export * from './new-entry-dto';
 export * from './recurrence-event-dto';
+export * from './scheduled-execution-manager-request-dto';
 export * from './summary-entry-request-dto';

@@ -3,4 +3,5 @@ export const environment = {
   clientId: 'frontend',
   defaultLanguage: 'en-US',
   defaultPrimeLanguage: 'en',
+  singleSsePerBrowser: true,
 };

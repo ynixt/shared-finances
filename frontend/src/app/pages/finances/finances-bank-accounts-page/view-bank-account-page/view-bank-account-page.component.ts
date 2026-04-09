@@ -86,6 +86,8 @@ export class ViewBankAccountPageComponent {
     this.dateControl.valueChanges.pipe(untilDestroyed(this)).subscribe(date => this.applyDateRange(date ?? undefined, true));
 
     this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+    this.userActionEventService.transactionUpdated$.pipe(untilDestroyed(this)).subscribe(() => this.newTransactionUpdated());
+    this.userActionEventService.transactionDeleted$.pipe(untilDestroyed(this)).subscribe(() => this.newTransactionUpdated());
   }
 
   private applyDateRange(dateRange: DateRange | undefined, syncUrl: boolean) {
@@ -157,7 +159,15 @@ export class ViewBankAccountPageComponent {
       (this.dateRange.startDate.isBefore(dto.date) || this.dateRange.startDate.isSame(dto.date)) &&
       (this.dateRange.endDate == null || this.dateRange.endDate.isAfter(dto.date) || this.dateRange.endDate.isSame(dto.date))
     ) {
-      this.getSummary();
+      void this.getSummary();
     }
+  }
+
+  private newTransactionUpdated() {
+    if (this.dateRange == null || this.bankAccount == null) {
+      return;
+    }
+
+    void this.getSummary();
   }
 }

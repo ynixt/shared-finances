@@ -173,6 +173,8 @@ export class ViewCreditCardPageComponent {
     this.dateControl.valueChanges.pipe(untilDestroyed(this)).subscribe(date => this.applyDateRange(date ?? undefined, true));
 
     this.userActionEventService.transactionInserted$.pipe(untilDestroyed(this)).subscribe(dto => this.newTransactionInserted(dto));
+    this.userActionEventService.transactionUpdated$.pipe(untilDestroyed(this)).subscribe(() => this.newTransactionUpdated());
+    this.userActionEventService.transactionDeleted$.pipe(untilDestroyed(this)).subscribe(() => this.newTransactionUpdated());
   }
 
   private applyDateRange(dateRange: DateRange | undefined, syncUrl: boolean) {
@@ -343,8 +345,26 @@ export class ViewCreditCardPageComponent {
       return;
 
     if (dto.entries.find(e => e.billDate && billDate.isSame(dayjs(e.billDate))) != null) {
-      this.getCreditCardBill(true);
+      void this.getCreditCardBill(true);
+      void this.refreshCreditCard();
     }
+  }
+
+  private newTransactionUpdated() {
+    if (this.dateRange == null || this.creditCard == null) {
+      return;
+    }
+
+    void this.getCreditCardBill(true);
+    void this.refreshCreditCard();
+  }
+
+  private async refreshCreditCard() {
+    if (this.creditCard?.id == null) {
+      return;
+    }
+
+    this.creditCard = await this.creditCardService.getCreditCard(this.creditCard.id);
   }
 
   private getDefaultDateRange(): DateRange {

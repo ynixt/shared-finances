@@ -36,6 +36,27 @@
                   <span class="table-item {{ entry.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
                     entry.value | localCurrency: item.currency
                   }}</span>
+
+                  @if (canEdit(item)) {
+                    <a
+                      [routerLink]="editRouterLink(item)"
+                      [queryParams]="editQueryParams(item)"
+                      pButton
+                      severity="secondary"
+                      [text]="true"
+                      [rounded]="true"
+                      size="small"
+                      class="ml-auto"
+                    >
+                      <fa-icon [icon]="editTransactionButtonIcon"></fa-icon>
+                    </a>
+                  }
+
+                  @if (canDelete(item)) {
+                    <button type="button" pButton severity="danger" [text]="true" [rounded]="true" size="small" (click)="startDelete(item)">
+                      <fa-icon [icon]="deleteTransactionButtonIcon"></fa-icon>
+                    </button>
+                  }
                 </div>
 
                 <app-entry-description [event]="item"></app-entry-description>
@@ -96,3 +117,27 @@
     </p-data-view>
   }
 </div>
+
+@if (scopeSelectionEntry != null) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+    <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+      <h3 class="text-lg font-semibold text-slate-900">{{ 'financesPage.transactionsPage.deleteScope.title' | translate }}</h3>
+      <p class="mt-2 text-sm text-slate-600">{{ 'financesPage.transactionsPage.deleteScope.description' | translate }}</p>
+
+      <div class="mt-4 flex flex-wrap justify-end gap-2">
+        <button type="button" pButton severity="secondary" [outlined]="true" (click)="cancelScopeSelection()">
+          {{ 'general.cancel' | translate }}
+        </button>
+        <button type="button" pButton severity="secondary" [outlined]="true" (click)="chooseOnlyThis()">
+          {{ 'financesPage.scheduleManager.scope.onlyThis' | translate }}
+        </button>
+        <button type="button" pButton (click)="chooseThisAndFuture()">
+          {{ 'financesPage.scheduleManager.scope.thisAndFuture' | translate }}
+        </button>
+        <button type="button" pButton severity="danger" (click)="chooseAllSeries()">
+          {{ 'financesPage.scheduleManager.scope.allSeries' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

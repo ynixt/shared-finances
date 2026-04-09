@@ -12,6 +12,33 @@ import java.util.UUID
 internal class InMemoryWalletEventRepository : WalletEventRepository {
     private val data = linkedMapOf<UUID, WalletEventEntity>()
 
+    fun findIdsByRecurrenceEventIds(recurrenceEventIds: Set<UUID>): Set<UUID> =
+        data.values
+            .filter { it.recurrenceEventId != null && recurrenceEventIds.contains(it.recurrenceEventId) }
+            .mapNotNull { it.id }
+            .toSet()
+
+    fun deleteAllByRecurrenceEventIds(recurrenceEventIds: Set<UUID>): Long {
+        val initial = data.size
+        data.entries.removeIf { (_, value) -> value.recurrenceEventId != null && recurrenceEventIds.contains(value.recurrenceEventId) }
+        return (initial - data.size).toLong()
+    }
+
+    override fun findById(id: UUID): Mono<WalletEventEntity> = Mono.justOrEmpty(data[id])
+
+    override fun deleteById(id: UUID): Mono<Long> = Mono.just(if (data.remove(id) != null) 1L else 0L)
+
+    override fun findOneByRecurrenceEventIdAndDate(
+        recurrenceEventId: UUID,
+        date: LocalDate,
+    ): Mono<WalletEventEntity> =
+        Mono.justOrEmpty(
+            data.values.firstOrNull { it.recurrenceEventId == recurrenceEventId && it.date == date },
+        )
+
+    override fun findAllByRecurrenceEventId(recurrenceEventId: UUID): Flux<WalletEventEntity> =
+        Flux.fromIterable(data.values.filter { it.recurrenceEventId == recurrenceEventId })
+
     override fun save(walletEntry: WalletEventEntity): Mono<WalletEventEntity> {
         val id = walletEntry.id ?: UUID.randomUUID()
         walletEntry.id = id

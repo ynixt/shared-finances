@@ -5,6 +5,8 @@ export * from './entry-summary-type';
 export * from './group-permissions';
 export * from './payment-type';
 export * from './recurrence-type';
+export * from './scheduled-edit-scope';
+export * from './scheduled-execution-filter';
 export * from './user-group-role';
 export * from './wallet-entry-type';
 export * from './wallet-item-type';

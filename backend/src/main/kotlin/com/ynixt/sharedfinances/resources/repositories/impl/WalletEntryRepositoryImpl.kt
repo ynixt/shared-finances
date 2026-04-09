@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.Wall
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEntrySpringDataRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
@@ -16,6 +17,11 @@ class WalletEntryRepositoryImpl(
     private val dcRepository: WalletEntryDatabaseClientRepository,
 ) : EntityRepositoryImpl<WalletEntrySpringDataRepository, WalletEntryEntity>(springDataRepository),
     WalletEntryRepository {
+    override fun findAllByWalletEventId(walletEventId: UUID): Flux<WalletEntryEntity> =
+        springDataRepository.findAllByWalletEventId(walletEventId)
+
+    override fun deleteAllByWalletEventId(walletEventId: UUID): Mono<Int> = springDataRepository.deleteAllByWalletEventId(walletEventId)
+
     override fun sumForBankAccountSummary(
         userId: UUID?,
         groupId: UUID?,

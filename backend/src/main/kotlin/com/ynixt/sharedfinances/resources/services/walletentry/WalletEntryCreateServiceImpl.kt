@@ -13,6 +13,7 @@ import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
@@ -42,6 +43,7 @@ class WalletEntryCreateServiceImpl(
     creditCardBillService: CreditCardBillService,
     recurrenceService: RecurrenceService,
     recurrenceEventRepository: RecurrenceEventRepository,
+    recurrenceSeriesRepository: RecurrenceSeriesRepository,
     recurrenceEntryRepository: RecurrenceEntryRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
     private val walletItemMapper: WalletItemMapper,
@@ -52,6 +54,7 @@ class WalletEntryCreateServiceImpl(
         creditCardBillService = creditCardBillService,
         recurrenceService = recurrenceService,
         recurrenceEventRepository = recurrenceEventRepository,
+        recurrenceSeriesRepository = recurrenceSeriesRepository,
         recurrenceEntryRepository = recurrenceEntryRepository,
         clock = clock,
     ),
@@ -60,16 +63,16 @@ class WalletEntryCreateServiceImpl(
     override suspend fun create(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
-    ): MinimumWalletEventEntity? =
-        loadRelationships(userId, newEntryRequest).let { newEntryRequest ->
-            checkDataIntegrity(newEntryRequest)
-            if (checkAllPermissions(userId, newEntryRequest)) {
-                createWithoutCheckPermissions(userId, newEntryRequest)
-                    .also { walletEventActionEventService.sendInsertedWalletEvent(userId, it) }
-            } else {
-                null
-            }
+    ): MinimumWalletEventEntity? {
+        val preparedRequest = prepareMutationRequest(userId, newEntryRequest)
+
+        return if (hasMutationPermission(userId, preparedRequest)) {
+            createWithoutCheckPermissions(userId, preparedRequest)
+                .also { walletEventActionEventService.sendInsertedWalletEvent(userId, it) }
+        } else {
+            null
         }
+    }
 
     @Transactional
     override suspend fun createFromRecurrenceConfig(
@@ -77,6 +80,7 @@ class WalletEntryCreateServiceImpl(
         date: LocalDate,
     ): MinimumWalletEventEntity? {
         val event = recurrenceEventRepository.findById(recurrenceConfigId).awaitSingle()
+        event.seriesQtyTotal = recurrenceSeriesRepository.findById(event.seriesId).awaitSingleOrNull()?.qtyTotal
 
         val entries =
             recurrenceEntryRepository.findAllByWalletEventId(recurrenceConfigId).asFlow().toList().also {
@@ -111,15 +115,20 @@ class WalletEntryCreateServiceImpl(
             return null
         }
 
+        if (event.paymentType == PaymentType.RECURRING && event.qtyLimit == null) {
+            recurrenceSeriesRepository.incrementQtyTotal(event.seriesId).awaitSingle()
+            event.seriesQtyTotal = (event.seriesQtyTotal ?: 0) + 1
+        }
+
         entries
             .map { entryTemplate ->
                 recurrenceEntryRepository.updateNextBillDate(
                     id = entryTemplate.id!!,
                     nextBillDate =
-                        if (nextExecution == null) {
+                        if (nextExecution == null || entryTemplate.nextBillDate == null) {
                             null
                         } else {
-                            calculateNextBillDate(entryTemplate.nextBillDate!!, event.periodicity)
+                            calculateNextBillDate(entryTemplate.nextBillDate, event.periodicity)
                         },
                 )
             }.also {
@@ -130,7 +139,7 @@ class WalletEntryCreateServiceImpl(
             if (event.paymentType ==
                 PaymentType.INSTALLMENTS
             ) {
-                event.qtyExecuted + 1
+                event.seriesOffset + event.qtyExecuted + 1
             } else {
                 null
             }
@@ -153,6 +162,9 @@ class WalletEntryCreateServiceImpl(
                         paymentType = event.paymentType,
                     ),
                 ).awaitSingle()
+                .also {
+                    it.recurrenceEvent = event
+                }
 
         val walletItems =
             walletItemService
@@ -168,7 +180,11 @@ class WalletEntryCreateServiceImpl(
                 val walletItem = walletItems.find { it.id!! == entry.walletItemId }!!
 
                 if (walletItem is CreditCard) {
-                    val dueDate = walletItem.getDueDate(entry.nextBillDate!!)
+                    val billDate =
+                        requireNotNull(entry.nextBillDate) {
+                            "Recurring credit card entry ${entry.id} must define nextBillDate"
+                        }
+                    val dueDate = walletItem.getDueDate(billDate)
                     creditCardBillService
                         .getOrCreateBill(
                             creditCardId = walletItem.id!!,
@@ -226,7 +242,7 @@ class WalletEntryCreateServiceImpl(
 
         if (event.paymentType == PaymentType.INSTALLMENTS && entry.walletItem!!.type == WalletItemType.CREDIT_CARD) {
             if (event.installment == 1) {
-                val installments = event.recurrenceEvent!!.qtyLimit!!
+                val installments = event.recurrenceEvent?.seriesQtyTotal ?: event.recurrenceEvent?.qtyLimit ?: 1
 
                 walletItemService.addBalanceById(entry.walletItemId, entry.value.multiply(installments.toBigDecimal()))
             }

@@ -46,6 +46,15 @@ class WalletItemDtoMapperImpl(
             mapping {
                 to::id fromPropertyNotNull from::id
                 to::user fromProperty from::user transform { it?.let { userDtoMapper.tSimpleDto(it) } }
+                to::dueDay fromExpression { source ->
+                    if (source is CreditCard) source.dueDay else null
+                }
+                to::dueOnNextBusinessDay fromExpression { source ->
+                    if (source is CreditCard) source.dueOnNextBusinessDay else null
+                }
+                to::daysBetweenDueAndClosing fromExpression { source ->
+                    if (source is CreditCard) source.daysBetweenDueAndClosing else null
+                }
             }
     }
 }

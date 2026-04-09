@@ -15,6 +15,8 @@ interface RecurrenceEventSpringDataRepository :
     EntityRepository<RecurrenceEventEntity> {
     fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity>
 
+    fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity>
+
     @Modifying
     @Query(
         """

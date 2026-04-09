@@ -60,6 +60,26 @@ export const routes: Routes = [
         path: 'transactions',
         children: [
           {
+            path: 'scheduler-manager/edit/:recurrenceConfigId',
+            loadComponent: () =>
+              import('./pages/finances/transactions-page/edit-scheduled-transaction-page/edit-scheduled-transaction-page.component').then(
+                m => m.EditScheduledTransactionPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.editTransaction',
+            },
+          },
+          {
+            path: 'scheduler-manager',
+            loadComponent: () =>
+              import('./pages/finances/transactions-page/scheduled-execution-manager-page/scheduled-execution-manager-page.component').then(
+                m => m.ScheduledExecutionManagerPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.scheduleManager',
+            },
+          },
+          {
             path: 'new',
             loadComponent: () =>
               import('./pages/finances/transactions-page/new-transaction-page/new-transaction-page.component').then(
@@ -67,6 +87,16 @@ export const routes: Routes = [
               ),
             data: {
               pageTitleKey: 'pageTitle.newTransaction',
+            },
+          },
+          {
+            path: 'edit/:id',
+            loadComponent: () =>
+              import('./pages/finances/transactions-page/edit-transaction-page/edit-transaction-page.component').then(
+                m => m.EditTransactionPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.editTransaction',
             },
           },
         ],

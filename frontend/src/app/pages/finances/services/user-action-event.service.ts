@@ -10,6 +10,7 @@ import { EventForListDto } from '../../../models/generated/com/ynixt/sharedfinan
 import { ActionEventCategory } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { TokenStateService } from '../../../services/token-state.service';
 import { ActionEventService } from './action-event.service';
+import { SingleSseCoordinatorService } from './single-sse-coordinator.service';
 
 const notGroupFilter = filter((e: UserActionEventDto) => e.groupId == null);
 
@@ -34,9 +35,14 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly groupInserted$: Observable<GroupDto>;
 
   readonly transactionInserted$: Observable<EventForListDto>;
+  readonly transactionUpdated$: Observable<EventForListDto>;
+  readonly transactionDeleted$: Observable<EventForListDto>;
+  readonly resyncRequired$: Observable<void>;
 
-  constructor(tokenStateService: TokenStateService, zone: NgZone) {
-    super(tokenStateService, zone, '/api/sse/user-events');
+  constructor(tokenStateService: TokenStateService, zone: NgZone, singleSseCoordinatorService: SingleSseCoordinatorService) {
+    super(tokenStateService, zone, singleSseCoordinatorService, '/api/sse/user-events');
+
+    this.resyncRequired$ = this.resyncRequiredSignal$;
 
     this.groupEvents$ = this.wire$.pipe(
       map(msg => {
@@ -94,6 +100,16 @@ export class UserActionEventService extends ActionEventService implements OnDest
 
     this.transactionInserted$ = baseTransaction.pipe(
       filter(e => e.type === 'INSERT'),
+      map(e => e.data as EventForListDto),
+    );
+
+    this.transactionUpdated$ = baseTransaction.pipe(
+      filter(e => e.type === 'UPDATE'),
+      map(e => e.data as EventForListDto),
+    );
+
+    this.transactionDeleted$ = baseTransaction.pipe(
+      filter(e => e.type === 'DELETE'),
       map(e => e.data as EventForListDto),
     );
   }

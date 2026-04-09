@@ -1,5 +1,8 @@
 financesPage:
   transactionsPage:
+    type: Tipo
+    name: Nome
+    date: Data
     group: Grupo
     origin: Origem
     target: Destino
@@ -25,10 +28,24 @@ financesPage:
       future: Agendado
     newTransactionPage:
       title: Nova transação
+    editTransactionPage:
+      title: Editar transação
+    editScope:
+      title: Escolha o escopo da edição
+      description: Essa transação é recorrente. Você quer editar somente esta ocorrência ou esta e futuras?
+      onlyThisHint: Editando somente esta ocorrência.
+      toEditThisAndFutureClickHere: Para editar esta e todas as ocorrências futuras clique aqui.
+      thisAndFutureHint: Editando esta e todas as ocorrências futuras.
+      toEditOnlyThisClickHere: Para editar apenas esta ocorrência clique aqui.
+    deleteScope:
+      title: Escolha o escopo da remoção
+      description: Essa transação é recorrente. Você quer remover somente esta ocorrência, esta e futuras, ou toda a série?
+    deleteConfirm: Tem certeza que deseja remover esta transação?
     noWalletEntryFound:
       title: 'Nenhuma transação foi encontrada em {{date}}.'
       subtitle: Que tal enviar uma nova?
     installmentValue: 'Parcela {{installment}} de {{installments}}'
+    onlyThisInstallmentContext: 'Editando parcela {{installment}} de {{installments}}'
     #    recurringValue: 'Recorrência #{{value}}'
     summary:
       balance: Saldo
@@ -40,3 +57,26 @@ financesPage:
       totalProjectedBalance: Alterações projetadas do período
       balanceAtEndOfPeriod: Saldo no fim do período
       diffAtEndOfPeriod: Alteração do fim do período
+  scheduleManager:
+    title: Gerenciador de agendamentos
+    loading: Carregando agendamentos...
+    filterLabel: Exibir
+    empty: Nenhum agendamento encontrado para este filtro.
+    noName: Sem nome
+    editTitle: Editar agendamento
+    scopeLabel: Escopo da edição
+    filters:
+      all: Todos
+      future: Futuras
+      alreadyGenerated: Já geradas
+    status:
+      future: Futura
+      generated: Já gerada
+    columns:
+      generatedStatus: Situação
+      recurrence: Recorrência
+    uniqueBypassScope: Agendamento UNIQUE selecionado. O escopo é aplicado automaticamente como somente esta ocorrência.
+    scope:
+      onlyThis: Somente esta
+      thisAndFuture: Esta e futuras
+      allSeries: Todas as séries

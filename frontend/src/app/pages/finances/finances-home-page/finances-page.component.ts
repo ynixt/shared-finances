@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faBuildingColumns, faCreditCard, faDollarSign, faGrip, faPlus, faTag } from '@fortawesome/free-solid-svg-icons';
+import { faBuildingColumns, faCalendarDays, faCreditCard, faDollarSign, faGrip, faPlus, faTag } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -48,7 +48,7 @@ export class FinancesPageComponent {
   private groupMenuRoot: AdvancedMenuItem | undefined;
 
   get shouldShowNewTransactionButton() {
-    return this.router.url.indexOf('/app/transactions/new') === -1;
+    return this.router.url.indexOf('/app/transactions/new') === -1 && this.router.url.indexOf('/app/transactions/edit/') === -1;
   }
 
   constructor(
@@ -129,6 +129,12 @@ export class FinancesPageComponent {
         fa: this.newTransactionButtonIcon,
         label: this.translateService.instant('financesPage.menu.newTransaction'),
         routerLink: ['/app/transactions/new'],
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
+        fa: faCalendarDays,
+        label: this.translateService.instant('financesPage.menu.scheduleManager'),
+        routerLink: ['/app/transactions/scheduler-manager'],
         routerLinkActiveOptions: { exact: true },
       },
       {

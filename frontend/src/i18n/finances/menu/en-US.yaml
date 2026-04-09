@@ -2,6 +2,7 @@ financesPage:
   menu:
     overview: Overview
     newTransaction: New Transaction
+    scheduleManager: Schedule Manager
     registrations: Registrations
     bankAccounts: Bank Accounts
     creditCards: Credit Cards

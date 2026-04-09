@@ -1,0 +1,160 @@
+<div class="finances-page flex flex-col gap-5">
+  <app-finances-title-bar [title]="'financesPage.scheduleManager.title' | translate"></app-finances-title-bar>
+
+  <div class="rounded-2xl border border-slate-200 p-4">
+    <label class="mb-2 block text-sm font-medium text-slate-700">{{ 'financesPage.scheduleManager.filterLabel' | translate }}</label>
+    <p-select-button
+      [options]="filterOptions"
+      [(ngModel)]="selectedFilter"
+      (onChange)="onFilterChange()"
+      optionValue="value"
+      [allowEmpty]="false"
+    >
+      <ng-template #item let-item>
+        <span>{{ item.label | translate }}</span>
+      </ng-template>
+    </p-select-button>
+  </div>
+
+  <div class="wallet-entry-table">
+    @if (!loading()) {
+      @if (entries().length === 0) {
+        <div class="p-8 text-center text-slate-500">
+          {{ 'financesPage.scheduleManager.empty' | translate }}
+        </div>
+      } @else {
+        <p-data-view [value]="entries()">
+          <ng-template #list let-items>
+            <div class="grid grid-cols-12 gap-4 grid-nogutter">
+              @for (entry of items; track rowTrack(entry); let first = $first) {
+                <div class="col-span-12">
+                  <div class="flex flex-col p-6 gap-4" [ngClass]="{ 'border-t border-surface-200 dark:border-surface-700': !first }">
+                    <div class="flex flex-wrap gap-4 items-center text-gray-400 text-sm">
+                      <app-entry-type [entry]="entry" class="table-item"></app-entry-type>
+                      <app-entry-status [entry]="entry" class="table-item"></app-entry-status>
+
+                      <span class="table-item">
+                        <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                          {{ statusLabel(entry) | translate }}
+                        </span>
+                      </span>
+
+                      <span class="table-item">{{ recurrenceLabel(entry) }}</span>
+
+                      @if (entry.installment != null) {
+                        <span class="table-item">
+                          {{
+                            'financesPage.transactionsPage.installmentValue'
+                              | translate
+                                : {
+                                    installment: entry.installment,
+                                    installments: entry.recurrenceConfig?.qtyLimit ?? entry.installment,
+                                  }
+                          }}
+                        </span>
+                      }
+                    </div>
+
+                    @if (entry.name != null && entry.name !== '') {
+                      <span class="table-item">{{ entry.name }}</span>
+                    } @else {
+                      <span class="table-item">{{ 'financesPage.scheduleManager.noName' | translate }}</span>
+                    }
+
+                    <div class="flex flex-wrap gap-4 items-center">
+                      <span class="table-item">{{ entry.date | localDate: 'shortDate' }}</span>
+                      <span class="table-item {{ entry.entries[0].value >= 0 ? 'text-green-700' : 'text-red-700' }}">
+                        {{ getEditableValue(entry) | localCurrency: entry.currency }}
+                      </span>
+
+                      <a
+                        [routerLink]="editRouterLink(entry)"
+                        [queryParams]="{ withFuture: true }"
+                        pButton
+                        severity="secondary"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        class="ml-auto"
+                      >
+                        <fa-icon [icon]="editTransactionButtonIcon"></fa-icon>
+                      </a>
+
+                      <button
+                        type="button"
+                        pButton
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        (click)="requestDelete(entry)"
+                      >
+                        <fa-icon [icon]="deleteTransactionButtonIcon"></fa-icon>
+                      </button>
+                    </div>
+
+                    <app-entry-description [event]="entry"></app-entry-description>
+                  </div>
+                </div>
+              }
+            </div>
+          </ng-template>
+        </p-data-view>
+      }
+    } @else {
+      <p-data-view [value]="skeletons">
+        <ng-template #list let-items>
+          <div class="grid grid-cols-12 gap-4 grid-nogutter">
+            @for (item of items; track item; let first = $first) {
+              <div class="col-span-12">
+                <div class="flex flex-col p-6 gap-4" [ngClass]="{ 'border-t border-surface-200 dark:border-surface-700': !first }">
+                  <div class="flex flex-wrap gap-4 items-center">
+                    <p-skeleton width="120px" height="20px"></p-skeleton>
+                    <p-skeleton width="120px" height="20px"></p-skeleton>
+                    <p-skeleton width="120px" height="20px"></p-skeleton>
+                  </div>
+
+                  <p-skeleton width="220px" height="24px"></p-skeleton>
+
+                  <div class="flex flex-wrap gap-4 items-center">
+                    <p-skeleton width="120px" height="24px"></p-skeleton>
+                    <p-skeleton width="120px" height="24px"></p-skeleton>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <p-skeleton width="79px" height="24px"></p-skeleton>
+                    <p-skeleton width="79px" height="24px"></p-skeleton>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </ng-template>
+      </p-data-view>
+    }
+  </div>
+</div>
+
+@if (deletingEntry() != null) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+    <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+      <h3 class="text-lg font-semibold text-slate-900">{{ 'financesPage.transactionsPage.deleteScope.title' | translate }}</h3>
+      <p class="mt-2 text-sm text-slate-600">{{ 'financesPage.transactionsPage.deleteScope.description' | translate }}</p>
+
+      <div class="mt-4 flex flex-wrap justify-end gap-2">
+        <button type="button" pButton severity="secondary" [outlined]="true" (click)="cancelDeleteScopeSelection()">
+          {{ 'general.cancel' | translate }}
+        </button>
+        <button type="button" pButton severity="secondary" [outlined]="true" (click)="chooseDeleteOnlyThis()">
+          {{ 'financesPage.scheduleManager.scope.onlyThis' | translate }}
+        </button>
+        <button type="button" pButton severity="secondary" [outlined]="true" (click)="chooseDeleteThisAndFuture()">
+          {{ 'financesPage.scheduleManager.scope.thisAndFuture' | translate }}
+        </button>
+        <button type="button" pButton severity="danger" (click)="chooseDeleteAllSeries()">
+          {{ 'financesPage.scheduleManager.scope.allSeries' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

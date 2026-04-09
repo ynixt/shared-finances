@@ -1,5 +1,8 @@
 financesPage:
   transactionsPage:
+    type: Type
+    name: Name
+    date: Date
     group: Group
     origin: Origin
     target: Target
@@ -25,10 +28,24 @@ financesPage:
       future: Scheduled
     newTransactionPage:
       title: New transaction
+    editTransactionPage:
+      title: Edit transaction
+    editScope:
+      title: Choose edit scope
+      description: This transaction is recurring. Do you want to edit only this occurrence or this and future ones?
+      onlyThisHint: Editing only this occurrence.
+      toEditThisAndFutureClickHere: To edit this and all future occurrences, click here.
+      thisAndFutureHint: Editing this and all future occurrences.
+      toEditOnlyThisClickHere: To edit only this entry, click here.
+    deleteScope:
+      title: Choose delete scope
+      description: This transaction is recurring. Do you want to remove only this occurrence, this and future ones, or the entire series?
+    deleteConfirm: Are you sure you want to delete this transaction?
     noWalletEntryFound:
       title: 'No transaction was found in {{date}}.'
       subtitle: How about sending a new one?
     installmentValue: 'Installment {{installment}} of {{installments}}'
+    onlyThisInstallmentContext: 'Editing installment {{installment}} of {{installments}}'
     #    recurringValue: 'Recurring #{{value}}'
     summary:
       balance: Balance
@@ -39,3 +56,26 @@ financesPage:
       totalProjectedBalance: Projected period diff
       balanceAtEndOfPeriod: Balance at end of period
       diffAtEndOfPeriod: Diff at end of period
+  scheduleManager:
+    title: Schedule manager
+    loading: Loading schedules...
+    filterLabel: Show
+    empty: No schedule entries found for this filter.
+    noName: Untitled
+    editTitle: Edit schedule
+    scopeLabel: Edit scope
+    filters:
+      all: All
+      future: Future
+      alreadyGenerated: Already generated
+    status:
+      future: Future
+      generated: Generated
+    columns:
+      generatedStatus: Status
+      recurrence: Recurrence
+    uniqueBypassScope: UNIQUE schedule selected. Scope is automatically applied as only this occurrence.
+    scope:
+      onlyThis: Only this
+      thisAndFuture: This and future
+      allSeries: All series

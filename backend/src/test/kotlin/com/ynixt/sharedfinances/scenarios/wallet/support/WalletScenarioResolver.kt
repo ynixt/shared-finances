@@ -4,10 +4,16 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEnt
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.ActionEventType
+import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
+import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
+import com.ynixt.sharedfinances.domain.models.walletentry.ScheduledExecutionManagerRequest
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import java.time.LocalDate
 import java.util.UUID
@@ -72,10 +78,20 @@ internal class WalletScenarioResolver(
     }
 
     suspend fun getNextRecurrenceExecutionDate(recurrenceConfigId: UUID? = null): LocalDate {
-        val recurrence = requireRecurrenceEntity(recurrenceConfigId)
-        return requireNotNull(recurrence.nextExecution) {
-            "Recurrence config ${recurrence.id} has no next execution date"
+        if (recurrenceConfigId != null) {
+            val recurrence = requireRecurrenceEntity(recurrenceConfigId)
+            return requireNotNull(recurrence.nextExecution) {
+                "Recurrence config ${recurrence.id} has no next execution date"
+            }
         }
+
+        val userId = ensureUser()
+        return runtime.recurrenceService
+            .findAllEntryByUserId(userId = userId)
+            .toList()
+            .mapNotNull { it.nextExecution }
+            .minOrNull()
+            ?: error("No recurrence config with pending execution was found")
     }
 
     private suspend fun findBillEntityByCardAndDate(
@@ -135,6 +151,32 @@ internal class WalletScenarioResolver(
         return runtime.recurrenceEventRepository.findById(id).awaitSingleOrNull() ?: error("Recurrence config $id not found")
     }
 
+    suspend fun findRecurrenceSeriesQtyTotal(recurrenceConfigId: UUID? = null): Int? {
+        val config = requireRecurrenceEntity(recurrenceConfigId)
+        return runtime.recurrenceSeriesRepository
+            .findById(config.seriesId)
+            .awaitSingleOrNull()
+            ?.qtyTotal
+    }
+
+    suspend fun countRecurrenceSegments(recurrenceConfigId: UUID? = null): Int {
+        val config = requireRecurrenceEntity(recurrenceConfigId)
+        return runtime.recurrenceEventRepository
+            .findAllBySeriesId(config.seriesId)
+            .collectList()
+            .awaitSingle()
+            .size
+    }
+
+    suspend fun recurrenceSeriesHasOnlyNullTags(recurrenceConfigId: UUID? = null): Boolean {
+        val config = requireRecurrenceEntity(recurrenceConfigId)
+        return runtime.recurrenceEventRepository
+            .findAllBySeriesId(config.seriesId)
+            .collectList()
+            .awaitSingle()
+            .all { it.tags == null }
+    }
+
     fun requireCurrentCreditCardId(): UUID =
         requireNotNull(context.currentCreditCardId) {
             "No credit card in scenario. Call creditCard() / givenCreditCard() first."
@@ -152,4 +194,61 @@ internal class WalletScenarioResolver(
             is RecurrenceEventEntity -> created.id
             else -> null
         }
+
+    fun extractWalletEventId(created: MinimumWalletEventEntity?): UUID? =
+        when (created) {
+            is WalletEventEntity -> created.id
+            else -> null
+        }
+
+    fun requireLastWalletEventId(): UUID =
+        requireNotNull(context.lastWalletEventId) {
+            "No wallet event tracked in scenario"
+        }
+
+    suspend fun fetchWalletEventById(walletEventId: UUID? = null): EventListResponse? {
+        val userId = ensureUser()
+        val eventId = walletEventId ?: requireLastWalletEventId()
+
+        return runtime.walletEventListService.findById(
+            userId = userId,
+            walletEventId = eventId,
+        )
+    }
+
+    suspend fun fetchScheduledEventByRecurrenceConfigId(recurrenceConfigId: UUID? = null): EventListResponse? {
+        val userId = ensureUser()
+        val recurrenceId =
+            recurrenceConfigId ?: requireNotNull(context.lastRecurrenceConfigId) {
+                "No tracked recurrence config found"
+            }
+
+        return runtime.walletEventListService.findScheduledByRecurrenceConfigId(
+            userId = userId,
+            recurrenceConfigId = recurrenceId,
+        )
+    }
+
+    fun lastFetchedWalletEvent(): EventListResponse? = context.lastFetchedWalletEvent
+
+    fun lastFetchedScheduledWalletEvent(): EventListResponse? = context.lastFetchedScheduledWalletEvent
+
+    fun countPublishedWalletEvents(type: ActionEventType): Int =
+        runtime.walletEventActionEventService.publishedEvents.count { it.type == type }
+
+    suspend fun listScheduledExecutions(filter: ScheduledExecutionFilter): Int = listScheduledExecutionEntries(filter).size
+
+    suspend fun listScheduledExecutionEntries(filter: ScheduledExecutionFilter): List<EventListResponse> {
+        val userId = ensureUser()
+
+        return runtime.scheduledExecutionManagerService
+            .list(
+                userId = userId,
+                request =
+                    ScheduledExecutionManagerRequest(
+                        groupId = null,
+                        filter = filter,
+                    ),
+            )
+    }
 }
