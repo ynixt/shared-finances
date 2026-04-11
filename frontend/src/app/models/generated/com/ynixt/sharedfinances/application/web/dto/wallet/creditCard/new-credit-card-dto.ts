@@ -7,5 +7,6 @@ export interface NewCreditCardDto {
   dueDay: number;
   dueOnNextBusinessDay: boolean;
   name: string;
+  showOnDashboard?: boolean | null;
   totalLimit: number;
 }

@@ -56,6 +56,7 @@ export class NewCreditCardPageComponent {
       dueDay: [1, [Validators.required, Validators.min(1), Validators.max(31)]],
       daysBetweenDueAndClosing: [10, [Validators.required, Validators.min(0), Validators.max(31)]],
       dueOnNextBusinessDay: [true, [Validators.required]],
+      showOnDashboard: [true, [Validators.required]],
     });
 
     this.userService.getUser().then(u => {

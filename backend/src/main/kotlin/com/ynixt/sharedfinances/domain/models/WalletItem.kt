@@ -11,6 +11,7 @@ abstract class WalletItem(
     val userId: UUID,
     val currency: String,
     val balance: BigDecimal,
+    val showOnDashboard: Boolean = true,
 ) : AuditedEntityModel() {
     var user: UserEntity? = null
     abstract val type: WalletItemType

@@ -8,6 +8,7 @@ financesPage:
     dueDay: Due day
     daysBetweenDueAndClosing: Days between due and closing
     dueOnNextBusinessDay: Due on next business day
+    showOnDashboard: Show on dashboard
     empty: No credit cards found.
     newCreditCardPage:
       title: New credit card
@@ -20,6 +21,7 @@ financesPage:
       title: 'Credit card: {{name}}'
       status: Status
       billValue: Bill value
+      payBill: Pay bill
       availableLimit: Available limit
       totalLimit: Total limit
       dueDate: Due date
@@ -28,3 +30,10 @@ financesPage:
         title: Edit closing date
       editDueDateDialog:
         title: Edit due date
+      payBillDialog:
+        title: Pay bill
+        bankAccount: Bank account
+        amount: Payment amount
+        observations: Observations
+        submit: Confirm payment
+        successMessage: Bill payment recorded successfully

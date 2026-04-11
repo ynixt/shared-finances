@@ -17,9 +17,17 @@ function getTransferTargetEntry(entry: EventForListDto) {
   return entry.entries.find(item => item.value > 0) ?? entry.entries[1] ?? entry.entries[0];
 }
 
+function getTransferOriginValue(entry: EventForListDto): number {
+  return entry.originValue ?? Math.abs(getTransferOriginEntry(entry).value ?? 0);
+}
+
+function getTransferTargetValue(entry: EventForListDto): number | undefined {
+  return entry.targetValue ?? undefined;
+}
+
 export function getEditableValueFromEvent(entry: EventForListDto): number {
   if (entry.type === WalletEntryType__Obj.TRANSFER) {
-    return Math.abs(getTransferTargetEntry(entry).value ?? 0);
+    return getTransferOriginValue(entry);
   }
 
   return Math.abs(entry.entries[0]?.value ?? 0);
@@ -44,6 +52,7 @@ export function mapEventToTransactionFormPatch(entry: EventForListDto): Partial<
     category: entry.category ?? undefined,
     date: dayjs(entry.date).toDate(),
     value: getEditableValueFromEvent(entry),
+    targetValue: entry.type === WalletEntryType__Obj.TRANSFER ? getTransferTargetValue(entry) : undefined,
     confirmed: entry.confirmed,
     observations: entry.observations ?? undefined,
     paymentType: paymentType,
@@ -57,13 +66,20 @@ export function mapEventToTransactionFormPatch(entry: EventForListDto): Partial<
   };
 }
 
-export function mapTransactionFormToNewEntryDto(form: NewTransactionForm, calculatedValue: number | undefined): NewEntryDto {
+export function mapTransactionFormToNewEntryDto(
+  form: NewTransactionForm,
+  calculatedValue: number | undefined,
+  includeTransferTargetValue: boolean,
+): NewEntryDto {
   const formValue = form.getRawValue();
 
   let value = formValue.value ?? 0;
   if (formValue.paymentType === PaymentType__Obj.INSTALLMENTS && formValue.valueType === ValueType.TOTAL) {
     value = calculatedValue ?? value;
   }
+
+  const normalizedValue = parseFloat(value.toFixed(2));
+  const normalizedTargetValue = formValue.targetValue == null ? null : parseFloat(formValue.targetValue.toFixed(2));
 
   return {
     categoryId: formValue.category?.id,
@@ -82,6 +98,8 @@ export function mapTransactionFormToNewEntryDto(form: NewTransactionForm, calcul
     targetBillDate: formValue.targetBill == null ? null : dayjs(formValue.targetBill).format(ONLY_DATE_FORMAT),
     targetId: formValue.target?.id,
     type: formValue.type!!,
-    value: parseFloat(value.toFixed(2)),
+    value: formValue.type === WalletEntryType__Obj.TRANSFER ? null : normalizedValue,
+    originValue: formValue.type === WalletEntryType__Obj.TRANSFER ? normalizedValue : null,
+    targetValue: formValue.type === WalletEntryType__Obj.TRANSFER && includeTransferTargetValue ? normalizedTargetValue : null,
   };
 }

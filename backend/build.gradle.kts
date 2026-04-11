@@ -117,6 +117,8 @@ dependencies {
 
     implementation("com.fasterxml.uuid:java-uuid-generator:5.2.0")
     implementation("tools.jackson.module:jackson-module-kotlin")
+    implementation("io.github.openfeign:feign-core:13.6")
+    implementation("io.github.openfeign:feign-jackson:13.6")
 
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 

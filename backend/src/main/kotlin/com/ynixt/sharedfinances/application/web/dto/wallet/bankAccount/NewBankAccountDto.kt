@@ -6,4 +6,5 @@ data class NewBankAccountDto(
     val name: String,
     val balance: BigDecimal?,
     val currency: String,
+    val showOnDashboard: Boolean? = true,
 )

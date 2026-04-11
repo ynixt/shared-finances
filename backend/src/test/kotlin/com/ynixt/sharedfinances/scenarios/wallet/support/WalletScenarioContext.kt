@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.scenarios.wallet.support
 
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboard
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.scenarios.support.ScenarioContext
 import java.util.UUID
@@ -14,6 +15,7 @@ internal class WalletScenarioContext(
     var lastRecurrenceConfigId: UUID? = null,
     var lastFetchedWalletEvent: EventListResponse? = null,
     var lastFetchedScheduledWalletEvent: EventListResponse? = null,
+    var lastOverview: OverviewDashboard? = null,
 ) : ScenarioContext(
         currentUserId = currentUserId,
         currentCurrency = currentCurrency,

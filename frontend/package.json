@@ -13,7 +13,8 @@
     "eslint:fix": "eslint . --fix",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier . --write",
-    "copy:prime-i18n": "npx cpx2 node_modules/primelocale/*.json public/prime-i18n"
+    "copy:prime-i18n": "npx cpx2 node_modules/primelocale/*.json public/prime-i18n",
+    "sync:currencies": "node scripts/sync-currencies.js"
   },
   "private": true,
   "dependencies": {
@@ -35,6 +36,7 @@
     "angularx-qrcode": "^21.0.4",
     "apollo-angular": "^13.0.0",
     "broadcast-channel": "^7.2.0",
+    "chart.js": "^4.5.1",
     "dayjs": "^1.11.19",
     "deepmerge-ts": "^7.1.5",
     "eventsource-client": "^1.2.0",
@@ -62,13 +64,13 @@
     "@typescript-eslint/parser": "^8.46.3",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "jsdom": "^27.1.0",
     "postcss": "^8.5.3",
     "prettier": "^3.6.2",
     "primelocale": "^2.2.2",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.3",
-    "yaml": "^2.8.1",
     "vitest": "^4.0.8",
-    "jsdom": "^27.1.0"
+    "yaml": "^2.8.1"
   }
 }

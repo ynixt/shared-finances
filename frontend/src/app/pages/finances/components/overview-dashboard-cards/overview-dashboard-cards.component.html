@@ -1,0 +1,40 @@
+<p-confirm-dialog [style]="{ width: '32rem' }">
+  <ng-template #message>
+    @if (selectedCard == null || currency() == null) {
+      <span class="text-sm text-surface-500">{{ 'financesPage.overviewPage.noDetails' | translate }}</span>
+    } @else if (selectedCard.details.length === 0) {
+      <span class="text-sm text-surface-500">{{ 'financesPage.overviewPage.noDetails' | translate }}</span>
+    } @else {
+      <div class="space-y-2">
+        @for (detail of selectedCard.details; track detail.sourceId ?? detail.label) {
+          <div class="flex gap-2 items-center justify-between rounded-md bg-surface-50 px-3 py-2">
+            <span class="text-sm text-surface-700">{{ detailLabel(detail) | translate }}</span>
+            <span class="text-xs text-surface-400">{{ detailSublabel(detail) | translate }}</span>
+            <span class="text-sm font-semibold" [class.text-green-700]="detail.value >= 0" [class.text-red-700]="detail.value < 0">
+              {{ detail.value | localCurrency: currency() }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </ng-template>
+</p-confirm-dialog>
+
+<div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+  @for (card of cards(); track trackByCardKey($index, card)) {
+    <button class="w-full text-left" type="button" (click)="showDetails(card)">
+      <app-dashboard-card
+        [titleKey]="cardTitleKey(card.key) | translate"
+        [value]="card.value | localCurrency: currency()"
+        [faIcon]="cardIcon(card.key)"
+        [valueCssColorClass]="cardValueClass(card)"
+      >
+        <ng-template #headerRight>
+          <span class="text-xs text-surface-500">
+            {{ 'financesPage.overviewPage.actions.details' | translate }}
+          </span>
+        </ng-template>
+      </app-dashboard-card>
+    </button>
+  }
+</div>

@@ -26,6 +26,7 @@ class WalletEventR2DBCMapping {
                 installment = row.get("${columnPrefix}installment", Int::class.javaObjectType),
                 recurrenceEventId = row.get("${columnPrefix}recurrence_event_id", UUID::class.java),
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
+                initialBalance = row.get("${columnPrefix}initial_balance", Boolean::class.java) ?: false,
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

@@ -9,6 +9,8 @@ import java.math.BigDecimal
 import java.util.UUID
 
 interface WalletItemRepository : EntityRepository<WalletItemEntity> {
+    fun findDistinctCurrencies(): Flux<String>
+
     fun findAllByUserIdAndEnabled(
         userId: UUID,
         enabled: Boolean,
@@ -49,6 +51,7 @@ interface WalletItemRepository : EntityRepository<WalletItemEntity> {
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+        newShowOnDashboard: Boolean,
     ): Mono<Long>
 
     fun updateCreditCard(
@@ -57,6 +60,7 @@ interface WalletItemRepository : EntityRepository<WalletItemEntity> {
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+        newShowOnDashboard: Boolean,
         newTotalLimit: BigDecimal,
         newDueDay: Int,
         newDaysBetweenDueAndClosing: Int,

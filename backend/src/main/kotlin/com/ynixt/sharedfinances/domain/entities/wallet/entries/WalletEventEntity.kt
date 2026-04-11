@@ -19,6 +19,7 @@ abstract class MinimumWalletEventEntity(
     val tags: List<String>?,
     val observations: String?,
     val paymentType: PaymentType,
+    val initialBalance: Boolean = false,
 ) : AuditedEntity() {
     @Transient
     var entries: List<MinimumWalletEntryEntity>? = null
@@ -38,6 +39,7 @@ class WalletEventEntity(
     val installment: Int?,
     val recurrenceEventId: UUID?,
     paymentType: PaymentType,
+    initialBalance: Boolean = false,
 ) : MinimumWalletEventEntity(
         type = type,
         name = name,
@@ -47,6 +49,7 @@ class WalletEventEntity(
         tags = tags,
         observations = observations,
         paymentType = paymentType,
+        initialBalance = initialBalance,
     ) {
     @Transient
     var recurrenceEvent: RecurrenceEventEntity? = null

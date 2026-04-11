@@ -1,0 +1,14 @@
+financesPage:
+  exchangeRatesPage:
+    title: Cotações
+    pair: Par de moedas
+    rate: Cotação
+    quoteDate: Data da cotação
+    quotedAt: Horário da cotação
+    fetchedAt: Horário da coleta
+    source: Fonte
+    filters:
+      baseCurrency: Moeda base
+      quoteCurrency: Moeda cotada
+      quoteDateFrom: Data da cotação
+      apply: Aplicar filtros

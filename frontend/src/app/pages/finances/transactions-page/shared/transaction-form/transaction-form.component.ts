@@ -1,12 +1,13 @@
-import { Component, Signal, computed, effect, inject, input, output } from '@angular/core';
+import { Component, Signal, computed, effect, inject, input, output, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { combineLatest, startWith } from 'rxjs';
+import { combineLatest, debounceTime, startWith } from 'rxjs';
 
+import dayjs from 'dayjs';
 import { ButtonDirective } from 'primeng/button';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
@@ -21,8 +22,6 @@ import { RequiredFieldAsteriskComponent } from '../../../../../components/requir
 import { TextareaComponent } from '../../../../../components/textarea/textarea.component';
 import { GroupWithRoleDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserResponseDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
-import { WalletItemSearchResponseDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
-import { CategoryDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
 import { NewEntryDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import {
   PaymentType,
@@ -34,11 +33,15 @@ import {
   WalletEntryType__Obj,
 } from '../../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { SimpleMenuItem } from '../../../../../models/simple-menu-item';
+import { LocalDatePipeService } from '../../../../../pipes/local-date.pipe';
+import { LocalNumberPipeService } from '../../../../../pipes/local-number.pipe';
 import { UserService } from '../../../../../services/user.service';
+import { ONLY_DATE_FORMAT } from '../../../../../util/date-util';
 import { CategoryPickerComponent } from '../../../components/item-picker/category-picker/category-picker.component';
 import { WalletItemPickerComponent } from '../../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
 import { CreditCardBillService } from '../../../services/credit-card-bill.service';
 import { GroupService } from '../../../services/group.service';
+import { WalletEntryService } from '../../../services/wallet-entry.service';
 import { mapEventToTransactionFormPatch, mapTransactionFormToNewEntryDto } from './transaction-form.mapper';
 import { NewTransactionForm, TransactionFormInitialData, TransactionFormMode, ValueType } from './transaction-form.types';
 
@@ -84,12 +87,32 @@ export class TransactionFormComponent {
   private readonly groupService = inject(GroupService);
   private readonly userService = inject(UserService);
   private readonly creditCardBillService = inject(CreditCardBillService);
+  private readonly walletEntryService = inject(WalletEntryService);
+  private readonly translate = inject(TranslateService);
+  private readonly localDatePipeService = inject(LocalDatePipeService);
+  private readonly localNumberPipeService = inject(LocalNumberPipeService);
 
   readonly form: NewTransactionForm;
   readonly user: Signal<UserResponseDto | null> = this.userService.user;
+  readonly transferQuoteLoading = signal(false);
+  readonly transferQuoteError = signal<string | null>(null);
+  /** Stored quote used for cross-currency transfer (read-only display + client-side conversion). */
+  readonly transferRateDisplay = signal<{
+    rate: number;
+    quoteDate: string;
+    baseCurrency: string;
+    quoteCurrency: string;
+  } | null>(null);
 
   private hydratedEntryKey: string | undefined;
   private isHydrating = false;
+  private transferRateRequestId = 0;
+  private isUpdatingTargetValueProgrammatically = false;
+  /** After loading a concrete transfer for edit, first rate fetch must not overwrite targetValue from the server. */
+  private suppressNextCrossCurrencyTargetFromRate = false;
+  private lastTransferRateSnapshot: TransferRateSnapshot | null = null;
+  /** Same-currency only: user edited target so it should not follow origin amount. */
+  private sameCurrencyTargetUserOverridden = false;
 
   get selectedGroup() {
     return this.form.get('group')!!.value;
@@ -137,6 +160,10 @@ export class TransactionFormComponent {
 
   get valueControl() {
     return this.form.get('value')!!;
+  }
+
+  get targetValueControl() {
+    return this.form.get('targetValue')!!;
   }
 
   get installmentsControl() {
@@ -189,6 +216,26 @@ export class TransactionFormComponent {
     return `enums.recurrenceType.${this.periodicityControl.value}`;
   }
 
+  get shouldShowTargetValueField(): boolean {
+    if (this.typeControl.value !== WalletEntryType__Obj.TRANSFER) {
+      return false;
+    }
+
+    if (this.mode() === 'edit') {
+      return this.initialEntry()?.id != null;
+    }
+
+    return this.currentPaymentType === PaymentType__Obj.UNIQUE && !this.isFutureDate(this.dateControl.value);
+  }
+
+  get shouldShowDeferredTargetHint(): boolean {
+    return this.typeControl.value === WalletEntryType__Obj.TRANSFER && !this.shouldShowTargetValueField;
+  }
+
+  get shouldRequireTargetValueField(): boolean {
+    return this.shouldShowTargetValueField;
+  }
+
   constructor() {
     this.form = this.formBuilder.group(
       {
@@ -199,6 +246,7 @@ export class TransactionFormComponent {
         name: [undefined, [Validators.maxLength(255)]],
         category: [undefined],
         value: [undefined, [Validators.required, Validators.min(0.01)]],
+        targetValue: [undefined, [Validators.min(0.01)]],
         date: [new Date(), [Validators.required]],
         confirmed: [false, [Validators.required]],
         observations: [undefined, [Validators.maxLength(512)]],
@@ -215,6 +263,7 @@ export class TransactionFormComponent {
       {
         validators: [
           this.requiredOnlyOnTransfer,
+          this.requiredOnlyOnConcreteTransferTargetValue,
           this.requiredOnlyIfInstallment,
           this.requiredOnlyOnOriginCreditCard,
           this.requiredOnlyOnTargetCreditCard,
@@ -246,6 +295,15 @@ export class TransactionFormComponent {
       this.isHydrating = true;
       this.form.patchValue(mapEventToTransactionFormPatch(entry));
       this.isHydrating = false;
+      this.lastTransferRateSnapshot = null;
+      this.transferRateDisplay.set(null);
+      this.suppressNextCrossCurrencyTargetFromRate =
+        this.mode() === 'edit' &&
+        entry.id != null &&
+        entry.type === WalletEntryType__Obj.TRANSFER &&
+        this.shouldShowTargetValueField &&
+        this.hasDifferentTransferCurrencies();
+      this.syncSameCurrencyTargetOverrideState();
 
       this.typeControl.enable({ emitEvent: false });
 
@@ -262,11 +320,27 @@ export class TransactionFormComponent {
       if (this.isHydrating) return;
       this.form.get('origin')?.reset();
       this.form.get('target')?.reset();
+      this.resetTargetValueControl();
+      this.transferRateDisplay.set(null);
+      this.lastTransferRateSnapshot = null;
+      this.transferQuoteError.set(null);
     });
 
     this.typeControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
       if (this.isHydrating) return;
       this.form.get('target')?.reset();
+      this.resetTargetValueControl();
+      this.transferQuoteError.set(null);
+      this.transferRateDisplay.set(null);
+      this.lastTransferRateSnapshot = null;
+    });
+
+    this.targetValueControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
+      if (this.isHydrating || this.isUpdatingTargetValueProgrammatically) {
+        return;
+      }
+
+      this.syncSameCurrencyTargetOverrideState();
     });
 
     this.paymentTypeControl.valueChanges.pipe(untilDestroyed(this)).subscribe(newPaymentType => {
@@ -348,6 +422,24 @@ export class TransactionFormComponent {
           this.form.get('targetBill')?.reset();
         }
       });
+
+    combineLatest([
+      this.typeControl.valueChanges.pipe(startWith(this.typeControl.value)),
+      this.paymentTypeControl.valueChanges.pipe(startWith(this.paymentTypeControl.value)),
+      this.dateControl.valueChanges.pipe(startWith(this.dateControl.value)),
+      this.originControl.valueChanges.pipe(startWith(this.originControl.value)),
+      this.targetControl.valueChanges.pipe(startWith(this.targetControl.value)),
+    ])
+      .pipe(debounceTime(150), untilDestroyed(this))
+      .subscribe(() => {
+        if (this.isHydrating) return;
+        void this.refreshTransferRateContext();
+      });
+
+    this.valueControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
+      if (this.isHydrating) return;
+      this.syncTransferTargetFromOriginValue();
+    });
   }
 
   transactionTypeOptions: any[] = [
@@ -434,7 +526,7 @@ export class TransactionFormComponent {
       return;
     }
 
-    this.formSubmitted.emit(mapTransactionFormToNewEntryDto(this.form, this.calculatedValueControl.value));
+    this.formSubmitted.emit(mapTransactionFormToNewEntryDto(this.form, this.calculatedValueControl.value, this.shouldShowTargetValueField));
   }
 
   shouldRequireOriginBill(): boolean {
@@ -451,6 +543,21 @@ export class TransactionFormComponent {
 
     const isTransfer = type === WalletEntryType__Obj.TRANSFER;
     return this.requireFieldsIf(targetControl, isTransfer);
+  };
+
+  private requiredOnlyOnConcreteTransferTargetValue = (group: NewTransactionForm): ValidationErrors | null => {
+    const type = group.get('type')?.value;
+    const paymentType = group.get('paymentType')?.value;
+    const date = group.get('date')?.value;
+    const targetValueControl = group.get('targetValue')!!;
+
+    const shouldShowTargetValue =
+      type === WalletEntryType__Obj.TRANSFER &&
+      (this.mode() === 'edit'
+        ? this.initialEntry()?.id != null
+        : paymentType === PaymentType__Obj.UNIQUE && !this.isFutureDate(date ?? undefined));
+
+    return this.requireFieldsIf(targetValueControl, shouldShowTargetValue);
   };
 
   private requiredOnlyIfInstallment = (group: NewTransactionForm): ValidationErrors | null => {
@@ -503,4 +610,289 @@ export class TransactionFormComponent {
   private isTransferType(type: WalletEntryType): boolean {
     return type === WalletEntryType__Obj.TRANSFER;
   }
+
+  hasDifferentTransferCurrencies(): boolean {
+    const originCurrency = this.currentOrigin?.currency;
+    const targetCurrency = this.currentTarget?.currency;
+    return originCurrency != null && targetCurrency != null && originCurrency !== targetCurrency;
+  }
+
+  selectedTransferDateIso(): string {
+    const d = this.dateControl.value;
+    return d ? dayjs(d).format(ONLY_DATE_FORMAT) : '';
+  }
+
+  transferRateReadonlyLabel(tr: { rate: number; quoteDate: string; baseCurrency: string; quoteCurrency: string }): string {
+    return this.translate.instant('financesPage.transactionsPage.transferExchangeRateLine', {
+      base: tr.baseCurrency,
+      rate: this.localNumberPipeService.transform(tr.rate, {
+        maximumFractionDigits: 8,
+      }),
+      quote: tr.quoteCurrency,
+    });
+  }
+
+  transferRateNearestHint(tr: { quoteDate: string }): string {
+    const date = dayjs(tr.quoteDate);
+
+    return this.translate.instant('financesPage.transactionsPage.transferExchangeRateNearestHint', {
+      date: this.localDatePipeService.transform(date, 'shortDate'),
+    });
+  }
+
+  private isFutureDate(date: Date | undefined): boolean {
+    if (date == null) {
+      return false;
+    }
+
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate.getTime() > today.getTime();
+  }
+
+  private async refreshTransferRateContext() {
+    if (this.typeControl.value !== WalletEntryType__Obj.TRANSFER) {
+      this.transferRateRequestId++;
+      this.transferQuoteLoading.set(false);
+      this.transferQuoteError.set(null);
+      this.transferRateDisplay.set(null);
+      this.lastTransferRateSnapshot = null;
+      this.resetTargetValueControl();
+      this.form.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    if (!this.shouldShowTargetValueField) {
+      this.transferRateRequestId++;
+      this.transferQuoteLoading.set(false);
+      this.transferQuoteError.set(null);
+      this.transferRateDisplay.set(null);
+      this.lastTransferRateSnapshot = null;
+      this.resetTargetValueControl();
+      this.form.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    const origin = this.currentOrigin;
+    const target = this.currentTarget;
+    const date = this.dateControl.value;
+
+    if (origin == null || target == null || date == null) {
+      this.transferQuoteLoading.set(false);
+      this.transferQuoteError.set(null);
+      this.transferRateDisplay.set(null);
+      this.lastTransferRateSnapshot = null;
+      this.form.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    const originValue = this.valueControl.value;
+
+    if (origin.currency === target.currency) {
+      this.transferRateRequestId++;
+      this.transferQuoteLoading.set(false);
+      this.transferQuoteError.set(null);
+      this.transferRateDisplay.set(null);
+      this.lastTransferRateSnapshot = null;
+      this.syncSameCurrencyTargetOverrideState();
+      if (originValue != null && originValue > 0 && !this.sameCurrencyTargetUserOverridden) {
+        this.setTargetValueControlValue(originValue);
+      }
+      this.form.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    const prevSnapshot = this.lastTransferRateSnapshot;
+    const currentSnapshot = this.buildTransferRateSnapshot();
+
+    const requestId = ++this.transferRateRequestId;
+    this.transferQuoteLoading.set(true);
+    this.transferQuoteError.set(null);
+
+    try {
+      const dto = await this.walletEntryService.fetchTransferRate({
+        groupId: this.groupControl.value?.id ?? null,
+        originId: origin.id,
+        targetId: target.id,
+        date: dayjs(date).format(ONLY_DATE_FORMAT),
+      });
+
+      if (requestId !== this.transferRateRequestId) {
+        return;
+      }
+
+      const rate = Number(dto.rate);
+      this.transferRateDisplay.set({
+        rate,
+        quoteDate: dto.quoteDate,
+        baseCurrency: dto.baseCurrency,
+        quoteCurrency: dto.quoteCurrency,
+      });
+      this.transferQuoteError.set(null);
+
+      const targetHasValue = this.targetValueControl.value != null && this.targetValueControl.value > 0;
+
+      if (this.suppressNextCrossCurrencyTargetFromRate) {
+        this.suppressNextCrossCurrencyTargetFromRate = false;
+        this.lastTransferRateSnapshot = currentSnapshot;
+        return;
+      }
+
+      const shouldUpdateTarget = this.computeShouldUpdateTargetAfterRateFetch(
+        prevSnapshot,
+        currentSnapshot,
+        targetHasValue,
+        originValue ?? null,
+      );
+
+      if (shouldUpdateTarget && originValue != null && originValue > 0) {
+        this.setTargetValueControlValue(this.roundMoney(originValue * rate));
+      }
+
+      this.lastTransferRateSnapshot = currentSnapshot;
+    } catch {
+      if (requestId !== this.transferRateRequestId) {
+        return;
+      }
+
+      this.suppressNextCrossCurrencyTargetFromRate = false;
+      this.transferRateDisplay.set(null);
+      this.transferQuoteError.set('financesPage.transactionsPage.targetValueQuoteUnavailable');
+      const keepTargetOnRateFailure = this.mode() === 'edit' && this.initialEntry()?.id != null;
+      if (!keepTargetOnRateFailure) {
+        this.isUpdatingTargetValueProgrammatically = true;
+        this.targetValueControl.reset(undefined, { emitEvent: false });
+        this.isUpdatingTargetValueProgrammatically = false;
+        this.sameCurrencyTargetUserOverridden = false;
+      }
+    } finally {
+      if (requestId === this.transferRateRequestId) {
+        this.transferQuoteLoading.set(false);
+        this.form.updateValueAndValidity({ emitEvent: false });
+      }
+    }
+  }
+
+  private syncTransferTargetFromOriginValue() {
+    if (this.typeControl.value !== WalletEntryType__Obj.TRANSFER || !this.shouldShowTargetValueField) {
+      return;
+    }
+
+    const originValue = this.valueControl.value;
+    if (originValue == null || originValue <= 0) {
+      return;
+    }
+
+    if (!this.hasDifferentTransferCurrencies()) {
+      if (!this.sameCurrencyTargetUserOverridden) {
+        this.setTargetValueControlValue(originValue);
+      }
+      return;
+    }
+
+    const meta = this.transferRateDisplay();
+    if (meta == null) {
+      return;
+    }
+
+    this.setTargetValueControlValue(this.roundMoney(originValue * meta.rate));
+  }
+
+  private buildTransferRateSnapshot(): TransferRateSnapshot {
+    const o = this.currentOrigin;
+    const t = this.currentTarget;
+    const d = this.dateControl.value;
+    return {
+      originId: o?.id,
+      targetId: t?.id,
+      dateStr: d ? dayjs(d).format(ONLY_DATE_FORMAT) : undefined,
+      pairKey: o?.currency != null && t?.currency != null ? `${o.currency}|${t.currency}` : undefined,
+    };
+  }
+
+  private computeShouldUpdateTargetAfterRateFetch(
+    prev: TransferRateSnapshot | null,
+    current: TransferRateSnapshot,
+    targetHasValue: boolean,
+    originValue: number | null,
+  ): boolean {
+    if (originValue == null || originValue <= 0) {
+      return false;
+    }
+
+    if (prev?.pairKey == null) {
+      return true;
+    }
+
+    const onlyDateChanged =
+      prev.originId === current.originId &&
+      prev.targetId === current.targetId &&
+      prev.pairKey === current.pairKey &&
+      prev.dateStr !== current.dateStr;
+
+    if (onlyDateChanged && targetHasValue) {
+      return false;
+    }
+
+    const onlyAccountSwapSamePair =
+      prev.pairKey === current.pairKey &&
+      prev.dateStr === current.dateStr &&
+      (prev.originId !== current.originId || prev.targetId !== current.targetId);
+
+    if (onlyAccountSwapSamePair) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private roundMoney(amount: number): number {
+    return Math.round((amount + Number.EPSILON) * 100) / 100;
+  }
+
+  private setTargetValueControlValue(value: number | undefined) {
+    this.isUpdatingTargetValueProgrammatically = true;
+    this.targetValueControl.setValue(value, { emitEvent: false });
+    this.isUpdatingTargetValueProgrammatically = false;
+  }
+
+  private resetTargetValueControl() {
+    this.isUpdatingTargetValueProgrammatically = true;
+    this.targetValueControl.reset(undefined, { emitEvent: false });
+    this.isUpdatingTargetValueProgrammatically = false;
+    this.sameCurrencyTargetUserOverridden = false;
+  }
+
+  private syncSameCurrencyTargetOverrideState() {
+    const originCurrency = this.currentOrigin?.currency;
+    const targetCurrency = this.currentTarget?.currency;
+
+    if (
+      this.typeControl.value !== WalletEntryType__Obj.TRANSFER ||
+      originCurrency == null ||
+      targetCurrency == null ||
+      originCurrency !== targetCurrency
+    ) {
+      this.sameCurrencyTargetUserOverridden = false;
+      return;
+    }
+
+    const originAmount = this.valueControl.value;
+    const targetAmount = this.targetValueControl.value;
+    if (originAmount == null || targetAmount == null) {
+      this.sameCurrencyTargetUserOverridden = false;
+      return;
+    }
+    this.sameCurrencyTargetUserOverridden = Math.abs(this.roundMoney(originAmount) - this.roundMoney(targetAmount)) > 0.001;
+  }
+}
+
+interface TransferRateSnapshot {
+  originId?: string;
+  targetId?: string;
+  dateStr?: string;
+  pairKey?: string;
 }

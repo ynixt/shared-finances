@@ -8,6 +8,7 @@ class CreditCardDto(
     id: UUID,
     name: String,
     enabled: Boolean,
+    showOnDashboard: Boolean = true,
     userId: UUID,
     currency: String,
     val totalLimit: BigDecimal,
@@ -19,6 +20,7 @@ class CreditCardDto(
         id = id,
         name = name,
         enabled = enabled,
+        showOnDashboard = showOnDashboard,
         userId = userId,
         currency = currency,
     )

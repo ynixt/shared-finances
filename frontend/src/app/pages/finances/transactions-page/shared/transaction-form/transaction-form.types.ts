@@ -22,6 +22,7 @@ export type NewTransactionForm = FormGroup<{
   category: FormControl<CategoryDto | undefined>;
   date: FormControl<Date | undefined>;
   value: FormControl<number | undefined>;
+  targetValue: FormControl<number | undefined>;
   confirmed: FormControl<boolean | undefined>;
   observations: FormControl<string | undefined>;
   paymentType: FormControl<PaymentType | undefined>;

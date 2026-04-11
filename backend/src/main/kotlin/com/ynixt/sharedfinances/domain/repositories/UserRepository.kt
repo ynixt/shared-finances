@@ -6,6 +6,8 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface UserRepository : EntityRepository<UserEntity> {
+    fun findDistinctDefaultCurrencies(): Flux<String>
+
     fun findOneByEmail(email: String): Mono<UserEntity>
 
     fun changeLanguage(

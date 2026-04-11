@@ -10,6 +10,7 @@ export interface WalletItemSearchResponseDto {
   dueOnNextBusinessDay?: boolean | null;
   id: string;
   name: string;
+  showOnDashboard: boolean;
   type: WalletItemType;
   user?: UserSimpleDto | null;
 }

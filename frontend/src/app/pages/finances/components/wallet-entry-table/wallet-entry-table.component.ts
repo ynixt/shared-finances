@@ -8,7 +8,9 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DataView } from 'primeng/dataview';
 import { Skeleton } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
@@ -43,17 +45,20 @@ import { EntryTypeComponent } from './components/entry-type/entry-type.component
     FormsModule,
     TranslatePipe,
     ButtonDirective,
+    ConfirmDialog,
     FaIconComponent,
     RouterLink,
   ],
   templateUrl: './wallet-entry-table.component.html',
   styleUrl: './wallet-entry-table.component.scss',
+  providers: [ConfirmationService],
 })
 @UntilDestroy()
 export class WalletEntryTableComponent {
   readonly walletEntryService = inject(WalletEntryService);
   readonly localDatePipeService = inject(LocalDatePipeService);
   readonly userActionEventService = inject(UserActionEventService);
+  readonly confirmationService = inject(ConfirmationService);
   private readonly translateService = inject(TranslateService);
 
   readonly pageSize = 30;
@@ -218,7 +223,7 @@ export class WalletEntryTableComponent {
     }
 
     if (entry.id != null) {
-      void this.deleteOneOff(entry.id);
+      this.deleteOneOff(entry.id);
     }
   }
 
@@ -257,11 +262,28 @@ export class WalletEntryTableComponent {
     return entry.recurrenceConfig?.paymentType !== 'UNIQUE';
   }
 
-  private async deleteOneOff(id: string) {
-    if (!window.confirm(this.translateService.instant('financesPage.transactionsPage.deleteConfirm'))) {
-      return;
-    }
+  private deleteOneOff(id: string) {
+    this.confirmationService.confirm({
+      message: this.translateService.instant('financesPage.transactionsPage.deleteConfirm'),
+      header: this.translateService.instant('general.confirmation'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translateService.instant('general.delete'),
+      rejectLabel: this.translateService.instant('general.cancel'),
+      acceptButtonProps: {
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        severity: 'secondary',
+      },
+      accept: () => {
+        void this.confirmDeleteOneOff(id);
+      },
+    });
+  }
 
+  private async confirmDeleteOneOff(id: string) {
     await this.walletEntryService.deleteWalletEntry(id);
     await this.reload();
   }
@@ -278,6 +300,27 @@ export class WalletEntryTableComponent {
 
     this.cancelScopeSelection();
     await this.reload();
+  }
+
+  protected showDualTransferAmounts(entry: EventForListDto): boolean {
+    return entry.type === 'TRANSFER' && entry.targetValue != null;
+  }
+
+  protected getTransferOriginEntry(entry: EventForListDto) {
+    return entry.entries.find(item => item.value < 0) ?? entry.entries[0];
+  }
+
+  protected getTransferTargetEntry(entry: EventForListDto) {
+    const origin = this.getTransferOriginEntry(entry);
+    return entry.entries.find(item => item.walletItemId !== origin.walletItemId) ?? entry.entries[1] ?? entry.entries[0];
+  }
+
+  protected getTransferOriginDisplayValue(entry: EventForListDto): number {
+    return entry.originValue ?? Math.abs(this.getTransferOriginEntry(entry).value ?? 0);
+  }
+
+  protected getTransferTargetDisplayValue(entry: EventForListDto): number | null {
+    return entry.targetValue ?? null;
   }
 
   protected readonly newTransactionButtonIcon = faDollarSign;

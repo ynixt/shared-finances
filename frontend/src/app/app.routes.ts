@@ -225,6 +225,16 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'exchange-rates',
+        loadComponent: () =>
+          import('./pages/finances/finances-exchange-rates-page/finances-exchange-rates-page.component').then(
+            m => m.FinancesExchangeRatesPageComponent,
+          ),
+        data: {
+          pageTitleKey: 'pageTitle.exchangeRates',
+        },
+      },
+      {
         path: 'groups',
         children: [
           {

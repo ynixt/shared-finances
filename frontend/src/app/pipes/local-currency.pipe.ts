@@ -30,12 +30,23 @@ export class LocalCurrencyPipeService {
     const value = typeof valueStr === 'string' ? parseFloat(valueStr) : valueStr;
 
     const code = currencyCode || 'USD';
-    return new Intl.NumberFormat(locale ?? this.localeService.locale, {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits,
-    })
-      .format(value)
-      .replace('-', '- ');
+    try {
+      return new Intl.NumberFormat(locale ?? this.localeService.locale, {
+        style: 'currency',
+        currency: code,
+        minimumFractionDigits,
+      })
+        .format(value)
+        .replace('-', '- ');
+    } catch (error) {
+      return new Intl.NumberFormat(locale ?? this.localeService.locale, {
+        style: 'currency',
+        currency: 'brl',
+        minimumFractionDigits,
+      })
+        .format(value)
+        .replace('-', '- ')
+        .replace('R$', `${currencyCode} `);
+    }
   }
 }

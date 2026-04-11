@@ -1,3 +1,4 @@
+import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -49,6 +50,7 @@ function buildEntry(paymentType: 'UNIQUE' | 'RECURRING'): EventForListDto {
           type: 'CREDIT_CARD',
           enabled: true,
           currency: 'BRL',
+          showOnDashboard: true,
           dueDay: 10,
           daysBetweenDueAndClosing: 7,
           dueOnNextBusinessDay: false,

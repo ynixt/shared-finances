@@ -14,6 +14,7 @@ import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupNotFoundException
 import com.ynixt.sharedfinances.domain.exceptions.http.OriginNotFoundException
 import com.ynixt.sharedfinances.domain.exceptions.http.TargetNotFoundException
+import com.ynixt.sharedfinances.domain.exceptions.http.TransferTargetValueRequiredException
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -68,7 +70,22 @@ abstract class WalletEntrySaveServiceImpl(
         requireNotNull(newEntryRequest.origin)
 
         if (newEntryRequest.type == WalletEntryType.TRANSFER) {
-            requireNotNull(newEntryRequest.target)
+            val origin = newEntryRequest.origin
+            val target = requireNotNull(newEntryRequest.target)
+            val originValue = requireNotNull(newEntryRequest.transferOriginValue)
+            require(originValue > BigDecimal.ZERO)
+            val targetValue = newEntryRequest.transferTargetValue
+            targetValue?.let { require(it > BigDecimal.ZERO) }
+
+            val sameCurrency = origin.currency == target.currency
+            if (newEntryRequest.paymentType == PaymentType.UNIQUE && !sameCurrency && targetValue == null) {
+                throw TransferTargetValueRequiredException(
+                    fromCurrency = origin.currency,
+                    toCurrency = target.currency,
+                )
+            }
+        } else {
+            requireNotNull(newEntryRequest.value)
         }
 
         if (newEntryRequest.origin.type == WalletItemType.CREDIT_CARD) {
@@ -134,9 +151,35 @@ abstract class WalletEntrySaveServiceImpl(
             installment = installment,
             recurrenceEventId = recurrenceConfig?.id,
             paymentType = newEntryRequest.paymentType,
+            initialBalance = newEntryRequest.initialBalance,
         ).also {
             it.id = id
         }
+
+    protected fun resolveTransferOriginValue(newEntryRequest: NewEntryRequest): BigDecimal =
+        requireNotNull(newEntryRequest.transferOriginValue)
+
+    protected fun resolveConcreteTransferTargetValue(newEntryRequest: NewEntryRequest): BigDecimal {
+        val originValue = resolveTransferOriginValue(newEntryRequest)
+        val targetValue = newEntryRequest.transferTargetValue
+        if (targetValue != null) {
+            return targetValue
+        }
+
+        val originCurrency = newEntryRequest.origin?.currency
+        val targetCurrency = newEntryRequest.target?.currency
+        val sameCurrency = originCurrency == targetCurrency
+        if (!sameCurrency) {
+            throw TransferTargetValueRequiredException(
+                fromCurrency = originCurrency ?: "unknown",
+                toCurrency = targetCurrency ?: "unknown",
+            )
+        }
+        return originValue
+    }
+
+    protected fun resolveTemplateTransferTargetValue(newEntryRequest: NewEntryRequest): BigDecimal =
+        resolveTransferOriginValue(newEntryRequest)
 
     protected fun requestToEntryEntity(
         id: UUID?,
@@ -151,9 +194,9 @@ abstract class WalletEntrySaveServiceImpl(
                         if (newEntryRequest.type ==
                             WalletEntryType.TRANSFER
                         ) {
-                            newEntryRequest.value.unaryMinus()
+                            resolveTransferOriginValue(newEntryRequest).unaryMinus()
                         } else {
-                            newEntryRequest.valueFixedForType
+                            requireNotNull(newEntryRequest.valueFixedForType)
                         },
                     walletItemId = newEntryRequest.originId,
                     billId = newEntryRequest.originBill?.id,
@@ -166,7 +209,7 @@ abstract class WalletEntrySaveServiceImpl(
             entries.add(
                 WalletEntryEntity(
                     walletEventId = event.id!!,
-                    value = newEntryRequest.value,
+                    value = resolveConcreteTransferTargetValue(newEntryRequest),
                     walletItemId = newEntryRequest.targetId!!,
                     billId = newEntryRequest.targetBill?.id,
                 ).also {
@@ -293,9 +336,9 @@ abstract class WalletEntrySaveServiceImpl(
                             if (newEntryRequest.type ==
                                 WalletEntryType.TRANSFER
                             ) {
-                                newEntryRequest.value.unaryMinus()
+                                resolveTransferOriginValue(newEntryRequest).unaryMinus()
                             } else {
-                                newEntryRequest.valueFixedForType
+                                requireNotNull(newEntryRequest.valueFixedForType)
                             },
                         walletEventId = savedRecurrence.id!!,
                         walletItemId = newEntryRequest.originId,
@@ -318,7 +361,7 @@ abstract class WalletEntrySaveServiceImpl(
                 if (newEntryRequest.type == WalletEntryType.TRANSFER) {
                     entries.add(
                         RecurrenceEntryEntity(
-                            value = newEntryRequest.value,
+                            value = resolveTemplateTransferTargetValue(newEntryRequest),
                             walletEventId = savedRecurrence.id!!,
                             walletItemId = newEntryRequest.targetId!!,
                             nextBillDate = nextTargetBillDate,

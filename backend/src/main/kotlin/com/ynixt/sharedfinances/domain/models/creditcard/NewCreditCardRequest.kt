@@ -9,4 +9,5 @@ data class NewCreditCardRequest(
     val dueDay: Int,
     val daysBetweenDueAndClosing: Int,
     val dueOnNextBusinessDay: Boolean = true,
+    val showOnDashboard: Boolean = true,
 )

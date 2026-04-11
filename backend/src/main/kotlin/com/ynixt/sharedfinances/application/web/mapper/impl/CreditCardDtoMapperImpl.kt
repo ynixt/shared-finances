@@ -50,7 +50,10 @@ class CreditCardDtoMapperImpl(
     }
 
     private object CreditCardFromNewDtoMapper : ObjectMappie<NewCreditCardDto, NewCreditCardRequest>() {
-        override fun map(from: NewCreditCardDto) = mapping {}
+        override fun map(from: NewCreditCardDto) =
+            mapping {
+                to::showOnDashboard fromProperty NewCreditCardDto::showOnDashboard transform { it ?: true }
+            }
     }
 
     private object CreditCardFromEditDtoMapper : ObjectMappie<EditCreditCardDto, EditCreditCardRequest>() {

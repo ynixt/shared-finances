@@ -8,5 +8,6 @@ export interface BankAccountDto extends WalletItemDto {
   enabled: boolean;
   id: string;
   name: string;
+  showOnDashboard: boolean;
   userId: string;
 }

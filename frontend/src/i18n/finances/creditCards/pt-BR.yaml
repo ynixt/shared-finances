@@ -8,6 +8,7 @@ financesPage:
     dueDay: Dia de vencimento
     daysBetweenDueAndClosing: Dias entre fechamento e vencimento
     dueOnNextBusinessDay: Vencimento no próximo dia útil
+    showOnDashboard: Exibir no dashboard
     empty: Nenhum cartão de crédito encontrado.
     newCreditCardPage:
       title: Novo cartão de crédito
@@ -20,6 +21,7 @@ financesPage:
       title: 'Cartão de crédito: {{name}}'
       status: Situação
       billValue: Valor da fatura
+      payBill: Pagar fatura
       availableLimit: Limite disponível
       totalLimit: Limite total
       dueDate: Data do vencimento
@@ -28,3 +30,10 @@ financesPage:
         title: Editar data de fechamento
       editDueDateDialog:
         title: Editar data de vencimento
+      payBillDialog:
+        title: Pagar fatura
+        bankAccount: Conta bancária
+        amount: Valor do pagamento
+        observations: Observações
+        submit: Confirmar pagamento
+        successMessage: Pagamento da fatura registrado com sucesso

@@ -19,7 +19,9 @@ data class NewEntryRequest(
     val name: String? = null,
     val categoryId: UUID? = null,
     val date: LocalDate,
-    val value: BigDecimal,
+    val value: BigDecimal? = null,
+    val originValue: BigDecimal? = null,
+    val targetValue: BigDecimal? = null,
     val confirmed: Boolean,
     val observations: String? = null,
     val paymentType: PaymentType,
@@ -35,8 +37,20 @@ data class NewEntryRequest(
     val target: WalletItem? = null,
     val targetBill: CreditCardBillEntity? = null,
     val category: WalletEntryCategoryEntity? = null,
+    val initialBalance: Boolean = false,
 ) {
-    val valueFixedForType: BigDecimal = type.fixValue(value)
+    val valueFixedForType: BigDecimal? = value?.let { type.fixValue(it) }
+    val primaryValue: BigDecimal =
+        when (type) {
+            WalletEntryType.TRANSFER -> requireNotNull(originValue).abs()
+            else -> requireNotNull(value).abs()
+        }
+
+    val transferOriginValue: BigDecimal?
+        get() = if (type == WalletEntryType.TRANSFER) originValue?.abs() else null
+
+    val transferTargetValue: BigDecimal?
+        get() = if (type == WalletEntryType.TRANSFER) targetValue?.abs() else null
 
     fun isInFuture(today: LocalDate): Boolean = date.isAfter(today)
 }

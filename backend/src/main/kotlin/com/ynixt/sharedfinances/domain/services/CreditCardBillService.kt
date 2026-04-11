@@ -37,6 +37,17 @@ interface CreditCardBillService {
 
     suspend fun findById(id: UUID): CreditCardBill?
 
+    suspend fun findAuthorizedById(
+        userId: UUID,
+        id: UUID,
+    ): CreditCardBill?
+
+    suspend fun findAllOpenByDueDateBetween(
+        userId: UUID,
+        minimumDueDate: LocalDate,
+        maximumDueDate: LocalDate,
+    ): List<CreditCardBill>
+
     suspend fun getBillFromDatabaseOrSimulate(
         userId: UUID,
         creditCardId: UUID,

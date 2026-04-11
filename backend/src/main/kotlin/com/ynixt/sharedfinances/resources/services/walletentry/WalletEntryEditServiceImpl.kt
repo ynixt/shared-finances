@@ -586,6 +586,7 @@ class WalletEntryEditServiceImpl(
                 installment = existingEvent.installment,
                 recurrenceEventId = recurrenceEventIdOverride ?: existingEvent.recurrenceEventId,
                 paymentType = preparedRequest.paymentType,
+                initialBalance = existingEvent.initialBalance,
             ).also {
                 it.id = existingEvent.id
                 it.createdAt = existingEvent.createdAt
@@ -834,9 +835,9 @@ class WalletEntryEditServiceImpl(
 
     private fun extractSignedEntryValue(preparedRequest: NewEntryRequest): BigDecimal =
         when (preparedRequest.type) {
-            WalletEntryType.REVENUE -> preparedRequest.value
-            WalletEntryType.EXPENSE -> preparedRequest.value.negate()
-            WalletEntryType.TRANSFER -> preparedRequest.value.negate()
+            WalletEntryType.REVENUE -> requireNotNull(preparedRequest.value)
+            WalletEntryType.EXPENSE -> requireNotNull(preparedRequest.value).negate()
+            WalletEntryType.TRANSFER -> requireNotNull(preparedRequest.transferOriginValue).negate()
         }
 
     private suspend fun normalizeAndAuthorize(
@@ -889,9 +890,9 @@ class WalletEntryEditServiceImpl(
                 .value
         val newValue =
             when (preparedRequest.type) {
-                WalletEntryType.REVENUE -> preparedRequest.value
-                WalletEntryType.EXPENSE -> preparedRequest.value.negate()
-                WalletEntryType.TRANSFER -> preparedRequest.value.negate()
+                WalletEntryType.REVENUE -> requireNotNull(preparedRequest.value)
+                WalletEntryType.EXPENSE -> requireNotNull(preparedRequest.value).negate()
+                WalletEntryType.TRANSFER -> requireNotNull(preparedRequest.transferOriginValue).negate()
             }
 
         val delta = newValue.subtract(oldValue).multiply(affectedOccurrences.toBigDecimal())
@@ -917,7 +918,7 @@ class WalletEntryEditServiceImpl(
             currentRequest.targetId != preparedRequest.targetId ||
             currentRequest.name != preparedRequest.name ||
             currentRequest.categoryId != preparedRequest.categoryId ||
-            currentRequest.value.compareTo(preparedRequest.value) != 0 ||
+            currentRequest.primaryValue.compareTo(preparedRequest.primaryValue) != 0 ||
             currentRequest.observations != preparedRequest.observations ||
             currentRequest.paymentType != preparedRequest.paymentType ||
             currentRequest.periodicity != preparedRequest.periodicity ||

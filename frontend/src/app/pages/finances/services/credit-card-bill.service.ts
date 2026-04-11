@@ -5,7 +5,10 @@ import { lastValueFrom, take } from 'rxjs';
 
 import dayjs from 'dayjs';
 
-import { CreditCardBillDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
+import {
+  CreditCardBillDto,
+  PayCreditCardBillDto,
+} from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { UserService } from '../../../services/user.service';
 import { ONLY_DATE_FORMAT, skipWeekend } from '../../../util/date-util';
 import { UserMissingError } from '../errors/user-missing.error';
@@ -72,6 +75,17 @@ export class CreditCardBillService {
           .put<void>(`/api/credit-card-bills/${creditCardId}/dueDate/${dueDate.format(ONLY_DATE_FORMAT)}`, undefined)
           .pipe(take(1)),
       );
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async payBill(billId: string, request: PayCreditCardBillDto): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.httpClient.post<void>(`/api/credit-card-bills/${billId}/payments`, request).pipe(take(1)));
       return;
     }
 

@@ -25,6 +25,7 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     fail-on-missing-locations: false
+#    clean-disabled: false
   data:
     redis:
       host: ${REDIS_APP_HOST}
@@ -95,3 +96,5 @@ app:
     region: ${APP_S3_REGION}
     bucket: ${APP_S3_BUCKET}
     pathStyleAccessEnabled: ${APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
+  exchangeRates:
+    providerUrl: ${APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}

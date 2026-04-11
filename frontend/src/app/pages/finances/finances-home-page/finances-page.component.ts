@@ -1,7 +1,16 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faBuildingColumns, faCalendarDays, faCreditCard, faDollarSign, faGrip, faPlus, faTag } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBuildingColumns,
+  faCalendarDays,
+  faCreditCard,
+  faDollarSign,
+  faGrip,
+  faMoneyBillTransfer,
+  faPlus,
+  faTag,
+} from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -157,6 +166,12 @@ export class FinancesPageComponent {
             fa: faTag,
             label: this.translateService.instant('financesPage.menu.categories'),
             routerLink: '/app/categories',
+            routerLinkActiveOptions: { exact: true },
+          },
+          {
+            fa: faMoneyBillTransfer,
+            label: this.translateService.instant('financesPage.menu.exchangeRates'),
+            routerLink: '/app/exchange-rates',
             routerLinkActiveOptions: { exact: true },
           },
         ],

@@ -2,13 +2,16 @@ package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import org.assertj.core.api.Assertions.assertThat
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 class WalletScenarioThen internal constructor(
     private val resolver: WalletScenarioResolver,
+    private val context: WalletScenarioContext,
 ) {
     suspend fun availableLimitShouldBe(
         expected: Number,
@@ -204,6 +207,18 @@ class WalletScenarioThen internal constructor(
             .isTrue()
     }
 
+    fun fetchedScheduledWalletEventShouldHideTargetValue() {
+        val fetched = resolver.lastFetchedScheduledWalletEvent()
+
+        assertThat(fetched)
+            .describedAs("fetched scheduled wallet event")
+            .isNotNull()
+
+        assertThat(fetched!!.targetValue)
+            .describedAs("scheduled transfer target value should stay hidden")
+            .isNull()
+    }
+
     suspend fun scheduledManagerCountShouldBe(
         filter: ScheduledExecutionFilter,
         expected: Int,
@@ -267,5 +282,62 @@ class WalletScenarioThen internal constructor(
         assertThat(allNull)
             .describedAs("recurrence tags across series should remain null")
             .isTrue()
+    }
+
+    fun overviewCardShouldBe(
+        key: OverviewDashboardCardKey,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val actual = overview.cards.first { it.key == key }.value
+
+        assertThat(actual)
+            .describedAs("overview card $key")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun overviewExpenseForMonthShouldBe(
+        month: YearMonth,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val actual =
+            overview.charts.expense
+                .first { it.month == month }
+                .value
+
+        assertThat(actual)
+            .describedAs("overview expense for $month")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun overviewExpenseGroupSliceShouldBe(
+        label: String,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val actual =
+            overview.charts.expenseByGroup
+                .first { it.label == label }
+                .value
+
+        assertThat(actual)
+            .describedAs("overview expense-by-group slice $label")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun overviewExpenseCategorySliceShouldBe(
+        label: String,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val actual =
+            overview.charts.expenseByCategory
+                .first { it.label == label }
+                .value
+
+        assertThat(actual)
+            .describedAs("overview expense-by-category slice $label")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
     }
 }

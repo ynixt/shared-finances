@@ -63,9 +63,26 @@
 
                     <div class="flex flex-wrap gap-4 items-center">
                       <span class="table-item">{{ entry.date | localDate: 'shortDate' }}</span>
-                      <span class="table-item {{ entry.entries[0].value >= 0 ? 'text-green-700' : 'text-red-700' }}">
-                        {{ getEditableValue(entry) | localCurrency: entry.currency }}
-                      </span>
+                      @if (showDualTransferAmounts(entry)) {
+                        @let originEntry = getOriginEntry(entry);
+                        @let targetEntry = getTargetEntry(entry);
+                        <span class="table-item text-red-700">
+                          {{ getOriginDisplayValue(entry) | localCurrency: originEntry.walletItem.currency }}
+                        </span>
+                        <span class="table-item text-slate-500">-></span>
+                        <span class="table-item text-green-700">
+                          {{ getTargetDisplayValue(entry) ?? 0 | localCurrency: targetEntry.walletItem.currency }}
+                        </span>
+                      } @else if (entry.type === 'TRANSFER') {
+                        @let originEntry = getOriginEntry(entry);
+                        <span class="table-item text-red-700">
+                          {{ getOriginDisplayValue(entry) | localCurrency: originEntry.walletItem.currency }}
+                        </span>
+                      } @else {
+                        <span class="table-item {{ entry.entries[0].value >= 0 ? 'text-green-700' : 'text-red-700' }}">
+                          {{ getOriginDisplayValue(entry) | localCurrency: entry.currency }}
+                        </span>
+                      }
 
                       <a
                         [routerLink]="editRouterLink(entry)"

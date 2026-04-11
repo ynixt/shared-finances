@@ -30,12 +30,29 @@
                 <div class="flex flex-wrap gap-4 items-center">
                   <span class="table-item">{{ item.date | localDate: 'shortDate' }}</span>
 
-                  @let wdId = walletItemId();
-                  @let entry = wdId == null ? item.entries[0] : wdId == item.entries[0].walletItemId ? item.entries[0] : item.entries[1];
+                  @if (showDualTransferAmounts(item)) {
+                    @let originEntry = getTransferOriginEntry(item);
+                    @let targetEntry = getTransferTargetEntry(item);
+                    <span class="table-item text-red-700">
+                      {{ getTransferOriginDisplayValue(item) | localCurrency: originEntry.walletItem.currency }}
+                    </span>
+                    <span class="table-item text-slate-500">-></span>
+                    <span class="table-item text-green-700">
+                      {{ getTransferTargetDisplayValue(item) ?? 0 | localCurrency: targetEntry.walletItem.currency }}
+                    </span>
+                  } @else if (item.type === 'TRANSFER') {
+                    @let originEntry = getTransferOriginEntry(item);
+                    <span class="table-item text-red-700">
+                      {{ getTransferOriginDisplayValue(item) | localCurrency: originEntry.walletItem.currency }}
+                    </span>
+                  } @else {
+                    @let wdId = walletItemId();
+                    @let entry = wdId == null ? item.entries[0] : wdId == item.entries[0].walletItemId ? item.entries[0] : item.entries[1];
 
-                  <span class="table-item {{ entry.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
-                    entry.value | localCurrency: item.currency
-                  }}</span>
+                    <span class="table-item {{ entry.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
+                      entry.value | localCurrency: item.currency
+                    }}</span>
+                  }
 
                   @if (canEdit(item)) {
                     <a
@@ -141,3 +158,5 @@
     </div>
   </div>
 }
+
+<p-confirm-dialog />

@@ -64,6 +64,7 @@ class BankAccountServiceImpl(
                         enabled = true,
                         name = newBankAccountRequest.name,
                         currency = newBankAccountRequest.currency,
+                        showOnDashboard = newBankAccountRequest.showOnDashboard,
                     ),
                 ),
             ).awaitSingle()
@@ -109,6 +110,7 @@ class BankAccountServiceImpl(
                 newName = editBankAccount.newName,
                 newEnabled = editBankAccount.newEnabled,
                 newCurrency = editBankAccount.newCurrency,
+                newShowOnDashboard = editBankAccount.newShowOnDashboard,
             ).awaitSingle()
             .let { modifiedLines ->
                 if (modifiedLines > 0) {
@@ -173,6 +175,7 @@ class BankAccountServiceImpl(
                     value = newBankAccountRequest.balance,
                     confirmed = true,
                     paymentType = PaymentType.UNIQUE,
+                    initialBalance = true,
                 ),
         )
     }

@@ -8,5 +8,6 @@ export interface EditCreditCardDto {
   newDueOnNextBusinessDay: boolean;
   newEnabled: boolean;
   newName: string;
+  newShowOnDashboard: boolean;
   newTotalLimit: number;
 }

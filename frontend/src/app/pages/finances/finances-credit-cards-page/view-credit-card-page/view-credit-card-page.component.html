@@ -45,7 +45,19 @@
         [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.billValue' | translate"
         [value]="value != null ? (value | localCurrency: creditCard.currency) : undefined"
         [faIcon]="balanceIcon"
-      ></app-dashboard-card>
+      >
+        @if (currentCreditCardBill?.id != null && remainingBillAmount() > 0) {
+          <ng-template #headerRight>
+            <p-button
+              severity="success"
+              variant="text"
+              size="small"
+              [label]="'financesPage.creditCardsPage.viewCreditCardPage.payBill' | translate"
+              (click)="openPayBillDialog()"
+            />
+          </ng-template>
+        }
+      </app-dashboard-card>
       <app-dashboard-card
         [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.closingDate' | translate"
         [value]="currentCreditCardBill ? (currentCreditCardBill.closingDate | localDate: 'shortDate') : undefined"
@@ -113,6 +125,59 @@
         type="submit"
         [disabled]="formToEditClosingDay.invalid"
         [loading]="dialogToEditClosingDayIsSubmitting"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<p-dialog
+  [header]="'financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.title' | translate"
+  [modal]="true"
+  [(visible)]="dialogToPayBillIsVisible"
+  [breakpoints]="{ '1199px': '75vw', '575px': '100vw' }"
+  [style]="{ width: '518px', 'max-width': '518px' }"
+  contentStyleClass="p-0"
+  [pt]="{
+    header: {
+      style: { paddingLeft: '1rem', paddingRight: '0.7rem' },
+    },
+  }"
+>
+  <form [formGroup]="formToPayBill" (ngSubmit)="submitPayBill()" class="flex flex-col gap-4 p-4">
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.bankAccount' | translate }}</span>
+      <app-wallet-item-picker formControlName="bankAccount" [optionsGetter]="loadBankAccounts.bind(this)"></app-wallet-item-picker>
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'general.date' | translate }}</span>
+      <app-date-picker formControlName="date"></app-date-picker>
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.amount' | translate }}</span>
+      <p-input-number
+        mode="currency"
+        [currency]="creditCard?.currency"
+        formControlName="amount"
+        [min]="0.01"
+        [max]="remainingBillAmount()"
+        fluid
+      ></p-input-number>
+    </label>
+
+    <label class="flex flex-col gap-2">
+      <span>{{ 'financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.observations' | translate }}</span>
+      <input pInputText formControlName="observations" />
+    </label>
+
+    <div class="flex justify-end gap-2 pt-4">
+      <p-button [label]="'general.cancel' | translate" severity="secondary" (click)="dialogToPayBillIsVisible = false" />
+      <p-button
+        [label]="'financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.submit' | translate"
+        type="submit"
+        [disabled]="formToPayBill.invalid || remainingBillAmount() <= 0"
+        [loading]="dialogToPayBillIsSubmitting"
       />
     </div>
   </form>

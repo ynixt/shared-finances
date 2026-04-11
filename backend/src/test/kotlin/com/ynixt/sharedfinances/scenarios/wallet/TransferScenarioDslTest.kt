@@ -1,13 +1,266 @@
 package com.ynixt.sharedfinances.scenarios.wallet
 
+import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
+import com.ynixt.sharedfinances.domain.exceptions.http.TransferTargetValueRequiredException
+import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
+import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
+import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
+import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.util.UUID
 
 class TransferScenarioDslTest {
+    @Test
+    fun `should mirror origin amount when same-currency transfer omits target amount`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val originInitialBalance = BigDecimal("1000.00")
+        val targetInitialBalance = BigDecimal("250.00")
+        val originValue = BigDecimal("200.00")
+
+        lateinit var originBankAccountId: UUID
+        lateinit var targetBankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                originBankAccountId =
+                    bankAccount(
+                        name = "Origin Account",
+                        balance = originInitialBalance,
+                        currency = "BRL",
+                    )
+                targetBankAccountId =
+                    bankAccount(
+                        name = "Target Account",
+                        balance = targetInitialBalance,
+                        currency = "BRL",
+                    )
+            }
+
+            `when` {
+                transfer(
+                    value = originValue,
+                    date = today,
+                    originId = originBankAccountId,
+                    targetId = targetBankAccountId,
+                    name = "Same Currency Mirror",
+                    confirmed = true,
+                )
+            }
+
+            then {
+                balanceShouldBe(expected = originInitialBalance.subtract(originValue), bankAccountId = originBankAccountId)
+                balanceShouldBe(expected = targetInitialBalance.add(originValue), bankAccountId = targetBankAccountId)
+            }
+        }
+    }
+
+    @Test
+    fun `should require target amount for unique cross-currency transfer when omitted`() {
+        val today = LocalDate.of(2026, 1, 8)
+
+        assertThatThrownBy {
+            lateinit var originBankAccountId: UUID
+            lateinit var targetBankAccountId: UUID
+
+            walletScenario(initialDate = today) {
+                given {
+                    user(defaultCurrency = "USD")
+                    originBankAccountId =
+                        bankAccount(
+                            name = "US Account",
+                            balance = BigDecimal("1000.00"),
+                            currency = "USD",
+                        )
+                    targetBankAccountId =
+                        bankAccount(
+                            name = "Brazil Account",
+                            balance = BigDecimal("5000.00"),
+                            currency = "BRL",
+                        )
+                }
+
+                `when` {
+                    transfer(
+                        value = BigDecimal("100.00"),
+                        date = today,
+                        originId = originBankAccountId,
+                        targetId = targetBankAccountId,
+                        name = "Missing target value",
+                        confirmed = true,
+                    )
+                }
+            }
+        }.isInstanceOf(TransferTargetValueRequiredException::class.java)
+    }
+
+    @Test
+    fun `should persist distinct origin and target amounts for same-currency transfer`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val originInitialBalance = BigDecimal("1000.00")
+        val targetInitialBalance = BigDecimal("250.00")
+        val originValue = BigDecimal("200.00")
+        val targetValue = BigDecimal("193.50")
+
+        lateinit var originBankAccountId: UUID
+        lateinit var targetBankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                originBankAccountId =
+                    bankAccount(
+                        name = "Origin Account",
+                        balance = originInitialBalance,
+                        currency = "BRL",
+                    )
+                targetBankAccountId =
+                    bankAccount(
+                        name = "Target Account",
+                        balance = targetInitialBalance,
+                        currency = "BRL",
+                    )
+            }
+
+            `when` {
+                transfer(
+                    value = originValue,
+                    targetValue = targetValue,
+                    date = today,
+                    originId = originBankAccountId,
+                    targetId = targetBankAccountId,
+                    name = "Same Currency With Fees",
+                    confirmed = true,
+                )
+            }
+
+            then {
+                balanceShouldBe(expected = originInitialBalance.subtract(originValue), bankAccountId = originBankAccountId)
+                balanceShouldBe(expected = targetInitialBalance.add(targetValue), bankAccountId = targetBankAccountId)
+            }
+        }
+    }
+
+    @Test
+    fun `should persist distinct origin and target amounts for cross-currency transfer`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val originInitialBalance = BigDecimal("1000.00")
+        val targetInitialBalance = BigDecimal("5000.00")
+        val originValue = BigDecimal("100.00")
+        val targetValue = BigDecimal("540.25")
+
+        lateinit var originBankAccountId: UUID
+        lateinit var targetBankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "USD")
+                originBankAccountId =
+                    bankAccount(
+                        name = "US Account",
+                        balance = originInitialBalance,
+                        currency = "USD",
+                    )
+                targetBankAccountId =
+                    bankAccount(
+                        name = "Brazil Account",
+                        balance = targetInitialBalance,
+                        currency = "BRL",
+                    )
+            }
+
+            `when` {
+                transfer(
+                    value = originValue,
+                    targetValue = targetValue,
+                    date = today,
+                    originId = originBankAccountId,
+                    targetId = targetBankAccountId,
+                    name = "USD to BRL",
+                    confirmed = true,
+                )
+            }
+
+            then {
+                balanceShouldBe(expected = originInitialBalance.subtract(originValue), bankAccountId = originBankAccountId)
+                balanceShouldBe(expected = targetInitialBalance.add(targetValue), bankAccountId = targetBankAccountId)
+            }
+        }
+    }
+
+    @Test
+    fun `should hide target value for recurring transfer template and resolve it on occurrence creation`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val scheduledExecutionDate = LocalDate.of(2026, 1, 10)
+        val originInitialBalance = BigDecimal("1000.00")
+        val targetInitialBalance = BigDecimal("5000.00")
+        val originValue = BigDecimal("100.00")
+        val resolvedTargetValue = BigDecimal("540.00")
+
+        lateinit var originBankAccountId: UUID
+        lateinit var targetBankAccountId: UUID
+
+        walletScenario(
+            initialDate = today,
+            exchangeRateService = fixedExchangeRateService(rate = BigDecimal("5.40")),
+        ) {
+            given {
+                user(defaultCurrency = "USD")
+                originBankAccountId =
+                    bankAccount(
+                        name = "US Account",
+                        balance = originInitialBalance,
+                        currency = "USD",
+                    )
+                targetBankAccountId =
+                    bankAccount(
+                        name = "Brazil Account",
+                        balance = targetInitialBalance,
+                        currency = "BRL",
+                    )
+            }
+
+            `when` {
+                transfer(
+                    value = originValue,
+                    date = scheduledExecutionDate,
+                    originId = originBankAccountId,
+                    targetId = targetBankAccountId,
+                    name = "Recurring USD to BRL",
+                    confirmed = true,
+                    paymentType = com.ynixt.sharedfinances.domain.enums.PaymentType.RECURRING,
+                    periodicity = com.ynixt.sharedfinances.domain.enums.RecurrenceType.MONTHLY,
+                    periodicityQtyLimit = 2,
+                )
+                fetchFirstScheduledExecution()
+            }
+
+            then {
+                fetchedScheduledWalletEventShouldExist()
+                fetchedScheduledWalletEventShouldHideTargetValue()
+                balanceShouldBe(expected = originInitialBalance, bankAccountId = originBankAccountId)
+                balanceShouldBe(expected = targetInitialBalance, bankAccountId = targetBankAccountId)
+            }
+
+            `when` {
+                advanceTime(scheduledExecutionDate)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(expected = originInitialBalance.subtract(originValue), bankAccountId = originBankAccountId)
+                balanceShouldBe(expected = targetInitialBalance.add(resolvedTargetValue), bankAccountId = targetBankAccountId)
+            }
+        }
+    }
+
     @Test
     fun `should create transfer from bank account to credit card for current date and update balance and bill`() {
         val today = LocalDate.of(2026, 1, 8)
@@ -250,4 +503,45 @@ class TransferScenarioDslTest {
             }
         }
     }
+
+    private fun fixedExchangeRateService(rate: BigDecimal): ExchangeRateService =
+        object : ExchangeRateService {
+            override suspend fun syncLatestQuotes(): Int = 0
+
+            override suspend fun syncQuotesForDate(
+                date: LocalDate,
+                baseCurrencies: Set<String>?,
+            ): Int = 0
+
+            override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity> =
+                CursorPage(
+                    items = emptyList(),
+                    nextCursor = null,
+                    hasNext = false,
+                )
+
+            override suspend fun getRate(
+                fromCurrency: String,
+                toCurrency: String,
+                referenceDate: LocalDate,
+            ): BigDecimal = rate
+
+            override suspend fun resolveRate(
+                fromCurrency: String,
+                toCurrency: String,
+                referenceDate: LocalDate,
+            ): ResolvedExchangeRate = ResolvedExchangeRate(rate = rate, quoteDate = referenceDate)
+
+            override suspend fun convert(
+                value: BigDecimal,
+                fromCurrency: String,
+                toCurrency: String,
+                referenceDate: LocalDate,
+            ): BigDecimal = value.multiply(rate).setScale(2, RoundingMode.HALF_UP)
+
+            override suspend fun convertBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, BigDecimal> =
+                requests.associateWith { request ->
+                    request.value.multiply(rate).setScale(2, RoundingMode.HALF_UP)
+                }
+        }
 }

@@ -12,6 +12,10 @@ import java.util.UUID
 internal class InMemoryWalletEventRepository : WalletEventRepository {
     private val data = linkedMapOf<UUID, WalletEventEntity>()
 
+    fun snapshot(): List<WalletEventEntity> = data.values.toList()
+
+    fun getOrNull(id: UUID): WalletEventEntity? = data[id]
+
     fun findIdsByRecurrenceEventIds(recurrenceEventIds: Set<UUID>): Set<UUID> =
         data.values
             .filter { it.recurrenceEventId != null && recurrenceEventIds.contains(it.recurrenceEventId) }

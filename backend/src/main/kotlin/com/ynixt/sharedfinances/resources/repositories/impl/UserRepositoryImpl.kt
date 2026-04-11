@@ -15,6 +15,8 @@ class UserRepositoryImpl(
     private val userEntityTemplateRepository: UserEntityTemplateRepository,
 ) : EntityRepositoryImpl<UserSpringDataRepository, UserEntity>(userSpringDataRepository),
     UserRepository {
+    override fun findDistinctDefaultCurrencies(): Flux<String> = springDataRepository.findDistinctDefaultCurrencies()
+
     override fun findOneByEmail(email: String): Mono<UserEntity> = springDataRepository.findOneByEmail(email)
 
     override fun changeLanguage(

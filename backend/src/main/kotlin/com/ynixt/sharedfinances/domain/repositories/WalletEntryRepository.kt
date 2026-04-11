@@ -1,6 +1,10 @@
 package com.ynixt.sharedfinances.domain.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
+import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -19,4 +23,28 @@ interface WalletEntryRepository : EntityRepository<WalletEntryEntity> {
         minimumDate: LocalDate,
         maximumDate: LocalDate?,
     ): Flux<EntrySumResult>
+
+    fun summarizeBankAccountsByMonth(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<BankAccountMonthlySummary>
+
+    fun summarizeOverviewExpenseByMonth(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExpenseMonthlySummary>
+
+    fun summarizeOverviewCashBreakdown(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewCashBreakdownSummary>
+
+    fun summarizeOverviewExpenseBreakdown(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExpenseBreakdownSummary>
 }

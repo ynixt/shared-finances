@@ -7,6 +7,8 @@ import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.repositories.CreditCardBillRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.CreditCardService
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
@@ -75,6 +77,31 @@ class CreditCardBillServiceImpl(
 
     override suspend fun findById(id: UUID): CreditCardBill? =
         creditCardBillRepository.findById(id).awaitSingleOrNull()?.let(creditCardBillMapper::toModel)
+
+    override suspend fun findAuthorizedById(
+        userId: UUID,
+        id: UUID,
+    ): CreditCardBill? =
+        creditCardBillRepository
+            .findOneByUserIdAndId(
+                userId = userId,
+                id = id,
+            ).awaitSingleOrNull()
+            ?.let(creditCardBillMapper::toModel)
+
+    override suspend fun findAllOpenByDueDateBetween(
+        userId: UUID,
+        minimumDueDate: LocalDate,
+        maximumDueDate: LocalDate,
+    ): List<CreditCardBill> =
+        creditCardBillRepository
+            .findAllOpenByUserIdAndDueDateBetween(
+                userId = userId,
+                minimumDueDate = minimumDueDate,
+                maximumDueDate = maximumDueDate,
+            ).asFlow()
+            .toList()
+            .map(creditCardBillMapper::toModel)
 
     override suspend fun getBillFromDatabaseOrSimulate(
         userId: UUID,

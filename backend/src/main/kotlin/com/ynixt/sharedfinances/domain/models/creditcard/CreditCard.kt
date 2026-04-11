@@ -21,12 +21,14 @@ class CreditCard(
     val dueDay: Int,
     val daysBetweenDueAndClosing: Int,
     val dueOnNextBusinessDay: Boolean = true,
+    showOnDashboard: Boolean = true,
 ) : WalletItem(
         name = name,
         enabled = enabled,
         userId = userId,
         currency = currency,
         balance = balance,
+        showOnDashboard = showOnDashboard,
     ) {
     override val type: WalletItemType = WalletItemType.CREDIT_CARD
 

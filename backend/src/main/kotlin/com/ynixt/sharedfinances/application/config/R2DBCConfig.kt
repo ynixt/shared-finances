@@ -9,4 +9,10 @@ import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
         "com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata",
     ],
 )
-class R2DBCConfig
+class R2DBCConfig {
+//    @Bean
+//    fun flywayInitializer(flyway: Flyway): FlywayMigrationInitializer {
+//        flyway.clean()
+//        return FlywayMigrationInitializer(flyway)
+//    }
+}

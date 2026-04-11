@@ -54,6 +54,7 @@ class CreditCardServiceImpl(
                             dueDay = request.dueDay,
                             daysBetweenDueAndClosing = request.daysBetweenDueAndClosing,
                             dueOnNextBusinessDay = request.dueOnNextBusinessDay,
+                            showOnDashboard = request.showOnDashboard,
                         ),
                     ),
                 ).awaitSingle()
@@ -88,6 +89,7 @@ class CreditCardServiceImpl(
                     newName = request.newName,
                     newEnabled = request.newEnabled,
                     newCurrency = request.newCurrency,
+                    newShowOnDashboard = request.newShowOnDashboard,
                     newTotalLimit = request.newTotalLimit,
                     newDueDay = request.newDueDay,
                     newDaysBetweenDueAndClosing = request.newDaysBetweenDueAndClosing,

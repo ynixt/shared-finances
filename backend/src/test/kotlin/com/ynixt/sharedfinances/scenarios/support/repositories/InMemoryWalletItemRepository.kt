@@ -13,6 +13,12 @@ import java.util.UUID
 internal class InMemoryWalletItemRepository : WalletItemRepository {
     private val data = linkedMapOf<UUID, WalletItemEntity>()
 
+    fun snapshot(): List<WalletItemEntity> = data.values.toList()
+
+    fun getOrNull(id: UUID): WalletItemEntity? = data[id]
+
+    override fun findDistinctCurrencies(): Flux<String> = Flux.fromIterable(data.values.map { it.currency }.distinct())
+
     override fun findAllByUserIdAndEnabled(
         userId: UUID,
         enabled: Boolean,
@@ -61,6 +67,7 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+        newShowOnDashboard: Boolean,
     ): Mono<Long> {
         val current = data[id]
         if (current == null || current.userId != userId || current.type != WalletItemType.BANK_ACCOUNT) {
@@ -73,6 +80,7 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
                 name = newName,
                 enabled = newEnabled,
                 currency = newCurrency,
+                showOnDashboard = newShowOnDashboard,
             )
         return Mono.just(1L)
     }
@@ -83,6 +91,7 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+        newShowOnDashboard: Boolean,
         newTotalLimit: BigDecimal,
         newDueDay: Int,
         newDaysBetweenDueAndClosing: Int,
@@ -99,6 +108,7 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
                 name = newName,
                 enabled = newEnabled,
                 currency = newCurrency,
+                showOnDashboard = newShowOnDashboard,
                 totalLimit = newTotalLimit,
                 dueDay = newDueDay,
                 daysBetweenDueAndClosing = newDaysBetweenDueAndClosing,
@@ -141,6 +151,10 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
         items: List<WalletItemEntity>,
         pageable: Pageable,
     ): List<WalletItemEntity> {
+        if (pageable.isUnpaged) {
+            return items
+        }
+
         val offset = pageable.offset.toInt()
         val endExclusive = (offset + pageable.pageSize).coerceAtMost(items.size)
         if (offset >= items.size) return emptyList()
@@ -153,6 +167,7 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
         enabled: Boolean = current.enabled,
         currency: String = current.currency,
         balance: BigDecimal = current.balance,
+        showOnDashboard: Boolean = current.showOnDashboard,
         totalLimit: BigDecimal? = current.totalLimit,
         dueDay: Int? = current.dueDay,
         daysBetweenDueAndClosing: Int? = current.daysBetweenDueAndClosing,
@@ -169,6 +184,7 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
             dueDay = dueDay,
             daysBetweenDueAndClosing = daysBetweenDueAndClosing,
             dueOnNextBusinessDay = dueOnNextBusinessDay,
+            showOnDashboard = showOnDashboard,
         ).also {
             it.id = current.id
             it.createdAt = current.createdAt

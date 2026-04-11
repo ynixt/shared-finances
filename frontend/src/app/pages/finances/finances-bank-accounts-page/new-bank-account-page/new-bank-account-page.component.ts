@@ -8,6 +8,7 @@ import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { InputNumber } from 'primeng/inputnumber';
 import { InputText } from 'primeng/inputtext';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../../components/currency-selector/currency-selector.component';
 import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
@@ -27,6 +28,7 @@ import { BankAccountService } from '../../services/bank-account.service';
     InputText,
     InputNumber,
     CurrencySelectorComponent,
+    ToggleSwitch,
     RequiredFieldAsteriskComponent,
   ],
   templateUrl: './new-bank-account-page.component.html',
@@ -52,6 +54,7 @@ export class NewBankAccountPageComponent {
       name: ['', [Validators.required]],
       balance: [undefined, []],
       currency: ['', [Validators.required]],
+      showOnDashboard: [true, [Validators.required]],
     });
 
     this.userService.getUser().then(u => {

@@ -1,8 +1,10 @@
 package com.ynixt.sharedfinances.scenarios.wallet.support
 
+import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
+import com.ynixt.sharedfinances.scenarios.support.identityExchangeRateService
 import com.ynixt.sharedfinances.scenarios.user.support.UserScenarioSetupOps
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
@@ -10,10 +12,15 @@ import java.time.LocalDate
 fun walletScenario(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
     groupService: GroupService = NoOpGroupService(),
+    exchangeRateService: ExchangeRateService? = null,
     block: suspend WalletScenarioDsl.() -> Unit,
 ): WalletScenarioDsl =
     runBlocking {
-        WalletScenarioDsl(initialDate = initialDate, groupService = groupService).apply {
+        WalletScenarioDsl(
+            initialDate = initialDate,
+            groupService = groupService,
+            exchangeRateService = exchangeRateService,
+        ).apply {
             block()
         }
     }
@@ -21,8 +28,14 @@ fun walletScenario(
 class WalletScenarioDsl(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
     groupService: GroupService = NoOpGroupService(),
+    exchangeRateService: ExchangeRateService? = null,
 ) {
-    private val runtime = ScenarioRuntime(initialDate = initialDate, groupService = groupService)
+    private val runtime =
+        ScenarioRuntime(
+            initialDate = initialDate,
+            groupService = groupService,
+            exchangeRateService = exchangeRateService ?: identityExchangeRateService(),
+        )
     private val context = WalletScenarioContext()
     private val userSetupOps = UserScenarioSetupOps(runtime = runtime, context = context)
 
@@ -35,7 +48,7 @@ class WalletScenarioDsl(
     private val walletSetupOps = WalletScenarioSetupOps(runtime = runtime, context = context, resolver = resolver)
     val given = WalletScenarioGiven(userSetupOps = userSetupOps, walletSetupOps = walletSetupOps)
     val whenActions = WalletScenarioWhen(runtime = runtime, context = context, resolver = resolver)
-    val then = WalletScenarioThen(resolver = resolver)
+    val then = WalletScenarioThen(resolver = resolver, context = context)
 
     suspend fun given(block: suspend WalletScenarioGiven.() -> Unit): WalletScenarioDsl =
         chain {

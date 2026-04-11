@@ -1,14 +1,17 @@
 package com.ynixt.sharedfinances.resources.services.walletentry
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.isSameMonthYear
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
+import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
@@ -19,6 +22,7 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
@@ -29,6 +33,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
+import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
@@ -47,6 +52,7 @@ class WalletEntryCreateServiceImpl(
     recurrenceEntryRepository: RecurrenceEntryRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
     private val walletItemMapper: WalletItemMapper,
+    private val exchangeRateService: ExchangeRateService,
     clock: Clock,
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
@@ -174,10 +180,18 @@ class WalletEntryCreateServiceImpl(
                             entry.walletItemId
                         }.distinct(),
                 ).toList()
+        val walletItemsById = walletItems.associateBy { it.id!! }
+        val walletItemsForEntries = entries.map { entry -> walletItemsById.getValue(entry.walletItemId) }
+        val resolvedTransferValuesByWalletItemId =
+            if (event.type == WalletEntryType.TRANSFER) {
+                resolveMaterializedTransferValues(entries, walletItemsById, date)
+            } else {
+                emptyMap()
+            }
 
         val bills =
             entries.map { entry ->
-                val walletItem = walletItems.find { it.id!! == entry.walletItemId }!!
+                val walletItem = walletItemsById.getValue(entry.walletItemId)
 
                 if (walletItem is CreditCard) {
                     val billDate =
@@ -202,8 +216,8 @@ class WalletEntryCreateServiceImpl(
                     entries.mapIndexed { index, entryTemplate ->
                         WalletEntryEntity(
                             walletEventId = walletEventSaved.id!!,
-                            value = entryTemplate.value,
-                            walletItemId = walletItems[index].id!!,
+                            value = resolvedTransferValuesByWalletItemId[entryTemplate.walletItemId] ?: entryTemplate.value,
+                            walletItemId = walletItemsForEntries[index].id!!,
                             billId = bills[index]?.id,
                         )
                     },
@@ -211,7 +225,7 @@ class WalletEntryCreateServiceImpl(
                 .toList()
                 .also { entries ->
                     entries.forEachIndexed { index, saved ->
-                        saved.walletItem = walletItemMapper.fromModel(walletItems[index])
+                        saved.walletItem = walletItemMapper.fromModel(walletItemsForEntries[index])
                         saved.bill = bills[index]
                         saved.event = walletEventSaved
 
@@ -222,6 +236,38 @@ class WalletEntryCreateServiceImpl(
         walletEventActionEventService.sendInsertedWalletEvent(event.userId, walletEventSaved)
 
         return walletEventSaved
+    }
+
+    private suspend fun resolveMaterializedTransferValues(
+        entries: List<RecurrenceEntryEntity>,
+        walletItemsById: Map<UUID, WalletItem>,
+        date: LocalDate,
+    ): Map<UUID, BigDecimal> {
+        if (entries.size < 2 || entries.none { it.value < BigDecimal.ZERO }) {
+            return emptyMap()
+        }
+
+        val originTemplate = entries.first { it.value < BigDecimal.ZERO }
+        val targetTemplate = entries.first { it.walletItemId != originTemplate.walletItemId }
+        val originItem = walletItemsById.getValue(originTemplate.walletItemId)
+        val targetItem = walletItemsById.getValue(targetTemplate.walletItemId)
+        val originValue = originTemplate.value.abs()
+        val targetValue =
+            if (originItem.currency == targetItem.currency) {
+                originValue
+            } else {
+                exchangeRateService.convert(
+                    value = originValue,
+                    fromCurrency = originItem.currency,
+                    toCurrency = targetItem.currency,
+                    referenceDate = date,
+                )
+            }
+
+        return mapOf(
+            originTemplate.walletItemId to originValue.negate(),
+            targetTemplate.walletItemId to targetValue,
+        )
     }
 
     private fun calculateNextBillDate(

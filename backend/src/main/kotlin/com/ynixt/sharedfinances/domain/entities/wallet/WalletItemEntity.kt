@@ -20,6 +20,7 @@ class WalletItemEntity(
     val dueDay: Int?,
     val daysBetweenDueAndClosing: Int?,
     val dueOnNextBusinessDay: Boolean?,
+    val showOnDashboard: Boolean = true,
 ) : AuditedEntity() {
     @Transient
     var user: UserEntity? = null

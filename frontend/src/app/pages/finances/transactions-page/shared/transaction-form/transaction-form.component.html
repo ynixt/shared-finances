@@ -90,7 +90,7 @@
   <div class="grid md:grid-cols-2 gap-2">
     <label class="flex flex-col gap-2">
       <span
-        >{{ 'financesPage.transactionsPage.value' | translate }}
+        >{{ (isTransfer ? 'financesPage.transactionsPage.originValue' : 'financesPage.transactionsPage.value') | translate }}
 
         @let sublabel = valueSublabel;
         @if (sublabel.length > 0) {
@@ -109,6 +109,47 @@
         fluid
       ></p-input-number>
     </label>
+
+    @if (isTransfer && shouldShowTargetValueField) {
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.transactionsPage.targetValue' | translate }}
+          @if (shouldRequireTargetValueField) {
+            <app-required-field-asterisk></app-required-field-asterisk>
+          }
+        </span>
+        <p-input-number
+          mode="currency"
+          [currency]="currentTarget?.currency ?? user()?.defaultCurrency ?? 'USD'"
+          formControlName="targetValue"
+          [showButtons]="true"
+          [min]="0.01"
+          [step]="10"
+          fluid
+        ></p-input-number>
+        @if (transferQuoteError()) {
+          <small class="text-sm text-orange-700">{{ transferQuoteError() | translate }}</small>
+        }
+      </label>
+
+      @if (isTransfer && shouldShowTargetValueField && hasDifferentTransferCurrencies()) {
+        <label class="flex flex-col gap-2 md:col-span-2">
+          <span class="text-slate-700">{{ 'financesPage.transactionsPage.transferExchangeRate' | translate }}</span>
+          @if (transferQuoteLoading()) {
+            <span class="text-sm text-slate-600">{{ 'financesPage.transactionsPage.transferExchangeRateLoading' | translate }}</span>
+          } @else if (transferRateDisplay(); as tr) {
+            <input pInputText class="w-full cursor-default bg-slate-50" readonly tabindex="-1" [value]="transferRateReadonlyLabel(tr)" />
+            @if (selectedTransferDateIso() !== tr.quoteDate) {
+              <small class="text-slate-600">{{ transferRateNearestHint(tr) }}</small>
+            }
+          }
+        </label>
+      }
+    } @else if (shouldShowDeferredTargetHint) {
+      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        {{ 'financesPage.transactionsPage.targetValueDeferredHint' | translate }}
+      </div>
+    }
 
     <label class="flex flex-col gap-2">
       <span>{{ 'general.date' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
@@ -134,8 +175,7 @@
           @if (shouldRequireTargetBill()) {
             <app-required-field-asterisk></app-required-field-asterisk>
           }
-          ></span
-        >
+        </span>
         <app-date-picker formControlName="targetBill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
       </label>
     }

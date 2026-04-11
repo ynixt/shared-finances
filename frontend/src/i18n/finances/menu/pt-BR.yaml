@@ -7,6 +7,7 @@ financesPage:
     bankAccounts: Contas bancárias
     creditCards: Cartões de crédito
     categories: Categorias
+    exchangeRates: Cotações
     tags: Tags
     groups: Grupos
     links: Associações

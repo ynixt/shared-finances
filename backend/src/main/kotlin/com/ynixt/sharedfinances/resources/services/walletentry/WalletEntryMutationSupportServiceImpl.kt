@@ -188,7 +188,7 @@ abstract class WalletEntryMutationSupportServiceImpl(
             when (config.type) {
                 WalletEntryType.REVENUE -> origin.value
                 WalletEntryType.EXPENSE -> origin.value.negate()
-                WalletEntryType.TRANSFER -> target?.value ?: origin.value.negate()
+                WalletEntryType.TRANSFER -> null
             }
 
         return NewEntryRequest(
@@ -200,6 +200,8 @@ abstract class WalletEntryMutationSupportServiceImpl(
             categoryId = config.categoryId,
             date = date,
             value = value,
+            originValue = if (config.type == WalletEntryType.TRANSFER) origin.value.abs() else null,
+            targetValue = null,
             confirmed = false,
             observations = config.observations,
             paymentType = config.paymentType,

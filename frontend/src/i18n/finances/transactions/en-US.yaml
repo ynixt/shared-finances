@@ -13,6 +13,14 @@ financesPage:
       INSTALLMENT: Installment
     category: Category
     value: Value
+    originValue: Origin amount
+    targetValue: Target amount
+    targetValueDeferredHint: The target amount will be resolved automatically when the concrete transfer occurrence is created.
+    targetValueQuoteUnavailable: The system could not suggest the target amount from stored quotes. You can still provide that value manually.
+    transferExchangeRate: Exchange rate (reference)
+    transferExchangeRateLoading: Loading exchange rate…
+    transferExchangeRateLine: '1 {{base}} = {{rate}} {{quote}}'
+    transferExchangeRateNearestHint: 'Nearest stored quote used (date {{date}}).'
     confirmed: Confirmed
     installments: Parcelas
     observations: Observations

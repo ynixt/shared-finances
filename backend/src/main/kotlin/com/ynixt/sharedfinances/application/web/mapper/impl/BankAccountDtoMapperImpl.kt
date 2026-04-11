@@ -44,6 +44,7 @@ class BankAccountDtoMapperImpl(
         override fun map(from: NewBankAccountDto) =
             mapping {
                 to::balance fromProperty NewBankAccountDto::balance transform { it ?: BigDecimal.ZERO }
+                to::showOnDashboard fromProperty NewBankAccountDto::showOnDashboard transform { it ?: true }
             }
     }
 

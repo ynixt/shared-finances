@@ -10,6 +10,8 @@ import java.util.UUID
 internal class InMemoryUserRepository : UserRepository {
     private val data = linkedMapOf<UUID, UserEntity>()
 
+    override fun findDistinctDefaultCurrencies(): Flux<String> = Flux.fromIterable(data.values.map { it.defaultCurrency }.distinct())
+
     override fun findOneByEmail(email: String): Mono<UserEntity> = Mono.justOrEmpty(data.values.firstOrNull { it.email == email })
 
     override fun changeLanguage(

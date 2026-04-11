@@ -1,3 +1,45 @@
 financesPage:
   overviewPage:
     title: Visão geral
+    empty: Nenhum dado disponível para o mês selecionado.
+    noDetails: Nenhum detalhe disponível.
+    unknownCard: Métrica desconhecida
+    actions:
+      details: Detalhar
+      close: Fechar
+    cards:
+      balance: Saldo
+      periodCashIn: Entrada do período
+      periodCashOut: Saída do período
+      periodNetCashFlow: Alterações do período
+      projectedCashIn: Entrada projetada do período
+      projectedCashOut: Saída projetada do período
+      endOfPeriodBalance: Saldo estimado no fim do período
+      endOfPeriodNetCashFlow: Alterações estimadas no fim do período
+    charts:
+      balance: Saldo (12 meses)
+      cashIn: Entrada em caixa (12 meses)
+      cashOut: Saída de caixa (12 meses)
+      expense: Despesas (12 meses)
+      cashInByCategory: Entrada em caixa por categoria
+      cashOutByCategory: Saída de caixa por categoria
+      expenseByGroup: Despesas por grupo
+      expenseByCategory: Despesas por categoria
+      emptyBreakdown: Nenhum dado disponível para o mês selecionado.
+      fallbackSliceLabels:
+        individual: Individual
+        uncategorized: Não categorizado
+        others: Outros
+    detail:
+      formula:
+        balance: Saldo
+        periodCashIn: Entrada do período
+        periodCashOut: Saída do período
+        projectedCashIn: Entrada projetada do período
+        projectedCashOut: Saída projetada do período
+        endOfPeriodBalance: Saldo no fim do período
+      sourceType:
+        bankAccount: Conta bancária
+        creditCardBill: Fatura do cartão
+        formula: Fórmula
+        unknown: Origem desconhecida

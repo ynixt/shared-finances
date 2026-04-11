@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -17,6 +18,17 @@ interface CreditCardBillRepository : EntityRepository<CreditCardBillEntity> {
         creditCardId: UUID,
         billDate: LocalDate,
     ): Mono<CreditCardBillEntity>
+
+    fun findOneByUserIdAndId(
+        userId: UUID,
+        id: UUID,
+    ): Mono<CreditCardBillEntity>
+
+    fun findAllOpenByUserIdAndDueDateBetween(
+        userId: UUID,
+        minimumDueDate: LocalDate,
+        maximumDueDate: LocalDate,
+    ): Flux<CreditCardBillEntity>
 
     fun addValueById(
         id: UUID,

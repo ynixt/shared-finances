@@ -1,0 +1,14 @@
+financesPage:
+  exchangeRatesPage:
+    title: Exchange rates
+    pair: Currency pair
+    rate: Rate
+    quoteDate: Quote date
+    quotedAt: Quoted at
+    fetchedAt: Fetched at
+    source: Source
+    filters:
+      baseCurrency: Base currency
+      quoteCurrency: Quote currency
+      quoteDateFrom: Quote date
+      apply: Apply filters

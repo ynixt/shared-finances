@@ -1,10 +1,12 @@
 package com.ynixt.sharedfinances.scenarios.wallet
 
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 class CreditCardScenarioDslTest {
@@ -152,6 +154,59 @@ class CreditCardScenarioDslTest {
                 billClosingDateShouldBe(expected = expectedClosingDate, billDate = expectedBillDate)
                 billValueShouldBe(expected = expenseValue.unaryMinus(), billDate = expectedBillDate)
                 availableLimitShouldBe(expected = totalLimit.subtract(expenseValue))
+            }
+        }
+    }
+
+    @Test
+    fun `should keep dashboard expense semantics and breakdowns after partial bill payment`() {
+        val initialDate = LocalDate.of(2026, 3, 31)
+        val purchaseDate = LocalDate.of(2026, 4, 5)
+        val paymentDate = LocalDate.of(2026, 4, 8)
+        val selectedMonth = YearMonth.of(2026, 4)
+        val billDate = LocalDate.of(2026, 4, 1)
+
+        walletScenario(initialDate = initialDate) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccount(balance = 1000, currency = "BRL")
+                creditCard(
+                    limit = 1000,
+                    currency = "BRL",
+                    dueDay = 20,
+                    daysBetweenDueAndClosing = 10,
+                    dueOnNextBusinessDay = false,
+                )
+            }
+
+            `when` {
+                advanceTime(to = purchaseDate)
+                expense(value = 200, date = purchaseDate, name = "Laptop stand")
+                fetchOverview(selectedMonth)
+            }
+
+            then {
+                overviewCardShouldBe(OverviewDashboardCardKey.PERIOD_CASH_OUT, 0)
+                overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_CASH_OUT, 200)
+                overviewExpenseForMonthShouldBe(selectedMonth, 200)
+                overviewExpenseGroupSliceShouldBe("PREDEFINED_INDIVIDUAL", 200)
+                overviewExpenseCategorySliceShouldBe("PREDEFINED_UNCATEGORIZED", 200)
+            }
+
+            `when` {
+                advanceTime(to = paymentDate)
+                payBill(amount = 50, date = paymentDate, billDate = billDate)
+                fetchOverview(selectedMonth)
+            }
+
+            then {
+                billValueShouldBe(expected = -150, billDate = billDate)
+                balanceShouldBe(expected = 950)
+                overviewCardShouldBe(OverviewDashboardCardKey.PERIOD_CASH_OUT, 50)
+                overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_CASH_OUT, 150)
+                overviewExpenseForMonthShouldBe(selectedMonth, 200)
+                overviewExpenseGroupSliceShouldBe("PREDEFINED_INDIVIDUAL", 200)
+                overviewExpenseCategorySliceShouldBe("PREDEFINED_UNCATEGORIZED", 200)
             }
         }
     }

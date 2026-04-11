@@ -11,6 +11,7 @@ export interface WalletItemForEntryListDto {
   enabled: boolean;
   id: string;
   name: string;
+  showOnDashboard: boolean;
   type: WalletItemType;
   user?: UserSimpleDto | null;
 }

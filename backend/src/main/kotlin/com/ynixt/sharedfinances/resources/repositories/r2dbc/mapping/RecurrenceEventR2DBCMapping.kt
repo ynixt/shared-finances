@@ -31,6 +31,7 @@ class RecurrenceEventR2DBCMapping {
                 periodicity = RecurrenceType.valueOf(row.get("${columnPrefix}periodicity", String::class.java)!!),
                 seriesId = row.get("${columnPrefix}series_id", UUID::class.java)!!,
                 seriesOffset = row.get("${columnPrefix}series_offset", Int::class.javaObjectType)!!,
+                initialBalance = row.get("${columnPrefix}initial_balance", Boolean::class.java) ?: false,
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

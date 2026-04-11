@@ -24,6 +24,8 @@ data class EventForListDto(
     val recurrenceConfigId: UUID?,
     val recurrenceConfig: RecurrenceEventDto?,
     val currency: String,
+    val originValue: BigDecimal?,
+    val targetValue: BigDecimal?,
     val entries: List<EntryResponseDto>,
 ) {
     data class EntryResponseDto(

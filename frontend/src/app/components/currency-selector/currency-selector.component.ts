@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, Input, OnInit, forwardRef } from '@angular/core';
+import { Component, OnInit, forwardRef, input } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ScrollerOptions } from 'primeng/api';
@@ -9,15 +9,6 @@ export interface CurrencyItem {
   code: string;
   name?: string;
   symbol: string;
-}
-
-interface DataHubCurrency {
-  Entity: string;
-  Currency: string;
-  AlphabeticCode?: string;
-  NumericCode: string;
-  MinorUnit: string;
-  WithdrawalDate: string;
 }
 
 @Component({
@@ -34,8 +25,9 @@ interface DataHubCurrency {
   imports: [FormsModule, Select],
 })
 export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
-  @Input() placeholder = '';
-  @Input() assetsUrl = '/public/currencies.json';
+  placeholder = input('');
+  showClear = input(false);
+  assetsUrl = input('/public/currencies.json');
 
   currencies: CurrencyItem[] = [];
   value: string | null = null;
@@ -56,17 +48,14 @@ export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
   }
 
   private loadCurrencies() {
-    this.http.get<DataHubCurrency[]>(this.assetsUrl, { responseType: 'json' as const }).subscribe({
-      next: list => {
-        const codesAlreadyRead = new Set<string>();
-
-        this.currencies = list
-          .filter(it => it.AlphabeticCode != null && !codesAlreadyRead.has(it.AlphabeticCode) && codesAlreadyRead.add(it.AlphabeticCode))
-          .map(it => ({
-            code: it.AlphabeticCode!!.toUpperCase(),
-            name: it.Currency,
-            symbol: this.getIntlSymbol(it.AlphabeticCode!!.toUpperCase()),
-            all: it.AlphabeticCode!!.toUpperCase() + ' ' + it.Currency + ' ' + this.getIntlSymbol(it.AlphabeticCode!!.toUpperCase()), // for search
+    this.http.get<Record<string, string>>(this.assetsUrl(), { responseType: 'json' as const }).subscribe({
+      next: data => {
+        this.currencies = Object.entries(data)
+          .map(([code, name]) => ({
+            code: code.toUpperCase(),
+            name: name || undefined,
+            symbol: this.getIntlSymbol(code.toUpperCase()),
+            all: code.toUpperCase() + ' ' + name + ' ' + this.getIntlSymbol(code.toUpperCase()),
           }))
           .sort((a, b) => a.code.localeCompare(b.code));
       },
@@ -77,9 +66,13 @@ export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
   }
 
   getIntlSymbol(code: string, locale = 'en-US') {
-    const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: code }).formatToParts(0);
-    const sym = parts.find(p => p.type === 'currency')?.value;
-    return sym ?? code;
+    try {
+      const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: code }).formatToParts(0);
+      const sym = parts.find(p => p.type === 'currency')?.value;
+      return sym ?? code;
+    } catch {
+      return code;
+    }
   }
 
   onSelectCurrency(e: any) {

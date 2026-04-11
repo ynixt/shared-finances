@@ -350,6 +350,19 @@ class RecurrenceSimulationServiceImpl(
             id = null,
             type = config.type,
             name = config.name,
+            originValue =
+                if (config.type ==
+                    com.ynixt.sharedfinances.domain.enums.WalletEntryType.TRANSFER
+                ) {
+                    config.entries!!
+                        .first()
+                        .value
+                        .abs()
+                } else {
+                    null
+                },
+            // Future transfer occurrences should not freeze the target-side amount before materialization.
+            targetValue = null,
             entries =
                 config.entries!!.mapIndexed { index, entry ->
                     val bill = bills[index]

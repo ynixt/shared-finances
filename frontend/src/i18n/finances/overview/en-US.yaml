@@ -1,3 +1,45 @@
 financesPage:
   overviewPage:
     title: Overview
+    empty: No dashboard data available for this month.
+    noDetails: No details available.
+    unknownCard: Unknown metric
+    actions:
+      details: Details
+      close: Close
+    cards:
+      balance: Balance
+      periodCashIn: Period cash in
+      periodCashOut: Period cash out
+      periodNetCashFlow: Period change
+      projectedCashIn: Projected cash in
+      projectedCashOut: Projected cash out
+      endOfPeriodBalance: Estimated end-of-period balance
+      endOfPeriodNetCashFlow: Estimated end-of-period change
+    charts:
+      balance: Balance (12 months)
+      cashIn: Cash in (12 months)
+      cashOut: Cash out (12 months)
+      expense: Expense (12 months)
+      cashInByCategory: Cash in by category
+      cashOutByCategory: Cash out by category
+      expenseByGroup: Expense by group
+      expenseByCategory: Expense by category
+      emptyBreakdown: No data available for the selected month.
+      fallbackSliceLabels:
+        individual: Individual
+        uncategorized: Uncategorized
+        others: Others
+    detail:
+      formula:
+        balance: Balance
+        periodCashIn: Period cash in
+        periodCashOut: Period cash out
+        projectedCashIn: Projected cash in
+        projectedCashOut: Projected cash out
+        endOfPeriodBalance: End-of-period balance
+      sourceType:
+        bankAccount: Bank account
+        creditCardBill: Credit card bill
+        formula: Formula
+        unknown: Unknown source

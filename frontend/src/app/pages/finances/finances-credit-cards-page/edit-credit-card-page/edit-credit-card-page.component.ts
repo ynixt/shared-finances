@@ -89,6 +89,7 @@ export class EditCreditCardPageComponent {
         newDueDay: this.formGroup.value.dueDay,
         newDaysBetweenDueAndClosing: this.formGroup.value.daysBetweenDueAndClosing,
         newDueOnNextBusinessDay: this.formGroup.value.dueOnNextBusinessDay,
+        newShowOnDashboard: this.formGroup.value.showOnDashboard,
       });
 
       this.messageService.add({
@@ -198,6 +199,7 @@ export class EditCreditCardPageComponent {
       dueDay: [this.card.dueDay, [Validators.required, Validators.min(1), Validators.max(31)]],
       daysBetweenDueAndClosing: [this.card.daysBetweenDueAndClosing, [Validators.required, Validators.min(0), Validators.max(31)]],
       dueOnNextBusinessDay: [this.card.dueOnNextBusinessDay, [Validators.required]],
+      showOnDashboard: [this.card.showOnDashboard, [Validators.required]],
     });
 
     this.formGroup

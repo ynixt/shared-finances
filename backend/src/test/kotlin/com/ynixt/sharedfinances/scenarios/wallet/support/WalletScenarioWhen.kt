@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.scenarios.wallet.support
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
+import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRequest
@@ -12,6 +13,7 @@ import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 class WalletScenarioWhen internal constructor(
@@ -132,12 +134,17 @@ class WalletScenarioWhen internal constructor(
 
     suspend fun transfer(
         value: Number,
+        targetValue: Number? = null,
         date: LocalDate,
         groupId: UUID? = null,
         originId: UUID,
         targetId: UUID,
         name: String = "Transfer",
         confirmed: Boolean = true,
+        paymentType: PaymentType = PaymentType.UNIQUE,
+        installments: Int? = null,
+        periodicity: RecurrenceType = RecurrenceType.SINGLE,
+        periodicityQtyLimit: Int? = null,
         originBillDate: LocalDate? = null,
         targetBillDate: LocalDate? = null,
     ) {
@@ -180,10 +187,14 @@ class WalletScenarioWhen internal constructor(
                             originId = originId,
                             targetId = targetId,
                             date = date,
-                            value = value.toBigDecimalSafe(),
+                            originValue = value.toBigDecimalSafe(),
+                            targetValue = targetValue?.toBigDecimalSafe(),
                             name = name,
                             confirmed = confirmed,
-                            paymentType = PaymentType.UNIQUE,
+                            paymentType = paymentType,
+                            installments = installments,
+                            periodicity = periodicity,
+                            periodicityQtyLimit = periodicityQtyLimit,
                             originBillDate = resolvedOriginBillDate,
                             targetBillDate = resolvedTargetBillDate,
                         ),
@@ -191,6 +202,34 @@ class WalletScenarioWhen internal constructor(
             ) { "Transfer was rejected due to insufficient permissions for selected group/origin/target" }
 
         context.lastWalletEventId = resolver.extractWalletEventId(created)
+    }
+
+    suspend fun payBill(
+        amount: Number,
+        date: LocalDate,
+        bankAccountId: UUID? = null,
+        billId: UUID? = null,
+        billDate: LocalDate? = null,
+        creditCardId: UUID? = null,
+        observations: String? = null,
+    ) {
+        val userId = resolver.ensureUser()
+        val bankAccount = resolver.resolveBankAccountItem(bankAccountId)
+        val bill =
+            resolver.resolveBill(
+                billId = billId,
+                billDate = billDate,
+                creditCardId = creditCardId,
+            )
+
+        runtime.creditCardBillPaymentService.payBill(
+            userId = userId,
+            billId = requireNotNull(bill.id),
+            bankAccountId = requireNotNull(bankAccount.id),
+            date = date,
+            amount = amount.toBigDecimalSafe(),
+            observations = observations,
+        )
     }
 
     suspend fun editOneOff(
@@ -275,6 +314,20 @@ class WalletScenarioWhen internal constructor(
 
     suspend fun fetchScheduledByRecurrenceConfigId(recurrenceConfigId: UUID? = null) {
         context.lastFetchedScheduledWalletEvent = resolver.fetchScheduledEventByRecurrenceConfigId(recurrenceConfigId)
+    }
+
+    suspend fun fetchFirstScheduledExecution(filter: ScheduledExecutionFilter = ScheduledExecutionFilter.ALL) {
+        context.lastFetchedScheduledWalletEvent = resolver.listScheduledExecutionEntries(filter).firstOrNull()
+    }
+
+    suspend fun fetchOverview(selectedMonth: YearMonth = YearMonth.from(runtime.clock.today())) {
+        val userId = resolver.ensureUser()
+        context.lastOverview =
+            runtime.overviewDashboardService.getOverview(
+                userId = userId,
+                defaultCurrency = context.currentCurrency,
+                selectedMonth = selectedMonth,
+            )
     }
 
     fun lastWalletEventId(): UUID = resolver.requireLastWalletEventId()

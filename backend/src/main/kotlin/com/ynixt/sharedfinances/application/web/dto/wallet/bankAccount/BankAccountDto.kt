@@ -8,6 +8,7 @@ class BankAccountDto(
     id: UUID,
     name: String,
     enabled: Boolean,
+    showOnDashboard: Boolean = true,
     userId: UUID,
     currency: String,
     val balance: BigDecimal,
@@ -15,6 +16,7 @@ class BankAccountDto(
         id = id,
         name = name,
         enabled = enabled,
+        showOnDashboard = showOnDashboard,
         userId = userId,
         currency = currency,
     )

@@ -9,15 +9,22 @@ import com.ynixt.sharedfinances.application.web.dto.walletentry.ListEntryRequest
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ScheduledExecutionManagerRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.SummaryEntryRequestDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.TransferQuoteDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.TransferQuoteRequestDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.TransferRateDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.TransferRateRequestDto
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEventDtoMapper
 import com.ynixt.sharedfinances.domain.extensions.CursorPageExtensions.mapCursorPageToDto
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.walletentry.ScheduledExecutionManagerService
+import com.ynixt.sharedfinances.domain.services.walletentry.TransferQuoteRequest
+import com.ynixt.sharedfinances.domain.services.walletentry.TransferRateRequest
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryRemovalService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntrySummaryService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryTransferQuoteService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -48,6 +55,7 @@ class WalletEntryController(
     private val walletEventListService: WalletEventListService,
     private val walletEntrySummaryService: WalletEntrySummaryService,
     private val scheduledExecutionManagerService: ScheduledExecutionManagerService,
+    private val walletEntryTransferQuoteService: WalletEntryTransferQuoteService,
 ) {
     @Operation(summary = "Create a new entry")
     @PostMapping
@@ -60,6 +68,52 @@ class WalletEntryController(
                 principalToken.principal.id,
                 walletEntryDtoMapper.fromNewDtoToNewRequest(newEntryDto),
             ).let { ResponseEntity.noContent().build() }
+
+    @Operation(summary = "Resolve a suggested target amount for transfer")
+    @PostMapping("/transfer-quote")
+    suspend fun transferQuote(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @RequestBody body: TransferQuoteRequestDto,
+    ): TransferQuoteDto =
+        walletEntryTransferQuoteService
+            .quote(
+                userId = principalToken.principal.id,
+                request =
+                    TransferQuoteRequest(
+                        groupId = body.groupId,
+                        originId = body.originId,
+                        targetId = body.targetId,
+                        date = body.date,
+                        originValue = body.originValue,
+                    ),
+            ).let { result ->
+                TransferQuoteDto(targetValue = result.targetValue)
+            }
+
+    @Operation(summary = "Resolve stored exchange rate for a transfer (nearest quote to the given date)")
+    @PostMapping("/transfer-rate")
+    suspend fun transferRate(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @RequestBody body: TransferRateRequestDto,
+    ): TransferRateDto =
+        walletEntryTransferQuoteService
+            .transferRate(
+                userId = principalToken.principal.id,
+                request =
+                    TransferRateRequest(
+                        groupId = body.groupId,
+                        originId = body.originId,
+                        targetId = body.targetId,
+                        date = body.date,
+                    ),
+            ).let { result ->
+                TransferRateDto(
+                    rate = result.rate,
+                    quoteDate = result.quoteDate,
+                    baseCurrency = result.baseCurrency,
+                    quoteCurrency = result.quoteCurrency,
+                )
+            }
 
     @Operation(summary = "Edit one-off entry")
     @PutMapping("/{id}")

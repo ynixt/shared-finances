@@ -1,0 +1,59 @@
+<app-finances-title-bar [title]="'financesPage.exchangeRatesPage.title' | translate"></app-finances-title-bar>
+
+<div class="mb-4 rounded-xl border border-surface-200 bg-white p-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-end gap-3">
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600" for="erf-base">{{ 'financesPage.exchangeRatesPage.filters.baseCurrency' | translate }}</label>
+      <app-currency-selector [(ngModel)]="filterBase" [showClear]="true"></app-currency-selector>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600" for="erf-quote">{{ 'financesPage.exchangeRatesPage.filters.quoteCurrency' | translate }}</label>
+      <app-currency-selector [(ngModel)]="filterQuote" [showClear]="true"></app-currency-selector>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-sm text-gray-600" for="erf-from">{{ 'financesPage.exchangeRatesPage.filters.quoteDateFrom' | translate }}</label>
+      <p-date-picker [showIcon]="true" [iconDisplay]="'input'" [(ngModel)]="filterDateFrom" />
+    </div>
+    <button type="button" pButton (click)="applyFilters()" [disabled]="loading" class="shrink-0">
+      {{ 'financesPage.exchangeRatesPage.filters.apply' | translate }}
+    </button>
+  </div>
+</div>
+
+@if (loading && quotes.length === 0) {
+  <div class="flex justify-center py-8">
+    <p-progress-spinner />
+  </div>
+} @else {
+  <div class="pt-4">
+    <p-table [value]="quotes" [tableStyle]="{ width: '100%' }" [loading]="loading">
+      <ng-template #header>
+        <tr>
+          <th style="width: 12rem">{{ 'financesPage.exchangeRatesPage.pair' | translate }}</th>
+          <th style="width: calc(100% - 36rem)">{{ 'financesPage.exchangeRatesPage.rate' | translate }}</th>
+          <th style="width: 12rem">{{ 'financesPage.exchangeRatesPage.quoteDate' | translate }}</th>
+          <th style="width: 12rem">{{ 'financesPage.exchangeRatesPage.source' | translate }}</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-quote>
+        <tr>
+          <td class="font-semibold">{{ quote.baseCurrency }}/{{ quote.quoteCurrency }}</td>
+          <td>{{ quote.rate | localCurrency: quote.quoteCurrency : 8 }}</td>
+          <td>{{ quote.quoteDate | localDate: 'shortDate' }}</td>
+          <td>{{ quote.source }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    @if (showPaginator) {
+      <div class="mt-4">
+        <app-infinite-paginator
+          [hasNext]="page != null && page.hasNext"
+          [initialPage]="0"
+          (pageChange)="onPageChange($event)"
+        ></app-infinite-paginator>
+      </div>
+    }
+  </div>
+}

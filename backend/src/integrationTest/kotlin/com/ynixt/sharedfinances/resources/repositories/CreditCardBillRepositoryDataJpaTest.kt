@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.r2dbc.test.autoconfigure.DataR2dbcTest
 import org.springframework.context.annotation.Import
+import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -22,6 +23,9 @@ import java.util.UUID
 @ActiveProfiles("test")
 @Import(SimpleEntityUuidBeforeConvertCallback::class)
 class CreditCardBillRepositoryDataJpaTest : RepositoryDataR2dbcTestSupport() {
+    @Autowired
+    private lateinit var dbClient: DatabaseClient
+
     @Autowired
     private lateinit var userRepository: UserSpringDataRepository
 
@@ -92,5 +96,107 @@ class CreditCardBillRepositoryDataJpaTest : RepositoryDataR2dbcTestSupport() {
         }
     }
 
+    @Test
+    fun `should use open due-date index for dashboard projected bill lookup`() {
+        runBlocking {
+            val user = userRepository.save(newUser()).awaitSingle()
+            val card = walletItemRepository.save(newCreditCard(requireNotNull(user.id))).awaitSingle()
+            val creditCardId = requireNotNull(card.id)
+
+            seedOpenBillExplainDataset(creditCardId)
+
+            val plan =
+                explainQuery(
+                    sql =
+                        """
+                        SELECT bill.*
+                        FROM credit_card_bill bill
+                        JOIN wallet_item creditCard ON creditCard.id = bill.credit_card_id
+                        WHERE
+                            creditCard.user_id = :userId
+                            AND creditCard.type = 'CREDIT_CARD'
+                            AND creditCard.enabled = true
+                            AND creditCard.show_on_dashboard = true
+                            AND bill.value < 0
+                            AND bill.due_date >= :minimumDueDate
+                            AND bill.due_date <= :maximumDueDate
+                        """.trimIndent(),
+                    bindings =
+                        mapOf(
+                            "userId" to requireNotNull(user.id),
+                            "minimumDueDate" to LocalDate.of(2026, 4, 1),
+                            "maximumDueDate" to LocalDate.of(2026, 4, 30),
+                        ),
+                )
+
+            assertThat(plan)
+                .contains("idx_credit_card_bill_open_due_date")
+                .doesNotContain("Seq Scan on credit_card_bill")
+        }
+    }
+
     private suspend fun reactor.core.publisher.Mono<Long>.awaitUpdatedCount(): Long = awaitSingleOrNull() ?: 0L
+
+    private suspend fun seedOpenBillExplainDataset(creditCardId: UUID) {
+        dbClient
+            .sql("DELETE FROM credit_card_bill")
+            .fetch()
+            .rowsUpdated()
+            .awaitSingle()
+
+        dbClient
+            .sql(
+                """
+                INSERT INTO credit_card_bill (
+                    id,
+                    credit_card_id,
+                    bill_date,
+                    due_date,
+                    closing_date,
+                    paid,
+                    value
+                )
+                SELECT
+                    (
+                        substr(md5(i::text), 1, 8) || '-' ||
+                        substr(md5(i::text), 9, 4) || '-' ||
+                        substr(md5(i::text), 13, 4) || '-' ||
+                        substr(md5(i::text), 17, 4) || '-' ||
+                        substr(md5(i::text), 21, 12)
+                    )::uuid,
+                    :creditCardId,
+                    DATE '2020-01-01' + i,
+                    DATE '2020-01-11' + i,
+                    DATE '2020-01-05' + i,
+                    FALSE,
+                    CASE WHEN i % 3 = 0 THEN -100.00 ELSE 50.00 END
+                FROM generate_series(0, 3999) AS s(i)
+                """.trimIndent(),
+            ).bind("creditCardId", creditCardId)
+            .fetch()
+            .rowsUpdated()
+            .awaitSingle()
+
+        dbClient
+            .sql("ANALYZE credit_card_bill")
+            .fetch()
+            .rowsUpdated()
+            .awaitSingle()
+    }
+
+    private suspend fun explainQuery(
+        sql: String,
+        bindings: Map<String, Any>,
+    ): String {
+        var spec = dbClient.sql("EXPLAIN (COSTS OFF) $sql")
+        for ((name, value) in bindings) {
+            spec = spec.bind(name, value)
+        }
+        return spec
+            .map { row, _ -> row.get(0, String::class.java)!! }
+            .all()
+            .collectList()
+            .awaitSingle()
+            .joinToString("\n")
+    }
 }

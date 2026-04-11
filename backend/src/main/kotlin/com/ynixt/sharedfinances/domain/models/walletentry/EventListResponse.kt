@@ -25,6 +25,8 @@ data class EventListResponse(
     val recurrenceConfigId: UUID?,
     val recurrenceConfig: RecurrenceEventEntity?,
     val currency: String,
+    val originValue: BigDecimal? = null,
+    val targetValue: BigDecimal? = null,
     val entries: List<EntryResponse>,
 ) {
     data class EntryResponse(

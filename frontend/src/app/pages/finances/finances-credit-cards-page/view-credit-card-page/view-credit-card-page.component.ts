@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
+  faBuildingColumns,
   faCalendarMinus,
   faCalendarXmark,
   faCircle,
@@ -21,20 +22,28 @@ import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
+import { InputNumber } from 'primeng/inputnumber';
+import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
+import { DatePickerComponent } from '../../../../components/date-picker/date-picker.component';
 import {
   CreditCardBillDto,
   CreditCardDto,
+  PayCreditCardBillDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
-import { CreditCardBillStatus__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { CreditCardBillStatus__Obj, WalletItemType__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
 import { DashboardCardComponent } from '../../components/dashboard-card/dashboard-card.component';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
+import {
+  WalletItemPickerComponent,
+  WalletItemSearchResponseDtoWithIcon,
+} from '../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
 import {
   AdvancedDatePickerComponent,
   DateRange,
@@ -45,6 +54,7 @@ import { CreditCardService } from '../../services/credit-card.service';
 import { readDateRangeFromQueryParams, syncDateQueryParams } from '../../services/date-query-params.util';
 import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
+import { WalletItemService } from '../../services/wallet-item.service';
 
 @Component({
   selector: 'app-view-credit-card-page',
@@ -59,8 +69,12 @@ import { WalletEntryService } from '../../services/wallet-entry.service';
     DashboardCardComponent,
     LocalCurrencyPipe,
     Button,
+    DatePickerComponent,
     FaIconComponent,
     Dialog,
+    WalletItemPickerComponent,
+    InputNumber,
+    InputText,
   ],
   templateUrl: './view-credit-card-page.component.html',
   styleUrl: './view-credit-card-page.component.scss',
@@ -76,10 +90,17 @@ export class ViewCreditCardPageComponent {
   public readonly overdueIcon = faCircleMinus;
   public readonly futureIcon = faCircleInfo;
   public readonly closedIcon = faCircleExclamation;
+  public readonly bankAccountIcon = faBuildingColumns;
 
   readonly dateControl = new FormControl<DateRange | undefined>(undefined);
   readonly formToEditClosingDay = new FormGroup({ closingDay: new FormControl<DateRange | undefined>(undefined, [Validators.required]) });
   readonly formToEditDueDay = new FormGroup({ dueDay: new FormControl<DateRange | undefined>(undefined, [Validators.required]) });
+  readonly formToPayBill = new FormGroup({
+    bankAccount: new FormControl<WalletItemSearchResponseDtoWithIcon | undefined>(undefined, [Validators.required]),
+    date: new FormControl<Date | undefined>(undefined, [Validators.required]),
+    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
+    observations: new FormControl<string>(''),
+  });
 
   titleBarButtons: FinancesTitleBarExtraButton[] = [];
   creditCard: CreditCardDto | undefined = undefined;
@@ -91,6 +112,8 @@ export class ViewCreditCardPageComponent {
   dialogToEditClosingDayIsSubmitting = false;
   dialogToEditDueDayIsVisible = false;
   dialogToEditDueDayIsSubmitting = false;
+  dialogToPayBillIsVisible = false;
+  dialogToPayBillIsSubmitting = false;
 
   private currentFilter: { creditCard: string; billDate: dayjs.Dayjs } | undefined = undefined;
 
@@ -149,6 +172,15 @@ export class ViewCreditCardPageComponent {
     return 'text-surface-900 dark:text-surface-0';
   });
 
+  remainingBillAmount = computed(() => {
+    const creditCardBill = this.creditCardBill();
+    if (creditCardBill == null || creditCardBill.value >= 0) {
+      return 0;
+    }
+
+    return creditCardBill.value * -1;
+  });
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -159,6 +191,7 @@ export class ViewCreditCardPageComponent {
     private walletEntryService: WalletEntryService,
     private creditCardBillService: CreditCardBillService,
     private userActionEventService: UserActionEventService,
+    private walletItemService: WalletItemService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -181,8 +214,6 @@ export class ViewCreditCardPageComponent {
     this.dateRange = dateRange;
 
     if (syncUrl) {
-      console.log(this.openBillDate()!!);
-
       void syncDateQueryParams(this.route, this.router, dateRange, 'single', this.openBillDate()!!);
     }
 
@@ -237,6 +268,22 @@ export class ViewCreditCardPageComponent {
     }
   }
 
+  openPayBillDialog() {
+    const creditCardBill = this.creditCardBill();
+    const remaining = this.remainingBillAmount();
+
+    if (creditCardBill?.id == null || remaining <= 0) {
+      return;
+    }
+
+    this.formToPayBill.reset();
+    this.formToPayBill.controls.amount.setValidators([Validators.required, Validators.min(0.01), Validators.max(remaining)]);
+    this.formToPayBill.controls.amount.setValue(remaining);
+    this.formToPayBill.controls.amount.updateValueAndValidity();
+    this.formToPayBill.controls.date.setValue(new Date());
+    this.dialogToPayBillIsVisible = true;
+  }
+
   async submitNewDueDate() {
     const creditCardBill = this.creditCardBill();
 
@@ -263,6 +310,53 @@ export class ViewCreditCardPageComponent {
     }
 
     this.dialogToEditDueDayIsVisible = false;
+  }
+
+  async submitPayBill() {
+    const creditCardBill = this.creditCardBill();
+    const bankAccount = this.formToPayBill.controls.bankAccount.value;
+    const date = this.formToPayBill.controls.date.value;
+    const amount = this.formToPayBill.controls.amount.value;
+    const observations = this.formToPayBill.controls.observations.value?.trim() || undefined;
+
+    if (creditCardBill?.id == null || bankAccount == null || date == null || amount == null || this.formToPayBill.invalid) {
+      return;
+    }
+
+    const request: PayCreditCardBillDto = {
+      bankAccountId: bankAccount.id,
+      date: dayjs(date).format(ONLY_DATE_FORMAT),
+      amount,
+      observations,
+    };
+
+    try {
+      this.dialogToPayBillIsSubmitting = true;
+      await this.creditCardBillService.payBill(creditCardBill.id, request);
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.successMessage'),
+      });
+      this.dialogToPayBillIsVisible = false;
+      await this.getCreditCardBill(true);
+      await this.refreshCreditCard();
+    } catch (error) {
+      this.errorMessageService.handleError(error, this.messageService);
+      throw error;
+    } finally {
+      this.dialogToPayBillIsSubmitting = false;
+    }
+  }
+
+  async loadBankAccounts(page = 0): Promise<WalletItemSearchResponseDtoWithIcon[]> {
+    const response = await this.walletItemService.getAllItems({ sort: 'name', page });
+
+    return response.content
+      .filter(item => item.type === WalletItemType__Obj.BANK_ACCOUNT)
+      .map(item => ({
+        ...item,
+        icon: this.bankAccountIcon,
+      }));
   }
 
   private async getCreditCardBill(force = false): Promise<CreditCardBillDto | undefined> {

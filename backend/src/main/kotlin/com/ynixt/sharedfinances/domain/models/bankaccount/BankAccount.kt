@@ -11,12 +11,14 @@ class BankAccount(
     userId: UUID,
     currency: String,
     balance: BigDecimal,
+    showOnDashboard: Boolean = true,
 ) : WalletItem(
         name = name,
         enabled = enabled,
         userId = userId,
         currency = currency,
         balance = balance,
+        showOnDashboard = showOnDashboard,
     ) {
     override val type: WalletItemType = WalletItemType.BANK_ACCOUNT
 }

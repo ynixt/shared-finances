@@ -14,12 +14,14 @@ export interface NewEntryDto {
   observations?: string | null;
   originBillDate?: string | null;
   originId: string;
+  originValue?: number | null;
   paymentType: PaymentType;
   periodicity?: RecurrenceType | null;
   periodicityQtyLimit?: number | null;
   tags?: Array<string> | null;
   targetBillDate?: string | null;
   targetId?: string | null;
+  targetValue?: number | null;
   type: WalletEntryType;
-  value: number;
+  value?: number | null;
 }

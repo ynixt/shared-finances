@@ -18,9 +18,11 @@ export interface EventForListDto {
   installment?: number | null;
   name?: string | null;
   observations?: string | null;
+  originValue?: number | null;
   recurrenceConfig?: RecurrenceEventDto | null;
   recurrenceConfigId?: string | null;
   tags?: Array<string> | null;
+  targetValue?: number | null;
   type: WalletEntryType;
   user?: UserSimpleDto | null;
 }

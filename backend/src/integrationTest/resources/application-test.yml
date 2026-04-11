@@ -83,3 +83,5 @@ app:
     region: ${APP_S3_REGION}
     bucket: ${APP_S3_BUCKET}
     pathStyleAccessEnabled: ${APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
+  exchangeRates:
+    providerUrl: http://localhost/mock-exchange

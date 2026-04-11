@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import '@angular/compiler';
 import { Component, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
@@ -76,6 +77,7 @@ function buildEntry(): EventForListDto {
           type: 'CREDIT_CARD',
           enabled: true,
           currency: 'BRL',
+          showOnDashboard: true,
           dueDay: 10,
           daysBetweenDueAndClosing: 7,
           dueOnNextBusinessDay: false,
@@ -96,6 +98,7 @@ describe('EditScheduledTransactionPageComponent', () => {
   };
 
   const routerMock = {
+    navigate: vi.fn().mockResolvedValue(true),
     navigateByUrl: vi.fn().mockResolvedValue(true),
   };
 

@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.util.UUID
@@ -12,6 +13,9 @@ import java.util.UUID
 interface WalletItemSpringDataRepository :
     WalletItemRepository,
     R2dbcRepository<WalletItemEntity, String> {
+    @Query("select distinct currency from wallet_item")
+    override fun findDistinctCurrencies(): Flux<String>
+
     @Modifying
     @Query(
         """
@@ -19,6 +23,7 @@ interface WalletItemSpringDataRepository :
             set name = :newName,
                 enabled = :newEnabled,
                 currency = :newCurrency,
+                show_on_dashboard = :newShowOnDashboard,
                 balance = balance + (:newTotalLimit - total_limit),
                 total_limit = :newTotalLimit,
                 due_day = :newDueDay,
@@ -36,6 +41,7 @@ interface WalletItemSpringDataRepository :
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+        newShowOnDashboard: Boolean,
         newTotalLimit: BigDecimal,
         newDueDay: Int,
         newDaysBetweenDueAndClosing: Int,
@@ -49,6 +55,7 @@ interface WalletItemSpringDataRepository :
             set name = :newName,
                 enabled = :newEnabled,
                 currency = :newCurrency,
+                show_on_dashboard = :newShowOnDashboard,
                 updated_at = CURRENT_TIMESTAMP
             where
                 id = :id
@@ -61,6 +68,7 @@ interface WalletItemSpringDataRepository :
         newName: String,
         newEnabled: Boolean,
         newCurrency: String,
+        newShowOnDashboard: Boolean,
     ): Mono<Long>
 
     @Modifying

@@ -13,6 +13,14 @@ financesPage:
       INSTALLMENT: Parcela
     category: Categoria
     value: Valor
+    originValue: Valor da origem
+    targetValue: Valor do destino
+    targetValueDeferredHint: O valor do destino sera definido automaticamente quando a ocorrencia concreta da transferencia for criada.
+    targetValueQuoteUnavailable: Não foi possivel sugerir o valor do destino a partir da cotacao salva. Voce ainda pode informar esse valor manualmente.
+    transferExchangeRate: Cotação (referência)
+    transferExchangeRateLoading: Carregando cotação…
+    transferExchangeRateLine: '1 {{base}} = {{rate}} {{quote}}'
+    transferExchangeRateNearestHint: 'Usando a cotação armazenada mais próxima (data {{date}}).'
     confirmed: Confirmado
     installments: Parcelas
     observations: Observações

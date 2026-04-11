@@ -7,6 +7,7 @@ import java.util.UUID
 class WalletItemSearchResponseDto(
     val id: UUID,
     val name: String,
+    val showOnDashboard: Boolean = true,
     val user: UserSimpleDto?,
     val currency: String,
     val type: WalletItemType,

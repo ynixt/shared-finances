@@ -1,14 +1,22 @@
 package com.ynixt.sharedfinances.scenarios.support
 
+import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
+import com.ynixt.sharedfinances.domain.models.CursorPage
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
+import com.ynixt.sharedfinances.domain.services.CreditCardBillPaymentService
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
+import com.ynixt.sharedfinances.domain.services.dashboard.OverviewDashboardService
+import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
+import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
+import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.ScheduledExecutionManagerService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
@@ -19,10 +27,12 @@ import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.Recurrenc
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import com.ynixt.sharedfinances.resources.services.BankAccountServiceImpl
+import com.ynixt.sharedfinances.resources.services.CreditCardBillPaymentServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardBillServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardServiceImpl
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
 import com.ynixt.sharedfinances.resources.services.WalletItemServiceImpl
+import com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.ScheduledExecutionManagerServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryCreateServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryEditServiceImpl
@@ -39,18 +49,59 @@ import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepos
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
+import java.math.BigDecimal
 import java.time.LocalDate
+
+internal fun identityExchangeRateService(): ExchangeRateService =
+    object : ExchangeRateService {
+        override suspend fun syncLatestQuotes(): Int = 0
+
+        override suspend fun syncQuotesForDate(
+            date: LocalDate,
+            baseCurrencies: Set<String>?,
+        ): Int = 0
+
+        override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity> =
+            CursorPage(
+                items = emptyList(),
+                nextCursor = null,
+                hasNext = false,
+            )
+
+        override suspend fun getRate(
+            fromCurrency: String,
+            toCurrency: String,
+            referenceDate: LocalDate,
+        ): BigDecimal = BigDecimal.ONE
+
+        override suspend fun resolveRate(
+            fromCurrency: String,
+            toCurrency: String,
+            referenceDate: LocalDate,
+        ): ResolvedExchangeRate = ResolvedExchangeRate(rate = BigDecimal.ONE, quoteDate = referenceDate)
+
+        override suspend fun convert(
+            value: BigDecimal,
+            fromCurrency: String,
+            toCurrency: String,
+            referenceDate: LocalDate,
+        ): BigDecimal = value
+
+        override suspend fun convertBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, BigDecimal> =
+            requests.associateWith { it.value }
+    }
 
 internal class ScenarioRuntime(
     initialDate: LocalDate,
     private val groupService: GroupService = NoOpGroupService(),
+    private val exchangeRateService: ExchangeRateService = identityExchangeRateService(),
 ) {
     val queueProducer = InMemoryGenerateEntryRecurrenceQueueProducer()
     val clock = MutableScenarioClock(initialDate)
 
     private val walletItemRepository = InMemoryWalletItemRepository()
     private val walletEventRepository = InMemoryWalletEventRepository()
-    private val walletEntryRepository = InMemoryWalletEntryRepository()
+    private val walletEntryRepository = InMemoryWalletEntryRepository(walletEventRepository, walletItemRepository)
     private val recurrenceEventRepositoryRaw = InMemoryRecurrenceEventRepository()
     private val recurrenceEntryRepository = InMemoryRecurrenceEntryRepository()
     private val recurrenceSeriesRepositoryRaw =
@@ -160,6 +211,7 @@ internal class ScenarioRuntime(
             recurrenceEntryRepository = recurrenceEntryRepository,
             walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
+            exchangeRateService = exchangeRateService,
             clock = clock,
         )
 
@@ -212,6 +264,24 @@ internal class ScenarioRuntime(
             bankAccountActionEventService = NoOpBankAccountActionEventService(),
             bankAccountMapper = bankAccountMapper,
             walletEntryCreateService = walletEntryCreateService,
+            clock = clock,
+        )
+
+    val creditCardBillPaymentService: CreditCardBillPaymentService =
+        CreditCardBillPaymentServiceImpl(
+            creditCardBillService = creditCardBillService,
+            bankAccountService = bankAccountService,
+            walletEntryCreateService = walletEntryCreateService,
+        )
+
+    val overviewDashboardService: OverviewDashboardService =
+        OverviewDashboardServiceImpl(
+            walletItemRepository = walletItemRepository,
+            walletItemMapper = walletItemMapper,
+            walletEntryRepository = walletEntryRepository,
+            recurrenceSimulationService = recurrenceSimulationService,
+            creditCardBillService = creditCardBillService,
+            exchangeRateService = exchangeRateService,
             clock = clock,
         )
 }

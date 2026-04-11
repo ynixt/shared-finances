@@ -81,6 +81,7 @@ export class EditBankAccountPageComponent {
         newName: this.formGroup.value.name,
         newEnabled: this.formGroup.value.enabled,
         newCurrency: this.formGroup.value.currency,
+        newShowOnDashboard: this.formGroup.value.showOnDashboard,
       });
 
       this.messageService.add({
@@ -186,6 +187,7 @@ export class EditBankAccountPageComponent {
       name: [this.bankAccount.name, [Validators.required]],
       currency: [this.bankAccount.currency, [Validators.required]],
       enabled: [this.bankAccount.enabled, [Validators.required]],
+      showOnDashboard: [this.bankAccount.showOnDashboard, [Validators.required]],
     });
 
     this.formGroup

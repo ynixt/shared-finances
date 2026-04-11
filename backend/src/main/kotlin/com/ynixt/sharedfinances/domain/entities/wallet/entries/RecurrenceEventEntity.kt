@@ -27,6 +27,7 @@ class RecurrenceEventEntity(
     val endExecution: LocalDate?,
     val seriesId: UUID,
     val seriesOffset: Int,
+    initialBalance: Boolean = false,
 ) : MinimumWalletEventEntity(
         type = type,
         name = name,
@@ -36,6 +37,7 @@ class RecurrenceEventEntity(
         tags = tags,
         observations = observations,
         paymentType = paymentType,
+        initialBalance = initialBalance,
     ) {
     @Transient
     var seriesQtyTotal: Int? = null

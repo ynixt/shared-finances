@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEn
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
@@ -355,6 +356,8 @@ class WalletEventListServiceImpl(
 
         val originEntry = entries.first()
         val targetEntry = entries.getOrNull(1)
+        val originValue = if (event.type == WalletEntryType.TRANSFER) originEntry.value.abs() else null
+        val targetValue = if (event.type == WalletEntryType.TRANSFER) targetEntry?.value?.abs() else null
 
         val user = event.userId?.let { usersById[it] }
         val group = event.groupId?.let { groupsById[it] }
@@ -390,6 +393,8 @@ class WalletEventListServiceImpl(
                     recurrenceConfigId = event.recurrenceEventId,
                     recurrenceConfig = event.recurrenceEventId?.let { recurrenceConfigById[it] },
                     currency = requireNotNull(walletItemById[entries.first().walletItemId]).currency,
+                    originValue = originValue,
+                    targetValue = targetValue,
                 )
             }
 

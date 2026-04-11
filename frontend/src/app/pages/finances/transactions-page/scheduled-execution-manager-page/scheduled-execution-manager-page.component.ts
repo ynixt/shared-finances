@@ -200,16 +200,33 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
     }
   }
 
-  protected getEditableValue(entry: EventForListDto): number {
-    if (entry.type === 'TRANSFER') {
-      return Math.abs(entry.entries[1]?.value ?? 0);
-    }
+  protected showDualTransferAmounts(entry: EventForListDto): boolean {
+    return entry.type === 'TRANSFER' && entry.targetValue != null;
+  }
 
-    if (entry.type === 'EXPENSE') {
-      return Math.abs(entry.entries[0].value);
+  protected getOriginEntry(entry: EventForListDto) {
+    return entry.entries.find(item => item.value < 0) ?? entry.entries[0];
+  }
+
+  protected getTargetEntry(entry: EventForListDto) {
+    const origin = this.getOriginEntry(entry);
+    return entry.entries.find(item => item.walletItemId !== origin.walletItemId) ?? entry.entries[1] ?? entry.entries[0];
+  }
+
+  protected getOriginDisplayValue(entry: EventForListDto): number {
+    if (entry.type === 'TRANSFER') {
+      return entry.originValue ?? Math.abs(this.getOriginEntry(entry).value ?? 0);
     }
 
     return Math.abs(entry.entries[0].value);
+  }
+
+  protected getTargetDisplayValue(entry: EventForListDto): number | null {
+    if (entry.type !== 'TRANSFER') {
+      return null;
+    }
+
+    return entry.targetValue ?? null;
   }
 
   protected statusLabel(entry: EventForListDto): string {

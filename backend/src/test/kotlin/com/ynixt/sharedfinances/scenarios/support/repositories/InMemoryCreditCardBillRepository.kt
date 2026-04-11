@@ -35,6 +35,34 @@ internal class InMemoryCreditCardBillRepository(
                 .map { item -> item.userId == userId }
         }
 
+    override fun findOneByUserIdAndId(
+        userId: UUID,
+        id: UUID,
+    ): Mono<CreditCardBillEntity> =
+        findById(id).filterWhen { bill ->
+            walletItemRepository
+                .findById(bill.creditCardId)
+                .map { item -> item.userId == userId }
+        }
+
+    override fun findAllOpenByUserIdAndDueDateBetween(
+        userId: UUID,
+        minimumDueDate: LocalDate,
+        maximumDueDate: LocalDate,
+    ): Flux<CreditCardBillEntity> =
+        Flux
+            .fromIterable(
+                data.values.filter { bill ->
+                    bill.value < BigDecimal.ZERO &&
+                        !bill.dueDate.isBefore(minimumDueDate) &&
+                        !bill.dueDate.isAfter(maximumDueDate)
+                },
+            ).filterWhen { bill ->
+                walletItemRepository
+                    .findById(bill.creditCardId)
+                    .map { item -> item.userId == userId && item.showOnDashboard }
+            }
+
     override fun addValueById(
         id: UUID,
         value: BigDecimal,

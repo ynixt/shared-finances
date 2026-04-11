@@ -12,5 +12,6 @@ export interface CreditCardDto extends WalletItemDto {
   enabled: boolean;
   id: string;
   name: string;
+  showOnDashboard: boolean;
   userId: string;
 }

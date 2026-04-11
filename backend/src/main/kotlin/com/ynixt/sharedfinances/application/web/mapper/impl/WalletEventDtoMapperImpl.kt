@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.application.web.mapper.RecurrenceEventDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEventDtoMapper
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
@@ -46,6 +47,13 @@ class WalletEventDtoMapperImpl(
                     it.map { item -> walletEntryDtoMapper.fromEntryResponseToDto(item) }
                 }
                 to::recurrenceConfig fromProperty from::recurrenceConfig transform { it?.let { recurrenceEventDtoMapper.toDto(it) } }
+                to::targetValue fromProperty from::targetValue transform {
+                    if (from.id == null && from.type == WalletEntryType.TRANSFER) {
+                        null
+                    } else {
+                        it
+                    }
+                }
             }
     }
 }

@@ -12,6 +12,9 @@ import java.util.UUID
 interface UserSpringDataRepository :
     R2dbcRepository<UserEntity, String>,
     EntityRepository<UserEntity> {
+    @Query("select distinct default_currency from users")
+    fun findDistinctDefaultCurrencies(): Flux<String>
+
     fun findOneByEmail(email: String): Mono<UserEntity>
 
     @Modifying

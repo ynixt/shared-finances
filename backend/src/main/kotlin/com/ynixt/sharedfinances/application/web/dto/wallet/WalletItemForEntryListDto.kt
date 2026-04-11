@@ -8,6 +8,7 @@ data class WalletItemForEntryListDto(
     val id: UUID,
     val name: String,
     val enabled: Boolean,
+    val showOnDashboard: Boolean = true,
     val user: UserSimpleDto?,
     val currency: String,
     val type: WalletItemType,
