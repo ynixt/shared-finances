@@ -11,8 +11,10 @@ import com.ynixt.sharedfinances.application.web.dto.walletentry.ListEntryRequest
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ScheduledExecutionManagerRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.SummaryEntryRequestDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletSourceLegDto
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletItemDtoMapper
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.SummaryEntryRequest
@@ -24,6 +26,7 @@ import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGrouped
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGroupedResult
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.ScheduledExecutionManagerRequest
 import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
@@ -37,7 +40,17 @@ class WalletEntryDtoMapperImpl(
     private val fromSummaryModelToDtoMapper = FromSummaryModelToDtoMapper(entrySummaryGroupedDtoMapper)
     private val fromEntryResponseToDtoMapper = FromEntryResponseToDtoMapper(walletItemDtoMapper)
 
-    override fun fromNewDtoToNewRequest(from: NewEntryDto): NewEntryRequest = FromNewDtoMapper.map(from)
+    override fun fromNewDtoToNewRequest(from: NewEntryDto): NewEntryRequest =
+        when (from.type) {
+            WalletEntryType.TRANSFER -> {
+                requireNotNull(from.originId) { "originId is required for transfer" }
+                FromNewEntryDtoToRequestTransferMapper.map(from)
+            }
+            else -> {
+                require(!from.sources.isNullOrEmpty()) { "sources is required for this entry type" }
+                FromNewEntryDtoToRequestNonTransferMapper.map(from)
+            }
+        }
 
     override fun fromEntryListRequestDtoToModel(from: ListEntryRequestDto): ListEntryRequest =
         FromEntryListRequestDtoToModelMapper.map(from)
@@ -46,7 +59,11 @@ class WalletEntryDtoMapperImpl(
         FromEntrySummaryRequestDtoToModelMapper.map(from)
 
     override fun fromEditScheduledDtoToModel(from: EditScheduledEntryDto): EditScheduledEntryRequest =
-        FromEditScheduledDtoToModelMapper.map(from)
+        EditScheduledEntryRequest(
+            occurrenceDate = from.occurrenceDate,
+            scope = from.scope,
+            entry = fromNewDtoToNewRequest(from.entry),
+        )
 
     override fun fromDeleteScheduledDtoToModel(from: DeleteScheduledEntryDto): DeleteScheduledEntryRequest =
         FromDeleteScheduledDtoToModelMapper.map(from)
@@ -60,9 +77,24 @@ class WalletEntryDtoMapperImpl(
     override fun fromEntryResponseToDto(from: EventListResponse.EntryResponse): EventForListDto.EntryResponseDto =
         fromEntryResponseToDtoMapper.map(from)
 
-    private object FromNewDtoMapper : ObjectMappie<NewEntryDto, NewEntryRequest>() {
+    private object WalletSourceLegDtoToNewLegMapper : ObjectMappie<WalletSourceLegDto, NewWalletSourceLeg>() {
+        override fun map(from: WalletSourceLegDto) =
+            mapping {
+            }
+    }
+
+    private object FromNewEntryDtoToRequestTransferMapper : ObjectMappie<NewEntryDto, NewEntryRequest>() {
         override fun map(from: NewEntryDto) =
             mapping {
+                to::sources fromValue null
+            }
+    }
+
+    private object FromNewEntryDtoToRequestNonTransferMapper : ObjectMappie<NewEntryDto, NewEntryRequest>() {
+        override fun map(from: NewEntryDto) =
+            mapping {
+                to::originId fromValue null
+                to::sources fromProperty from::sources via IterableToListMapper(WalletSourceLegDtoToNewLegMapper)
             }
     }
 
@@ -76,13 +108,6 @@ class WalletEntryDtoMapperImpl(
     private object FromEntrySummaryRequestDtoToModelMapper : ObjectMappie<SummaryEntryRequestDto, SummaryEntryRequest>() {
         override fun map(from: SummaryEntryRequestDto) =
             mapping {
-            }
-    }
-
-    private object FromEditScheduledDtoToModelMapper : ObjectMappie<EditScheduledEntryDto, EditScheduledEntryRequest>() {
-        override fun map(from: EditScheduledEntryDto) =
-            mapping {
-                to::entry fromProperty from::entry via FromNewDtoMapper
             }
     }
 

@@ -14,7 +14,8 @@ import java.util.UUID
 data class NewEntryRequest(
     val type: WalletEntryType,
     val groupId: UUID? = null,
-    val originId: UUID,
+    /** Required for [WalletEntryType.TRANSFER]; for other types use [sources] (or legacy [originId] only). */
+    val originId: UUID? = null,
     val targetId: UUID? = null,
     val name: String? = null,
     val categoryId: UUID? = null,
@@ -38,6 +39,10 @@ data class NewEntryRequest(
     val targetBill: CreditCardBillEntity? = null,
     val category: WalletEntryCategoryEntity? = null,
     val initialBalance: Boolean = false,
+    /** Non-transfer: funding legs with percentages summing to 100. */
+    val sources: List<NewWalletSourceLeg>? = null,
+    /** Populated in [com.ynixt.sharedfinances.resources.services.walletentry.WalletEntrySaveServiceImpl.loadRelationships]. */
+    val resolvedSources: List<ResolvedWalletSourceLeg>? = null,
 ) {
     val valueFixedForType: BigDecimal? = value?.let { type.fixValue(it) }
     val primaryValue: BigDecimal =

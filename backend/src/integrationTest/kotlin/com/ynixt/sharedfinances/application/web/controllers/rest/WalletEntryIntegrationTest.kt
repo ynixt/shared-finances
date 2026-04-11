@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.TransferQuoteRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.TransferRateRequestDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletSourceLegDto
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
@@ -104,8 +105,16 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
                         NewEntryDto(
                             type = WalletEntryType.EXPENSE,
                             groupId = null,
-                            originId = bankAccountId,
+                            originId = null,
                             targetId = null,
+                            sources =
+                                listOf(
+                                    WalletSourceLegDto(
+                                        walletItemId = bankAccountId,
+                                        contributionPercent = BigDecimal("100.00"),
+                                        billDate = null,
+                                    ),
+                                ),
                             name = "Installment Purchase",
                             categoryId = null,
                             date = LocalDate.of(2026, 4, 10),

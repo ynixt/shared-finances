@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
@@ -181,26 +182,59 @@ abstract class WalletEntryMutationSupportServiceImpl(
         date: LocalDate,
     ): NewEntryRequest {
         val entries = config.entries!!.filterIsInstance<RecurrenceEntryEntity>()
-        val origin = entries.first()
-        val target = entries.getOrNull(1)
 
+        if (config.type == WalletEntryType.TRANSFER) {
+            val origin = entries.first { it.value < BigDecimal.ZERO }
+            val target = entries.first { it.walletItemId != origin.walletItemId }
+
+            return NewEntryRequest(
+                type = config.type,
+                groupId = config.groupId,
+                originId = origin.walletItemId,
+                targetId = target.walletItemId,
+                name = config.name,
+                categoryId = config.categoryId,
+                date = date,
+                value = null,
+                originValue = origin.value.abs(),
+                targetValue = null,
+                confirmed = false,
+                observations = config.observations,
+                paymentType = config.paymentType,
+                installments = if (config.paymentType == PaymentType.INSTALLMENTS) config.qtyLimit else null,
+                periodicity = config.periodicity,
+                periodicityQtyLimit = if (config.paymentType == PaymentType.RECURRING) config.qtyLimit else null,
+                originBillDate = origin.nextBillDate,
+                targetBillDate = target.nextBillDate,
+                tags = config.tags,
+            )
+        }
+
+        val sources =
+            entries.map { e ->
+                NewWalletSourceLeg(
+                    walletItemId = e.walletItemId,
+                    contributionPercent = e.contributionPercent ?: BigDecimal("100.00"),
+                    billDate = e.nextBillDate,
+                )
+            }
         val value =
             when (config.type) {
-                WalletEntryType.REVENUE -> origin.value
-                WalletEntryType.EXPENSE -> origin.value.negate()
+                WalletEntryType.REVENUE -> entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.value) }
+                WalletEntryType.EXPENSE -> entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.value) }.negate()
                 WalletEntryType.TRANSFER -> null
             }
 
         return NewEntryRequest(
             type = config.type,
             groupId = config.groupId,
-            originId = origin.walletItemId,
-            targetId = target?.walletItemId,
+            originId = entries.first().walletItemId,
+            targetId = null,
             name = config.name,
             categoryId = config.categoryId,
             date = date,
             value = value,
-            originValue = if (config.type == WalletEntryType.TRANSFER) origin.value.abs() else null,
+            originValue = null,
             targetValue = null,
             confirmed = false,
             observations = config.observations,
@@ -208,9 +242,10 @@ abstract class WalletEntryMutationSupportServiceImpl(
             installments = if (config.paymentType == PaymentType.INSTALLMENTS) config.qtyLimit else null,
             periodicity = config.periodicity,
             periodicityQtyLimit = if (config.paymentType == PaymentType.RECURRING) config.qtyLimit else null,
-            originBillDate = origin.nextBillDate,
-            targetBillDate = target?.nextBillDate,
+            originBillDate = entries.first().nextBillDate,
+            targetBillDate = null,
             tags = config.tags,
+            sources = sources,
         )
     }
 
@@ -363,13 +398,19 @@ abstract class WalletEntryMutationSupportServiceImpl(
         ).also { recurrence ->
             val origin = preparedRequest.origin
             val target = preparedRequest.target
+            val sourcesById =
+                preparedRequest.resolvedSources?.associateBy { it.walletItemId }.orEmpty()
 
             recurrence.entries?.forEach { entry ->
                 val model =
-                    when (entry.walletItemId) {
-                        preparedRequest.originId -> origin
-                        preparedRequest.targetId -> target
-                        else -> null
+                    when (preparedRequest.type) {
+                        WalletEntryType.TRANSFER ->
+                            when (entry.walletItemId) {
+                                preparedRequest.originId -> origin
+                                preparedRequest.targetId -> target
+                                else -> null
+                            }
+                        else -> sourcesById[entry.walletItemId]?.walletItem
                     } ?: return@forEach
 
                 entry.walletItem = walletItemMapper.fromModel(model)

@@ -35,5 +35,6 @@ data class EventListResponse(
         val walletItemId: UUID,
         val billDate: LocalDate?,
         val billId: UUID?,
+        val contributionPercent: BigDecimal? = null,
     )
 }

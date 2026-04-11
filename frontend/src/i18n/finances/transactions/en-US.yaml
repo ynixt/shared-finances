@@ -27,6 +27,12 @@ financesPage:
     periodicity: Periodicity
     periodicityQtyLimit: Repeat n times
     bill: Bill
+    primarySourcePercent: Primary source percentage
+    extraFundingSource: Additional source
+    removeFundingSource: Remove source
+    sourcePercent: Source percentage
+    addFundingSource: Add another source
+    sourcePercentsMustEqual100: 'Source percentages must total 100% (current total {{sum}}%).'
     originBill: Origin bill
     targetBill: Target bill
     tags: Tags

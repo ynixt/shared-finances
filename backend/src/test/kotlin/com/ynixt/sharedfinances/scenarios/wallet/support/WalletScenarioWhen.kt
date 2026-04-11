@@ -9,8 +9,10 @@ import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
@@ -90,6 +92,106 @@ class WalletScenarioWhen internal constructor(
                     ),
             )
 
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
+    }
+
+    suspend fun multiOriginExpense(
+        value: Number,
+        date: LocalDate,
+        sources: List<Pair<UUID, BigDecimal>>,
+        name: String = "Multi-origin expense",
+        confirmed: Boolean = true,
+    ) {
+        val userId = resolver.ensureUser()
+        val legs =
+            sources.map { (id, pct) ->
+                val item =
+                    requireNotNull(runtime.walletItemService.findOne(id)) {
+                        "Wallet item $id was not found"
+                    }
+                val billDate =
+                    if (item is CreditCard) {
+                        item.getBestBill(date)
+                    } else {
+                        null
+                    }
+                NewWalletSourceLeg(
+                    walletItemId = id,
+                    contributionPercent = pct,
+                    billDate = billDate,
+                )
+            }
+
+        val created =
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest =
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        date = date,
+                        value = value.toBigDecimalSafe(),
+                        name = name,
+                        confirmed = confirmed,
+                        paymentType = PaymentType.UNIQUE,
+                        sources = legs,
+                    ),
+            )
+
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
+    }
+
+    suspend fun multiOriginInstallmentPurchase(
+        total: Number,
+        installments: Int,
+        date: LocalDate,
+        sources: List<Pair<UUID, BigDecimal>>,
+        name: String = "Multi-origin installment",
+    ) {
+        require(installments > 1) { "Installments should be greater than 1" }
+
+        val userId = resolver.ensureUser()
+        val installmentValue =
+            total
+                .toBigDecimalSafe()
+                .divide(installments.toBigDecimal(), 2, RoundingMode.HALF_UP)
+
+        val legs =
+            sources.map { (id, pct) ->
+                val item =
+                    requireNotNull(runtime.walletItemService.findOne(id)) {
+                        "Wallet item $id was not found"
+                    }
+                val billDate =
+                    if (item is CreditCard) {
+                        item.getBestBill(date)
+                    } else {
+                        null
+                    }
+                NewWalletSourceLeg(
+                    walletItemId = id,
+                    contributionPercent = pct,
+                    billDate = billDate,
+                )
+            }
+
+        val created =
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest =
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        date = date,
+                        value = installmentValue,
+                        name = name,
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = installments,
+                        periodicity = RecurrenceType.MONTHLY,
+                        sources = legs,
+                    ),
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
         context.lastWalletEventId = resolver.extractWalletEventId(created)
     }
 

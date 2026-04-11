@@ -380,6 +380,7 @@ class WalletEventListServiceImpl(
                                 walletItem = walletItem,
                                 billDate = entry.bill?.billDate,
                                 billId = entry.billId,
+                                contributionPercent = entry.contributionPercent,
                             )
                         },
                     category = category,

@@ -75,6 +75,65 @@
     }
   </div>
 
+  @if (!isTransfer) {
+    @if (extraSourceLegs.length > 0) {
+      <label class="flex max-w-xs flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.primarySourcePercent' | translate }}</span>
+        <p-input-number
+          formControlName="primaryOriginContributionPercent"
+          [min]="0.01"
+          [max]="100"
+          suffix="%"
+          [showButtons]="true"
+          fluid
+        ></p-input-number>
+      </label>
+    }
+
+    <div formArrayName="extraSourceLegs" class="flex flex-col gap-3">
+      @for (ctrl of extraSourceLegs.controls; track $index; let i = $index) {
+        <div [formGroupName]="i" class="flex flex-col gap-2 rounded-xl border border-slate-200 p-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium text-slate-800">{{ 'financesPage.transactionsPage.extraFundingSource' | translate }}</span>
+            <button type="button" pButton class="p-button-text p-button-sm" (click)="removeExtraSourceLeg(i)">
+              {{ 'financesPage.transactionsPage.removeFundingSource' | translate }}
+            </button>
+          </div>
+          <app-wallet-item-picker [group]="selectedGroup" formControlName="walletItem"></app-wallet-item-picker>
+          <label class="flex max-w-xs flex-col gap-2">
+            <span>{{ 'financesPage.transactionsPage.sourcePercent' | translate }}</span>
+            <p-input-number
+              formControlName="contributionPercent"
+              [min]="0.01"
+              [max]="100"
+              suffix="%"
+              [showButtons]="true"
+              fluid
+            ></p-input-number>
+          </label>
+          @if (ctrl.get('walletItem')?.value?.type === 'CREDIT_CARD') {
+            <label class="flex flex-col gap-2">
+              <span
+                >{{ 'financesPage.transactionsPage.bill' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+              ></span>
+              <app-date-picker formControlName="bill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
+            </label>
+          }
+        </div>
+      }
+    </div>
+
+    <button type="button" pButton outlined class="w-full md:w-auto" (click)="addExtraSourceLeg()">
+      {{ 'financesPage.transactionsPage.addFundingSource' | translate }}
+    </button>
+
+    @if (form.errors?.['sourcePercentsSum']; as err) {
+      <p class="text-sm text-red-700">
+        {{ 'financesPage.transactionsPage.sourcePercentsMustEqual100' | translate: { sum: err.sum } }}
+      </p>
+    }
+  }
+
   <div class="grid md:grid-cols-2 gap-2">
     <label class="flex flex-col gap-2">
       <span>{{ 'general.name' | translate }}</span>

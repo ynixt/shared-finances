@@ -1,5 +1,5 @@
 import '@angular/compiler';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
 
 import { describe, expect, it } from 'vitest';
 
@@ -82,17 +82,21 @@ function buildForm(): NewTransactionForm {
     originBill: new FormControl(undefined),
     targetBill: new FormControl(undefined),
     tags: new FormControl(['fx']),
-  }) as NewTransactionForm;
+    primaryOriginContributionPercent: new FormControl(100),
+    extraSourceLegs: new FormArray([]),
+  }) as unknown as NewTransactionForm;
 }
 
 describe('transaction-form.mapper', () => {
   it('maps explicit transfer origin and target amounts into the edit form patch', () => {
-    const patch = mapEventToTransactionFormPatch(buildTransferEvent());
+    const hydration = mapEventToTransactionFormPatch(buildTransferEvent());
 
-    expect(patch.value).toBe(100);
-    expect(patch.targetValue).toBe(540.25);
-    expect(patch.origin?.id).toBe('origin-wallet');
-    expect(patch.target?.id).toBe('target-wallet');
+    expect(hydration.patch.value).toBe(100);
+    expect(hydration.patch.targetValue).toBe(540.25);
+    expect(hydration.patch.origin?.id).toBe('origin-wallet');
+    expect(hydration.patch.target?.id).toBe('target-wallet');
+    expect(hydration.primaryOriginContributionPercent).toBe(100);
+    expect(hydration.extraSourceLegs).toEqual([]);
   });
 
   it('serializes explicit transfer amounts into the new entry dto', () => {

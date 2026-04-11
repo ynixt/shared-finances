@@ -1,4 +1,4 @@
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
 
 import { GroupDto, GroupWithRoleDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { WalletItemSearchResponseDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
@@ -12,6 +12,13 @@ export enum ValueType {
 }
 
 export type SelectableGroup = GroupDto | GroupWithRoleDto;
+
+/** Additional funding sources (non-transfer); primary origin stays on `origin`. */
+export type ExtraSourceLegForm = FormGroup<{
+  walletItem: FormControl<WalletItemSearchResponseDto | undefined>;
+  contributionPercent: FormControl<number | undefined>;
+  bill: FormControl<Date | undefined>;
+}>;
 
 export type NewTransactionForm = FormGroup<{
   type: FormControl<WalletEntryType | undefined>;
@@ -34,6 +41,8 @@ export type NewTransactionForm = FormGroup<{
   originBill: FormControl<Date | undefined>;
   targetBill: FormControl<Date | undefined>;
   tags: FormControl<string[] | undefined>;
+  primaryOriginContributionPercent: FormControl<number | undefined>;
+  extraSourceLegs: FormArray<ExtraSourceLegForm>;
 }>;
 
 export type TransactionFormMode = 'create' | 'edit';

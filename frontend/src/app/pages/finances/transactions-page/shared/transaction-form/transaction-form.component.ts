@@ -1,5 +1,5 @@
 import { Component, Signal, computed, effect, inject, input, output, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -42,8 +42,14 @@ import { WalletItemPickerComponent } from '../../../components/item-picker/walle
 import { CreditCardBillService } from '../../../services/credit-card-bill.service';
 import { GroupService } from '../../../services/group.service';
 import { WalletEntryService } from '../../../services/wallet-entry.service';
-import { mapEventToTransactionFormPatch, mapTransactionFormToNewEntryDto } from './transaction-form.mapper';
-import { NewTransactionForm, TransactionFormInitialData, TransactionFormMode, ValueType } from './transaction-form.types';
+import { ExtraSourceLegInit, mapEventToTransactionFormPatch, mapTransactionFormToNewEntryDto } from './transaction-form.mapper';
+import {
+  ExtraSourceLegForm,
+  NewTransactionForm,
+  TransactionFormInitialData,
+  TransactionFormMode,
+  ValueType,
+} from './transaction-form.types';
 
 @Component({
   selector: 'app-transaction-form',
@@ -128,6 +134,10 @@ export class TransactionFormComponent {
 
   get originControl() {
     return this.form.get('origin')!!;
+  }
+
+  get extraSourceLegs(): FormArray<ExtraSourceLegForm> {
+    return this.form.get('extraSourceLegs') as FormArray<ExtraSourceLegForm>;
   }
 
   get targetControl() {
@@ -259,6 +269,8 @@ export class TransactionFormComponent {
         originBill: [undefined, []],
         targetBill: [undefined, []],
         tags: [undefined, []],
+        primaryOriginContributionPercent: [100, [Validators.min(0.01), Validators.max(100)]],
+        extraSourceLegs: this.formBuilder.array<ExtraSourceLegForm>([]),
       },
       {
         validators: [
@@ -267,11 +279,24 @@ export class TransactionFormComponent {
           this.requiredOnlyIfInstallment,
           this.requiredOnlyOnOriginCreditCard,
           this.requiredOnlyOnTargetCreditCard,
+          this.sourcePercentsMustSumTo100,
+          this.requiredExtraSourceLegFields,
         ],
       },
     ) as NewTransactionForm;
 
     this.calculatedValueControl.disable();
+
+    combineLatest([
+      this.form
+        .get('primaryOriginContributionPercent')!
+        .valueChanges.pipe(startWith(this.form.get('primaryOriginContributionPercent')!.value)),
+      this.extraSourceLegs.valueChanges.pipe(startWith(this.extraSourceLegs.value)),
+    ])
+      .pipe(untilDestroyed(this))
+      .subscribe(() => {
+        this.form.updateValueAndValidity({ emitEvent: false });
+      });
 
     effect(() => {
       if (this.mode() === 'edit') {
@@ -293,7 +318,10 @@ export class TransactionFormComponent {
 
       this.hydratedEntryKey = entryKey;
       this.isHydrating = true;
-      this.form.patchValue(mapEventToTransactionFormPatch(entry));
+      const hydration = mapEventToTransactionFormPatch(entry);
+      this.form.patchValue(hydration.patch);
+      this.form.get('primaryOriginContributionPercent')?.setValue(hydration.primaryOriginContributionPercent);
+      this.resetExtraSourceLegs(hydration.extraSourceLegs);
       this.isHydrating = false;
       this.lastTransferRateSnapshot = null;
       this.transferRateDisplay.set(null);
@@ -320,6 +348,8 @@ export class TransactionFormComponent {
       if (this.isHydrating) return;
       this.form.get('origin')?.reset();
       this.form.get('target')?.reset();
+      this.resetExtraSourceLegs([]);
+      this.form.get('primaryOriginContributionPercent')?.setValue(100);
       this.resetTargetValueControl();
       this.transferRateDisplay.set(null);
       this.lastTransferRateSnapshot = null;
@@ -329,6 +359,8 @@ export class TransactionFormComponent {
     this.typeControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
       if (this.isHydrating) return;
       this.form.get('target')?.reset();
+      this.resetExtraSourceLegs([]);
+      this.form.get('primaryOriginContributionPercent')?.setValue(100);
       this.resetTargetValueControl();
       this.transferQuoteError.set(null);
       this.transferRateDisplay.set(null);
@@ -503,6 +535,113 @@ export class TransactionFormComponent {
 
     this.typeControl.setValue(type);
   }
+
+  addExtraSourceLeg(): void {
+    const arr = this.extraSourceLegs;
+    if (arr.length === 0) {
+      this.form.get('primaryOriginContributionPercent')?.setValue(50);
+      const g = this.createExtraSourceLegGroup({ contributionPercent: 50 });
+      arr.push(g);
+      this.attachExtraLegBillSync(g);
+    } else {
+      const g = this.createExtraSourceLegGroup({});
+      arr.push(g);
+      this.attachExtraLegBillSync(g);
+    }
+    this.form.updateValueAndValidity({ emitEvent: false });
+  }
+
+  removeExtraSourceLeg(index: number): void {
+    this.extraSourceLegs.removeAt(index);
+    if (this.extraSourceLegs.length === 0) {
+      this.form.get('primaryOriginContributionPercent')?.setValue(100);
+    }
+    this.form.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private createExtraSourceLegGroup(init: Partial<ExtraSourceLegInit> = {}): ExtraSourceLegForm {
+    return this.formBuilder.group({
+      walletItem: [init.walletItem, [Validators.required]],
+      contributionPercent: [init.contributionPercent, [Validators.required, Validators.min(0.01), Validators.max(100)]],
+      bill: [init.bill],
+    }) as ExtraSourceLegForm;
+  }
+
+  private resetExtraSourceLegs(legs: ExtraSourceLegInit[]): void {
+    const arr = this.extraSourceLegs;
+    while (arr.length) {
+      arr.removeAt(0);
+    }
+    for (const leg of legs) {
+      const g = this.createExtraSourceLegGroup(leg);
+      arr.push(g);
+      this.attachExtraLegBillSync(g);
+    }
+  }
+
+  private attachExtraLegBillSync(group: ExtraSourceLegForm): void {
+    combineLatest([
+      this.dateControl.valueChanges.pipe(startWith(this.dateControl.value)),
+      group.get('walletItem')!.valueChanges.pipe(startWith(group.get('walletItem')!.value)),
+    ])
+      .pipe(untilDestroyed(this))
+      .subscribe(([date, w]) => {
+        if (this.isHydrating) {
+          return;
+        }
+        if (w?.type === 'CREDIT_CARD' && w.dueDay != null && w.dueOnNextBusinessDay != null && w.daysBetweenDueAndClosing != null) {
+          group
+            .get('bill')!
+            .setValue(
+              this.creditCardBillService
+                .getBestBill(date ?? new Date(), w.dueDay, w.dueOnNextBusinessDay, w.daysBetweenDueAndClosing)
+                .toDate(),
+            );
+        } else if (w?.type !== 'CREDIT_CARD') {
+          group.get('bill')?.reset();
+        }
+      });
+  }
+
+  private sourcePercentsMustSumTo100 = (group: NewTransactionForm): ValidationErrors | null => {
+    const type = group.get('type')?.value;
+    if (type === WalletEntryType__Obj.TRANSFER) {
+      return null;
+    }
+    // Use `group`, not `this.form`: validators run while `group()` is still constructing and `this.form` is not assigned yet.
+    const arr = group.get('extraSourceLegs') as FormArray<ExtraSourceLegForm> | null;
+    if (!arr) {
+      return null;
+    }
+    const primary = arr.length === 0 ? 100 : Number(group.get('primaryOriginContributionPercent')?.value ?? 0);
+    let sum = primary;
+    for (let i = 0; i < arr.length; i++) {
+      sum += Number(arr.at(i).get('contributionPercent')?.value ?? 0);
+    }
+    const rounded = Math.round(sum * 100) / 100;
+    if (rounded !== 100) {
+      return { sourcePercentsSum: { sum: rounded } };
+    }
+    return null;
+  };
+
+  private requiredExtraSourceLegFields = (group: NewTransactionForm): ValidationErrors | null => {
+    const type = group.get('type')?.value;
+    if (type === WalletEntryType__Obj.TRANSFER) {
+      return null;
+    }
+    const arr = group.get('extraSourceLegs') as FormArray<ExtraSourceLegForm> | null;
+    if (!arr) {
+      return null;
+    }
+    for (let i = 0; i < arr.length; i++) {
+      const g = arr.at(i) as FormGroup;
+      const w = g.get('walletItem')?.value;
+      const billCtrl = g.get('bill')!!;
+      this.requireFieldsIf(billCtrl, w?.type === 'CREDIT_CARD');
+    }
+    return null;
+  };
 
   isTypeOptionDisabled(type: WalletEntryType): boolean {
     if (this.mode() !== 'edit') {

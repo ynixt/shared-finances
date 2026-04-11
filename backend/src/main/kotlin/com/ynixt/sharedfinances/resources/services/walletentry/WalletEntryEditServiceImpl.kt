@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimit
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
@@ -609,11 +610,20 @@ class WalletEntryEditServiceImpl(
                 .also { entries ->
                     entries.forEachIndexed { index, entry ->
                         entry.event = savedEvent
-                        entry.bill = if (index == 0) preparedRequest.originBill else preparedRequest.targetBill
-                        entry.walletItem =
-                            walletItemMapper.fromModel(
-                                if (index == 0) preparedRequest.origin!! else preparedRequest.target!!,
-                            )
+                        when (preparedRequest.type) {
+                            WalletEntryType.TRANSFER -> {
+                                entry.bill = if (index == 0) preparedRequest.originBill else preparedRequest.targetBill
+                                entry.walletItem =
+                                    walletItemMapper.fromModel(
+                                        if (index == 0) preparedRequest.origin!! else preparedRequest.target!!,
+                                    )
+                            }
+                            else -> {
+                                val leg = preparedRequest.resolvedSources!![index]
+                                entry.bill = leg.bill
+                                entry.walletItem = walletItemMapper.fromModel(leg.walletItem)
+                            }
+                        }
                     }
                 }
 
@@ -788,14 +798,13 @@ class WalletEntryEditServiceImpl(
             return
         }
 
-        if (segments.first().paymentType != PaymentType.INSTALLMENTS || preparedRequest.origin?.type != WalletItemType.CREDIT_CARD) {
+        if (segments.first().paymentType != PaymentType.INSTALLMENTS) {
             return
         }
 
-        val newValue = extractSignedEntryValue(preparedRequest)
         val generatedCountBySegment = generatedOccurrences.groupBy { it.segment.id!! }.mapValues { (_, value) -> value.size }
 
-        var totalDelta = BigDecimal.ZERO
+        val deltaByWallet = mutableMapOf<UUID, BigDecimal>()
         var totalNonGeneratedCount = 0
 
         segments.forEach { segment ->
@@ -808,28 +817,36 @@ class WalletEntryEditServiceImpl(
                 return@forEach
             }
 
-            val oldValue =
-                segment.entries!!
-                    .filterIsInstance<RecurrenceEntryEntity>()
-                    .first()
-                    .value
-            totalDelta = totalDelta.add(newValue.subtract(oldValue).multiply(affectedNonGenerated.toBigDecimal()))
+            val oldEntries = segment.entries!!.filterIsInstance<RecurrenceEntryEntity>()
+            installmentReservationDeltasPerWallet(
+                preparedRequest = preparedRequest,
+                oldEntries = oldEntries,
+                affectedCount = affectedNonGenerated,
+            ).forEach { (walletId, delta) ->
+                deltaByWallet.merge(walletId, delta, BigDecimal::add)
+            }
             totalNonGeneratedCount += affectedNonGenerated
         }
 
         if (totalNonGeneratedCount == 0 && nonGeneratedFallbackCount > 0) {
-            val oldValue =
+            val oldEntries =
                 segments
                     .first()
                     .entries!!
                     .filterIsInstance<RecurrenceEntryEntity>()
-                    .first()
-                    .value
-            totalDelta = newValue.subtract(oldValue).multiply(nonGeneratedFallbackCount.toBigDecimal())
+            installmentReservationDeltasPerWallet(
+                preparedRequest = preparedRequest,
+                oldEntries = oldEntries,
+                affectedCount = nonGeneratedFallbackCount,
+            ).forEach { (walletId, delta) ->
+                deltaByWallet.merge(walletId, delta, BigDecimal::add)
+            }
         }
 
-        if (totalDelta != BigDecimal.ZERO) {
-            walletItemService.addBalanceById(preparedRequest.originId, totalDelta)
+        deltaByWallet.forEach { (walletId, delta) ->
+            if (delta.compareTo(BigDecimal.ZERO) != 0) {
+                walletItemService.addBalanceById(walletId, delta)
+            }
         }
     }
 
@@ -879,26 +896,54 @@ class WalletEntryEditServiceImpl(
             return
         }
 
-        if (preparedRequest.origin?.type != WalletItemType.CREDIT_CARD) {
-            return
-        }
-
-        val oldValue =
-            config.entries!!
-                .filterIsInstance<RecurrenceEntryEntity>()
-                .first()
-                .value
-        val newValue =
-            when (preparedRequest.type) {
-                WalletEntryType.REVENUE -> requireNotNull(preparedRequest.value)
-                WalletEntryType.EXPENSE -> requireNotNull(preparedRequest.value).negate()
-                WalletEntryType.TRANSFER -> requireNotNull(preparedRequest.transferOriginValue).negate()
+        val oldEntries = config.entries!!.filterIsInstance<RecurrenceEntryEntity>()
+        installmentReservationDeltasPerWallet(
+            preparedRequest = preparedRequest,
+            oldEntries = oldEntries,
+            affectedCount = affectedOccurrences,
+        ).forEach { (walletId, delta) ->
+            if (delta.compareTo(BigDecimal.ZERO) != 0) {
+                walletItemService.addBalanceById(walletId, delta)
             }
-
-        val delta = newValue.subtract(oldValue).multiply(affectedOccurrences.toBigDecimal())
-        if (delta != BigDecimal.ZERO) {
-            walletItemService.addBalanceById(preparedRequest.originId, delta)
         }
+    }
+
+    private fun installmentReservationDeltasPerWallet(
+        preparedRequest: NewEntryRequest,
+        oldEntries: List<RecurrenceEntryEntity>,
+        affectedCount: Int,
+    ): Map<UUID, BigDecimal> {
+        if (affectedCount <= 0) {
+            return emptyMap()
+        }
+        val result = mutableMapOf<UUID, BigDecimal>()
+        if (preparedRequest.type == WalletEntryType.TRANSFER) {
+            if (preparedRequest.origin?.type != WalletItemType.CREDIT_CARD) {
+                return emptyMap()
+            }
+            val oldVal = oldEntries.first().value
+            val newVal = extractSignedEntryValue(preparedRequest)
+            val delta = newVal.subtract(oldVal).multiply(affectedCount.toBigDecimal())
+            result[oldEntries.first().walletItemId] = delta
+            return result
+        }
+        val legs = preparedRequest.resolvedSources ?: return emptyMap()
+        val totalMag = requireNotNull(preparedRequest.value).abs()
+        val newVals =
+            WalletSourceSplit.distributeLegValues(
+                preparedRequest.type,
+                totalMag,
+                legs.map { it.contributionPercent },
+            )
+        oldEntries.forEachIndexed { i, old ->
+            if (old.walletItem?.type != WalletItemType.CREDIT_CARD) {
+                return@forEachIndexed
+            }
+            val newV = newVals.getOrNull(i) ?: return@forEachIndexed
+            val delta = newV.subtract(old.value).multiply(affectedCount.toBigDecimal())
+            result.merge(old.walletItemId, delta, BigDecimal::add)
+        }
+        return result
     }
 
     private fun resolveRequestedSeriesQtyTotal(request: NewEntryRequest): Int? =
@@ -916,6 +961,7 @@ class WalletEntryEditServiceImpl(
             currentRequest.groupId != preparedRequest.groupId ||
             currentRequest.originId != preparedRequest.originId ||
             currentRequest.targetId != preparedRequest.targetId ||
+            !sameScheduledSources(currentRequest, preparedRequest) ||
             currentRequest.name != preparedRequest.name ||
             currentRequest.categoryId != preparedRequest.categoryId ||
             currentRequest.primaryValue.compareTo(preparedRequest.primaryValue) != 0 ||
@@ -925,6 +971,25 @@ class WalletEntryEditServiceImpl(
             currentRequest.originBillDate != preparedRequest.originBillDate ||
             currentRequest.targetBillDate != preparedRequest.targetBillDate ||
             normalizeTags(currentRequest.tags) != normalizeTags(preparedRequest.tags)
+
+    private fun sameScheduledSources(
+        a: NewEntryRequest,
+        b: NewEntryRequest,
+    ): Boolean {
+        if (a.type == WalletEntryType.TRANSFER) {
+            return true
+        }
+        val sa = a.sources ?: return false
+        val sb = b.sources ?: return false
+        if (sa.size != sb.size) {
+            return false
+        }
+        return sa.zip(sb).all { (x, y) ->
+            x.walletItemId == y.walletItemId &&
+                x.contributionPercent.compareTo(y.contributionPercent) == 0 &&
+                x.billDate == y.billDate
+        }
+    }
 
     private fun normalizeTags(tags: List<String>?): List<String>? = tags?.ifEmpty { null }
 

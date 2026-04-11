@@ -73,6 +73,7 @@ class WalletEntryEntity(
     walletEventId: UUID,
     walletItemId: UUID,
     val billId: UUID?,
+    val contributionPercent: BigDecimal? = null,
 ) : MinimumWalletEntryEntity(
         value = value,
         walletEventId = walletEventId,

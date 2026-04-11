@@ -219,6 +219,7 @@ class WalletEntryCreateServiceImpl(
                             value = resolvedTransferValuesByWalletItemId[entryTemplate.walletItemId] ?: entryTemplate.value,
                             walletItemId = walletItemsForEntries[index].id!!,
                             billId = bills[index]?.id,
+                            contributionPercent = entryTemplate.contributionPercent,
                         )
                     },
                 ).asFlow()
@@ -321,16 +322,17 @@ class WalletEntryCreateServiceImpl(
             )
         }.also {
             it.entries!!.forEachIndexed { index, entity ->
-                entity.walletItem =
-                    (
-                        if (index ==
-                            0
-                        ) {
-                            newEntryRequest.origin
-                        } else {
-                            newEntryRequest.target
-                        }
-                    )?.let { origin -> walletItemMapper.fromModel(origin) }
+                val model =
+                    when (newEntryRequest.type) {
+                        WalletEntryType.TRANSFER ->
+                            if (index == 0) {
+                                newEntryRequest.origin
+                            } else {
+                                newEntryRequest.target
+                            }
+                        else -> newEntryRequest.resolvedSources!![index].walletItem
+                    }
+                entity.walletItem = model?.let { w -> walletItemMapper.fromModel(w) }
             }
         }
     }
@@ -373,8 +375,20 @@ class WalletEntryCreateServiceImpl(
 
         return event.also {
             it.entries!!.filterIsInstance<WalletEntryEntity>().forEachIndexed { index, entry ->
-                entry.bill = if (index == 0) newEntryRequest.originBill else newEntryRequest.targetBill
-                entry.walletItem = walletItemMapper.fromModel(if (index == 0) newEntryRequest.origin!! else newEntryRequest.target!!)
+                when (newEntryRequest.type) {
+                    WalletEntryType.TRANSFER -> {
+                        entry.bill = if (index == 0) newEntryRequest.originBill else newEntryRequest.targetBill
+                        entry.walletItem =
+                            walletItemMapper.fromModel(
+                                if (index == 0) newEntryRequest.origin!! else newEntryRequest.target!!,
+                            )
+                    }
+                    else -> {
+                        val leg = newEntryRequest.resolvedSources!![index]
+                        entry.bill = leg.bill
+                        entry.walletItem = walletItemMapper.fromModel(leg.walletItem)
+                    }
+                }
 
                 updateBalance(entry)
             }

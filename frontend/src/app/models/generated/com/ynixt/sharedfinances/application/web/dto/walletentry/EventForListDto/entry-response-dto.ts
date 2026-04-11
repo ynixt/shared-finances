@@ -5,6 +5,7 @@ import { WalletItemForEntryListDto } from '../../wallet/wallet-item-for-entry-li
 export interface EntryResponseDto {
   billDate?: string | null;
   billId?: string | null;
+  contributionPercent?: number | null;
   value: number;
   walletItem: WalletItemForEntryListDto;
   walletItemId: string;

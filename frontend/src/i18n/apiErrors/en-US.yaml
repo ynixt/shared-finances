@@ -21,3 +21,4 @@ apiErrors:
   mfaAlreadyEnabled: 2-step is already enabled.
   mfaEnrollmentNotFound: We were unable to configure the 2-step process. Please refresh the page and try again.
   emailAlreadyInUse: Account temporarily blocked due to too many incorrect login attempts.
+  mixedCurrencyWalletSources: Multiple sources with different currencies are not supported.

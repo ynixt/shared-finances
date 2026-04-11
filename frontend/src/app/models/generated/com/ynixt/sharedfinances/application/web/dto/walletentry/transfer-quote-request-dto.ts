@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 export interface TransferQuoteRequestDto {
   date: string;
   groupId?: string | null;

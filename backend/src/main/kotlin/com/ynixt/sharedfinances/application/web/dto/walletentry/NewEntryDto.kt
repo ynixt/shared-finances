@@ -10,8 +10,11 @@ import java.util.UUID
 data class NewEntryDto(
     val type: WalletEntryType,
     val groupId: UUID?,
-    val originId: UUID,
+    /** Required for [WalletEntryType.TRANSFER]. */
+    val originId: UUID? = null,
     val targetId: UUID?,
+    /** Required for non-transfer types (sum of percents = 100). */
+    val sources: List<WalletSourceLegDto>? = null,
     val name: String?,
     val categoryId: UUID?,
     val date: LocalDate,

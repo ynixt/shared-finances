@@ -18,7 +18,8 @@ class WalletEntryR2DBCMapping {
             $tableAlias.value                           AS ${columnPrefix}value,
             $tableAlias.wallet_event_id                 AS ${columnPrefix}wallet_event_id,
             $tableAlias.wallet_item_id                  AS ${columnPrefix}wallet_item_id,
-            $tableAlias.bill_id                         AS ${columnPrefix}bill_id
+            $tableAlias.bill_id                         AS ${columnPrefix}bill_id,
+            $tableAlias.contribution_percent            AS ${columnPrefix}contribution_percent
             """.trimIndent()
 
         fun walletEntryFromRow(
@@ -30,6 +31,7 @@ class WalletEntryR2DBCMapping {
                 walletEventId = row.get("${columnPrefix}wallet_event_id", UUID::class.java)!!,
                 walletItemId = row.get("${columnPrefix}wallet_item_id", UUID::class.java)!!,
                 billId = row.get("${columnPrefix}bill_id", UUID::class.java),
+                contributionPercent = row.get("${columnPrefix}contribution_percent", BigDecimal::class.java),
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

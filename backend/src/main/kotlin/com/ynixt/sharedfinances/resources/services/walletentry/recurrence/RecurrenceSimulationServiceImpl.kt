@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.services.walletentry.recurrence
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
@@ -373,6 +374,7 @@ class RecurrenceSimulationServiceImpl(
                         walletItem = walletItems.find { wt -> wt.id == entry.walletItemId }!!,
                         billDate = simulatedBillDateByWalletItemId?.get(entry.walletItemId) ?: bill?.billDate,
                         billId = bill?.id,
+                        contributionPercent = (entry as? RecurrenceEntryEntity)?.contributionPercent,
                     )
                 },
             category = category,

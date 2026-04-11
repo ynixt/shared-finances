@@ -50,6 +50,7 @@ class RecurrenceEntryEntity(
     walletItemId: UUID,
     val nextBillDate: LocalDate?,
     val lastBillDate: LocalDate?,
+    val contributionPercent: BigDecimal? = null,
 ) : MinimumWalletEntryEntity(
         value = value,
         walletEventId = walletEventId,

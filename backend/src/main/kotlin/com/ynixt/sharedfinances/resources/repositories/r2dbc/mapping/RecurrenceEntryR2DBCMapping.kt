@@ -20,7 +20,8 @@ class RecurrenceEntryR2DBCMapping {
             $tableAlias.wallet_event_id                 AS ${columnPrefix}wallet_event_id,
             $tableAlias.wallet_item_id                  AS ${columnPrefix}wallet_item_id,
             $tableAlias.next_bill_date                  AS ${columnPrefix}next_bill_date,
-            $tableAlias.last_bill_date                  AS ${columnPrefix}last_bill_date
+            $tableAlias.last_bill_date                  AS ${columnPrefix}last_bill_date,
+            $tableAlias.contribution_percent            AS ${columnPrefix}contribution_percent
             """.trimIndent()
 
         fun recurrenceEntryFromRow(
@@ -33,6 +34,7 @@ class RecurrenceEntryR2DBCMapping {
                 walletItemId = row.get("${columnPrefix}wallet_item_id", UUID::class.java)!!,
                 nextBillDate = row.get("${columnPrefix}next_bill_date", LocalDate::class.java),
                 lastBillDate = row.get("${columnPrefix}last_bill_date", LocalDate::class.java),
+                contributionPercent = row.get("${columnPrefix}contribution_percent", BigDecimal::class.java),
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)
             }

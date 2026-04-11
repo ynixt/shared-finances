@@ -27,6 +27,12 @@ financesPage:
     periodicity: Periodicidade
     periodicityQtyLimit: Repetir n vezes
     bill: Fatura
+    primarySourcePercent: Percentual da origem principal
+    extraFundingSource: Origem adicional
+    removeFundingSource: Remover origem
+    sourcePercent: Percentual desta origem
+    addFundingSource: Adicionar outra origem
+    sourcePercentsMustEqual100: 'A soma dos percentuais das origens deve ser 100% (total atual {{sum}}%).'
     originBill: Fatura da origem
     targetBill: Fatura do destino
     tags: Tags

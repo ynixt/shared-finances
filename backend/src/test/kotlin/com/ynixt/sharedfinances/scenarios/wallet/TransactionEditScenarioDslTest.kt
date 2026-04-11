@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimitException
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletSourceSplitException
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
@@ -565,7 +566,8 @@ class TransactionEditScenarioDslTest {
                             originId = originId,
                             targetId = targetId,
                             date = today,
-                            value = BigDecimal("50.00"),
+                            value = null,
+                            originValue = BigDecimal("50.00"),
                             confirmed = true,
                             paymentType = PaymentType.UNIQUE,
                         ),
@@ -880,7 +882,8 @@ class TransactionEditScenarioDslTest {
                             originId = originId,
                             targetId = targetId,
                             date = today,
-                            value = BigDecimal("50.00"),
+                            value = null,
+                            originValue = BigDecimal("50.00"),
                             confirmed = true,
                             paymentType = PaymentType.UNIQUE,
                         ),
@@ -2051,7 +2054,7 @@ class TransactionEditScenarioDslTest {
         val secondOccurrence = firstOccurrence.plusMonths(1)
         val firstBillDate = expectedCardModel.getBestBill(firstOccurrence)
 
-        assertThrows<IllegalArgumentException> {
+        assertThrows<InvalidWalletSourceSplitException> {
             walletScenario(initialDate = today) {
                 lateinit var creditCardId: UUID
 
