@@ -15,12 +15,16 @@ export class GroupWalletItemService {
     private userService: UserService,
   ) {}
 
-  async getAllItems(groupId: string, request?: PageRequest): Promise<Page<WalletItemSearchResponseDto>> {
+  async getAllItems(groupId: string, request?: PageRequest, onlyBankAccounts = false): Promise<Page<WalletItemSearchResponseDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
       return lastValueFrom(
-        this.paginationService.get<WalletItemSearchResponseDto>(`/api/groups/${groupId}/wallet-items`, request).pipe(take(1)),
+        this.paginationService
+          .get<WalletItemSearchResponseDto>(`/api/groups/${groupId}/wallet-items`, request, {
+            onlyBankAccounts: onlyBankAccounts ? 'true' : undefined,
+          })
+          .pipe(take(1)),
       );
     }
 

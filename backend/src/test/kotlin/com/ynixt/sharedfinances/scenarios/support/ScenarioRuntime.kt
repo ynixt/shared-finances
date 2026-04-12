@@ -4,6 +4,10 @@ import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEn
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
+import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByGoalRow
+import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByWalletRow
+import com.ynixt.sharedfinances.domain.repositories.GoalCurrencyCommittedRow
+import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
@@ -49,6 +53,7 @@ import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepos
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
+import reactor.core.publisher.Flux
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -282,6 +287,15 @@ internal class ScenarioRuntime(
             recurrenceSimulationService = recurrenceSimulationService,
             creditCardBillService = creditCardBillService,
             exchangeRateService = exchangeRateService,
+            goalLedgerSummaryRepository = NoOpGoalLedgerCommittedSummaryRepository,
             clock = clock,
         )
+}
+
+internal object NoOpGoalLedgerCommittedSummaryRepository : GoalLedgerCommittedSummaryRepository {
+    override fun summarizeCommittedByUserGoals(userId: java.util.UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+    override fun summarizeCommittedByUserGoalsDetailed(userId: java.util.UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
+
+    override fun summarizeCommittedByGoal(goalId: java.util.UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
 }

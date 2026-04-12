@@ -11,10 +11,15 @@
     {{ 'financesPage.overviewPage.empty' | translate }}
   </div>
 } @else {
-  <app-overview-dashboard-charts [charts]="dashboard.charts" [currency]="dashboard.currency"></app-overview-dashboard-charts>
-  <app-overview-dashboard-cards
+  @if (dashboard.goalOverCommittedWarning) {
+    <p-message severity="warn" icon="pi pi-exclamation-triangle" styleClass="mb-2">
+      {{ 'financesPage.overviewPage.goalBalances.overCommittedWarning' | translate }}
+    </p-message>
+  }
+  <app-overview-dashboard-cards class="block" [cards]="dashboard.cards" [currency]="dashboard.currency"></app-overview-dashboard-cards>
+  <app-overview-dashboard-charts
     class="mt-10 block"
-    [cards]="dashboard.cards"
+    [charts]="dashboard.charts"
     [currency]="dashboard.currency"
-  ></app-overview-dashboard-cards>
+  ></app-overview-dashboard-charts>
 }

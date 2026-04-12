@@ -15,11 +15,17 @@ export class WalletItemService {
     private userService: UserService,
   ) {}
 
-  async getAllItems(request?: PageRequest): Promise<Page<WalletItemSearchResponseDto>> {
+  async getAllItems(request?: PageRequest, onlyBankAccounts = false): Promise<Page<WalletItemSearchResponseDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.paginationService.get<WalletItemSearchResponseDto>('/api/wallet-items', request).pipe(take(1)));
+      return lastValueFrom(
+        this.paginationService
+          .get<WalletItemSearchResponseDto>('/api/wallet-items', request, {
+            onlyBankAccounts: onlyBankAccounts ? 'true' : undefined,
+          })
+          .pipe(take(1)),
+      );
     }
 
     throw new UserMissingError();

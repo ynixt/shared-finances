@@ -340,4 +340,25 @@ class WalletScenarioThen internal constructor(
             .describedAs("overview expense-by-category slice $label")
             .isEqualByComparingTo(expected.toBigDecimalSafe())
     }
+
+    fun overviewGoalCommittedShouldBe(expected: Number) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        assertThat(overview.goalCommittedTotal)
+            .describedAs("overview goal committed total")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun overviewFreeBalanceShouldBe(expected: Number) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        assertThat(overview.freeBalanceTotal)
+            .describedAs("overview free balance")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun overviewGoalOverCommittedWarningShouldBe(expected: Boolean) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        assertThat(overview.goalOverCommittedWarning)
+            .describedAs("overview goal over-committed warning")
+            .isEqualTo(expected)
+    }
 }

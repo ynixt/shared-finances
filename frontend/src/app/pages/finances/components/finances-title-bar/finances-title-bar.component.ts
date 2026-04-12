@@ -4,8 +4,7 @@ import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesom
 import { faChevronLeft, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { PrimeTemplate } from 'primeng/api';
-import { Button, ButtonDirective } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 
 export type FinancesTitleBarExtraButton = {
@@ -20,7 +19,7 @@ export type FinancesTitleBarExtraButton = {
 
 @Component({
   selector: 'app-finances-title-bar',
-  imports: [FaIconComponent, RouterLink, ButtonDirective, TranslatePipe, Tooltip, Button, PrimeTemplate],
+  imports: [FaIconComponent, RouterLink, ButtonDirective, TranslatePipe, Tooltip],
   templateUrl: './finances-title-bar.component.html',
   styleUrl: './finances-title-bar.component.scss',
 })
@@ -35,7 +34,7 @@ export class FinancesTitleBarComponent {
 
   @Output() deleteButtonClicked = new EventEmitter<void>();
 
-  newRouterLink = input<string | undefined>(undefined);
+  newRouterLink = input<string | string[] | undefined>(undefined);
   extraButtons = input<FinancesTitleBarExtraButton[] | undefined>();
   showDeleteButton = input<boolean>(false);
   deleteButtonLoading = input<boolean>(false);

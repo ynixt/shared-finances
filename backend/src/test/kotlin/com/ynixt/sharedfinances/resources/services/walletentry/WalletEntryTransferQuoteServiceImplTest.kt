@@ -333,6 +333,7 @@ class WalletEntryTransferQuoteServiceImplTest {
         override suspend fun findAllItems(
             userId: UUID,
             pageable: Pageable,
+            onlyBankAccounts: Boolean,
         ): Page<WalletItem> = throw NotImplementedError()
 
         override suspend fun findOne(id: UUID): WalletItem? = itemsById[id]

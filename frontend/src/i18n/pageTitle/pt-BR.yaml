@@ -26,7 +26,18 @@ pageTitle:
   associateBankAccountGroup: Associar conta bancária ao grupo
   groupCreditCards: Cartões de crédito do grupo
   associateCreditCardGroup: Associar cartão de crédito ao grupo
+  groupGoals: Metas do grupo
+  groupNewGoal: Nova meta do grupo
   transactions: Transações
   newTransaction: Nova transação
   editTransaction: Editar transação
   scheduleManager: Gerenciador de agendamentos
+  goals: Metas
+  newGoal: Nova meta
+  editGoal: Editar meta
+  goalDetail: Meta
+  goalAllocate: Alocar na meta
+  goalReverse: Desalocação
+  goalSchedule: Novo agendamento
+  goalEditSchedule: Editar agendamento
+  goalEditLedgerMovement: Editar alocação

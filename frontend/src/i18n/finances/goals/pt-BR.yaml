@@ -1,0 +1,55 @@
+financesPage:
+  goalsPage:
+    listTitle: Metas
+    newTitle: Nova meta
+    editTitle: Editar meta
+    detailTitle: Meta
+    loadError: Não foi possível carregar as metas.
+    empty: Nenhuma meta ainda. Crie uma para acompanhar alvos e valores comprometidos.
+    newGoal: Nova meta
+    description: Descrição
+    columns:
+      name: Nome
+      scope: Escopo
+      deadline: Prazo
+    scopeIndividual: Individual
+    scopeGroup: Grupo
+    groupNonePlaceholder: Sem grupo
+    targets: Alvos por moeda
+    committed: Comprometido por moeda
+    commitmentChartTitle: Comprometimento e alvo (mês a mês)
+    commitmentChartCommitted: Comprometido (acumulado)
+    commitmentChartTarget: Alvo
+    movements: Lançamentos
+    schedules: Agendamentos
+    scheduleKindColumn: Tipo
+    scheduleKind:
+      allocation: Aporte
+      removal: Desalocação
+    newSchedule: Novo agendamento
+    editSchedule: Editar agendamento
+    nextExecution: Próxima execução
+    endExecution: Encerramento
+    removesAllocationHint: Agendar desalocação (reduz o comprometido na meta), em vez de aporte
+    allocate: Alocar
+    reverse: Desalocação
+    schedule: Novo agendamento
+    allocationDate: Data da alocação
+    amount: Valor
+    wallet: Conta
+    note: Observação
+    periodicity: Periodicidade
+    firstExecution: Primeira execução
+    qtyLimit: Quantidade de execuções
+    overAllocationHint: O comprometido em metas ultrapassa o saldo bancário visível; o saldo livre pode ficar negativo.
+    deleteGoalConfirm: Excluir esta meta e todos os lançamentos? Esta ação não pode ser desfeita.
+    deleteMovementConfirm: Excluir este lançamento de alocação/desalocação? Esta ação não pode ser desfeita.
+    movementKind:
+      IMMEDIATE: Imediato
+      SCHEDULED_MATERIALIZATION: Agendado
+    recurrence:
+      SINGLE: Única
+      DAILY: Diária
+      WEEKLY: Semanal
+      MONTHLY: Mensal
+      YEARLY: Anual

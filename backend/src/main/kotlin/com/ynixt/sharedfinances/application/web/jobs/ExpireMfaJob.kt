@@ -13,7 +13,7 @@ class ExpireMfaJob(
 ) {
     private val logger = LoggerFactory.getLogger(ExpireMfaJob::class.java)
 
-    @Scheduled(cron = "0 0 0/12 * * *")
+    @Scheduled(cron = "\${app.jobs.expireMfa.cron}")
     fun job() {
         logger.info("Expire mfa job started")
 

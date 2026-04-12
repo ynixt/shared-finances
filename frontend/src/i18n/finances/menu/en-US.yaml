@@ -8,6 +8,7 @@ financesPage:
     creditCards: Credit Cards
     categories: Categories
     exchangeRates: Exchange rates
+    goals: Goals
     tags: Tags
     groups: Groups
     links: Links

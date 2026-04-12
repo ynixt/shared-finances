@@ -38,12 +38,15 @@ export class WalletItemPickerComponent extends SimpleControlValueAccessor<Wallet
     this.loadOrigins.bind(this),
   );
   group = input<GroupDto | undefined>(undefined);
+  /** When true, only bank accounts are loaded (server-side filter). */
+  onlyBankAccounts = input(false);
 
   constructor() {
     super();
 
     effect(() => {
       this.group();
+      this.onlyBankAccounts();
 
       this.pagedSelect?.resetComponent();
     });
@@ -51,13 +54,24 @@ export class WalletItemPickerComponent extends SimpleControlValueAccessor<Wallet
 
   async loadOrigins(page = 0, query: string | undefined): Promise<WalletItemSearchResponseDtoWithIcon[]> {
     const group = this.group();
+    const onlyBank = this.onlyBankAccounts();
 
     const t = await (group == null
-      ? this.walletItemService.getAllItems({
-          sort: 'name',
-          page,
-        })
-      : this.groupWalletItemService.getAllItems(group.id, { sort: 'name', page }));
+      ? this.walletItemService.getAllItems(
+          {
+            sort: 'name',
+            page,
+          },
+          onlyBank,
+        )
+      : this.groupWalletItemService.getAllItems(
+          group.id,
+          {
+            sort: 'name',
+            page,
+          },
+          onlyBank,
+        ));
 
     const getIcon = (item: WalletItemSearchResponseDto) => {
       return item.type === 'CREDIT_CARD' ? faCreditCard : faBuildingColumns;

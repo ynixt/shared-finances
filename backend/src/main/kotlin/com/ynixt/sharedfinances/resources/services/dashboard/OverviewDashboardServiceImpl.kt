@@ -13,6 +13,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCharts
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetail
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardPieSlice
+import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
@@ -38,6 +39,7 @@ class OverviewDashboardServiceImpl(
     private val recurrenceSimulationService: RecurrenceSimulationService,
     private val creditCardBillService: CreditCardBillService,
     private val exchangeRateService: ExchangeRateService,
+    private val goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository,
     private val clock: Clock,
 ) : OverviewDashboardService {
     override suspend fun getOverview(
@@ -306,6 +308,49 @@ class OverviewDashboardServiceImpl(
         }
         rawChartContributions.addAll(rawExpenseChartContributions)
 
+        val goalCommitmentReferenceDate = balanceReferenceDateForMonth(selectedMonth, currentMonth, today)
+        val rawGoalCommittedDetails =
+            goalLedgerSummaryRepository
+                .summarizeCommittedByUserGoalsDetailed(userId)
+                .collectList()
+                .awaitSingle()
+                .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
+                .map { committed ->
+                    RawDetail(
+                        sourceId = committed.goalId,
+                        sourceType = OverviewDashboardDetailSourceType.GOAL,
+                        label = committed.goalName,
+                        value = committed.committed.asMoney(),
+                        currency = committed.currency,
+                        referenceDate = goalCommitmentReferenceDate,
+                    )
+                }
+        val rawBalanceByBankId =
+            rawDetailByCardKey[OverviewDashboardCardKey.BALANCE]
+                .orEmpty()
+                .mapNotNull { detail ->
+                    val sourceId = detail.sourceId
+                    if (sourceId == null || detail.sourceType != OverviewDashboardDetailSourceType.BANK_ACCOUNT) {
+                        null
+                    } else {
+                        sourceId to detail.value.asMoney()
+                    }
+                }.toMap()
+        val hasAccountOverCommittedBalance =
+            goalLedgerSummaryRepository
+                .summarizeCommittedByUserGoals(userId)
+                .collectList()
+                .awaitSingle()
+                .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
+                .any { committed ->
+                    val bankAccount = bankAccountById[committed.walletItemId] ?: return@any false
+                    if (!committed.currency.equals(bankAccount.currency, ignoreCase = true)) {
+                        return@any false
+                    }
+                    val balance = rawBalanceByBankId[committed.walletItemId] ?: BigDecimal.ZERO
+                    committed.committed.asMoney().compareTo(balance) > 0
+                }
+
         val rawValues = mutableListOf<RawValue>()
         rawDetailByCardKey.values.flatten().forEach { rawDetail ->
             rawValues.add(
@@ -324,6 +369,16 @@ class OverviewDashboardServiceImpl(
                     value = rawChartContribution.value,
                     currency = rawChartContribution.currency,
                     referenceDate = rawChartContribution.referenceDate,
+                ),
+            )
+        }
+        rawGoalCommittedDetails.forEach { rawDetail ->
+            rawValues.add(
+                RawValue(
+                    key = rawDetail.key,
+                    value = rawDetail.value,
+                    currency = rawDetail.currency,
+                    referenceDate = rawDetail.referenceDate,
                 ),
             )
         }
@@ -353,6 +408,33 @@ class OverviewDashboardServiceImpl(
             }
 
         val balanceTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE])
+        val goalCommittedDetails =
+            aggregateConvertedDetails(
+                rawDetails = rawGoalCommittedDetails,
+                convertedValueByKey = convertedValueByKey,
+                sourceType = OverviewDashboardDetailSourceType.GOAL,
+            )
+        val goalCommittedTotal = sumDetails(goalCommittedDetails)
+        val freeBalanceTotal = balanceTotal.subtract(goalCommittedTotal).asMoney()
+        val goalOverCommittedWarning = goalCommittedTotal.compareTo(balanceTotal) > 0 || hasAccountOverCommittedBalance
+        val freeBalanceDetails =
+            listOf(
+                OverviewDashboardDetail(
+                    sourceId = null,
+                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
+                    label = "financesPage.overviewPage.detail.formula.balance",
+                    value = balanceTotal,
+                ),
+            ) +
+                goalCommittedDetails.map { detail ->
+                    OverviewDashboardDetail(
+                        sourceId = detail.sourceId,
+                        sourceType = detail.sourceType,
+                        label = detail.label,
+                        value = detail.value.negate().asMoney(),
+                    )
+                }
+
         val periodCashInTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN])
         val periodCashOutTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT])
         val projectedCashInTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_IN])
@@ -503,6 +585,16 @@ class OverviewDashboardServiceImpl(
                     details = convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE].orEmpty(),
                 ),
                 OverviewDashboardCard(
+                    key = OverviewDashboardCardKey.GOAL_FREE_BALANCE,
+                    value = freeBalanceTotal,
+                    details = freeBalanceDetails,
+                ),
+                OverviewDashboardCard(
+                    key = OverviewDashboardCardKey.GOAL_COMMITTED,
+                    value = goalCommittedTotal,
+                    details = goalCommittedDetails,
+                ),
+                OverviewDashboardCard(
                     key = OverviewDashboardCardKey.PERIOD_CASH_IN,
                     value = periodCashInTotal,
                     details = convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN].orEmpty(),
@@ -528,14 +620,14 @@ class OverviewDashboardServiceImpl(
                     details = convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_OUT].orEmpty(),
                 ),
                 OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.END_OF_PERIOD_BALANCE,
-                    value = endOfPeriodBalanceTotal,
-                    details = endOfPeriodBalanceDetails,
-                ),
-                OverviewDashboardCard(
                     key = OverviewDashboardCardKey.END_OF_PERIOD_NET_CASH_FLOW,
                     value = endOfPeriodNetCashFlowTotal,
                     details = endOfPeriodNetCashFlowDetails,
+                ),
+                OverviewDashboardCard(
+                    key = OverviewDashboardCardKey.END_OF_PERIOD_BALANCE,
+                    value = endOfPeriodBalanceTotal,
+                    details = endOfPeriodBalanceDetails,
                 ),
             )
 
@@ -580,6 +672,9 @@ class OverviewDashboardServiceImpl(
             currency = normalizedTargetCurrency,
             cards = cards,
             charts = charts,
+            goalCommittedTotal = goalCommittedTotal,
+            freeBalanceTotal = freeBalanceTotal,
+            goalOverCommittedWarning = goalOverCommittedWarning,
         )
     }
 
@@ -806,6 +901,27 @@ class OverviewDashboardServiceImpl(
             .orEmpty()
             .fold(BigDecimal.ZERO) { acc, detail -> acc.add(detail.value) }
             .asMoney()
+
+    private fun aggregateConvertedDetails(
+        rawDetails: List<RawDetail>,
+        convertedValueByKey: Map<String, BigDecimal>,
+        sourceType: OverviewDashboardDetailSourceType,
+    ): List<OverviewDashboardDetail> =
+        rawDetails
+            .groupBy { it.sourceId to it.label }
+            .map { (identity, details) ->
+                OverviewDashboardDetail(
+                    sourceId = identity.first,
+                    sourceType = sourceType,
+                    label = identity.second,
+                    value =
+                        details
+                            .fold(BigDecimal.ZERO) { acc, detail ->
+                                acc.add(convertedValueByKey.getOrDefault(detail.key, BigDecimal.ZERO))
+                            }.asMoney(),
+                )
+            }.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
+            .sortedWith(compareByDescending<OverviewDashboardDetail> { it.value.abs() }.thenBy { it.label.lowercase() })
 
     private fun buildMonthRange(
         start: YearMonth,

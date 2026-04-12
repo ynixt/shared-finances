@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.resources.services.groups
 
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
@@ -21,6 +22,7 @@ class GroupWalletItemServiceImpl(
         userId: UUID,
         groupId: UUID,
         pageable: Pageable,
+        onlyBankAccounts: Boolean,
     ): Page<WalletItem> =
         groupPermissionService
             .hasPermission(
@@ -28,12 +30,14 @@ class GroupWalletItemServiceImpl(
                 groupId = groupId,
             ).let { hasPermission ->
                 if (hasPermission) {
-                    createPage(pageable, countFn = { groupWalletItemRepository.countByGroupId(groupId, enabled = true) }) {
+                    val type = if (onlyBankAccounts) WalletItemType.BANK_ACCOUNT else null
+                    createPage(pageable, countFn = { groupWalletItemRepository.countByGroupIdAndEnabled(groupId, enabled = true, type) }) {
                         groupWalletItemRepository
                             .findAllByGroupIdAndEnabled(
                                 groupId = groupId,
                                 enabled = true,
                                 pageable = pageable,
+                                walletItemType = type,
                             ).map(walletItemMapper::toModel)
                     }
                 } else {

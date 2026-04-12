@@ -13,11 +13,13 @@ interface GroupWalletItemRepository {
         groupId: UUID,
         enabled: Boolean,
         pageable: Pageable,
+        walletItemType: WalletItemType? = null,
     ): Flux<WalletItemEntity>
 
-    fun countByGroupId(
+    fun countByGroupIdAndEnabled(
         groupId: UUID,
         enabled: Boolean,
+        walletItemType: WalletItemType? = null,
     ): Mono<Long>
 
     fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity>
@@ -36,4 +38,9 @@ interface GroupWalletItemRepository {
         groupId: UUID,
         type: WalletItemType,
     ): Flux<WalletItemEntity>
+
+    fun countByGroupIdAndWalletItemId(
+        groupId: UUID,
+        walletItemId: UUID,
+    ): Mono<Long>
 }

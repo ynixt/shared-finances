@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.services
 
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
@@ -23,14 +24,26 @@ class WalletItemServiceImpl(
     override suspend fun findAllItems(
         userId: UUID,
         pageable: Pageable,
+        onlyBankAccounts: Boolean,
     ): Page<WalletItem> =
-        createPage(pageable, countFn = { repository.countByUserIdAndEnabled(userId, enabled = true) }) {
-            repository
-                .findAllByUserIdAndEnabled(
-                    userId = userId,
-                    enabled = true,
-                    pageable = pageable,
-                ).map(this::convert)
+        if (onlyBankAccounts) {
+            createPage(pageable, countFn = { repository.countByUserIdAndType(userId, WalletItemType.BANK_ACCOUNT) }) {
+                repository
+                    .findAllByUserIdAndType(
+                        userId = userId,
+                        type = WalletItemType.BANK_ACCOUNT,
+                        pageable = pageable,
+                    ).map(this::convert)
+            }
+        } else {
+            createPage(pageable, countFn = { repository.countByUserIdAndEnabled(userId, enabled = true) }) {
+                repository
+                    .findAllByUserIdAndEnabled(
+                        userId = userId,
+                        enabled = true,
+                        pageable = pageable,
+                    ).map(this::convert)
+            }
         }
 
     override suspend fun findOne(id: UUID): WalletItem? = repository.findOneById(id).map(this::convert).awaitSingleOrNull()

@@ -7,5 +7,8 @@ export interface OverviewDashboardDto {
   cards: Array<OverviewDashboardCardDto>;
   charts: OverviewDashboardChartsDto;
   currency: string;
+  freeBalanceTotal: number;
+  goalCommittedTotal: number;
+  goalOverCommittedWarning: boolean;
   selectedMonth: string;
 }

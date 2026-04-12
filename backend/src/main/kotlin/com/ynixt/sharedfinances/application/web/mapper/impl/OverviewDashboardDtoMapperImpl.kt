@@ -29,6 +29,9 @@ class OverviewDashboardDtoMapperImpl : OverviewDashboardDtoMapper {
                 to::selectedMonth fromProperty from::selectedMonth transform { formatMonth(it) }
                 to::cards fromProperty from::cards via IterableToListMapper(CardMapper)
                 to::charts fromProperty from::charts via ChartsMapper
+                to::goalCommittedTotal fromProperty from::goalCommittedTotal
+                to::freeBalanceTotal fromProperty from::freeBalanceTotal
+                to::goalOverCommittedWarning fromProperty from::goalOverCommittedWarning
             }
     }
 

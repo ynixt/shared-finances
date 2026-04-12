@@ -17,12 +17,17 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySu
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
+import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByGoalRow
+import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByWalletRow
+import com.ynixt.sharedfinances.domain.repositories.GoalCurrencyCommittedRow
+import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
+import com.ynixt.sharedfinances.scenarios.support.NoOpGoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import kotlinx.coroutines.runBlocking
@@ -39,6 +44,228 @@ import java.util.UUID
 import kotlin.system.measureTimeMillis
 
 class OverviewDashboardServiceImplTest {
+    @Test
+    fun `should include goal committed and free balance from ledger summary`() =
+        runBlocking {
+            val ownerUserId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 4)
+            val bankId = UUID.randomUUID()
+            val hiddenBankId = UUID.randomUUID()
+            val goalId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            walletItemRepository.save(
+                bankAccountEntity(
+                    id = bankId,
+                    userId = ownerUserId,
+                    name = "Main",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                ),
+            )
+            walletItemRepository.save(
+                bankAccountEntity(
+                    id = hiddenBankId,
+                    userId = ownerUserId,
+                    name = "Hidden reserve",
+                    currency = "BRL",
+                    balance = "400.00",
+                    showOnDashboard = false,
+                ),
+            )
+
+            val walletEntryRepository =
+                stubWalletEntryRepository(
+                    monthlySummaries =
+                        listOf(
+                            monthly(bankId, "2026-04", net = "0", cashIn = "0", cashOut = "0"),
+                        ),
+                )
+
+            val goalLedgerSummaryRepository =
+                object : GoalLedgerCommittedSummaryRepository {
+                    override fun summarizeCommittedByUserGoals(userId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+                    override fun summarizeCommittedByUserGoalsDetailed(userId: UUID) =
+                        if (userId == ownerUserId) {
+                            Flux.just(
+                                GoalCommittedByGoalRow(
+                                    goalId = goalId,
+                                    goalName = "Reserve",
+                                    walletItemId = bankId,
+                                    currency = "BRL",
+                                    committed = BigDecimal("250.00"),
+                                ),
+                                GoalCommittedByGoalRow(
+                                    goalId = goalId,
+                                    goalName = "Reserve",
+                                    walletItemId = hiddenBankId,
+                                    currency = "BRL",
+                                    committed = BigDecimal("100.00"),
+                                ),
+                            )
+                        } else {
+                            Flux.empty()
+                        }
+
+                    override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
+                }
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    recurrenceSimulationService = fakeRecurrenceSimulationService(emptyList()),
+                    creditCardBillService = fakeCreditCardBillService(emptyMap()),
+                    exchangeRateService = identityExchangeRateService(),
+                    goalLedgerSummaryRepository = goalLedgerSummaryRepository,
+                )
+
+            val result =
+                service.getOverview(
+                    userId = ownerUserId,
+                    defaultCurrency = "BRL",
+                    selectedMonth = selectedMonth,
+                )
+
+            assertMoney(result.goalCommittedTotal, "250.00")
+            assertMoney(result.freeBalanceTotal, "750.00")
+            assertThat(result.goalOverCommittedWarning).isFalse()
+            assertThat(result.cards.take(3).map { it.key }).containsExactly(
+                OverviewDashboardCardKey.BALANCE,
+                OverviewDashboardCardKey.GOAL_COMMITTED,
+                OverviewDashboardCardKey.GOAL_FREE_BALANCE,
+            )
+            assertThat(
+                result.cards
+                    .first { it.key == OverviewDashboardCardKey.GOAL_COMMITTED }
+                    .details,
+            ).singleElement().satisfies({ detail ->
+                assertThat(detail.sourceId).isEqualTo(goalId)
+                assertThat(detail.label).isEqualTo("Reserve")
+                assertMoney(detail.value, "250.00")
+            })
+            assertThat(
+                result.cards
+                    .first { it.key == OverviewDashboardCardKey.GOAL_FREE_BALANCE }
+                    .details
+                    .map { it.label to it.value },
+            ).containsExactly(
+                "financesPage.overviewPage.detail.formula.balance" to BigDecimal("1000.00"),
+                "Reserve" to BigDecimal("-250.00"),
+            )
+        }
+
+    @Test
+    fun `should raise goal warning when one visible bank account is over-committed`() =
+        runBlocking {
+            val ownerUserId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 4)
+            val primaryBankId = UUID.randomUUID()
+            val secondaryBankId = UUID.randomUUID()
+            val goalId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            walletItemRepository.save(
+                bankAccountEntity(
+                    id = primaryBankId,
+                    userId = ownerUserId,
+                    name = "Primary",
+                    currency = "BRL",
+                    balance = "50.00",
+                    showOnDashboard = true,
+                ),
+            )
+            walletItemRepository.save(
+                bankAccountEntity(
+                    id = secondaryBankId,
+                    userId = ownerUserId,
+                    name = "Secondary",
+                    currency = "BRL",
+                    balance = "100.00",
+                    showOnDashboard = true,
+                ),
+            )
+
+            val walletEntryRepository =
+                stubWalletEntryRepository(
+                    monthlySummaries =
+                        listOf(
+                            monthly(primaryBankId, "2026-04", net = "0", cashIn = "0", cashOut = "0"),
+                            monthly(secondaryBankId, "2026-04", net = "0", cashIn = "0", cashOut = "0"),
+                        ),
+                )
+
+            val goalLedgerSummaryRepository =
+                object : GoalLedgerCommittedSummaryRepository {
+                    override fun summarizeCommittedByUserGoals(userId: UUID): Flux<GoalCommittedByWalletRow> =
+                        if (userId == ownerUserId) {
+                            Flux.just(
+                                GoalCommittedByWalletRow(
+                                    walletItemId = primaryBankId,
+                                    currency = "BRL",
+                                    committed = BigDecimal("80.00"),
+                                ),
+                                GoalCommittedByWalletRow(
+                                    walletItemId = secondaryBankId,
+                                    currency = "BRL",
+                                    committed = BigDecimal("20.00"),
+                                ),
+                            )
+                        } else {
+                            Flux.empty()
+                        }
+
+                    override fun summarizeCommittedByUserGoalsDetailed(userId: UUID): Flux<GoalCommittedByGoalRow> =
+                        if (userId == ownerUserId) {
+                            Flux.just(
+                                GoalCommittedByGoalRow(
+                                    goalId = goalId,
+                                    goalName = "Reserve",
+                                    walletItemId = primaryBankId,
+                                    currency = "BRL",
+                                    committed = BigDecimal("80.00"),
+                                ),
+                                GoalCommittedByGoalRow(
+                                    goalId = goalId,
+                                    goalName = "Reserve",
+                                    walletItemId = secondaryBankId,
+                                    currency = "BRL",
+                                    committed = BigDecimal("20.00"),
+                                ),
+                            )
+                        } else {
+                            Flux.empty()
+                        }
+
+                    override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
+                }
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    recurrenceSimulationService = fakeRecurrenceSimulationService(emptyList()),
+                    creditCardBillService = fakeCreditCardBillService(emptyMap()),
+                    exchangeRateService = identityExchangeRateService(),
+                    goalLedgerSummaryRepository = goalLedgerSummaryRepository,
+                )
+
+            val result =
+                service.getOverview(
+                    userId = ownerUserId,
+                    defaultCurrency = "BRL",
+                    selectedMonth = selectedMonth,
+                )
+
+            assertMoney(result.goalCommittedTotal, "100.00")
+            assertMoney(result.freeBalanceTotal, "50.00")
+            assertThat(result.goalOverCommittedWarning).isTrue()
+        }
+
     @Test
     fun `should calculate formulas for selected month`() =
         runBlocking {
@@ -676,6 +903,7 @@ class OverviewDashboardServiceImplTest {
         recurrenceSimulationService: RecurrenceSimulationService,
         creditCardBillService: CreditCardBillService,
         exchangeRateService: ExchangeRateService,
+        goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository = NoOpGoalLedgerCommittedSummaryRepository,
     ): OverviewDashboardServiceImpl =
         OverviewDashboardServiceImpl(
             walletItemRepository = walletItemRepository,
@@ -684,6 +912,7 @@ class OverviewDashboardServiceImplTest {
             recurrenceSimulationService = recurrenceSimulationService,
             creditCardBillService = creditCardBillService,
             exchangeRateService = exchangeRateService,
+            goalLedgerSummaryRepository = goalLedgerSummaryRepository,
             clock = clock,
         )
 

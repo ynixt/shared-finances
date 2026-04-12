@@ -22,3 +22,8 @@ apiErrors:
   mfaEnrollmentNotFound: We were unable to configure the 2-step process. Please refresh the page and try again.
   emailAlreadyInUse: Account temporarily blocked due to too many incorrect login attempts.
   mixedCurrencyWalletSources: Multiple sources with different currencies are not supported.
+  financialGoalNotFound: Goal not found.
+  financialGoalForbidden: You are not allowed to manage this goal.
+  financialGoalInvalidWallet: This bank account cannot be used for this goal.
+  financialGoalUnsupportedCurrency: Currency {{currency}} is not targeted for this goal.
+  financialGoalMovementNotFound: Ledger movement not found.

@@ -1,5 +1,9 @@
 financesPage:
   overviewPage:
+    goalBalances:
+      committed: Comprometido em metas
+      free: Saldo livre
+      overCommittedWarning: O comprometido em metas ultrapassa o saldo bancário visível.
     title: Visão geral
     empty: Nenhum dado disponível para o mês selecionado.
     noDetails: Nenhum detalhe disponível.
@@ -9,6 +13,8 @@ financesPage:
       close: Fechar
     cards:
       balance: Saldo
+      goalCommitted: Comprometimento em metas
+      goalFreeBalance: Saldo livre
       periodCashIn: Entrada do período
       periodCashOut: Saída do período
       periodNetCashFlow: Alterações do período
@@ -41,5 +47,6 @@ financesPage:
       sourceType:
         bankAccount: Conta bancária
         creditCardBill: Fatura do cartão
+        goal: Meta
         formula: Fórmula
         unknown: Origem desconhecida

@@ -21,12 +21,14 @@ class GroupWalletItemRepositoryImpl(
         groupId: UUID,
         enabled: Boolean,
         pageable: Pageable,
-    ): Flux<WalletItemEntity> = dcRepository.findAllByGroupIdAndEnabled(groupId, enabled, pageable)
+        walletItemType: WalletItemType?,
+    ): Flux<WalletItemEntity> = dcRepository.findAllByGroupIdAndEnabled(groupId, enabled, pageable, walletItemType)
 
-    override fun countByGroupId(
+    override fun countByGroupIdAndEnabled(
         groupId: UUID,
         enabled: Boolean,
-    ): Mono<Long> = springDataRepository.countByGroupId(groupId, enabled)
+        walletItemType: WalletItemType?,
+    ): Mono<Long> = dcRepository.countByGroupIdAndEnabled(groupId, enabled, walletItemType)
 
     override fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity> = springDataRepository.save(groupUser)
 
@@ -44,4 +46,9 @@ class GroupWalletItemRepositoryImpl(
         groupId: UUID,
         type: WalletItemType,
     ): Flux<WalletItemEntity> = dcRepository.findAllAssociatedToGroup(groupId, type)
+
+    override fun countByGroupIdAndWalletItemId(
+        groupId: UUID,
+        walletItemId: UUID,
+    ): Mono<Long> = springDataRepository.countByGroupIdAndWalletItemId(groupId, walletItemId)
 }

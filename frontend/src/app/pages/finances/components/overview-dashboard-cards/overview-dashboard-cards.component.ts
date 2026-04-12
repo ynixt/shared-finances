@@ -3,6 +3,7 @@ import {
   faArrowRightArrowLeft,
   faArrowTrendDown,
   faArrowTrendUp,
+  faBullseye,
   faChartSimple,
   faClock,
   faDollarSign,
@@ -31,6 +32,8 @@ export class OverviewDashboardCardsComponent {
   readonly currency = input<string | undefined>(undefined);
 
   readonly balanceIcon = faDollarSign;
+  readonly goalCommittedIcon = faBullseye;
+  readonly goalFreeBalanceIcon = faWallet;
   readonly periodCashInIcon = faArrowTrendUp;
   readonly periodCashOutIcon = faArrowTrendDown;
   readonly periodNetCashFlowIcon = faArrowRightArrowLeft;
@@ -68,6 +71,8 @@ export class OverviewDashboardCardsComponent {
     return (
       {
         BALANCE: 'financesPage.overviewPage.cards.balance',
+        GOAL_COMMITTED: 'financesPage.overviewPage.cards.goalCommitted',
+        GOAL_FREE_BALANCE: 'financesPage.overviewPage.cards.goalFreeBalance',
         PERIOD_CASH_IN: 'financesPage.overviewPage.cards.periodCashIn',
         PERIOD_CASH_OUT: 'financesPage.overviewPage.cards.periodCashOut',
         PERIOD_NET_CASH_FLOW: 'financesPage.overviewPage.cards.periodNetCashFlow',
@@ -83,6 +88,8 @@ export class OverviewDashboardCardsComponent {
     return (
       {
         BALANCE: this.balanceIcon,
+        GOAL_COMMITTED: this.goalCommittedIcon,
+        GOAL_FREE_BALANCE: this.goalFreeBalanceIcon,
         PERIOD_CASH_IN: this.periodCashInIcon,
         PERIOD_CASH_OUT: this.periodCashOutIcon,
         PERIOD_NET_CASH_FLOW: this.periodNetCashFlowIcon,
@@ -95,6 +102,10 @@ export class OverviewDashboardCardsComponent {
   }
 
   cardValueClass(card: OverviewDashboardCardDto): string {
+    if (card.key === 'GOAL_COMMITTED') {
+      return card.value >= 0 ? 'text-surface-900 dark:text-surface-0' : 'text-red-700';
+    }
+
     if (card.key === 'PERIOD_CASH_OUT' || card.key === 'PROJECTED_CASH_OUT') {
       return 'text-red-700';
     }
@@ -115,6 +126,7 @@ export class OverviewDashboardCardsComponent {
       {
         BANK_ACCOUNT: 'financesPage.overviewPage.detail.sourceType.bankAccount',
         CREDIT_CARD_BILL: 'financesPage.overviewPage.detail.sourceType.creditCardBill',
+        GOAL: 'financesPage.overviewPage.detail.sourceType.goal',
         FORMULA: 'financesPage.overviewPage.detail.sourceType.formula',
       }[detail.sourceType] ?? 'financesPage.overviewPage.detail.sourceType.unknown'
     );

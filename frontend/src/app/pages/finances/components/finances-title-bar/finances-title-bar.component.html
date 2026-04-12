@@ -31,18 +31,19 @@
               }
             </a>
           } @else if (rightButton.click != null) {
-            <p-button
-              (click)="rightButton.click()"
-              [rounded]="rightButton.rounded"
+            <button
+              type="button"
+              pButton
+              [text]="true"
+              [rounded]="rightButton.rounded ?? false"
               size="small"
+              (click)="rightButton.click!()"
               [pTooltip]="rightButton.tooltip != null ? (rightButton.tooltip | translate) : undefined"
               [tooltipPosition]="rightButton.tooltipPosition ?? 'bottom'"
-              [loading]="rightButton.loading"
+              [loading]="rightButton.loading ?? false"
             >
-              <ng-template pTemplate="iconTemplate">
-                <fa-icon [icon]="deleteButtonIcon"></fa-icon>
-              </ng-template>
-            </p-button>
+              <fa-icon [icon]="rightButton.icon ?? deleteButtonIcon"></fa-icon>
+            </button>
           }
         }
       </div>

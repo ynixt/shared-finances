@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.util.UUID
 
 @Repository
@@ -18,8 +19,15 @@ class GroupWalletItemDatabaseClientRepository(
         groupId: UUID,
         enabled: Boolean,
         pageable: Pageable,
+        walletItemType: WalletItemType? = null,
     ): Flux<WalletItemEntity> {
         val sort = pageableToSortQuery(pageable, setOf("name"))
+        val typeClause =
+            if (walletItemType == null) {
+                ""
+            } else {
+                " AND wi.type = :walletItemType "
+            }
 
         val sql =
             """
@@ -34,20 +42,58 @@ class GroupWalletItemDatabaseClientRepository(
             where 
                 gwi.group_id = :groupId 
                 and wi.enabled = :enabled
+                $typeClause
             $sort
             LIMIT ${pageable.pageSize} 
             OFFSET ${pageable.offset}
             """.trimIndent()
 
-        return dbClient
-            .sql(sql)
-            .bind("groupId", groupId)
-            .bind("enabled", enabled)
+        var spec =
+            dbClient
+                .sql(sql)
+                .bind("groupId", groupId)
+                .bind("enabled", enabled)
+        if (walletItemType != null) {
+            spec = spec.bind("walletItemType", walletItemType.toString())
+        }
+        return spec
             .map { row, _ ->
                 WalletItemR2DBCMapping.walletItemFromRow(row, "")!!.also { wa ->
                     wa.user = UserR2DBCMapping.userFromRow(row)
                 }
             }.all()
+    }
+
+    fun countByGroupIdAndEnabled(
+        groupId: UUID,
+        enabled: Boolean,
+        walletItemType: WalletItemType? = null,
+    ): Mono<Long> {
+        val typeClause =
+            if (walletItemType == null) {
+                ""
+            } else {
+                " AND wi.type = :walletItemType "
+            }
+        val sql =
+            """
+            SELECT COUNT(*) AS cnt
+            FROM group_wallet_item gwi
+            JOIN wallet_item wi ON wi.id = gwi.wallet_item_id
+            WHERE gwi.group_id = :groupId AND wi.enabled = :enabled
+            $typeClause
+            """.trimIndent()
+        var spec =
+            dbClient
+                .sql(sql)
+                .bind("groupId", groupId)
+                .bind("enabled", enabled)
+        if (walletItemType != null) {
+            spec = spec.bind("walletItemType", walletItemType.toString())
+        }
+        return spec
+            .map { row, _ -> row.get("cnt", java.lang.Long::class.java)!!.toLong() }
+            .one()
     }
 
     fun findAllAllowedForGroup(

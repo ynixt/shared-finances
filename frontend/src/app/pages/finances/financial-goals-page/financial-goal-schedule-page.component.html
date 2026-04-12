@@ -1,0 +1,44 @@
+<app-finances-title-bar [title]="goalName() || ('financesPage.goalsPage.newSchedule' | translate)" [closeRouterLink]="closeRouterLink" />
+
+@if (initialLoading) {
+  <div class="py-8 text-center text-surface-600">{{ 'general.loading' | translate }}</div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 flex max-w-md flex-col gap-4">
+    <label class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-surface-700"
+        >{{ 'financesPage.goalsPage.wallet' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <app-wallet-item-picker [group]="selectedGroupForPicker()" [onlyBankAccounts]="true" formControlName="walletItem" />
+    </label>
+    <label class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-surface-700"
+        >{{ 'financesPage.goalsPage.amount' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <p-inputNumber formControlName="amount" mode="currency" [currency]="amountCurrency()" class="w-full" />
+    </label>
+    <label class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-surface-700"
+        >{{ 'financesPage.goalsPage.periodicity' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <p-select formControlName="periodicity" [options]="recurrenceOptions()" optionLabel="label" optionValue="value" class="w-full" />
+    </label>
+    <div class="flex flex-col gap-1">
+      <span class="text-sm font-medium text-surface-700"
+        >{{ 'financesPage.goalsPage.firstExecution' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <app-date-picker formControlName="firstExecution" class="block w-full" />
+    </div>
+    <p-inputNumber
+      formControlName="qtyLimit"
+      [min]="1"
+      [useGrouping]="false"
+      [placeholder]="'financesPage.goalsPage.qtyLimit' | translate"
+      class="w-full"
+    />
+    <div class="flex items-center gap-2">
+      <p-toggleswitch formControlName="removesAllocation" inputId="newRemovesAlloc" />
+      <label for="newRemovesAlloc" class="text-sm text-surface-700">{{ 'financesPage.goalsPage.removesAllocationHint' | translate }}</label>
+    </div>
+    <button pButton type="submit" [loading]="loading" [label]="'general.save' | translate" [disabled]="form.invalid"></button>
+  </form>
+}

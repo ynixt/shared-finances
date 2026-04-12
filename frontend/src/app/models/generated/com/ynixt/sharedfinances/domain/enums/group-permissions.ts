@@ -14,7 +14,8 @@ export type GroupPermissions =
   | 'REMOVE_CREDIT_CARD'
   | 'NEW_CATEGORY'
   | 'EDIT_CATEGORY'
-  | 'DELETE_CATEGORY';
+  | 'DELETE_CATEGORY'
+  | 'MANAGE_GOALS';
 
 export const GroupPermissions__Options: GroupPermissions[] = [
   'CHANGE_ROLE',
@@ -30,6 +31,7 @@ export const GroupPermissions__Options: GroupPermissions[] = [
   'NEW_CATEGORY',
   'EDIT_CATEGORY',
   'DELETE_CATEGORY',
+  'MANAGE_GOALS',
 ];
 
 export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions } = {
@@ -46,4 +48,5 @@ export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions 
   'NEW_CATEGORY': 'NEW_CATEGORY',
   'EDIT_CATEGORY': 'EDIT_CATEGORY',
   'DELETE_CATEGORY': 'DELETE_CATEGORY',
+  'MANAGE_GOALS': 'MANAGE_GOALS',
 };

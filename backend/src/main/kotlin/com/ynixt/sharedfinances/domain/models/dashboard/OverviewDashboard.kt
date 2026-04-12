@@ -9,6 +9,9 @@ data class OverviewDashboard(
     val currency: String,
     val cards: List<OverviewDashboardCard>,
     val charts: OverviewDashboardCharts,
+    val goalCommittedTotal: BigDecimal,
+    val freeBalanceTotal: BigDecimal,
+    val goalOverCommittedWarning: Boolean,
 )
 
 data class OverviewDashboardCard(
@@ -48,6 +51,8 @@ data class OverviewDashboardPieSlice(
 
 enum class OverviewDashboardCardKey {
     BALANCE,
+    GOAL_COMMITTED,
+    GOAL_FREE_BALANCE,
     PERIOD_CASH_IN,
     PERIOD_CASH_OUT,
     PERIOD_NET_CASH_FLOW,
@@ -60,5 +65,6 @@ enum class OverviewDashboardCardKey {
 enum class OverviewDashboardDetailSourceType {
     BANK_ACCOUNT,
     CREDIT_CARD_BILL,
+    GOAL,
     FORMULA,
 }

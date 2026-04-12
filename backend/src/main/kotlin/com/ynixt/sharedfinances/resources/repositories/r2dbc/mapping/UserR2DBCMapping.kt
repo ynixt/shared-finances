@@ -15,12 +15,16 @@ class UserR2DBCMapping {
             $tableAlias.id                AS ${columnPrefix}id,
             $tableAlias.created_at        AS ${columnPrefix}created_at,
             $tableAlias.updated_at        AS ${columnPrefix}updated_at,
-            $tableAlias.external_id       AS ${columnPrefix}external_id,
             $tableAlias.email             AS ${columnPrefix}email,
             $tableAlias.first_name        AS ${columnPrefix}first_name,
             $tableAlias.last_name         AS ${columnPrefix}last_name,
             $tableAlias.lang              AS ${columnPrefix}lang,
-            $tableAlias.default_currency  AS ${columnPrefix}default_currency
+            $tableAlias.tmz               AS ${columnPrefix}tmz,
+            $tableAlias.email_verified    AS ${columnPrefix}email_verified,
+            $tableAlias.photo_url         AS ${columnPrefix}photo_url,
+            $tableAlias.mfa_enabled       AS ${columnPrefix}mfa_enabled,
+            $tableAlias.default_currency  AS ${columnPrefix}default_currency,
+            $tableAlias.onboarding_done   AS ${columnPrefix}onboarding_done
             """.trimIndent()
 
         fun userFromRow(

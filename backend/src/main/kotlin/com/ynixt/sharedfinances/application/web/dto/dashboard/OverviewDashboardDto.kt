@@ -8,6 +8,9 @@ data class OverviewDashboardDto(
     val currency: String,
     val cards: List<OverviewDashboardCardDto>,
     val charts: OverviewDashboardChartsDto,
+    val goalCommittedTotal: BigDecimal,
+    val freeBalanceTotal: BigDecimal,
+    val goalOverCommittedWarning: Boolean,
 )
 
 data class OverviewDashboardCardDto(

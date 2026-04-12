@@ -3,6 +3,7 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faBuildingColumns,
+  faBullseye,
   faCalendarDays,
   faCreditCard,
   faDollarSign,
@@ -169,9 +170,9 @@ export class FinancesPageComponent {
             routerLinkActiveOptions: { exact: true },
           },
           {
-            fa: faMoneyBillTransfer,
-            label: this.translateService.instant('financesPage.menu.exchangeRates'),
-            routerLink: '/app/exchange-rates',
+            fa: faBullseye,
+            label: this.translateService.instant('financesPage.menu.goals'),
+            routerLink: '/app/goals',
             routerLinkActiveOptions: { exact: true },
           },
         ],
@@ -194,6 +195,14 @@ export class FinancesPageComponent {
     };
 
     this.items.push(this.groupMenuRoot);
+
+    this.items.push({
+      fa: faMoneyBillTransfer,
+      label: this.translateService.instant('financesPage.menu.exchangeRates'),
+      routerLink: '/app/exchange-rates',
+      routerLinkActiveOptions: { exact: true },
+    });
+
     this.convertGroupsIntoMenu();
   }
 
@@ -238,6 +247,12 @@ export class FinancesPageComponent {
               fa: faTag,
               label: this.translateService.instant('financesPage.menu.categories'),
               routerLink: ['/app/groups', g.id, 'categories'],
+              routerLinkActiveOptions: { exact: true },
+            },
+            {
+              fa: faBullseye,
+              label: this.translateService.instant('financesPage.menu.goals'),
+              routerLink: ['/app/groups', g.id, 'goals'],
               routerLinkActiveOptions: { exact: true },
             },
           ],

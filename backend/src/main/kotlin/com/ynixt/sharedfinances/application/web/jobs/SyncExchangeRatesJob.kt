@@ -14,7 +14,7 @@ class SyncExchangeRatesJob(
 ) {
     private val logger = LoggerFactory.getLogger(SyncExchangeRatesJob::class.java)
 
-    @Scheduled(cron = "0 0 0/12 * * 1")
+    @Scheduled(cron = "\${app.jobs.refreshExchangeRates.cron}")
     fun job() {
         logger.info("Sync exchange rates job started")
 

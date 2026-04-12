@@ -26,7 +26,18 @@ pageTitle:
   associateBankAccountGroup: Associate bank account to group
   groupCreditCards: Group credit cards
   associateCreditCardGroup: Associate credit card to group
+  groupGoals: Group goals
+  groupNewGoal: New group goal
   transactions: Transactions
   newTransaction: New transaction
   editTransaction: Edit transaction
   scheduleManager: Schedule manager
+  goals: Goals
+  newGoal: New goal
+  editGoal: Edit goal
+  goalDetail: Goal
+  goalAllocate: Allocate to goal
+  goalReverse: Deallocation
+  goalSchedule: New schedule
+  goalEditSchedule: Edit schedule
+  goalEditLedgerMovement: Edit allocation

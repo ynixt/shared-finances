@@ -1,0 +1,35 @@
+<p-confirmDialog />
+
+<app-finances-title-bar
+  [title]="goalName() || ('general.edit' | translate)"
+  [closeRouterLink]="closeRouterLink"
+  [showDeleteButton]="true"
+  [deleteButtonLoading]="deleting"
+  (deleteButtonClicked)="confirmDelete()"
+/>
+
+@if (initialLoading) {
+  <div class="py-8 text-center text-surface-600">{{ 'general.loading' | translate }}</div>
+} @else {
+  <div class="mt-6 max-w-md space-y-4">
+    <p class="text-sm text-surface-600">
+      {{ 'financesPage.goalsPage.wallet' | translate }}:
+      <span class="font-medium text-surface-800">{{ movement()?.walletItemName || movement()?.walletItemId }}</span>
+    </p>
+    <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1">
+        <span class="text-sm font-medium text-surface-700">{{ 'financesPage.goalsPage.allocationDate' | translate }}</span>
+        <app-date-picker formControlName="allocationDate" class="block w-full" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-sm font-medium text-surface-700">{{ 'financesPage.goalsPage.amount' | translate }}</span>
+        <p-inputNumber formControlName="newSignedAmount" mode="currency" [currency]="movementCurrency()" class="w-full" />
+      </div>
+      <label class="flex flex-col gap-2">
+        <span class="text-sm font-medium text-surface-700">{{ 'financesPage.goalsPage.note' | translate }}</span>
+        <input pInputText type="text" formControlName="note" class="w-full" />
+      </label>
+      <button pButton type="submit" [loading]="loading" [label]="'general.save' | translate" [disabled]="form.invalid"></button>
+    </form>
+  </div>
+}

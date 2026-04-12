@@ -10,5 +10,6 @@ interface GroupWalletItemService {
         userId: UUID,
         groupId: UUID,
         pageable: Pageable,
+        onlyBankAccounts: Boolean = false,
     ): Page<WalletItem>
 }

@@ -31,6 +31,8 @@ general:
   copy: Copy
   language: Language
   date: Date
+  loading: Loading…
+  view: View
 
 error:
   genericTitle: Error

@@ -42,6 +42,7 @@ class GroupPermissionServiceImpl(
                 setOf(
                     GroupPermissions.SEND_ENTRIES,
                     GroupPermissions.ADD_BANK_ACCOUNT,
+                    GroupPermissions.MANAGE_GOALS,
                 )
 
             else -> emptySet()

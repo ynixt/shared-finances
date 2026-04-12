@@ -1,0 +1,37 @@
+<app-finances-title-bar [title]="goalName() || (titleKey | translate)" [closeRouterLink]="closeRouterLink" />
+
+@if (initialLoading) {
+  <div class="py-8 text-center text-surface-600">{{ 'general.loading' | translate }}</div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 flex max-w-md flex-col gap-4">
+    <label class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-surface-700"
+        >{{ 'financesPage.goalsPage.wallet' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <app-wallet-item-picker [group]="selectedGroupForPicker()" [onlyBankAccounts]="true" formControlName="walletItem" />
+    </label>
+
+    @if (requiresDate) {
+      <div class="flex flex-col gap-1">
+        <span class="text-sm font-medium text-surface-700"
+          >{{ 'financesPage.goalsPage.allocationDate' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <app-date-picker formControlName="allocationDate" class="block w-full" />
+      </div>
+    }
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm font-medium text-surface-700"
+        >{{ 'financesPage.goalsPage.amount' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <p-inputNumber formControlName="amount" mode="currency" [currency]="amountCurrency()" class="w-full" />
+    </div>
+
+    <label class="flex flex-col gap-2">
+      <span class="text-sm font-medium text-surface-700">{{ 'financesPage.goalsPage.note' | translate }}</span>
+      <input pInputText type="text" formControlName="note" class="w-full" />
+    </label>
+
+    <button pButton type="submit" [loading]="loading" [label]="'general.save' | translate" [disabled]="form.invalid"></button>
+  </form>
+}

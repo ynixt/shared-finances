@@ -2,6 +2,7 @@ export * from './action-event-category';
 export * from './action-event-type';
 export * from './credit-card-bill-status';
 export * from './entry-summary-type';
+export * from './goal-ledger-movement-kind';
 export * from './group-permissions';
 export * from './payment-type';
 export * from './recurrence-type';

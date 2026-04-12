@@ -31,6 +31,8 @@ general:
   copy: Copiar
   language: Idioma
   date: Data
+  loading: Carregando…
+  view: Ver
 
 error:
   genericTitle: Erro

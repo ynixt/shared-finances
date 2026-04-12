@@ -22,3 +22,8 @@ apiErrors:
   mfaEnrollmentNotFound: Não foi possível configurar o 2-step. Por favor, atualize a página e tente novamente.
   emailAlreadyInUse: Conta bloqueada temporariamente por muitas tentativas incorretas de login.
   mixedCurrencyWalletSources: Não é suportado multiplas origens com moedas diferentes.
+  financialGoalNotFound: Meta não encontrada.
+  financialGoalForbidden: Você não pode gerenciar esta meta.
+  financialGoalInvalidWallet: Esta conta bancária não pode ser usada nesta meta.
+  financialGoalUnsupportedCurrency: A moeda {{currency}} não está definida como alvo para esta meta.
+  financialGoalMovementNotFound: Lançamento do ledger não encontrado.

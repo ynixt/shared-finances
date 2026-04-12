@@ -6,6 +6,7 @@ import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
+import { ConfirmationService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 
 import { environment } from '../environments/environment';
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    ConfirmationService,
     providePrimeNG({
       theme: {
         preset: SharedFinancesPreset,

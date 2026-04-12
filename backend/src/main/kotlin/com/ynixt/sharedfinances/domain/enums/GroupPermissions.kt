@@ -19,4 +19,6 @@ enum class GroupPermissions {
     NEW_CATEGORY,
     EDIT_CATEGORY,
     DELETE_CATEGORY,
+
+    MANAGE_GOALS,
 }

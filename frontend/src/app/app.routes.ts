@@ -235,6 +235,83 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'goals',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goals-list-page.component').then(
+                m => m.FinancialGoalsListPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goals' },
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-upsert-page.component').then(
+                m => m.FinancialGoalUpsertPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.newGoal' },
+          },
+          {
+            path: ':id/allocate',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-allocation-form-page.component').then(
+                m => m.FinancialGoalAllocationFormPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goalAllocate', goalLedgerMode: 'allocate' },
+          },
+          {
+            path: ':id/reverse',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-allocation-form-page.component').then(
+                m => m.FinancialGoalAllocationFormPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goalReverse', goalLedgerMode: 'deallocate' },
+          },
+          {
+            path: ':id/schedule',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-schedule-page.component').then(
+                m => m.FinancialGoalSchedulePageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goalSchedule' },
+          },
+          {
+            path: ':id/schedules/:scheduleId/edit',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-edit-schedule-page.component').then(
+                m => m.FinancialGoalEditSchedulePageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goalEditSchedule' },
+          },
+          {
+            path: ':id/movements/:movementId/edit',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-edit-ledger-movement-page.component').then(
+                m => m.FinancialGoalEditLedgerMovementPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goalEditLedgerMovement' },
+          },
+          {
+            path: ':id/edit',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-upsert-page.component').then(
+                m => m.FinancialGoalUpsertPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.editGoal' },
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./pages/finances/financial-goals-page/financial-goal-detail-page.component').then(
+                m => m.FinancialGoalDetailPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.goalDetail' },
+          },
+        ],
+      },
+      {
         path: 'groups',
         children: [
           {
@@ -257,6 +334,83 @@ export const routes: Routes = [
             data: {
               pageTitleKey: 'pageTitle.editGroup',
             },
+          },
+          {
+            path: ':groupId/goals',
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goals-list-page.component').then(
+                    m => m.FinancialGoalsListPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.groupGoals' },
+              },
+              {
+                path: 'new',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-upsert-page.component').then(
+                    m => m.FinancialGoalUpsertPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.groupNewGoal' },
+              },
+              {
+                path: ':id/allocate',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-allocation-form-page.component').then(
+                    m => m.FinancialGoalAllocationFormPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.goalAllocate', goalLedgerMode: 'allocate' },
+              },
+              {
+                path: ':id/reverse',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-allocation-form-page.component').then(
+                    m => m.FinancialGoalAllocationFormPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.goalReverse', goalLedgerMode: 'deallocate' },
+              },
+              {
+                path: ':id/schedule',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-schedule-page.component').then(
+                    m => m.FinancialGoalSchedulePageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.goalSchedule' },
+              },
+              {
+                path: ':id/schedules/:scheduleId/edit',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-edit-schedule-page.component').then(
+                    m => m.FinancialGoalEditSchedulePageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.goalEditSchedule' },
+              },
+              {
+                path: ':id/movements/:movementId/edit',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-edit-ledger-movement-page.component').then(
+                    m => m.FinancialGoalEditLedgerMovementPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.goalEditLedgerMovement' },
+              },
+              {
+                path: ':id/edit',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-upsert-page.component').then(
+                    m => m.FinancialGoalUpsertPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.editGoal' },
+              },
+              {
+                path: ':id',
+                loadComponent: () =>
+                  import('./pages/finances/financial-goals-page/financial-goal-detail-page.component').then(
+                    m => m.FinancialGoalDetailPageComponent,
+                  ),
+                data: { pageTitleKey: 'pageTitle.goalDetail' },
+              },
+            ],
           },
           {
             path: ':id',

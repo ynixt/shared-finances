@@ -1,0 +1,168 @@
+@if (loading()) {
+  <div class="py-8 text-center text-surface-600">{{ 'general.loading' | translate }}</div>
+} @else if (detail() != null) {
+  <app-finances-title-bar [title]="detail()!.goal.name" [closeRouterLink]="closeRouterLink" [extraButtons]="editExtras()" />
+
+  <div class="mb-6 flex flex-wrap gap-2">
+    <a
+      [routerLink]="goalActionRouterLink('allocate')"
+      pButton
+      type="button"
+      class="p-button-sm"
+      [label]="'financesPage.goalsPage.allocate' | translate"
+    ></a>
+    <a
+      [routerLink]="goalActionRouterLink('reverse')"
+      pButton
+      type="button"
+      class="p-button-sm p-button-secondary"
+      [label]="'financesPage.goalsPage.reverse' | translate"
+    ></a>
+    <a
+      [routerLink]="goalActionRouterLink('schedule')"
+      pButton
+      type="button"
+      class="p-button-sm p-button-secondary"
+      [label]="'financesPage.goalsPage.newSchedule' | translate"
+    ></a>
+  </div>
+
+  <section class="mb-8">
+    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.targets' | translate }}</h3>
+    <ul class="list-inside list-disc text-surface-700">
+      @for (t of detail()!.targets; track t.currency) {
+        <li>{{ t.currency }} — {{ t.targetAmount | localCurrency: t.currency }}</li>
+      }
+    </ul>
+  </section>
+
+  <section class="mb-8">
+    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.committed' | translate }}</h3>
+    <ul class="list-inside list-disc text-surface-700">
+      @for (e of detail()!.committedByCurrency | keyvalue; track e.key) {
+        <li>{{ e.key }} — {{ e.value | localCurrency: e.key }}</li>
+      }
+    </ul>
+  </section>
+
+  @if (commitmentChartViews().length > 0) {
+    <section class="mb-8">
+      <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.commitmentChartTitle' | translate }}</h3>
+      <div class="space-y-6">
+        @for (view of commitmentChartViews(); track view.currency) {
+          <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
+            <h4 class="mb-3 text-sm font-medium text-surface-700">{{ view.currency }}</h4>
+            <div>
+              <p-chart type="line" [data]="view.data" [options]="view.options"></p-chart>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="mb-8">
+    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.movements' | translate }}</h3>
+    <p-table
+      [value]="movementPage().content"
+      styleClass="p-datatable-sm"
+      [lazy]="true"
+      [paginator]="true"
+      [rows]="movementPageSize"
+      [totalRecords]="movementPage().totalElements"
+      [loading]="loadingMovements()"
+      (onLazyLoad)="onMovementLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th>{{ 'general.date' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.wallet' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.amount' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.note' | translate }}</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-m>
+        <tr>
+          <td>{{ m.movementDate | localDate: 'shortDate' }}</td>
+          <td>{{ m.walletItemName || m.walletItemId }}</td>
+          <td>{{ m.signedAmount | localCurrency: m.currency }}</td>
+          <td>{{ m.note ?? '—' }}</td>
+          <td class="text-end">
+            <a
+              [routerLink]="movementEditRouterLink(m.id)"
+              pButton
+              type="button"
+              class="p-button-text p-button-sm"
+              [label]="'general.edit' | translate"
+            ></a>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  <section class="mb-8">
+    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.schedules' | translate }}</h3>
+    <p-table
+      [value]="schedulePage().content"
+      styleClass="p-datatable-sm"
+      [lazy]="true"
+      [paginator]="true"
+      [rows]="schedulePageSize"
+      [totalRecords]="schedulePage().totalElements"
+      [loading]="loadingSchedules()"
+      (onLazyLoad)="onScheduleLazyLoad($event)"
+    >
+      <ng-template #header>
+        <tr>
+          <th>{{ 'financesPage.goalsPage.scheduleKindColumn' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.wallet' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.amount' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.periodicity' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.nextExecution' | translate }}</th>
+          <th>{{ 'financesPage.goalsPage.endExecution' | translate }}</th>
+          <th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-s>
+        <tr>
+          <td>
+            @if (s.removesAllocation) {
+              {{ 'financesPage.goalsPage.scheduleKind.removal' | translate }}
+            } @else {
+              {{ 'financesPage.goalsPage.scheduleKind.allocation' | translate }}
+            }
+          </td>
+          <td>{{ s.walletItemName || s.walletItemId }}</td>
+          <td>
+            @if (s.removesAllocation) {
+              <span class="text-red-600">-{{ s.amount | localCurrency: s.currency }}</span>
+            } @else {
+              {{ s.amount | localCurrency: s.currency }}
+            }
+          </td>
+          <td>{{ 'financesPage.goalsPage.recurrence.' + s.periodicity | translate }}</td>
+          <td>{{ s.nextExecution != null ? (s.nextExecution | localDate: 'shortDate') : '—' }}</td>
+          <td>{{ s.endExecution != null ? (s.endExecution | localDate: 'shortDate') : '—' }}</td>
+          <td class="flex flex-wrap justify-end gap-1">
+            <a
+              [routerLink]="scheduleEditRouterLink(s.id)"
+              pButton
+              type="button"
+              class="p-button-text p-button-sm"
+              [label]="'general.edit' | translate"
+            ></a>
+            <button
+              pButton
+              type="button"
+              class="p-button-text p-button-danger p-button-sm"
+              (click)="deleteSchedule(s.id)"
+              [label]="'general.delete' | translate"
+            ></button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+}

@@ -1,5 +1,9 @@
 financesPage:
   overviewPage:
+    goalBalances:
+      committed: Committed to goals
+      free: Free balance
+      overCommittedWarning: Committed to goals exceeds your visible bank balance.
     title: Overview
     empty: No dashboard data available for this month.
     noDetails: No details available.
@@ -9,6 +13,8 @@ financesPage:
       close: Close
     cards:
       balance: Balance
+      goalCommitted: Goal commitment
+      goalFreeBalance: Free balance
       periodCashIn: Period cash in
       periodCashOut: Period cash out
       periodNetCashFlow: Period change
@@ -41,5 +47,6 @@ financesPage:
       sourceType:
         bankAccount: Bank account
         creditCardBill: Credit card bill
+        goal: Goal
         formula: Formula
         unknown: Unknown source

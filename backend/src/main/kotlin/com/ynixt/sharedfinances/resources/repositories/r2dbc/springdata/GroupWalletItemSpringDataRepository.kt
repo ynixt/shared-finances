@@ -6,14 +6,14 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupWalletItemSpringDataRepository : R2dbcRepository<GroupWalletItemEntity, String> {
-    fun countByGroupId(
-        groupId: UUID,
-        enabled: Boolean,
-    ): Mono<Long>
-
     fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity>
 
     fun deleteByGroupIdAndWalletItemId(
+        groupId: UUID,
+        walletItemId: UUID,
+    ): Mono<Long>
+
+    fun countByGroupIdAndWalletItemId(
         groupId: UUID,
         walletItemId: UUID,
     ): Mono<Long>

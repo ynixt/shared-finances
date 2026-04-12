@@ -13,7 +13,7 @@ class ExpireInvitesJob(
 ) {
     private val logger = LoggerFactory.getLogger(ExpireInvitesJob::class.java)
 
-    @Scheduled(cron = "0 0/30 * * * *")
+    @Scheduled(cron = "\${app.jobs.expireInvites.cron}")
     fun job() {
         logger.info("Expire invites job started")
 

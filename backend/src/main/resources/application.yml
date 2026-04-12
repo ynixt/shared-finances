@@ -98,3 +98,14 @@ app:
     pathStyleAccessEnabled: ${APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
   exchangeRates:
     providerUrl: ${APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
+  jobs:
+    refreshExchangeRates:
+      cron: ${APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * 1}
+    materializeGoal:
+      cron: ${APP_MATERIALIZE_GOAL_CRON:0 0 0 * * *}
+    generateEntry:
+      cron: ${APP_GENERATE_ENTRY_CRON:0 0 0 * * *}
+    expireMfa:
+      cron: ${APP_EXPIRE_MFA_CRON:0 0 0/12 * * *}
+    expireInvites:
+      cron: ${APP_EXPIRE_INVITES_CRON:0 0/30 * * * *}

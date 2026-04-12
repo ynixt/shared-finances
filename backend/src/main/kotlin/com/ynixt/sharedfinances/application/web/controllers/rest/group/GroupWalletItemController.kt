@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
@@ -31,11 +32,13 @@ class GroupWalletItemController(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
         pageable: Pageable,
+        @RequestParam(required = false, defaultValue = "false") onlyBankAccounts: Boolean,
     ): Page<WalletItemSearchResponseDto> =
         groupWalletItemService
             .findAllItems(
                 userId = principalToken.principal.id,
                 groupId = groupId,
                 pageable,
+                onlyBankAccounts = onlyBankAccounts,
             ).map(walletItemDtoMapper::searchResponseToDto)
 }

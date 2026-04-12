@@ -1,0 +1,55 @@
+financesPage:
+  goalsPage:
+    listTitle: Goals
+    newTitle: New goal
+    editTitle: Edit goal
+    detailTitle: Goal
+    loadError: Could not load goals.
+    empty: No goals yet. Create one to track targets and committed balances.
+    newGoal: New goal
+    description: Description
+    columns:
+      name: Name
+      scope: Scope
+      deadline: Deadline
+    scopeIndividual: Individual
+    scopeGroup: Group
+    groupNonePlaceholder: Not in a group
+    targets: Targets
+    committed: Committed by currency
+    commitmentChartTitle: Commitment and target (by month)
+    commitmentChartCommitted: Committed (cumulative)
+    commitmentChartTarget: Target
+    movements: Ledger
+    schedules: Schedules
+    scheduleKindColumn: Type
+    scheduleKind:
+      allocation: Contribution
+      removal: Deallocation
+    newSchedule: New schedule
+    editSchedule: Edit schedule
+    nextExecution: Next run
+    endExecution: Ends on
+    removesAllocationHint: Schedule a deallocation (reduces goal commitment) instead of a contribution
+    allocate: Allocate
+    reverse: Deallocation
+    schedule: New schedule
+    allocationDate: Allocation date
+    amount: Amount
+    wallet: Account
+    note: Note
+    periodicity: Periodicity
+    firstExecution: First execution
+    qtyLimit: Number of executions
+    overAllocationHint: Committed to goals exceeds visible bank balance; free balance may be negative.
+    deleteGoalConfirm: Delete this goal and all its ledger data? This cannot be undone.
+    deleteMovementConfirm: Delete this allocation/deallocation movement? This action cannot be undone.
+    movementKind:
+      IMMEDIATE: Immediate
+      SCHEDULED_MATERIALIZATION: Scheduled
+    recurrence:
+      SINGLE: One-time
+      DAILY: Daily
+      WEEKLY: Weekly
+      MONTHLY: Monthly
+      YEARLY: Yearly

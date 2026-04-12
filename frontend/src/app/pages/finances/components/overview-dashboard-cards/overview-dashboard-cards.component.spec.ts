@@ -27,10 +27,15 @@ describe('OverviewDashboardCardsComponent', () => {
   });
 
   it('maps the new cash-flow cards to translation keys and value classes', () => {
+    expect(component.cardTitleKey('GOAL_COMMITTED')).toBe('financesPage.overviewPage.cards.goalCommitted');
+    expect(component.cardTitleKey('GOAL_FREE_BALANCE')).toBe('financesPage.overviewPage.cards.goalFreeBalance');
     expect(component.cardTitleKey('PERIOD_CASH_IN')).toBe('financesPage.overviewPage.cards.periodCashIn');
     expect(component.cardTitleKey('PERIOD_CASH_OUT')).toBe('financesPage.overviewPage.cards.periodCashOut');
     expect(component.cardTitleKey('END_OF_PERIOD_NET_CASH_FLOW')).toBe('financesPage.overviewPage.cards.endOfPeriodNetCashFlow');
 
+    expect(component.cardValueClass({ key: 'GOAL_COMMITTED', value: 10 } as OverviewDashboardCardDto)).toBe(
+      'text-surface-900 dark:text-surface-0',
+    );
     expect(component.cardValueClass({ key: 'PERIOD_CASH_IN', value: 10 } as OverviewDashboardCardDto)).toBe('text-green-700');
     expect(component.cardValueClass({ key: 'PROJECTED_CASH_OUT', value: 10 } as OverviewDashboardCardDto)).toBe('text-red-700');
     expect(component.cardValueClass({ key: 'BALANCE', value: -1 } as OverviewDashboardCardDto)).toBe('text-red-700');
@@ -43,6 +48,7 @@ describe('OverviewDashboardCardsComponent', () => {
     expect(component.detailSublabel({ sourceType: 'CREDIT_CARD_BILL' } as never)).toBe(
       'financesPage.overviewPage.detail.sourceType.creditCardBill',
     );
+    expect(component.detailSublabel({ sourceType: 'GOAL' } as never)).toBe('financesPage.overviewPage.detail.sourceType.goal');
     expect(component.detailSublabel({ sourceType: 'FORMULA' } as never)).toBe('financesPage.overviewPage.detail.sourceType.formula');
     expect(component.detailSublabel({ sourceType: 'SOMETHING_ELSE' } as never)).toBe('financesPage.overviewPage.detail.sourceType.unknown');
   });

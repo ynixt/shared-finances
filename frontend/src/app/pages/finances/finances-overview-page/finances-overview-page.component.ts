@@ -7,6 +7,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
+import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { OverviewDashboardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/dashboard';
@@ -36,6 +37,7 @@ import { OverviewDashboardService } from '../services/overview-dashboard.service
     ProgressSpinner,
     OverviewDashboardChartsComponent,
     OverviewDashboardCardsComponent,
+    Message,
   ],
   templateUrl: './finances-overview-page.component.html',
 })

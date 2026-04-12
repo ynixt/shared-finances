@@ -259,6 +259,7 @@ internal class ScenarioGroupPermissionService(
                 setOf(
                     GroupPermissions.SEND_ENTRIES,
                     GroupPermissions.ADD_BANK_ACCOUNT,
+                    GroupPermissions.MANAGE_GOALS,
                 )
 
             else -> emptySet()
