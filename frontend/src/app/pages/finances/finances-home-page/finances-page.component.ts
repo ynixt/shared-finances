@@ -7,6 +7,7 @@ import {
   faCalendarDays,
   faCreditCard,
   faDollarSign,
+  faFlask,
   faGrip,
   faMoneyBillTransfer,
   faPlus,
@@ -148,6 +149,12 @@ export class FinancesPageComponent {
         routerLinkActiveOptions: { exact: true },
       },
       {
+        fa: faFlask,
+        label: this.translateService.instant('financesPage.menu.simulationJobs'),
+        routerLink: '/app/simulations',
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
         label: this.translateService.instant('financesPage.menu.registrations'),
         expanded: true,
         items: [
@@ -228,6 +235,12 @@ export class FinancesPageComponent {
           routerLinkActiveOptions: { exact: true },
         },
         {
+          fa: faFlask,
+          label: this.translateService.instant('financesPage.menu.simulationJobs'),
+          routerLink: ['/app/groups', g.id, 'simulations'],
+          routerLinkActiveOptions: { exact: true },
+        },
+        {
           label: this.translateService.instant('financesPage.menu.links'),
           expanded: true,
           items: [
@@ -243,6 +256,12 @@ export class FinancesPageComponent {
               routerLink: ['/app/groups', g.id, 'creditCards'],
               routerLinkActiveOptions: { exact: true },
             },
+          ],
+        },
+        {
+          label: this.translateService.instant('financesPage.menu.registrations'),
+          expanded: true,
+          items: [
             {
               fa: faTag,
               label: this.translateService.instant('financesPage.menu.categories'),

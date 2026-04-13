@@ -8,6 +8,8 @@ export * from './payment-type';
 export * from './recurrence-type';
 export * from './scheduled-edit-scope';
 export * from './scheduled-execution-filter';
+export * from './simulation-job-status';
+export * from './simulation-job-type';
 export * from './user-group-role';
 export * from './wallet-entry-type';
 export * from './wallet-item-type';

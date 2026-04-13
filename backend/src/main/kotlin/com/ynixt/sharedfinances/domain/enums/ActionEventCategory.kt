@@ -10,4 +10,5 @@ enum class ActionEventCategory {
     GROUP_CATEGORY,
 
     WALLET_EVENT,
+    SIMULATION_JOB,
 }

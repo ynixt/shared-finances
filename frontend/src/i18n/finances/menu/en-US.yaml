@@ -9,6 +9,7 @@ financesPage:
     categories: Categories
     exchangeRates: Exchange rates
     goals: Goals
+    simulationJobs: Simulations
     tags: Tags
     groups: Groups
     links: Links

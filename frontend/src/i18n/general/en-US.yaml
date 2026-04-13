@@ -33,6 +33,9 @@ general:
   date: Date
   loading: Loading…
   view: View
+  refresh: Refresh
+  previous: Previous
+  next: Next
 
 error:
   genericTitle: Error

@@ -85,3 +85,10 @@ app:
     pathStyleAccessEnabled: ${APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
   exchangeRates:
     providerUrl: http://localhost/mock-exchange
+  jobs:
+    simulation:
+      reconcile:
+        cron-enabled: false
+        cron: "0 */2 * * * *"
+      purge:
+        cron: "0 30 3 * * *"

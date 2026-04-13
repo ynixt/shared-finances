@@ -312,6 +312,12 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'simulations',
+        loadComponent: () =>
+          import('./pages/finances/financial-simulations-page/simulation-jobs-page.component').then(m => m.SimulationJobsPageComponent),
+        data: { pageTitleKey: 'pageTitle.simulationJobs' },
+      },
+      {
         path: 'groups',
         children: [
           {
@@ -411,6 +417,14 @@ export const routes: Routes = [
                 data: { pageTitleKey: 'pageTitle.goalDetail' },
               },
             ],
+          },
+          {
+            path: ':groupId/simulations',
+            loadComponent: () =>
+              import('./pages/finances/financial-simulations-page/group-simulation-jobs-page.component').then(
+                m => m.GroupSimulationJobsPageComponent,
+              ),
+            data: { pageTitleKey: 'pageTitle.simulationJobs' },
           },
           {
             path: ':id',

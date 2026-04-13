@@ -33,6 +33,9 @@ general:
   date: Data
   loading: Carregando…
   view: Ver
+  refresh: Atualizar
+  previous: Anterior
+  next: Próximo
 
 error:
   genericTitle: Erro

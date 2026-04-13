@@ -1,0 +1,95 @@
+<app-finances-title-bar
+  [title]="'financesPage.goalsPage.simulationJobs.title' | translate"
+  [closeRouterLink]="closeRouterLink"
+></app-finances-title-bar>
+
+<p-message severity="info" icon="pi pi-exclamation-triangle" styleClass="mb-4">
+  {{ 'financesPage.goalsPage.simulationJobs.retentionHint' | translate }}
+</p-message>
+
+<div class="mb-4 flex flex-wrap items-center gap-2">
+  <button pButton [loading]="creating" (click)="createJob()">
+    <fa-icon [icon]="createIcon"></fa-icon>
+    <span class="ml-2">{{ 'financesPage.goalsPage.simulationJobs.new' | translate }}</span>
+  </button>
+  <button pButton severity="secondary" [loading]="loading" (click)="refreshPage()">
+    <fa-icon [icon]="refreshIcon"></fa-icon>
+    <span class="ml-2">{{ 'general.refresh' | translate }}</span>
+  </button>
+</div>
+
+@if (loadError) {
+  <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
+    {{ 'financesPage.goalsPage.simulationJobs.loadError' | translate }}
+  </div>
+} @else if (jobs.length === 0) {
+  <div class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+    {{ 'financesPage.goalsPage.simulationJobs.empty' | translate }}
+  </div>
+} @else {
+  <div class="space-y-3">
+    @for (job of jobs; track job.id) {
+      <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <header class="flex flex-wrap items-center gap-3">
+          <div class="mr-auto min-w-0">
+            <p class="truncate font-semibold text-slate-900">{{ job.id }}</p>
+            <p class="text-xs text-slate-500">
+              {{ 'financesPage.goalsPage.simulationJobs.createdAt' | translate }}:
+              {{ job.createdAt != null ? (job.createdAt | localDate: 'short') : '—' }}
+            </p>
+          </div>
+          <p-tag [value]="statusKey(job.status) | translate" [severity]="statusSeverity(job.status)" />
+        </header>
+
+        <section class="mt-3 grid gap-1 text-sm text-slate-700">
+          <p>
+            <strong>{{ 'financesPage.goalsPage.simulationJobs.type' | translate }}:</strong>
+            {{ job.type }}
+          </p>
+          <p>
+            <strong>{{ 'financesPage.goalsPage.simulationJobs.retries' | translate }}:</strong>
+            {{ job.retries }}
+          </p>
+          @if (job.errorMessage) {
+            <p class="text-red-700">
+              <strong>{{ 'financesPage.goalsPage.simulationJobs.error' | translate }}:</strong>
+              {{ job.errorMessage }}
+            </p>
+          }
+          @if (job.resultPayload) {
+            <p class="break-all text-emerald-700">
+              <strong>{{ 'financesPage.goalsPage.simulationJobs.result' | translate }}:</strong>
+              {{ job.resultPayload }}
+            </p>
+          }
+        </section>
+
+        @if (canCancel(job)) {
+          <footer class="mt-3">
+            <button
+              pButton
+              severity="danger"
+              [text]="true"
+              [loading]="isCancelling(job.id)"
+              (click)="cancel(job)"
+              [pTooltip]="'financesPage.goalsPage.simulationJobs.cancel' | translate"
+            >
+              <fa-icon [icon]="cancelIcon"></fa-icon>
+              <span class="ml-2">{{ 'financesPage.goalsPage.simulationJobs.cancel' | translate }}</span>
+            </button>
+          </footer>
+        }
+      </article>
+    }
+  </div>
+
+  <div class="mt-4 flex items-center justify-end gap-2">
+    <button pButton severity="secondary" [disabled]="!canGoPreviousPage || loading" (click)="previousPage()">
+      {{ 'general.previous' | translate }}
+    </button>
+    <span class="text-sm text-slate-600"> {{ jobsPage.number + 1 }} / {{ jobsPage.totalPages }} </span>
+    <button pButton severity="secondary" [disabled]="!canGoNextPage || loading" (click)="nextPage()">
+      {{ 'general.next' | translate }}
+    </button>
+  </div>
+}

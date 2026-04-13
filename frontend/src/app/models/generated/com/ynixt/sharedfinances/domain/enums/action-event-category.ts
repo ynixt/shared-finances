@@ -9,7 +9,8 @@ export type ActionEventCategory =
   | 'CREDIT_CARD_ASSOCIATE'
   | 'USER_CATEGORY'
   | 'GROUP_CATEGORY'
-  | 'WALLET_EVENT';
+  | 'WALLET_EVENT'
+  | 'SIMULATION_JOB';
 
 export const ActionEventCategory__Options: ActionEventCategory[] = [
   'BANK_ACCOUNT',
@@ -20,6 +21,7 @@ export const ActionEventCategory__Options: ActionEventCategory[] = [
   'USER_CATEGORY',
   'GROUP_CATEGORY',
   'WALLET_EVENT',
+  'SIMULATION_JOB',
 ];
 
 export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEventCategory } = {
@@ -31,4 +33,5 @@ export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEvent
   'USER_CATEGORY': 'USER_CATEGORY',
   'GROUP_CATEGORY': 'GROUP_CATEGORY',
   'WALLET_EVENT': 'WALLET_EVENT',
+  'SIMULATION_JOB': 'SIMULATION_JOB',
 };

@@ -27,3 +27,5 @@ apiErrors:
   financialGoalInvalidWallet: This bank account cannot be used for this goal.
   financialGoalUnsupportedCurrency: Currency {{currency}} is not targeted for this goal.
   financialGoalMovementNotFound: Ledger movement not found.
+  simulationJobNotFound: Simulation job not found.
+  simulationJobForbidden: You are not allowed to access this simulation job.

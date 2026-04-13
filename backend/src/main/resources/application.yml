@@ -109,3 +109,9 @@ app:
       cron: ${APP_EXPIRE_MFA_CRON:0 0 0/12 * * *}
     expireInvites:
       cron: ${APP_EXPIRE_INVITES_CRON:0 0/30 * * * *}
+    simulation:
+      reconcile:
+        cron-enabled: ${APP_SIMULATION_RECONCILE_CRON_ENABLED:false}
+        cron: ${APP_SIMULATION_RECONCILE_CRON:0 */2 * * * *}
+      purge:
+        cron: ${APP_SIMULATION_PURGE_CRON:0 30 3 * * *}

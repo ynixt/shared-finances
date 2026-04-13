@@ -4,6 +4,7 @@ import { Observable, filter, map } from 'rxjs';
 
 import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { SimulationJobStatusEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/simulationjobs';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { EventForListDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
@@ -37,6 +38,7 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly transactionInserted$: Observable<EventForListDto>;
   readonly transactionUpdated$: Observable<EventForListDto>;
   readonly transactionDeleted$: Observable<EventForListDto>;
+  readonly simulationJobUpdates$: Observable<SimulationJobStatusEventDto>;
   readonly resyncRequired$: Observable<void>;
 
   constructor(tokenStateService: TokenStateService, zone: NgZone, singleSseCoordinatorService: SingleSseCoordinatorService) {
@@ -112,5 +114,9 @@ export class UserActionEventService extends ActionEventService implements OnDest
       filter(e => e.type === 'DELETE'),
       map(e => e.data as EventForListDto),
     );
+
+    // --- Simulation jobs ---
+    const baseSimulationJob = this.streamOf<UserActionEventDto>('SIMULATION_JOB').pipe(notGroupFilter);
+    this.simulationJobUpdates$ = baseSimulationJob.pipe(map(e => e.data as SimulationJobStatusEventDto));
   }
 }
