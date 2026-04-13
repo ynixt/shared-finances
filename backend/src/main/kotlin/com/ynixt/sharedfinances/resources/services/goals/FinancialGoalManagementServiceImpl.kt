@@ -469,11 +469,13 @@ class FinancialGoalManagementServiceImpl(
     ) {
         val goal = loadGoal(goalId)
         ensureEditAccess(userId, goal)
+
         val existing =
             ledgerMovementRepository
                 .findByIdAndFinancialGoalId(movementId, goalId)
                 .awaitSingleOrNull() ?: throw FinancialGoalLedgerMovementNotFoundException(movementId)
-        ledgerMovementRepository.deleteById(existing.id!!.toString()).then().awaitSingle()
+
+        ledgerMovementRepository.deleteById(existing.id!!.toString()).awaitSingleOrNull()
     }
 
     @Transactional

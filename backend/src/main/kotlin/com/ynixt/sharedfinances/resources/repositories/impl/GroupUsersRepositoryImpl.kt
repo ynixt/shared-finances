@@ -29,6 +29,8 @@ class GroupUsersRepositoryImpl(
 
     override fun findAllMembers(groupId: UUID): Flux<GroupUserEntity> = dcRepository.findAllMembers(groupId)
 
+    override fun findAllOptedInUserIds(groupId: UUID): Flux<UUID> = dcRepository.findAllOptedInUserIds(groupId)
+
     override fun updateRole(
         userId: UUID,
         groupId: UUID,
@@ -38,5 +40,16 @@ class GroupUsersRepositoryImpl(
             userId = userId,
             groupId = groupId,
             newRole = newRole,
+        )
+
+    override fun updatePlanningSimulatorOptIn(
+        userId: UUID,
+        groupId: UUID,
+        allowPlanningSimulator: Boolean,
+    ): Mono<Long> =
+        springDataRepository.updatePlanningSimulatorOptIn(
+            userId = userId,
+            groupId = groupId,
+            allowPlanningSimulator = allowPlanningSimulator,
         )
 }

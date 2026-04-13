@@ -15,7 +15,13 @@ financesPage:
     manageTeamPage:
       title: 'Manage team of group: {{name}}'
       role: Role
+      allowPlanningSimulator: Planning simulator privacy
+      onlyYouCanChange: Only you can change your own privacy opt-in.
       successChangeMessage: Role changed successfully
+      planningOptInSaved: Planning simulator preference saved.
+      planningOptIn:
+        enabled: Opted in
+        disabled: Opted out
       generateInvitation: Generate invitation
       expiresOn: 'Expires on {{date}}'
     bankAccountsAssociatedPage:

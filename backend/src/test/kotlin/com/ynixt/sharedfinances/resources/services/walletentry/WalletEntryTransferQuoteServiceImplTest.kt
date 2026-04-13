@@ -393,6 +393,12 @@ class WalletEntryTransferQuoteServiceImplTest {
             role: UserGroupRole,
         ) = throw NotImplementedError()
 
+        override suspend fun updateOwnPlanningSimulatorOptIn(
+            userId: UUID,
+            id: UUID,
+            allowPlanningSimulator: Boolean,
+        ): Boolean = throw NotImplementedError()
+
         override fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity> = emptyList<GroupEntity>().asFlow()
     }
 }

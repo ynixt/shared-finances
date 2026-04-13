@@ -1,0 +1,66 @@
+financesPage:
+  simulationJobs:
+    title: Simulations
+    retentionHint: Simulation jobs and stored results are retained for up to 30 days.
+    new: Simulate
+    createError: Could not create simulation. Please try again.
+    loadError: Could not load simulation jobs.
+    empty: No simulation jobs yet.
+    createdAt: Created
+    type: Type
+    retries: Attempts
+    error: Error
+    result: Result
+    outcome: Outcome
+    cancel: Cancel
+    delete: Remove simulation
+    deleteConfirmTitle: Remove simulation
+    deleteConfirmMessage: This permanently deletes the simulation record. Do you want to continue?
+    deleteError: Could not remove the simulation. Please try again.
+    form:
+      title: Planning Simulation
+      hint: Simulate debt installments and estimate liquidity month by month before committing.
+      horizonMonths: Horizon (months)
+      debtAmount: Debt amount
+      installments: Installments
+      firstPaymentDate: First payment date
+      currency: Debt currency
+      addDebt: Add debt
+      pendingDebts: Debts included in this run
+      noDebts: No debts added yet.
+      removeDebt: Remove debt
+    fastPath:
+      processing: Simulation is running asynchronously. Results will appear as soon as processing is complete.
+      completed: Simulation finished quickly and the result is already available.
+      badge: Quick result
+    outcomeBand:
+      FITS: Fits
+      FITS_BUT_CANNOT_SUSTAIN_SCHEDULED_GOAL_CONTRIBUTIONS: Fits, but cannot sustain scheduled goal contributions
+      FITS_IF_GOAL_ALLOCATIONS_ARE_REDUCED: Fits if goal allocations are reduced
+      DOES_NOT_FIT: Does not fit
+    group:
+      incomplete: Incomplete group simulation
+      membersCount: 'Included members: {{included}}. Excluded members: {{excluded}}.'
+    goalTrack:
+      sustainScheduled: Can sustain scheduled contributions
+      sustainScheduledIfFreed: Can sustain scheduled contributions if allocations are freed
+      fitIfFreed: Can fit if allocations are freed
+      yes: 'Yes'
+      no: 'No'
+    timeline:
+      empty: No timeline data returned for this simulation.
+      month: Month
+      currency: Currency
+      opening: Opening balance
+      projectedFlow: Projected flow
+      cardOutflow: Card bill outflow
+      debtOutflow: Debt outflow
+      closing: Closing balance
+      goalContribution: Scheduled goal contribution
+      closingWithGoals: Closing with goal contributions
+    status:
+      QUEUED: Queued
+      RUNNING: Running
+      COMPLETED: Completed
+      FAILED: Failed
+      CANCELLED: Cancelled

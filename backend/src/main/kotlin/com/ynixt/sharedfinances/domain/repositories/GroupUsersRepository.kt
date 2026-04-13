@@ -21,9 +21,17 @@ interface GroupUsersRepository {
 
     fun findAllMembers(groupId: UUID): Flux<GroupUserEntity>
 
+    fun findAllOptedInUserIds(groupId: UUID): Flux<UUID>
+
     fun updateRole(
         userId: UUID,
         groupId: UUID,
         newRole: UserGroupRole,
+    ): Mono<Long>
+
+    fun updatePlanningSimulatorOptIn(
+        userId: UUID,
+        groupId: UUID,
+        allowPlanningSimulator: Boolean,
     ): Mono<Long>
 }

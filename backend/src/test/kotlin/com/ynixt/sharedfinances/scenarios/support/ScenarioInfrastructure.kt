@@ -233,6 +233,12 @@ internal class NoOpGroupService : GroupService {
         role: UserGroupRole,
     ) {}
 
+    override suspend fun updateOwnPlanningSimulatorOptIn(
+        userId: UUID,
+        id: UUID,
+        allowPlanningSimulator: Boolean,
+    ): Boolean = false
+
     override fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity> = emptyFlow()
 }
 
@@ -260,6 +266,8 @@ internal class ScenarioGroupPermissionService(
                     GroupPermissions.SEND_ENTRIES,
                     GroupPermissions.ADD_BANK_ACCOUNT,
                     GroupPermissions.MANAGE_GOALS,
+                    GroupPermissions.NEW_SIMULATION,
+                    GroupPermissions.DELETE_SIMULATIONS,
                 )
 
             else -> emptySet()

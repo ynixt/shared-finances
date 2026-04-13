@@ -53,21 +53,3 @@ financesPage:
       WEEKLY: Semanal
       MONTHLY: Mensal
       YEARLY: Anual
-    simulationJobs:
-      title: Simulações
-      retentionHint: Jobs e resultados de simulação são mantidos por no máximo 30 dias.
-      new: Nova simulação
-      loadError: Não foi possível carregar os jobs de simulação.
-      empty: Nenhum job de simulação ainda.
-      createdAt: Criado em
-      type: Tipo
-      retries: Tentativas
-      error: Erro
-      result: Resultado
-      cancel: Cancelar
-      status:
-        QUEUED: Na fila
-        RUNNING: Processando
-        COMPLETED: Concluído
-        FAILED: Falhou
-        CANCELLED: Cancelado

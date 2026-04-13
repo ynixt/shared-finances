@@ -7,6 +7,7 @@ import java.util.UUID
 
 data class SimulationJobDto(
     val id: UUID,
+    val requestedByUserId: UUID,
     val type: SimulationJobType,
     val status: SimulationJobStatus,
     val requestPayload: String?,

@@ -252,4 +252,21 @@ class GroupServiceImpl(
             }
         }
     }
+
+    override suspend fun updateOwnPlanningSimulatorOptIn(
+        userId: UUID,
+        id: UUID,
+        allowPlanningSimulator: Boolean,
+    ): Boolean {
+        if (!groupPermissionService.hasPermission(userId = userId, groupId = id)) {
+            return false
+        }
+
+        return groupUserRepository
+            .updatePlanningSimulatorOptIn(
+                userId = userId,
+                groupId = id,
+                allowPlanningSimulator = allowPlanningSimulator,
+            ).awaitSingle() > 0
+    }
 }

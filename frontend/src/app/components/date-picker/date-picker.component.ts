@@ -3,6 +3,7 @@ import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faCalendar } from '@fortawesome/free-solid-svg-icons';
 
+import dayjs from 'dayjs';
 import { DatePicker } from 'primeng/datepicker';
 import { DatePickerTypeView } from 'primeng/types/datepicker';
 
@@ -28,4 +29,14 @@ export class DatePickerComponent extends SimpleControlValueAccessor<Date> {
   readonlyInput = input<boolean>(false);
   view = input<DatePickerTypeView>('date');
   dateFormat = input<string | undefined>(undefined);
+
+  /** PrimeNG expects `Date`; callers may still pass dayjs from domain defaults. */
+  override writeValue(obj: Date | dayjs.Dayjs | undefined): void {
+    if (obj == null) {
+      super.writeValue(undefined);
+      return;
+    }
+    const asDate = dayjs.isDayjs(obj) ? obj.toDate() : obj instanceof Date ? obj : new Date(obj as unknown as string | number);
+    super.writeValue(asDate);
+  }
 }

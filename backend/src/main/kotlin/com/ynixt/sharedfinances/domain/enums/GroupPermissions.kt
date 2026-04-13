@@ -21,4 +21,7 @@ enum class GroupPermissions {
     DELETE_CATEGORY,
 
     MANAGE_GOALS,
+
+    NEW_SIMULATION,
+    DELETE_SIMULATIONS,
 }

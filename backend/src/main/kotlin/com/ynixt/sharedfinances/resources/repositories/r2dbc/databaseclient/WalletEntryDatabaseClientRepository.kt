@@ -24,22 +24,26 @@ class WalletEntryDatabaseClientRepository(
         walletItemId: UUID?,
         minimumDate: LocalDate,
         maximumDate: LocalDate?,
+        asOfDate: LocalDate,
     ): Flux<EntrySumResult> {
         require(userId != null || groupId != null) { "Either userId or groupId must be provided" }
 
         var sql = """
             SELECT
-                COALESCE(SUM(CASE WHEN wev.date <= CURRENT_DATE THEN we.value END), 0) AS balance,
-                COALESCE(SUM(CASE WHEN wev.date <= CURRENT_DATE AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0) AS revenue,
-                COALESCE(SUM(CASE WHEN wev.date <= CURRENT_DATE AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0) AS expense,
+                COALESCE(SUM(CASE WHEN wev.date <= :asOfDate THEN we.value END), 0)
+                    + COALESCE(SUM(CASE WHEN wev.date > :asOfDate AND wev.date < :minimumDate THEN we.value END), 0) AS balance,
+                COALESCE(SUM(CASE WHEN wev.date <= :asOfDate AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0)
+                    + COALESCE(SUM(CASE WHEN wev.date > :asOfDate AND wev.date < :minimumDate AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0) AS revenue,
+                COALESCE(SUM(CASE WHEN wev.date <= :asOfDate AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0)
+                    + COALESCE(SUM(CASE WHEN wev.date > :asOfDate AND wev.date < :minimumDate AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0) AS expense,
 
-                COALESCE(SUM(CASE WHEN wev.date <= CURRENT_DATE AND wev.date >= :minimumDate THEN we.value END), 0) AS period_balance,
-                COALESCE(SUM(CASE WHEN wev.date <= CURRENT_DATE AND wev.date >= :minimumDate AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0) AS period_revenue,
-                COALESCE(SUM(CASE WHEN wev.date <= CURRENT_DATE AND wev.date >= :minimumDate AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0) AS period_expense,
+                COALESCE(SUM(CASE WHEN wev.date <= :asOfDate AND wev.date >= :minimumDate THEN we.value END), 0) AS period_balance,
+                COALESCE(SUM(CASE WHEN wev.date <= :asOfDate AND wev.date >= :minimumDate AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0) AS period_revenue,
+                COALESCE(SUM(CASE WHEN wev.date <= :asOfDate AND wev.date >= :minimumDate AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0) AS period_expense,
 
-                COALESCE(SUM(CASE WHEN wev.date > CURRENT_DATE THEN we.value END), 0) AS projected_balance,
-                COALESCE(SUM(CASE WHEN wev.date > CURRENT_DATE AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0) AS projected_revenue,
-                COALESCE(SUM(CASE WHEN wev.date > CURRENT_DATE AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0) AS projected_expense,
+                COALESCE(SUM(CASE WHEN wev.date > :asOfDate AND wev.date >= :minimumDate THEN we.value END), 0) AS projected_balance,
+                COALESCE(SUM(CASE WHEN wev.date > :asOfDate AND wev.date >= :minimumDate AND NOT wev.initial_balance THEN GREATEST(we.value, 0) END), 0) AS projected_revenue,
+                COALESCE(SUM(CASE WHEN wev.date > :asOfDate AND wev.date >= :minimumDate AND NOT wev.initial_balance THEN ABS(LEAST(we.value, 0)) END), 0) AS projected_expense,
                 
                 we.wallet_item_id,
                 null AS bill_id
@@ -70,6 +74,7 @@ class WalletEntryDatabaseClientRepository(
                 walletItemId = walletItemId,
                 minimumDate = minimumDate,
                 maximumDate = maximumDate,
+                asOfDate = asOfDate,
                 walletItemIdColumn = "wallet_item_id",
                 creditCardBillIdColumn = "bill_id",
             )
@@ -325,6 +330,7 @@ class WalletEntryDatabaseClientRepository(
         walletItemId: UUID?,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
+        asOfDate: LocalDate? = null,
         walletItemIdColumn: String,
         creditCardBillIdColumn: String,
         billId: UUID? = null,
@@ -338,6 +344,7 @@ class WalletEntryDatabaseClientRepository(
         if (walletItemId != null) spec = spec.bind("walletItemId", walletItemId)
         if (minimumDate != null) spec = spec.bind("minimumDate", minimumDate)
         if (maximumDate != null) spec = spec.bind("maximumDate", maximumDate)
+        if (asOfDate != null) spec = spec.bind("asOfDate", asOfDate)
         if (billId != null) spec = spec.bind("billId", billId)
 
         return spec

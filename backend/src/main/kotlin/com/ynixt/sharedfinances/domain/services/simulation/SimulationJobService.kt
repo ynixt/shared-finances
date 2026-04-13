@@ -56,6 +56,17 @@ interface SimulationJobService {
         jobId: UUID,
     ): SimulationJobEntity
 
+    suspend fun deleteForOwner(
+        ownerUserId: UUID,
+        jobId: UUID,
+    )
+
+    suspend fun deleteForGroup(
+        requesterUserId: UUID,
+        groupId: UUID,
+        jobId: UUID,
+    )
+
     suspend fun processDispatchMessage(jobId: UUID)
 
     suspend fun dispatchNextQueuedForOwner(ownerUserId: UUID)

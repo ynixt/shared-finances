@@ -10,6 +10,7 @@ class SimulationJobDtoMapperImpl : SimulationJobDtoMapper {
     override fun toDto(from: SimulationJobEntity): SimulationJobDto =
         SimulationJobDto(
             id = requireNotNull(from.id) { "simulation job id" },
+            requestedByUserId = from.requestedByUserId,
             type = from.type,
             status = from.status,
             requestPayload = from.requestPayload,

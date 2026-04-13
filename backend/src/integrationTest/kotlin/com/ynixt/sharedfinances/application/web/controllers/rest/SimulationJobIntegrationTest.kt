@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupDto
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
 import com.ynixt.sharedfinances.application.web.dto.groups.NewGroupDto
 import com.ynixt.sharedfinances.application.web.dto.simulationjobs.CreateSimulationJobRequestDto
 import com.ynixt.sharedfinances.application.web.dto.simulationjobs.SimulationJobDto
@@ -88,7 +89,7 @@ class SimulationJobIntegrationTest : IntegrationTestContainers() {
                     expected = SimulationJobStatus.COMPLETED,
                 )
 
-            assertThat(completed.resultPayload).contains("\"mode\":\"noop\"")
+            assertThat(completed.resultPayload).contains("\"outcomeBand\"")
             assertThat(completed.retries).isEqualTo(1)
         }
     }
@@ -229,6 +230,136 @@ class SimulationJobIntegrationTest : IntegrationTestContainers() {
 
             assertThat(completed.status).isEqualTo(SimulationJobStatus.COMPLETED)
             assertThat(completed.retries).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun `should delete personal simulation job and return 404 after`() {
+        runBlocking {
+            userATestUtil.createUserOnDatabase()
+            val token = userATestUtil.login()
+
+            val created = createJob(accessToken = token, payload = """{"scenario":"delete-me"}""")
+            awaitJobStatus(
+                accessToken = token,
+                jobId = created.id,
+                expected = SimulationJobStatus.COMPLETED,
+            )
+
+            webClient
+                .delete()
+                .uri("/simulation-jobs/${created.id}")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isNoContent
+
+            webClient
+                .get()
+                .uri("/simulation-jobs/${created.id}")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isNotFound
+        }
+    }
+
+    @Test
+    fun `should forbid deleting another users simulation job`() {
+        runBlocking {
+            userATestUtil.createUserOnDatabase()
+            userBTestUtil.createUserOnDatabase()
+
+            val ownerToken = userATestUtil.login()
+            val otherToken = userBTestUtil.login()
+
+            val created = createJob(accessToken = ownerToken, payload = """{"scenario":"private"}""")
+
+            webClient
+                .delete()
+                .uri("/simulation-jobs/${created.id}")
+                .header(HttpHeaders.AUTHORIZATION, otherToken)
+                .exchange()
+                .expectStatus()
+                .isForbidden
+        }
+    }
+
+    @Test
+    fun `should delete group simulation job when requester has permission`() {
+        runBlocking {
+            userATestUtil.createUserOnDatabase()
+            val token = userATestUtil.login()
+            val group = createGroup(token, "Deletable sims")
+
+            val created = createGroupJob(token, group.id, payload = """{"scenario":"group-del"}""")
+            awaitGroupJobStatus(
+                accessToken = token,
+                groupId = group.id,
+                jobId = created.id,
+                expected = SimulationJobStatus.COMPLETED,
+            )
+
+            webClient
+                .delete()
+                .uri("/groups/${group.id}/simulation-jobs/${created.id}")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isNoContent
+
+            webClient
+                .get()
+                .uri("/groups/${group.id}/simulation-jobs/${created.id}")
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isNotFound
+        }
+    }
+
+    @Test
+    fun `should flag incomplete group simulation when requester opts out`() {
+        runBlocking {
+            userATestUtil.createUserOnDatabase()
+            val ownerToken = userATestUtil.login()
+            val group = createGroup(ownerToken, "Planner group")
+
+            webClient
+                .put()
+                .uri("/groups/${group.id}/members/me/planning-simulator-opt-in")
+                .header(HttpHeaders.AUTHORIZATION, ownerToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(mapOf("allowPlanningSimulator" to false))
+                .exchange()
+                .expectStatus()
+                .isNoContent
+
+            val members =
+                webClient
+                    .get()
+                    .uri("/groups/${group.id}/members")
+                    .header(HttpHeaders.AUTHORIZATION, ownerToken)
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+                    .expectBodyList(GroupUserDto::class.java)
+                    .returnResult()
+                    .responseBody!!
+
+            assertThat(members).hasSize(1)
+            assertThat(members.first().allowPlanningSimulator).isFalse()
+
+            val created = createGroupJob(ownerToken, group.id, payload = "{}")
+            val completed =
+                awaitGroupJobStatus(
+                    accessToken = ownerToken,
+                    groupId = group.id,
+                    jobId = created.id,
+                    expected = SimulationJobStatus.COMPLETED,
+                )
+
+            assertThat(completed.resultPayload).contains("\"incompleteSimulation\":true")
         }
     }
 

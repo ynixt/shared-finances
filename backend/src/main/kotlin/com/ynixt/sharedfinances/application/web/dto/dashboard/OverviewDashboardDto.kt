@@ -24,6 +24,8 @@ data class OverviewDashboardDetailDto(
     val sourceType: String,
     val label: String,
     val value: BigDecimal,
+    val children: List<OverviewDashboardDetailDto> = emptyList(),
+    val accountOverCommitted: Boolean = false,
 )
 
 data class OverviewDashboardChartsDto(

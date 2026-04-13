@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummar
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
@@ -142,20 +143,34 @@ class OverviewDashboardServiceImplTest {
                 result.cards
                     .first { it.key == OverviewDashboardCardKey.GOAL_COMMITTED }
                     .details,
-            ).singleElement().satisfies({ detail ->
-                assertThat(detail.sourceId).isEqualTo(goalId)
-                assertThat(detail.label).isEqualTo("Reserve")
-                assertMoney(detail.value, "250.00")
+            ).singleElement().satisfies({ parent ->
+                assertThat(parent.sourceId).isEqualTo(bankId)
+                assertThat(parent.sourceType).isEqualTo(OverviewDashboardDetailSourceType.BANK_ACCOUNT)
+                assertThat(parent.label).isEqualTo("Main")
+                assertMoney(parent.value, "250.00")
+                assertThat(parent.accountOverCommitted).isFalse()
+                assertThat(parent.children).singleElement().satisfies({ child ->
+                    assertThat(child.sourceId).isEqualTo(goalId)
+                    assertThat(child.sourceType).isEqualTo(OverviewDashboardDetailSourceType.GOAL)
+                    assertThat(child.label).isEqualTo("Reserve")
+                    assertMoney(child.value, "250.00")
+                })
             })
-            assertThat(
-                result.cards
-                    .first { it.key == OverviewDashboardCardKey.GOAL_FREE_BALANCE }
-                    .details
-                    .map { it.label to it.value },
-            ).containsExactly(
-                "financesPage.overviewPage.detail.formula.balance" to BigDecimal("1000.00"),
-                "Reserve" to BigDecimal("-250.00"),
-            )
+            val freeBalanceCard = result.cards.first { it.key == OverviewDashboardCardKey.GOAL_FREE_BALANCE }
+            assertThat(freeBalanceCard.details).hasSize(2)
+            assertThat(freeBalanceCard.details[0].sourceType).isEqualTo(OverviewDashboardDetailSourceType.FORMULA)
+            assertMoney(freeBalanceCard.details[0].value, "1000.00")
+            assertThat(freeBalanceCard.details[1]).satisfies({ mainRow ->
+                assertThat(mainRow.sourceId).isEqualTo(bankId)
+                assertThat(mainRow.sourceType).isEqualTo(OverviewDashboardDetailSourceType.BANK_ACCOUNT)
+                assertThat(mainRow.label).isEqualTo("Main")
+                assertMoney(mainRow.value, "750.00")
+                assertThat(mainRow.accountOverCommitted).isFalse()
+                assertThat(mainRow.children).singleElement().satisfies({ child ->
+                    assertThat(child.sourceType).isEqualTo(OverviewDashboardDetailSourceType.GOAL)
+                    assertMoney(child.value, "-250.00")
+                })
+            })
         }
 
     @Test
@@ -264,6 +279,47 @@ class OverviewDashboardServiceImplTest {
             assertMoney(result.goalCommittedTotal, "100.00")
             assertMoney(result.freeBalanceTotal, "50.00")
             assertThat(result.goalOverCommittedWarning).isTrue()
+            val committedCard = result.cards.first { it.key == OverviewDashboardCardKey.GOAL_COMMITTED }
+            assertThat(committedCard.details).hasSize(2)
+            assertThat(committedCard.details[0]).satisfies({ primary ->
+                assertThat(primary.label).isEqualTo("Primary")
+                assertThat(primary.sourceType).isEqualTo(OverviewDashboardDetailSourceType.BANK_ACCOUNT)
+                assertThat(primary.accountOverCommitted).isTrue()
+                assertMoney(primary.value, "80.00")
+                assertThat(primary.children).singleElement().satisfies({ child ->
+                    assertThat(child.label).isEqualTo("Reserve")
+                    assertMoney(child.value, "80.00")
+                })
+            })
+            assertThat(committedCard.details[1]).satisfies({ secondary ->
+                assertThat(secondary.label).isEqualTo("Secondary")
+                assertThat(secondary.accountOverCommitted).isFalse()
+                assertMoney(secondary.value, "20.00")
+                assertThat(secondary.children).singleElement().satisfies({ child ->
+                    assertThat(child.label).isEqualTo("Reserve")
+                    assertMoney(child.value, "20.00")
+                })
+            })
+            val freeCard = result.cards.first { it.key == OverviewDashboardCardKey.GOAL_FREE_BALANCE }
+            assertThat(freeCard.details).hasSize(3)
+            assertThat(freeCard.details[0].sourceType).isEqualTo(OverviewDashboardDetailSourceType.FORMULA)
+            assertMoney(freeCard.details[0].value, "150.00")
+            assertThat(freeCard.details[1]).satisfies({ primary ->
+                assertThat(primary.label).isEqualTo("Primary")
+                assertThat(primary.accountOverCommitted).isTrue()
+                assertMoney(primary.value, "-30.00")
+                assertThat(primary.children).singleElement().satisfies({ child ->
+                    assertMoney(child.value, "-80.00")
+                })
+            })
+            assertThat(freeCard.details[2]).satisfies({ secondary ->
+                assertThat(secondary.label).isEqualTo("Secondary")
+                assertThat(secondary.accountOverCommitted).isFalse()
+                assertMoney(secondary.value, "80.00")
+                assertThat(secondary.children).singleElement().satisfies({ child ->
+                    assertMoney(child.value, "-20.00")
+                })
+            })
         }
 
     @Test
@@ -943,6 +999,7 @@ class OverviewDashboardServiceImplTest {
                 walletItemId: UUID?,
                 minimumDate: LocalDate,
                 maximumDate: LocalDate?,
+                asOfDate: LocalDate,
             ): Flux<EntrySumResult> = Flux.empty()
 
             override fun summarizeOverviewExpenseByMonth(
@@ -1007,6 +1064,7 @@ class OverviewDashboardServiceImplTest {
                 userId: UUID?,
                 groupId: UUID?,
                 walletItemId: UUID?,
+                summaryMinimumDate: LocalDate,
             ): List<EntrySumResult> = emptyList()
 
             override suspend fun simulateGenerationForCreditCard(

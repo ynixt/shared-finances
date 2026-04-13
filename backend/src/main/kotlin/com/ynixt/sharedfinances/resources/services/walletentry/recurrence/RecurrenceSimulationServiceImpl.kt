@@ -191,8 +191,10 @@ class RecurrenceSimulationServiceImpl(
         userId: UUID?,
         groupId: UUID?,
         walletItemId: UUID?,
+        summaryMinimumDate: LocalDate,
     ): List<EntrySumResult> {
         val resultByWalletId = mutableMapOf<UUID, EntrySumResult>()
+        val today = LocalDate.now(clock)
 
         simulateGeneration(
             userId = userId,
@@ -202,23 +204,33 @@ class RecurrenceSimulationServiceImpl(
             maximumNextExecution = maximumNextExecution,
             billDate = null,
         ).forEach {
+            val executionDate = it.date
             it.entries.forEach { entry ->
                 if (!resultByWalletId.containsKey(entry.walletItemId)) {
                     resultByWalletId[entry.walletItemId] = EntrySumResult.empty(entry.walletItemId)
                 }
 
-                val projected =
+                val movement =
                     EntrySum(
                         balance = entry.value,
                         revenue = if (entry.value >= BigDecimal.ZERO) entry.value else BigDecimal.ZERO,
                         expense = if (entry.value < BigDecimal.ZERO) entry.value.negate() else BigDecimal.ZERO,
                     )
 
+                val isFuture = executionDate.isAfter(today)
+                val carryToBalance = isFuture && executionDate.isBefore(summaryMinimumDate)
+                val (sumPart, projectedPart) =
+                    if (carryToBalance) {
+                        movement to EntrySum.EMPTY
+                    } else {
+                        EntrySum.EMPTY to movement
+                    }
+
                 resultByWalletId[entry.walletItemId] = resultByWalletId[entry.walletItemId]!! +
                     EntrySumResult(
-                        sum = EntrySum.EMPTY,
+                        sum = sumPart,
                         period = EntrySum.EMPTY,
-                        projected = projected,
+                        projected = projectedPart,
                         walletItemId = entry.walletItemId,
                         creditCardBillId = null,
                     ).also { result ->

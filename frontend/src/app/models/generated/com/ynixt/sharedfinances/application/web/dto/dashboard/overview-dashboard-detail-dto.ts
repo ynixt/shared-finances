@@ -6,4 +6,6 @@ export interface OverviewDashboardDetailDto {
   sourceId?: string | null;
   sourceType: string;
   value: number;
+  children?: OverviewDashboardDetailDto[];
+  accountOverCommitted?: boolean;
 }

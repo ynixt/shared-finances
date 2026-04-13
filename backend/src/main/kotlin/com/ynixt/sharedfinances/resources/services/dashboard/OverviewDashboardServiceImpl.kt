@@ -323,6 +323,7 @@ class OverviewDashboardServiceImpl(
                         value = committed.committed.asMoney(),
                         currency = committed.currency,
                         referenceDate = goalCommitmentReferenceDate,
+                        walletItemId = committed.walletItemId,
                     )
                 }
         val rawBalanceByBankId =
@@ -408,32 +409,29 @@ class OverviewDashboardServiceImpl(
             }
 
         val balanceTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE])
+        val goalCommittedTotal =
+            rawGoalCommittedDetails
+                .fold(BigDecimal.ZERO) { acc, raw ->
+                    acc.add(convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO))
+                }.asMoney()
         val goalCommittedDetails =
-            aggregateConvertedDetails(
-                rawDetails = rawGoalCommittedDetails,
+            buildGoalCommittedDetailsByWallet(
+                rawGoalCommittedDetails = rawGoalCommittedDetails,
                 convertedValueByKey = convertedValueByKey,
-                sourceType = OverviewDashboardDetailSourceType.GOAL,
+                visibleBankAccounts = visibleBankAccounts,
+                rawBalanceByBankId = rawBalanceByBankId,
             )
-        val goalCommittedTotal = sumDetails(goalCommittedDetails)
         val freeBalanceTotal = balanceTotal.subtract(goalCommittedTotal).asMoney()
         val goalOverCommittedWarning = goalCommittedTotal.compareTo(balanceTotal) > 0 || hasAccountOverCommittedBalance
         val freeBalanceDetails =
-            listOf(
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.balance",
-                    value = balanceTotal,
-                ),
-            ) +
-                goalCommittedDetails.map { detail ->
-                    OverviewDashboardDetail(
-                        sourceId = detail.sourceId,
-                        sourceType = detail.sourceType,
-                        label = detail.label,
-                        value = detail.value.negate().asMoney(),
-                    )
-                }
+            buildFreeBalanceDetailsByWallet(
+                balanceTotal = balanceTotal,
+                balanceDetails = convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE].orEmpty(),
+                rawGoalCommittedDetails = rawGoalCommittedDetails,
+                convertedValueByKey = convertedValueByKey,
+                visibleBankAccounts = visibleBankAccounts,
+                rawBalanceByBankId = rawBalanceByBankId,
+            )
 
         val periodCashInTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN])
         val periodCashOutTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT])
@@ -902,26 +900,138 @@ class OverviewDashboardServiceImpl(
             .fold(BigDecimal.ZERO) { acc, detail -> acc.add(detail.value) }
             .asMoney()
 
-    private fun aggregateConvertedDetails(
-        rawDetails: List<RawDetail>,
+    private fun buildGoalCommittedDetailsByWallet(
+        rawGoalCommittedDetails: List<RawDetail>,
         convertedValueByKey: Map<String, BigDecimal>,
-        sourceType: OverviewDashboardDetailSourceType,
-    ): List<OverviewDashboardDetail> =
-        rawDetails
-            .groupBy { it.sourceId to it.label }
-            .map { (identity, details) ->
+        visibleBankAccounts: List<BankAccount>,
+        rawBalanceByBankId: Map<UUID, BigDecimal>,
+    ): List<OverviewDashboardDetail> {
+        val byWallet = rawGoalCommittedDetails.groupBy { it.walletItemId }
+        val result = mutableListOf<OverviewDashboardDetail>()
+        for (bank in visibleBankAccounts) {
+            val walletId = bank.id!!
+            val raws = byWallet[walletId].orEmpty()
+            if (raws.isEmpty()) {
+                continue
+            }
+            val children =
+                raws
+                    .map { raw ->
+                        OverviewDashboardDetail(
+                            sourceId = raw.sourceId,
+                            sourceType = OverviewDashboardDetailSourceType.GOAL,
+                            label = raw.label,
+                            value = convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO).asMoney(),
+                        )
+                    }.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
+                    .sortedWith(
+                        compareByDescending<OverviewDashboardDetail> { it.value.abs() }.thenBy { it.label.lowercase() },
+                    )
+            if (children.isEmpty()) {
+                continue
+            }
+            val parentValue =
+                children.fold(BigDecimal.ZERO) { acc, child -> acc.add(child.value) }.asMoney()
+            result.add(
                 OverviewDashboardDetail(
-                    sourceId = identity.first,
-                    sourceType = sourceType,
-                    label = identity.second,
-                    value =
-                        details
-                            .fold(BigDecimal.ZERO) { acc, detail ->
-                                acc.add(convertedValueByKey.getOrDefault(detail.key, BigDecimal.ZERO))
-                            }.asMoney(),
+                    sourceId = walletId,
+                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
+                    label = bank.name,
+                    value = parentValue,
+                    children = children,
+                    accountOverCommitted =
+                        accountOverCommittedForWallet(
+                            bank = bank,
+                            raws = raws,
+                            rawBalanceByBankId = rawBalanceByBankId,
+                        ),
+                ),
+            )
+        }
+        return result
+    }
+
+    private fun buildFreeBalanceDetailsByWallet(
+        balanceTotal: BigDecimal,
+        balanceDetails: List<OverviewDashboardDetail>,
+        rawGoalCommittedDetails: List<RawDetail>,
+        convertedValueByKey: Map<String, BigDecimal>,
+        visibleBankAccounts: List<BankAccount>,
+        rawBalanceByBankId: Map<UUID, BigDecimal>,
+    ): List<OverviewDashboardDetail> {
+        val byWallet = rawGoalCommittedDetails.groupBy { it.walletItemId }
+        val balanceByWalletId = balanceDetails.associateBy { it.sourceId }
+        return buildList {
+            add(
+                OverviewDashboardDetail(
+                    sourceId = null,
+                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
+                    label = "financesPage.overviewPage.detail.formula.balance",
+                    value = balanceTotal,
+                ),
+            )
+            for (bank in visibleBankAccounts) {
+                val walletId = bank.id!!
+                val balanceConv =
+                    balanceByWalletId[walletId]?.value ?: BigDecimal.ZERO.asMoney()
+                val raws = byWallet[walletId].orEmpty()
+                val committedSumConv =
+                    raws
+                        .fold(BigDecimal.ZERO) { acc, raw ->
+                            acc.add(convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO))
+                        }.asMoney()
+                val freeOnAccount = balanceConv.subtract(committedSumConv).asMoney()
+                val children =
+                    raws
+                        .map { raw ->
+                            OverviewDashboardDetail(
+                                sourceId = raw.sourceId,
+                                sourceType = OverviewDashboardDetailSourceType.GOAL,
+                                label = raw.label,
+                                value =
+                                    convertedValueByKey
+                                        .getOrDefault(raw.key, BigDecimal.ZERO)
+                                        .asMoney()
+                                        .negate()
+                                        .asMoney(),
+                            )
+                        }.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
+                        .sortedWith(
+                            compareByDescending<OverviewDashboardDetail> { it.value.abs() }.thenBy { it.label.lowercase() },
+                        )
+                add(
+                    OverviewDashboardDetail(
+                        sourceId = walletId,
+                        sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
+                        label = bank.name,
+                        value = freeOnAccount,
+                        children = children,
+                        accountOverCommitted =
+                            accountOverCommittedForWallet(
+                                bank = bank,
+                                raws = raws,
+                                rawBalanceByBankId = rawBalanceByBankId,
+                            ),
+                    ),
                 )
-            }.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
-            .sortedWith(compareByDescending<OverviewDashboardDetail> { it.value.abs() }.thenBy { it.label.lowercase() })
+            }
+        }
+    }
+
+    private fun accountOverCommittedForWallet(
+        bank: BankAccount,
+        raws: List<RawDetail>,
+        rawBalanceByBankId: Map<UUID, BigDecimal>,
+    ): Boolean {
+        val walletId = bank.id ?: return false
+        val balance = rawBalanceByBankId[walletId] ?: BigDecimal.ZERO
+        val nativeCommitted =
+            raws
+                .filter { it.currency.equals(bank.currency, ignoreCase = true) }
+                .fold(BigDecimal.ZERO) { acc, raw -> acc.add(raw.value) }
+                .asMoney()
+        return nativeCommitted.compareTo(balance) > 0
+    }
 
     private fun buildMonthRange(
         start: YearMonth,
@@ -1026,6 +1136,7 @@ class OverviewDashboardServiceImpl(
         val value: BigDecimal,
         val currency: String,
         val referenceDate: LocalDate,
+        val walletItemId: UUID? = null,
         val key: String = UUID.randomUUID().toString(),
     )
 

@@ -22,6 +22,7 @@ interface WalletEntryRepository : EntityRepository<WalletEntryEntity> {
         walletItemId: UUID?,
         minimumDate: LocalDate,
         maximumDate: LocalDate?,
+        asOfDate: LocalDate,
     ): Flux<EntrySumResult>
 
     fun summarizeBankAccountsByMonth(

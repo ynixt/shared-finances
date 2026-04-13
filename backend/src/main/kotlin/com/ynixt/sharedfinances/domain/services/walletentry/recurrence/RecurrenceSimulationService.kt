@@ -43,6 +43,7 @@ interface RecurrenceSimulationService {
         userId: UUID?,
         groupId: UUID?,
         walletItemId: UUID?,
+        summaryMinimumDate: LocalDate,
     ): List<EntrySumResult>
 
     suspend fun simulateGenerationForCreditCard(

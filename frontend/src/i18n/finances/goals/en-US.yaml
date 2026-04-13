@@ -53,21 +53,3 @@ financesPage:
       WEEKLY: Weekly
       MONTHLY: Monthly
       YEARLY: Yearly
-    simulationJobs:
-      title: Simulations
-      retentionHint: Simulation jobs and stored results are retained for up to 30 days.
-      new: New simulation
-      loadError: Could not load simulation jobs.
-      empty: No simulation jobs yet.
-      createdAt: Created
-      type: Type
-      retries: Attempts
-      error: Error
-      result: Result
-      cancel: Cancel
-      status:
-        QUEUED: Queued
-        RUNNING: Running
-        COMPLETED: Completed
-        FAILED: Failed
-        CANCELLED: Cancelled

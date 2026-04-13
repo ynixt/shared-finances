@@ -1,95 +1,321 @@
 <app-finances-title-bar
-  [title]="'financesPage.goalsPage.simulationJobs.title' | translate"
+  [title]="'financesPage.simulationJobs.title' | translate"
   [closeRouterLink]="closeRouterLink"
 ></app-finances-title-bar>
 
-<p-message severity="info" icon="pi pi-exclamation-triangle" styleClass="mb-4">
-  {{ 'financesPage.goalsPage.simulationJobs.retentionHint' | translate }}
-</p-message>
+@if (planningForm != null) {
+  <p-confirm-dialog />
 
-<div class="mb-4 flex flex-wrap items-center gap-2">
-  <button pButton [loading]="creating" (click)="createJob()">
-    <fa-icon [icon]="createIcon"></fa-icon>
-    <span class="ml-2">{{ 'financesPage.goalsPage.simulationJobs.new' | translate }}</span>
-  </button>
-  <button pButton severity="secondary" [loading]="loading" (click)="refreshPage()">
-    <fa-icon [icon]="refreshIcon"></fa-icon>
-    <span class="ml-2">{{ 'general.refresh' | translate }}</span>
-  </button>
-</div>
+  <p-message severity="info" icon="pi pi-exclamation-triangle" styleClass="mb-4">
+    {{ 'financesPage.simulationJobs.retentionHint' | translate }}
+  </p-message>
 
-@if (loadError) {
-  <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
-    {{ 'financesPage.goalsPage.simulationJobs.loadError' | translate }}
-  </div>
-} @else if (jobs.length === 0) {
-  <div class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-    {{ 'financesPage.goalsPage.simulationJobs.empty' | translate }}
-  </div>
-} @else {
-  <div class="space-y-3">
-    @for (job of jobs; track job.id) {
-      <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <header class="flex flex-wrap items-center gap-3">
-          <div class="mr-auto min-w-0">
-            <p class="truncate font-semibold text-slate-900">{{ job.id }}</p>
-            <p class="text-xs text-slate-500">
-              {{ 'financesPage.goalsPage.simulationJobs.createdAt' | translate }}:
-              {{ job.createdAt != null ? (job.createdAt | localDate: 'short') : '—' }}
-            </p>
+  @if (canNewSimulation()) {
+    <section class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h2 class="text-base font-semibold text-slate-900">{{ 'financesPage.simulationJobs.form.title' | translate }}</h2>
+      <p class="mt-1 text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.hint' | translate }}</p>
+
+      <form class="contents" novalidate [formGroup]="planningForm" (ngSubmit)="onAddDebtSubmit($event)">
+        <div class="mt-4 grid gap-3 md:grid-cols-4">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.debtAmount' | translate }}</span>
+            <p-input-number formControlName="amount" mode="currency" [currency]="planningForm.get('currency')!.value"></p-input-number>
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.installments' | translate }}</span>
+            <p-input-number formControlName="installments" [min]="1" [max]="480"></p-input-number>
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.firstPaymentDate' | translate }}</span>
+            <app-date-picker formControlName="firstPaymentDate"></app-date-picker>
+          </label>
+
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.currency' | translate }}</span>
+            <app-currency-selector formControlName="currency"></app-currency-selector>
+          </label>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+          <button type="submit" pButton [disabled]="creating || planningForm.invalid">
+            {{ 'financesPage.simulationJobs.form.addDebt' | translate }}
+          </button>
+        </div>
+      </form>
+
+      <div class="mt-3">
+        <p class="mb-2 text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.pendingDebts' | translate }}</p>
+        @if (debts.length === 0) {
+          <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.noDebts' | translate }}</p>
+        } @else {
+          <div class="flex flex-wrap gap-2">
+            @for (debt of debts; track $index) {
+              <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
+                {{ debt.amount | localCurrency: debt.currency }} · {{ debt.installments }}x ·
+                {{ debt.firstPaymentDate | localDate: 'shortDate' }}
+                <button
+                  pButton
+                  [text]="true"
+                  size="small"
+                  severity="danger"
+                  [disabled]="creating"
+                  (click)="removeDebt($index)"
+                  [pTooltip]="'financesPage.simulationJobs.form.removeDebt' | translate"
+                >
+                  <fa-icon [icon]="cancelIcon"></fa-icon>
+                </button>
+              </span>
+            }
           </div>
-          <p-tag [value]="statusKey(job.status) | translate" [severity]="statusSeverity(job.status)" />
-        </header>
 
-        <section class="mt-3 grid gap-1 text-sm text-slate-700">
-          <p>
-            <strong>{{ 'financesPage.goalsPage.simulationJobs.type' | translate }}:</strong>
-            {{ job.type }}
-          </p>
-          <p>
-            <strong>{{ 'financesPage.goalsPage.simulationJobs.retries' | translate }}:</strong>
-            {{ job.retries }}
-          </p>
-          @if (job.errorMessage) {
-            <p class="text-red-700">
-              <strong>{{ 'financesPage.goalsPage.simulationJobs.error' | translate }}:</strong>
-              {{ job.errorMessage }}
-            </p>
-          }
-          @if (job.resultPayload) {
-            <p class="break-all text-emerald-700">
-              <strong>{{ 'financesPage.goalsPage.simulationJobs.result' | translate }}:</strong>
+          <form class="contents" novalidate [formGroup]="simulationForm" (ngSubmit)="onSimulateSubmit($event)">
+            <div class="mt-4 flex flex-wrap items-end gap-3">
+              <label class="flex min-w-[10rem] flex-col gap-1">
+                <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.horizonMonths' | translate }}</span>
+                <p-input-number formControlName="horizonMonths" [min]="simulationHorizonMin" [max]="480"></p-input-number>
+              </label>
+              <button type="submit" pButton [loading]="creating" [disabled]="creating || simulationForm.invalid">
+                <fa-icon [icon]="createIcon"></fa-icon>
+                <span class="ml-2">{{ 'financesPage.simulationJobs.new' | translate }}</span>
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </section>
+  }
+
+  @if (createError) {
+    <p-message severity="error" styleClass="mb-4">
+      {{ 'financesPage.simulationJobs.createError' | translate }}
+    </p-message>
+  }
+
+  @if (deleteError) {
+    <p-message severity="error" styleClass="mb-4">
+      {{ 'financesPage.simulationJobs.deleteError' | translate }}
+    </p-message>
+  }
+
+  @if (waitingAsyncResult && lastCreatedJobId != null) {
+    <p-message severity="info" styleClass="mb-4">
+      {{ 'financesPage.simulationJobs.fastPath.processing' | translate }}
+    </p-message>
+  } @else if (!waitingAsyncResult && lastCreateCompletedFastPath && lastCreatedJobId != null) {
+    <p-message severity="success" styleClass="mb-4">
+      {{ 'financesPage.simulationJobs.fastPath.completed' | translate }}
+    </p-message>
+  }
+
+  @if (loadError) {
+    <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
+      {{ 'financesPage.simulationJobs.loadError' | translate }}
+    </div>
+  } @else if (jobs.length === 0) {
+    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+      {{ 'financesPage.simulationJobs.empty' | translate }}
+    </div>
+  } @else {
+    <div class="my-3">
+      <button pButton severity="secondary" [loading]="loading" (click)="refreshPage()">
+        <fa-icon [icon]="refreshIcon"></fa-icon>
+        <span class="ml-2">{{ 'general.refresh' | translate }}</span>
+      </button>
+    </div>
+
+    <div class="space-y-3">
+      @for (job of jobs; track job.id) {
+        <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <header class="flex flex-wrap items-center gap-3">
+            <div class="mr-auto min-w-0">
+              <p class="truncate font-semibold text-slate-900">{{ job.id }}</p>
+              <p class="text-xs text-slate-500">
+                {{ 'financesPage.simulationJobs.createdAt' | translate }}:
+                {{ job.createdAt != null ? (job.createdAt | localDate: 'short') : '—' }}
+              </p>
+            </div>
+            <p-tag [value]="statusKey(job.status) | translate" [severity]="statusSeverity(job.status)" />
+            @if (canDeleteSimulation(job)) {
+              <button
+                pButton
+                [text]="true"
+                severity="danger"
+                type="button"
+                [loading]="isRemovingSimulation(job.id)"
+                (click)="confirmDeleteSimulation(job)"
+                [pTooltip]="'financesPage.simulationJobs.delete' | translate"
+              >
+                <fa-icon [icon]="trashIcon"></fa-icon>
+              </button>
+            }
+          </header>
+
+          <section class="mt-3 grid gap-1 text-sm text-slate-700">
+            @if (job.errorMessage) {
+              <p class="text-red-700">
+                <strong>{{ 'financesPage.simulationJobs.error' | translate }}:</strong>
+                {{ job.errorMessage }}
+              </p>
+            }
+          </section>
+
+          @let result = parsedResult(job);
+          @if (result != null) {
+            <section class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  {{ 'financesPage.simulationJobs.outcome' | translate }}
+                </span>
+                <p-tag [value]="outcomeBandKey(result.outcomeBand) | translate" [severity]="outcomeBandSeverity(result.outcomeBand)" />
+                @if (isLatestCreated(job) && lastCreateCompletedFastPath) {
+                  <p-tag severity="success" [value]="'financesPage.simulationJobs.fastPath.badge' | translate" />
+                }
+              </div>
+
+              @let groupContext = result.groupContext;
+              @if (groupContext != null && groupContext.incompleteSimulation) {
+                <div class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                  <p class="font-semibold">
+                    {{ 'financesPage.simulationJobs.group.incomplete' | translate }}
+                  </p>
+                  <p>
+                    {{
+                      'financesPage.simulationJobs.group.membersCount'
+                        | translate
+                          : {
+                              included: groupContext.includedMembers,
+                              excluded: groupContext.excludedMembers,
+                            }
+                    }}
+                  </p>
+                  @if (groupContext.privacyLabels.length > 0) {
+                    <div class="mt-2 flex flex-wrap gap-1">
+                      @for (label of groupContext.privacyLabels; track label) {
+                        <span class="rounded-full bg-amber-100 px-2 py-0.5">{{ label }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (result.goalTrack != null) {
+                <div class="mt-3 grid gap-2 md:grid-cols-3">
+                  <div class="rounded-lg border border-slate-200 bg-white p-2">
+                    <p class="text-xs text-slate-500">
+                      {{ 'financesPage.simulationJobs.goalTrack.sustainScheduled' | translate }}
+                    </p>
+                    <p class="text-sm font-semibold text-slate-900">
+                      {{
+                        (result.goalTrack.canSustainScheduledContributions
+                          ? 'financesPage.simulationJobs.goalTrack.yes'
+                          : 'financesPage.simulationJobs.goalTrack.no'
+                        ) | translate
+                      }}
+                    </p>
+                  </div>
+                  <div class="rounded-lg border border-slate-200 bg-white p-2">
+                    <p class="text-xs text-slate-500">
+                      {{ 'financesPage.simulationJobs.goalTrack.sustainScheduledIfFreed' | translate }}
+                    </p>
+                    <p class="text-sm font-semibold text-slate-900">
+                      {{
+                        (result.goalTrack.canSustainScheduledContributionsIfAllocationsAreFreed
+                          ? 'financesPage.simulationJobs.goalTrack.yes'
+                          : 'financesPage.simulationJobs.goalTrack.no'
+                        ) | translate
+                      }}
+                    </p>
+                  </div>
+                  <div class="rounded-lg border border-slate-200 bg-white p-2">
+                    <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.goalTrack.fitIfFreed' | translate }}</p>
+                    <p class="text-sm font-semibold text-slate-900">
+                      {{
+                        (result.goalTrack.canFitIfAllocationsAreFreed
+                          ? 'financesPage.simulationJobs.goalTrack.yes'
+                          : 'financesPage.simulationJobs.goalTrack.no'
+                        ) | translate
+                      }}
+                    </p>
+                  </div>
+                </div>
+              }
+
+              <div class="mt-3 overflow-x-auto">
+                @if (result.timeline.length === 0) {
+                  <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.timeline.empty' | translate }}</p>
+                } @else {
+                  <table class="min-w-full border-collapse text-xs">
+                    <thead>
+                      <tr class="border-b border-slate-300 text-left text-slate-600">
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.month' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.currency' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.opening' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.projectedFlow' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.cardOutflow' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.debtOutflow' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.closing' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.goalContribution' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.closingWithGoals' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of result.timeline; track row.month) {
+                        @for (currency of currenciesForTimelineRow(row); track currency) {
+                          @let point = currencyPoint(row, currency);
+                          <tr class="border-b border-slate-200" [class.bg-red-50]="point.closingBalance < 0">
+                            <td class="px-2 py-2">{{ row.month }}</td>
+                            <td class="px-2 py-2">{{ currency }}</td>
+                            <td class="px-2 py-2">{{ point.openingBalance | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ point.projectedCashFlow | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ -point.creditCardBillOutflow | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ -point.debtOutflow | localCurrency: currency }}</td>
+                            <td class="px-2 py-2 font-semibold">{{ point.closingBalance | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ -point.scheduledGoalContribution | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ point.closingBalanceWithGoalContributions | localCurrency: currency }}</td>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+                }
+              </div>
+            </section>
+          } @else if (shouldShowRawResult(job)) {
+            <p class="mt-3 break-all text-xs text-emerald-700">
+              <strong>{{ 'financesPage.simulationJobs.result' | translate }}:</strong>
               {{ job.resultPayload }}
             </p>
           }
-        </section>
 
-        @if (canCancel(job)) {
-          <footer class="mt-3">
-            <button
-              pButton
-              severity="danger"
-              [text]="true"
-              [loading]="isCancelling(job.id)"
-              (click)="cancel(job)"
-              [pTooltip]="'financesPage.goalsPage.simulationJobs.cancel' | translate"
-            >
-              <fa-icon [icon]="cancelIcon"></fa-icon>
-              <span class="ml-2">{{ 'financesPage.goalsPage.simulationJobs.cancel' | translate }}</span>
-            </button>
-          </footer>
-        }
-      </article>
-    }
-  </div>
+          @if (showCancelSimulation(job)) {
+            <footer class="mt-3">
+              <button
+                pButton
+                severity="danger"
+                [text]="true"
+                [loading]="isCancelling(job.id)"
+                (click)="cancel(job)"
+                [pTooltip]="'financesPage.simulationJobs.cancel' | translate"
+              >
+                <fa-icon [icon]="cancelIcon"></fa-icon>
+                <span class="ml-2">{{ 'financesPage.simulationJobs.cancel' | translate }}</span>
+              </button>
+            </footer>
+          }
+        </article>
+      }
+    </div>
 
-  <div class="mt-4 flex items-center justify-end gap-2">
-    <button pButton severity="secondary" [disabled]="!canGoPreviousPage || loading" (click)="previousPage()">
-      {{ 'general.previous' | translate }}
-    </button>
-    <span class="text-sm text-slate-600"> {{ jobsPage.number + 1 }} / {{ jobsPage.totalPages }} </span>
-    <button pButton severity="secondary" [disabled]="!canGoNextPage || loading" (click)="nextPage()">
-      {{ 'general.next' | translate }}
-    </button>
-  </div>
+    <div class="mt-4 flex items-center justify-end gap-2">
+      <button pButton severity="secondary" [disabled]="!canGoPreviousPage || loading" (click)="previousPage()">
+        {{ 'general.previous' | translate }}
+      </button>
+      <span class="text-sm text-slate-600"> {{ jobsPage.number + 1 }} / {{ jobsPage.totalPages }} </span>
+      <button pButton severity="secondary" [disabled]="!canGoNextPage || loading" (click)="nextPage()">
+        {{ 'general.next' | translate }}
+      </button>
+    </div>
+  }
 }

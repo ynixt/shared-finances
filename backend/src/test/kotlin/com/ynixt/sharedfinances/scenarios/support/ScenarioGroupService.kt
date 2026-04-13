@@ -20,6 +20,7 @@ internal class ScenarioGroupService : GroupService {
         val role: UserGroupRole,
         val permissions: Set<GroupPermissions>,
         val associatedItemIds: Set<UUID>,
+        val allowPlanningSimulator: Boolean,
     )
 
     private data class GroupState(
@@ -44,6 +45,7 @@ internal class ScenarioGroupService : GroupService {
         role: UserGroupRole = UserGroupRole.EDITOR,
         permissions: Set<GroupPermissions> = GroupPermissions.entries.toSet(),
         associatedItemIds: Set<UUID> = emptySet(),
+        allowPlanningSimulator: Boolean = true,
     ) {
         val group = groups.getOrPut(groupId) { GroupState(id = groupId, name = "Scenario Group") }
         group.members[userId] =
@@ -51,6 +53,7 @@ internal class ScenarioGroupService : GroupService {
                 role = role,
                 permissions = permissions,
                 associatedItemIds = associatedItemIds,
+                allowPlanningSimulator = allowPlanningSimulator,
             )
     }
 
@@ -124,6 +127,7 @@ internal class ScenarioGroupService : GroupService {
                 groupId = id,
                 userId = memberId,
                 role = memberScope.role,
+                allowPlanningSimulator = memberScope.allowPlanningSimulator,
             )
         }
     }
@@ -153,7 +157,19 @@ internal class ScenarioGroupService : GroupService {
             role = role,
             permissions = GroupPermissions.entries.toSet(),
             associatedItemIds = emptySet(),
+            allowPlanningSimulator = true,
         )
+    }
+
+    override suspend fun updateOwnPlanningSimulatorOptIn(
+        userId: UUID,
+        id: UUID,
+        allowPlanningSimulator: Boolean,
+    ): Boolean {
+        val state = groups[id] ?: return false
+        val current = state.members[userId] ?: return false
+        state.members[userId] = current.copy(allowPlanningSimulator = allowPlanningSimulator)
+        return true
     }
 
     override fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity> = emptyFlow()

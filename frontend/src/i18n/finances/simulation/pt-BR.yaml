@@ -1,0 +1,66 @@
+financesPage:
+  simulationJobs:
+    title: Simulações
+    retentionHint: Jobs e resultados de simulação são mantidos por no máximo 30 dias.
+    new: Simular
+    createError: Não foi possível criar a simulação. Tente novamente.
+    loadError: Não foi possível carregar os jobs de simulação.
+    empty: Nenhum job de simulação ainda.
+    createdAt: Criado em
+    type: Tipo
+    retries: Tentativas
+    error: Erro
+    result: Resultado
+    outcome: Resultado do cenário
+    cancel: Cancelar
+    delete: Remover simulação
+    deleteConfirmTitle: Remover simulação
+    deleteConfirmMessage: Esta ação apaga o registro da simulação de forma permanente. Deseja continuar?
+    deleteError: Não foi possível remover a simulação. Tente novamente.
+    form:
+      title: Simulador de planejamento
+      hint: Simule dívidas parceladas e estime a liquidez mês a mês antes de assumir o compromisso.
+      horizonMonths: Horizonte (meses)
+      debtAmount: Valor da dívida
+      installments: Parcelas
+      firstPaymentDate: Primeira data de pagamento
+      currency: Moeda da dívida
+      addDebt: Adicionar dívida
+      pendingDebts: Dívidas incluídas nesta execução
+      noDebts: Nenhuma dívida adicionada ainda.
+      removeDebt: Remover dívida
+    fastPath:
+      processing: A simulação está processando de forma assíncrona. O resultado aparecerá assim que terminar.
+      completed: A simulação terminou rapidamente e o resultado já está disponível.
+      badge: Resultado rápido
+    outcomeBand:
+      FITS: Cabe
+      FITS_BUT_CANNOT_SUSTAIN_SCHEDULED_GOAL_CONTRIBUTIONS: Cabe, mas não sustenta aportes agendados
+      FITS_IF_GOAL_ALLOCATIONS_ARE_REDUCED: Cabe se reduzir alocações em metas
+      DOES_NOT_FIT: Não cabe
+    group:
+      incomplete: Simulação de grupo incompleta
+      membersCount: 'Membros incluídos: {{included}}. Membros excluídos: {{excluded}}.'
+    goalTrack:
+      sustainScheduled: Sustenta aportes agendados
+      sustainScheduledIfFreed: Sustenta aportes agendados se liberar alocações
+      fitIfFreed: Cabe se liberar alocações
+      yes: Sim
+      no: Não
+    timeline:
+      empty: Não houve dados de timeline para esta simulação.
+      month: Mês
+      currency: Moeda
+      opening: Saldo inicial
+      projectedFlow: Fluxo projetado
+      cardOutflow: Saída de fatura
+      debtOutflow: Saída da dívida
+      closing: Saldo final
+      goalContribution: Aporte agendado para meta
+      closingWithGoals: Saldo final com aportes de meta
+    status:
+      QUEUED: Na fila
+      RUNNING: Processando
+      COMPLETED: Concluído
+      FAILED: Falhou
+      CANCELLED: Cancelado

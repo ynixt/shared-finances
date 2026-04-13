@@ -15,7 +15,13 @@ financesPage:
     manageTeamPage:
       title: 'Gerenciar pessoas do grupo: {{name}}'
       role: Permissão
+      allowPlanningSimulator: Privacidade do simulador de planejamento
+      onlyYouCanChange: Somente você pode alterar seu próprio opt-in de privacidade.
       successChangeMessage: Permissão alterada com sucesso
+      planningOptInSaved: Preferência do simulador de planejamento salva.
+      planningOptIn:
+        enabled: Participando
+        disabled: Não participando
       generateInvitation: Gerar convite
       expiresOn: 'Expira em {{date}}'
     bankAccountsAssociatedPage:

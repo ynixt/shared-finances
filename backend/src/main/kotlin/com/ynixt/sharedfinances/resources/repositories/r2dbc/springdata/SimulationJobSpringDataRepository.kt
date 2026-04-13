@@ -100,4 +100,33 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
     @Modifying
     @Query("DELETE FROM simulation_job WHERE created_at < :threshold")
     fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM simulation_job
+        WHERE id = :id
+          AND owner_user_id = :userId
+          AND owner_group_id IS NULL
+          AND requested_by_user_id = :userId
+        """,
+    )
+    fun deletePersonalIfCreator(
+        id: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM simulation_job
+        WHERE id = :id
+          AND owner_group_id = :groupId
+          AND owner_user_id IS NULL
+        """,
+    )
+    fun deleteGroupJob(
+        id: UUID,
+        groupId: UUID,
+    ): Mono<Long>
 }

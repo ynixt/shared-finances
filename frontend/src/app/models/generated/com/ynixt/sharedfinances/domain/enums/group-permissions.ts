@@ -15,7 +15,9 @@ export type GroupPermissions =
   | 'NEW_CATEGORY'
   | 'EDIT_CATEGORY'
   | 'DELETE_CATEGORY'
-  | 'MANAGE_GOALS';
+  | 'MANAGE_GOALS'
+  | 'NEW_SIMULATION'
+  | 'DELETE_SIMULATIONS';
 
 export const GroupPermissions__Options: GroupPermissions[] = [
   'CHANGE_ROLE',
@@ -32,6 +34,8 @@ export const GroupPermissions__Options: GroupPermissions[] = [
   'EDIT_CATEGORY',
   'DELETE_CATEGORY',
   'MANAGE_GOALS',
+  'NEW_SIMULATION',
+  'DELETE_SIMULATIONS',
 ];
 
 export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions } = {
@@ -49,4 +53,6 @@ export const GroupPermissions__Obj: { [K in GroupPermissions]: GroupPermissions 
   'EDIT_CATEGORY': 'EDIT_CATEGORY',
   'DELETE_CATEGORY': 'DELETE_CATEGORY',
   'MANAGE_GOALS': 'MANAGE_GOALS',
+  'NEW_SIMULATION': 'NEW_SIMULATION',
+  'DELETE_SIMULATIONS': 'DELETE_SIMULATIONS',
 };

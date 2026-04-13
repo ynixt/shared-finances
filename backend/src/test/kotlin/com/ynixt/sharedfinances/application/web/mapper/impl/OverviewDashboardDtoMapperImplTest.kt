@@ -45,10 +45,20 @@ class OverviewDashboardDtoMapperImplTest {
                             details =
                                 listOf(
                                     OverviewDashboardDetail(
-                                        sourceId = goalId,
-                                        sourceType = OverviewDashboardDetailSourceType.GOAL,
-                                        label = "Emergency fund",
+                                        sourceId = accountId,
+                                        sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
+                                        label = "Main",
                                         value = BigDecimal("250.00"),
+                                        children =
+                                            listOf(
+                                                OverviewDashboardDetail(
+                                                    sourceId = goalId,
+                                                    sourceType = OverviewDashboardDetailSourceType.GOAL,
+                                                    label = "Emergency fund",
+                                                    value = BigDecimal("250.00"),
+                                                ),
+                                            ),
+                                        accountOverCommitted = false,
                                     ),
                                 ),
                         ),
@@ -64,10 +74,20 @@ class OverviewDashboardDtoMapperImplTest {
                                         value = BigDecimal("1000.00"),
                                     ),
                                     OverviewDashboardDetail(
-                                        sourceId = goalId,
-                                        sourceType = OverviewDashboardDetailSourceType.GOAL,
-                                        label = "Emergency fund",
-                                        value = BigDecimal("-250.00"),
+                                        sourceId = accountId,
+                                        sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
+                                        label = "Main",
+                                        value = BigDecimal("750.00"),
+                                        children =
+                                            listOf(
+                                                OverviewDashboardDetail(
+                                                    sourceId = goalId,
+                                                    sourceType = OverviewDashboardDetailSourceType.GOAL,
+                                                    label = "Emergency fund",
+                                                    value = BigDecimal("-250.00"),
+                                                ),
+                                            ),
+                                        accountOverCommitted = false,
                                     ),
                                 ),
                         ),
@@ -91,15 +111,37 @@ class OverviewDashboardDtoMapperImplTest {
         val dto = mapper.toDto(overview)
 
         assertThat(dto.cards.map { it.key }).containsExactly("BALANCE", "GOAL_COMMITTED", "GOAL_FREE_BALANCE")
-        assertThat(dto.cards[1].details).singleElement().satisfies({ detail ->
-            assertThat(detail.sourceId).isEqualTo(goalId)
-            assertThat(detail.sourceType).isEqualTo("GOAL")
-            assertThat(detail.label).isEqualTo("Emergency fund")
-            assertThat(detail.value).isEqualByComparingTo("250.00")
+        assertThat(dto.cards[1].details).singleElement().satisfies({ parent ->
+            assertThat(parent.sourceId).isEqualTo(accountId)
+            assertThat(parent.sourceType).isEqualTo("BANK_ACCOUNT")
+            assertThat(parent.label).isEqualTo("Main")
+            assertThat(parent.value).isEqualByComparingTo("250.00")
+            assertThat(parent.accountOverCommitted).isFalse()
+            assertThat(parent.children).singleElement().satisfies({ child ->
+                assertThat(child.sourceId).isEqualTo(goalId)
+                assertThat(child.sourceType).isEqualTo("GOAL")
+                assertThat(child.label).isEqualTo("Emergency fund")
+                assertThat(child.value).isEqualByComparingTo("250.00")
+            })
         })
-        assertThat(dto.cards[2].details.map { it.sourceType to it.value.toPlainString() }).containsExactly(
+        assertThat(dto.cards[2].details).hasSize(2)
+        assertThat(
+            dto.cards[2].details[0].sourceType to
+                dto.cards[2]
+                    .details[0]
+                    .value
+                    .toPlainString(),
+        ).isEqualTo(
             "FORMULA" to "1000.00",
-            "GOAL" to "-250.00",
         )
+        assertThat(dto.cards[2].details[1]).satisfies({ main ->
+            assertThat(main.sourceType).isEqualTo("BANK_ACCOUNT")
+            assertThat(main.value).isEqualByComparingTo("750.00")
+            assertThat(main.accountOverCommitted).isFalse()
+            assertThat(main.children).singleElement().satisfies({ child ->
+                assertThat(child.sourceType).isEqualTo("GOAL")
+                assertThat(child.value).isEqualByComparingTo("-250.00")
+            })
+        })
     }
 }

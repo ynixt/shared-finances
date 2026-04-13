@@ -5,6 +5,7 @@ export * from './entry-summary-type';
 export * from './goal-ledger-movement-kind';
 export * from './group-permissions';
 export * from './payment-type';
+export * from './planning-simulation-outcome-band';
 export * from './recurrence-type';
 export * from './scheduled-edit-scope';
 export * from './scheduled-execution-filter';

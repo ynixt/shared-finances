@@ -32,6 +32,7 @@ class WalletEntryRepositoryImpl(
         walletItemId: UUID?,
         minimumDate: LocalDate,
         maximumDate: LocalDate?,
+        asOfDate: LocalDate,
     ): Flux<EntrySumResult> =
         dcRepository.sumForBankAccountSummary(
             userId = userId,
@@ -39,6 +40,7 @@ class WalletEntryRepositoryImpl(
             walletItemId = walletItemId,
             minimumDate = minimumDate,
             maximumDate = maximumDate,
+            asOfDate = asOfDate,
         )
 
     override fun summarizeBankAccountsByMonth(

@@ -4,7 +4,6 @@ import { Observable, filter, map } from 'rxjs';
 
 import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
-import { SimulationJobStatusEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/simulationjobs';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { EventForListDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
@@ -38,7 +37,8 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly transactionInserted$: Observable<EventForListDto>;
   readonly transactionUpdated$: Observable<EventForListDto>;
   readonly transactionDeleted$: Observable<EventForListDto>;
-  readonly simulationJobUpdates$: Observable<SimulationJobStatusEventDto>;
+  /** INSERT/UPDATE payload is {@link SimulationJobStatusEventDto}; DELETE payload is job id string. */
+  readonly simulationJobAction$: Observable<UserActionEventDto>;
   readonly resyncRequired$: Observable<void>;
 
   constructor(tokenStateService: TokenStateService, zone: NgZone, singleSseCoordinatorService: SingleSseCoordinatorService) {
@@ -116,7 +116,6 @@ export class UserActionEventService extends ActionEventService implements OnDest
     );
 
     // --- Simulation jobs ---
-    const baseSimulationJob = this.streamOf<UserActionEventDto>('SIMULATION_JOB').pipe(notGroupFilter);
-    this.simulationJobUpdates$ = baseSimulationJob.pipe(map(e => e.data as SimulationJobStatusEventDto));
+    this.simulationJobAction$ = this.streamOf<UserActionEventDto>('SIMULATION_JOB').pipe(notGroupFilter);
   }
 }

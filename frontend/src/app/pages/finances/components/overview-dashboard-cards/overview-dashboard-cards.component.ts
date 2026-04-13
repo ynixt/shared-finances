@@ -135,4 +135,8 @@ export class OverviewDashboardCardsComponent {
   trackByCardKey(index: number, card: OverviewDashboardCardDto) {
     return card.key;
   }
+
+  trackDetail(index: number, detail: OverviewDashboardDetailDto): string {
+    return `${index}-${detail.sourceType}-${detail.sourceId ?? ''}-${detail.label}`;
+  }
 }

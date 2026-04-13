@@ -38,4 +38,21 @@ interface GroupUsersSpringDataRepository : R2dbcRepository<GroupUserEntity, Stri
         groupId: UUID,
         newRole: UserGroupRole,
     ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        update group_user
+        set
+            allow_planning_simulator = :allowPlanningSimulator
+        where
+            group_id = :groupId
+            and user_id = :userId
+    """,
+    )
+    fun updatePlanningSimulatorOptIn(
+        userId: UUID,
+        groupId: UUID,
+        allowPlanningSimulator: Boolean,
+    ): Mono<Long>
 }

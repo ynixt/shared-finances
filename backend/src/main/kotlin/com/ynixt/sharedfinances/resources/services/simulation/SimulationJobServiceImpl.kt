@@ -96,7 +96,7 @@ class SimulationJobServiceImpl(
         groupId: UUID,
         input: NewSimulationJobInput,
     ): SimulationJobEntity {
-        if (!groupPermissionService.hasPermission(requesterUserId, groupId, GroupPermissions.MANAGE_GOALS)) {
+        if (!groupPermissionService.hasPermission(requesterUserId, groupId, GroupPermissions.NEW_SIMULATION)) {
             throw SimulationJobForbiddenException()
         }
 
@@ -203,7 +203,7 @@ class SimulationJobServiceImpl(
         groupId: UUID,
         jobId: UUID,
     ): SimulationJobEntity {
-        if (!groupPermissionService.hasPermission(requesterUserId, groupId, GroupPermissions.MANAGE_GOALS)) {
+        if (!groupPermissionService.hasPermission(requesterUserId, groupId, GroupPermissions.NEW_SIMULATION)) {
             throw SimulationJobForbiddenException()
         }
 
@@ -223,6 +223,41 @@ class SimulationJobServiceImpl(
         }
 
         return reloaded
+    }
+
+    override suspend fun deleteForOwner(
+        ownerUserId: UUID,
+        jobId: UUID,
+    ) {
+        val existing = loadById(jobId)
+        ensureOwnerUser(ownerUserId, existing)
+        if (existing.requestedByUserId != ownerUserId) {
+            throw SimulationJobForbiddenException()
+        }
+        val deleted = simulationJobRepository.deletePersonalIfCreator(jobId, ownerUserId).awaitSingle()
+        if (deleted == 0L) {
+            throw SimulationJobNotFoundException(jobId)
+        }
+        emitDeleteEvent(existing)
+        dispatchNextQueuedForOwner(ownerUserId)
+    }
+
+    override suspend fun deleteForGroup(
+        requesterUserId: UUID,
+        groupId: UUID,
+        jobId: UUID,
+    ) {
+        if (!groupPermissionService.hasPermission(requesterUserId, groupId, GroupPermissions.DELETE_SIMULATIONS)) {
+            throw SimulationJobForbiddenException()
+        }
+        val existing = loadById(jobId)
+        ensureOwnerGroup(groupId, existing)
+        val deleted = simulationJobRepository.deleteGroupJob(jobId, groupId).awaitSingle()
+        if (deleted == 0L) {
+            throw SimulationJobNotFoundException(jobId)
+        }
+        emitDeleteEvent(existing)
+        dispatchNextQueuedForGroup(groupId)
     }
 
     override suspend fun processDispatchMessage(jobId: UUID) {
@@ -407,6 +442,22 @@ class SimulationJobServiceImpl(
             simulationJobDispatchQueueProducer.send(jobId)
         }.onFailure { ex ->
             logger.error("Failed to publish simulation job dispatch for $jobId", ex)
+        }
+    }
+
+    private suspend fun emitDeleteEvent(entity: SimulationJobEntity) {
+        val jobId = requireNotNull(entity.id) { "simulation job id" }
+        val groupId = entity.ownerGroupId
+        runCatching {
+            actionEventService.newEvent(
+                userId = entity.ownerUserId ?: entity.requestedByUserId,
+                type = ActionEventType.DELETE,
+                category = ActionEventCategory.SIMULATION_JOB,
+                data = jobId.toString(),
+                groupInfo = groupId?.let { NewEventGroupInfo(it) },
+            )
+        }.onFailure { ex ->
+            logger.warn("Failed to emit simulation job delete event for $jobId", ex)
         }
     }
 

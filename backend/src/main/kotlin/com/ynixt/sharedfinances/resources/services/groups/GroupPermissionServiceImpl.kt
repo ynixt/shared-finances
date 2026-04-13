@@ -42,7 +42,15 @@ class GroupPermissionServiceImpl(
                 setOf(
                     GroupPermissions.SEND_ENTRIES,
                     GroupPermissions.ADD_BANK_ACCOUNT,
+                    GroupPermissions.REMOVE_BANK_ACCOUNT,
+                    GroupPermissions.ADD_CREDIT_CARD,
+                    GroupPermissions.REMOVE_CREDIT_CARD,
+                    GroupPermissions.NEW_CATEGORY,
+                    GroupPermissions.EDIT_CATEGORY,
+                    GroupPermissions.DELETE_CATEGORY,
                     GroupPermissions.MANAGE_GOALS,
+                    GroupPermissions.NEW_SIMULATION,
+                    GroupPermissions.DELETE_SIMULATIONS,
                 )
 
             else -> emptySet()

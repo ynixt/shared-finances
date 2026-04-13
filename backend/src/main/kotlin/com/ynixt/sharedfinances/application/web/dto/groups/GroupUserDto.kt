@@ -5,5 +5,6 @@ import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 
 data class GroupUserDto(
     val role: UserGroupRole,
+    val allowPlanningSimulator: Boolean,
     val user: UserSimpleDto,
 )

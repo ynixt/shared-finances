@@ -5,3 +5,4 @@ export * from './group-invite-dto';
 export * from './group-user-dto';
 export * from './group-with-role-dto';
 export * from './new-group-dto';
+export * from './update-group-planning-simulator-opt-in-dto';

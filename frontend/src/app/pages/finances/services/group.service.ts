@@ -12,6 +12,7 @@ import {
   GroupUserDto,
   GroupWithRoleDto,
   NewGroupDto,
+  UpdateGroupPlanningSimulatorOptInDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserGroupRole } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { UserService } from '../../../services/user.service';
@@ -103,6 +104,21 @@ export class GroupService {
       };
 
       await lastValueFrom(this.http.put<void>(`/api/groups/${groupId}/members/change-role`, request).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async updateOwnPlanningSimulatorOptIn(groupId: string, allowPlanningSimulator: boolean): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      const request: UpdateGroupPlanningSimulatorOptInDto = {
+        allowPlanningSimulator,
+      };
+
+      await lastValueFrom(this.http.put<void>(`/api/groups/${groupId}/members/me/planning-simulator-opt-in`, request).pipe(take(1)));
       return;
     }
 

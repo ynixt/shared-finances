@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -94,4 +95,19 @@ class GroupSimulationJobController(
                 jobId = jobId,
             ),
         )
+
+    @Operation(summary = "Delete group simulation job permanently (requires DELETE_SIMULATIONS)")
+    @DeleteMapping("/{jobId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    suspend fun delete(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable groupId: UUID,
+        @PathVariable jobId: UUID,
+    ) {
+        simulationJobService.deleteForGroup(
+            requesterUserId = principalToken.principal.id,
+            groupId = groupId,
+            jobId = jobId,
+        )
+    }
 }

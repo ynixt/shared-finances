@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.application.web.dto.groups.GroupInviteDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupWithRoleDto
 import com.ynixt.sharedfinances.application.web.dto.groups.NewGroupDto
+import com.ynixt.sharedfinances.application.web.dto.groups.UpdateGroupPlanningSimulatorOptInDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupInviteDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupUserDtoMapper
@@ -145,5 +146,21 @@ class GroupController(
                 id = id,
             ).let { list ->
                 ResponseEntity.ofNullable(list.map(groupUserDtoMapper::toDto))
+            }
+
+    @Operation(summary = "Update own planning simulator opt-in in group")
+    @PutMapping("/{id}/members/me/planning-simulator-opt-in")
+    suspend fun updateOwnPlanningSimulatorOptIn(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+        @RequestBody request: UpdateGroupPlanningSimulatorOptInDto,
+    ): ResponseEntity<Unit> =
+        groupService
+            .updateOwnPlanningSimulatorOptIn(
+                userId = principalToken.principal.id,
+                id = id,
+                allowPlanningSimulator = request.allowPlanningSimulator,
+            ).let { updated ->
+                if (updated) ResponseEntity.noContent().build() else ResponseEntity.notFound().build()
             }
 }

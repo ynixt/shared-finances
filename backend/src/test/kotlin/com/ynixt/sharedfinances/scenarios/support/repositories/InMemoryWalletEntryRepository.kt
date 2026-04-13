@@ -45,6 +45,7 @@ internal class InMemoryWalletEntryRepository(
         walletItemId: UUID?,
         minimumDate: LocalDate,
         maximumDate: LocalDate?,
+        asOfDate: LocalDate,
     ): Flux<EntrySumResult> = Flux.empty()
 
     override fun summarizeBankAccountsByMonth(

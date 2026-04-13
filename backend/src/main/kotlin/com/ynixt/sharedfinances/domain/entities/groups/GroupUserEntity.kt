@@ -12,6 +12,7 @@ class GroupUserEntity(
     val groupId: UUID,
     val userId: UUID,
     val role: UserGroupRole,
+    val allowPlanningSimulator: Boolean = true,
 ) : SimpleEntity() {
     @Transient
     var user: UserEntity? = null

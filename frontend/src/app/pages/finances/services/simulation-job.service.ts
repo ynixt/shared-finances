@@ -53,4 +53,9 @@ export class SimulationJobService {
     await this.ensureUserLoaded();
     return lastValueFrom(this.httpClient.post<SimulationJobDto>(`${this.basePath(groupId)}/${jobId}/cancel`, {}).pipe(take(1)));
   }
+
+  async deleteJob(jobId: string, groupId?: string): Promise<void> {
+    await this.ensureUserLoaded();
+    await lastValueFrom(this.httpClient.delete<void>(`${this.basePath(groupId)}/${jobId}`).pipe(take(1)));
+  }
 }

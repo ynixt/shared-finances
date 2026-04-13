@@ -47,6 +47,7 @@ class OverviewDashboardDtoMapperImpl : OverviewDashboardDtoMapper {
         override fun map(from: OverviewDashboardDetail) =
             mapping {
                 to::sourceType fromProperty from::sourceType transform { it.name }
+                to::children fromProperty from::children via IterableToListMapper(DetailMapper)
             }
     }
 

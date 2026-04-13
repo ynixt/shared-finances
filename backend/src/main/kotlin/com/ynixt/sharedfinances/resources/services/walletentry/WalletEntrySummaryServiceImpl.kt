@@ -16,6 +16,7 @@ import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.Recurrenc
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.stereotype.Service
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 
@@ -26,6 +27,7 @@ class WalletEntrySummaryServiceImpl(
     private val userService: UserService,
     private val groupPermissionService: GroupPermissionService,
     private val recurrenceSimulationService: RecurrenceSimulationService,
+    private val clock: Clock,
 ) : WalletEntrySummaryService {
     override suspend fun summary(
         userId: UUID,
@@ -59,14 +61,17 @@ class WalletEntrySummaryServiceImpl(
         groupId: UUID?,
         request: SummaryEntryRequest,
     ): EntrySummary {
+        val today = LocalDate.now(clock)
+        val minimumDate = request.minimumDate ?: today.minusMonths(1)
         val sumsNotGrouped =
             walletEntryRepository
                 .sumForBankAccountSummary(
                     userId = userId,
                     groupId = groupId,
                     walletItemId = request.walletItemId,
-                    minimumDate = request.minimumDate ?: LocalDate.now().minusMonths(1),
+                    minimumDate = minimumDate,
                     maximumDate = request.maximumDate,
+                    asOfDate = today,
                 ).collectList()
                 .defaultIfEmpty(emptyList())
                 .awaitSingle() +
@@ -74,8 +79,9 @@ class WalletEntrySummaryServiceImpl(
                     userId = userId,
                     groupId = groupId,
                     walletItemId = request.walletItemId,
-                    minimumEndExecution = LocalDate.now().plusDays(1),
+                    minimumEndExecution = today.plusDays(1),
                     maximumNextExecution = request.maximumDate,
+                    summaryMinimumDate = minimumDate,
                 )
 
         var sums =

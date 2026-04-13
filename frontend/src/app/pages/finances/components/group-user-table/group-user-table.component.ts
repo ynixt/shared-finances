@@ -10,6 +10,7 @@ import { Ripple } from 'primeng/ripple';
 import { Select } from 'primeng/select';
 import { Table, TableModule } from 'primeng/table';
 import { Tag } from 'primeng/tag';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { UserAvatarComponent } from '../../../../components/user-avatar/user-avatar.component';
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
@@ -29,7 +30,18 @@ type GroupUserWithIdDto = GroupUserDto & { id: string };
 
 @Component({
   selector: 'app-group-user-table',
-  imports: [TableModule, TranslatePipe, UserAvatarComponent, ButtonDirective, Ripple, Tag, Select, FormsModule, FaIconComponent],
+  imports: [
+    TableModule,
+    TranslatePipe,
+    UserAvatarComponent,
+    ButtonDirective,
+    Ripple,
+    Tag,
+    Select,
+    FormsModule,
+    FaIconComponent,
+    ToggleSwitch,
+  ],
   templateUrl: './group-user-table.component.html',
   styleUrl: './group-user-table.component.scss',
 })
@@ -39,6 +51,7 @@ export class GroupUserTableComponent {
   clonedMembersById: { [s: string]: GroupUserWithIdDto } = {};
   roles: I18nOption<UserGroupRole>[];
   submitting = false;
+  updatingPlanningOptIn = new Set<string>();
 
   group = input<GroupWithRoleDto | undefined>(undefined);
   groupRole = signal<UserGroupRole>('VIEWER');
@@ -114,6 +127,44 @@ export class GroupUserTableComponent {
       });
     } finally {
       this.submitting = false;
+    }
+  }
+
+  isOwnUser(groupUser: GroupUserWithIdDto): boolean {
+    return this.userService.user()?.id === groupUser.user.id;
+  }
+
+  isUpdatingPlanningOptIn(groupUserId: string): boolean {
+    return this.updatingPlanningOptIn.has(groupUserId);
+  }
+
+  async onPlanningOptInChange(groupUser: GroupUserWithIdDto, allowPlanningSimulator: boolean) {
+    const groupId = this.group()?.id;
+    if (groupId == null || !this.isOwnUser(groupUser) || this.isUpdatingPlanningOptIn(groupUser.id)) return;
+
+    const oldValue = groupUser.allowPlanningSimulator;
+    groupUser.allowPlanningSimulator = allowPlanningSimulator;
+    this.updatingPlanningOptIn.add(groupUser.id);
+
+    try {
+      await this.groupService.updateOwnPlanningSimulatorOptIn(groupId, allowPlanningSimulator);
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('financesPage.groupsPage.manageTeamPage.planningOptInSaved'),
+        life: DEFAULT_SUCCESS_LIFE,
+      });
+    } catch (err) {
+      groupUser.allowPlanningSimulator = oldValue;
+      console.error(err);
+      this.messageService.add({
+        severity: 'error',
+        summary: this.translateService.instant('error.genericTitle'),
+        detail: this.translateService.instant('error.genericMessage'),
+        life: DEFAULT_ERROR_LIFE,
+      });
+    } finally {
+      this.updatingPlanningOptIn.delete(groupUser.id);
     }
   }
 

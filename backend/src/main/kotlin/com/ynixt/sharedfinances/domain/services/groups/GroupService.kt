@@ -56,5 +56,11 @@ interface GroupService {
         role: UserGroupRole = UserGroupRole.VIEWER,
     )
 
+    suspend fun updateOwnPlanningSimulatorOptIn(
+        userId: UUID,
+        id: UUID,
+        allowPlanningSimulator: Boolean,
+    ): Boolean
+
     fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity>
 }
