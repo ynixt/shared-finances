@@ -19,9 +19,9 @@ abstract class IntegrationTestContainers : IntegrationTest() {
         val postgres: PostgreSQLContainer<*> =
             PostgreSQLContainer(
                 DockerImageName.parse("postgres:18.3"),
-            ).withDatabaseName(env("POSTGRES_APP_DB", "testdb"))
-                .withUsername(env("POSTGRES_APP_USER", "test"))
-                .withPassword(env("POSTGRES_APP_PASSWORD", "test"))
+            ).withDatabaseName(env("SF_APP_POSTGRES_DB", "testdb"))
+                .withUsername(env("SF_APP_POSTGRES_USER", "test"))
+                .withPassword(env("SF_APP_POSTGRES_PASSWORD", "test"))
 
         val redis: GenericContainer<*> =
             GenericContainer(

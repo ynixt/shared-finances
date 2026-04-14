@@ -41,7 +41,7 @@ annotation class OnlyServiceSecretAllowed
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 class SecurityConfig(
-    @param:Value("\${APP_SERVICE_SECRET}") private val serviceSecret: String,
+    @param:Value("\${SF_APP_SERVICE_SECRET}") private val serviceSecret: String,
     private val jwtDecoder: ReactiveJwtDecoder,
     private val jwtToUserAuthConverter: JwtToUserAuthConverter,
 ) {

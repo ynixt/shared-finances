@@ -1,8 +1,29 @@
 include dev.env
 export
 
-API_URL ?= http://localhost:$(APP_PORT)
+API_URL ?= http://localhost:$(SF_APP_PORT)
 SECRETS_DIR ?= secrets
+
+up:
+	docker compose -p shared-finances -f docker-compose.yml --env-file .env.production up -d
+
+up-b:
+	docker compose -p shared-finances -f docker-compose.yml --env-file .env.production up -d --build
+
+down:
+	docker compose -f docker-compose.yml --env-file .env.production down --remove-orphans
+
+down-v:
+	docker compose -f docker-compose.yml --env-file .env.production down -v
+
+up-dev:
+	docker compose -p shared-finances-dev -f docker-compose-dev.yml --env-file dev.env up -d
+
+down-dev:
+	docker compose -f docker-compose-dev.yml --env-file dev.env down --remove-orphans
+
+down-dev-v:
+	docker compose -f docker-compose-dev.yml --env-file dev.env down -v
 
 # Usage:
 #   make populate-history MIN_DATE=2024-01-01 MAX_DATE=2024-12-31
@@ -27,7 +48,7 @@ endif
 		echo -n "Syncing $$current ... "; \
 		response=$$(curl -s -w "\n%{http_code}" -X POST \
 			"$(API_URL)/exchange-rates/sync?date=$$current$$quotes_params" \
-			-H "Authorization: $(APP_SERVICE_SECRET)"); \
+			-H "Authorization: $(SF_APP_SERVICE_SECRET)"); \
 		status=$$(echo "$$response" | tail -1); \
 		body=$$(echo "$$response" | sed '$$d'); \
 		echo "HTTP $$status - $$body"; \
@@ -77,7 +98,7 @@ jwt-b64: ensure-secrets-dir
 	@base64 -w 0 $(SECRETS_DIR)/jwt-public.der > $(SECRETS_DIR)/jwt-public.der.b64
 	@echo "Done."
 
-# 5) Update APP_JWT_PUBLIC_KEY and APP_JWT_PRIVATE_KEY in dev.env
+# 5) Update SF_APP_JWT_PUBLIC_KEY and SF_APP_JWT_PRIVATE_KEY in dev.env
 .PHONY: jwt-update-dev-env
 jwt-update-dev-env:
 	@test -f dev.env || (echo "Missing dev.env" && exit 1)
@@ -85,15 +106,15 @@ jwt-update-dev-env:
 	@test -f $(SECRETS_DIR)/jwt-private.der.b64 || (echo "Missing $(SECRETS_DIR)/jwt-private.der.b64. Run: make jwt-b64" && exit 1)
 	@public_key=$$(cat $(SECRETS_DIR)/jwt-public.der.b64); \
 	private_key=$$(cat $(SECRETS_DIR)/jwt-private.der.b64); \
-	if grep -q '^APP_JWT_PUBLIC_KEY=' dev.env; then \
-		sed -i "s|^APP_JWT_PUBLIC_KEY=.*|APP_JWT_PUBLIC_KEY=$$public_key|" dev.env; \
+	if grep -q '^SF_APP_JWT_PUBLIC_KEY=' dev.env; then \
+		sed -i "s|^SF_APP_JWT_PUBLIC_KEY=.*|SF_APP_JWT_PUBLIC_KEY=$$public_key|" dev.env; \
 	else \
-		echo "APP_JWT_PUBLIC_KEY=$$public_key" >> dev.env; \
+		echo "SF_APP_JWT_PUBLIC_KEY=$$public_key" >> dev.env; \
 	fi; \
-	if grep -q '^APP_JWT_PRIVATE_KEY=' dev.env; then \
-		sed -i "s|^APP_JWT_PRIVATE_KEY=.*|APP_JWT_PRIVATE_KEY=$$private_key|" dev.env; \
+	if grep -q '^SF_APP_JWT_PRIVATE_KEY=' dev.env; then \
+		sed -i "s|^SF_APP_JWT_PRIVATE_KEY=.*|SF_APP_JWT_PRIVATE_KEY=$$private_key|" dev.env; \
 	else \
-		echo "APP_JWT_PRIVATE_KEY=$$private_key" >> dev.env; \
+		echo "SF_APP_JWT_PRIVATE_KEY=$$private_key" >> dev.env; \
 	fi; \
 	echo "dev.env updated."
 

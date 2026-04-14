@@ -19,7 +19,7 @@ class NatsConfig {
             Options
                 .Builder()
                 .server(natsUrl)
-                .userInfo(System.getenv("NATS_APP_USER"), System.getenv("NATS_APP_PASSWORD"))
+                .userInfo(System.getenv("SF_APP_NATS_USER"), System.getenv("SF_APP_NATS_PASSWORD"))
                 .maxReconnects(-1)
                 .reconnectWait(Duration.ofSeconds(2))
                 .build()

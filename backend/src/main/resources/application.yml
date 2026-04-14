@@ -1,5 +1,5 @@
 server:
-  port: ${APP_PORT}
+  port: ${SF_APP_PORT}
   http2:
     enabled: true
 
@@ -7,9 +7,9 @@ spring:
   application:
     name: shared-finances
   r2dbc:
-    url: r2dbc:${POSTGRES_APP_CONNECTION_STRING}
-    username: ${POSTGRES_APP_USER}
-    password: ${POSTGRES_APP_PASSWORD}
+    url: r2dbc:${SF_APP_POSTGRES_CONNECTION_STRING}
+    username: ${SF_APP_POSTGRES_USER}
+    password: ${SF_APP_POSTGRES_PASSWORD}
     pool:
       initial-size: 5
       max-size: 20
@@ -19,18 +19,18 @@ spring:
       validation-query: SELECT 1
       acquire-retry: 2
   flyway:
-    url: jdbc:${POSTGRES_APP_CONNECTION_STRING}
-    user: ${POSTGRES_APP_USER}
-    password: ${POSTGRES_APP_PASSWORD}
+    url: jdbc:${SF_APP_POSTGRES_CONNECTION_STRING}
+    user: ${SF_APP_POSTGRES_USER}
+    password: ${SF_APP_POSTGRES_PASSWORD}
     locations: classpath:db/migration
     baseline-on-migrate: true
     fail-on-missing-locations: false
 #    clean-disabled: false
   data:
     redis:
-      host: ${REDIS_APP_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
+      host: ${SF_APP_REDIS_HOST}
+      port: ${SF_APP_REDIS_PORT}
+      password: ${SF_APP_REDIS_PASSWORD:}
       database: 0
       ssl:
         enabled: false
@@ -72,46 +72,46 @@ logging:
 
 app:
   nats:
-    url: nats://${NATS_HOST}:${NATS_PORT}
-  invitationExpirationMinutes: ${APP_INVITATION_EXPIRATION_MINUTES:15}
+    url: nats://${SF_APP_NATS_HOST}:${SF_APP_NATS_PORT}
+  invitationExpirationMinutes: ${SF_APP_INVITATION_EXPIRATION_MINUTES:15}
   security:
     jwt:
-      publicKeyBase64: ${APP_JWT_PUBLIC_KEY}
-      privateKeyBase64: ${APP_JWT_PRIVATE_KEY}
-      kid: ${APP_JWT_KID}
-      issuer: ${APP_JWT_ISSUER}
-      accessTokenTTLMinutes: ${APP_JWT_ACCESS_TOKEN_TTL_MINUTES:15}
-      refreshTokenTTLMinutes: ${APP_JWT_REFRESH_TOKEN_TTL_MINUTES:43200}
-    wrongPasswordTtlMinutes: ${APP_WRONG_PASSWORD_TTL_MINUTES:120}
-    wrongPasswordBlock: ${APP_WRONG_PASSWORD_BLOCK:10}
-    secureCookie: ${APP_SECURE_COOKIE:true}
+      publicKeyBase64: ${SF_APP_JWT_PUBLIC_KEY}
+      privateKeyBase64: ${SF_APP_JWT_PRIVATE_KEY}
+      kid: ${SF_APP_JWT_KID}
+      issuer: ${SF_APP_JWT_ISSUER}
+      accessTokenTTLMinutes: ${SF_APP_JWT_ACCESS_TOKEN_TTL_MINUTES:15}
+      refreshTokenTTLMinutes: ${SF_APP_JWT_REFRESH_TOKEN_TTL_MINUTES:43200}
+    wrongPasswordTtlMinutes: ${SF_APP_WRONG_PASSWORD_TTL_MINUTES:120}
+    wrongPasswordBlock: ${SF_APP_WRONG_PASSWORD_BLOCK:10}
+    secureCookie: ${SF_APP_SECURE_COOKIE:true}
     mfa:
       crypto:
-        password: ${APP_MFA_TOTP_CRYPTO_PASSWORD}
-        saltHex: ${APP_MFA_TOTP_CRYPTO_SALT_HEX}
+        password: ${SF_APP_MFA_TOTP_CRYPTO_PASSWORD}
+        saltHex: ${SF_APP_MFA_TOTP_CRYPTO_SALT_HEX}
   s3:
-    endpoint: ${APP_S3_ENDPOINT}
-    accessKey: ${APP_S3_ACCESS_KEY_ID}
-    secretKey: ${APP_S3_SECRET_ACCESS_KEY}
-    region: ${APP_S3_REGION}
-    bucket: ${APP_S3_BUCKET}
-    pathStyleAccessEnabled: ${APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
+    endpoint: ${SF_APP_S3_ENDPOINT}
+    accessKey: ${SF_APP_S3_ACCESS_KEY_ID}
+    secretKey: ${SF_APP_S3_SECRET_ACCESS_KEY}
+    region: ${SF_APP_S3_REGION}
+    bucket: ${SF_APP_S3_BUCKET}
+    pathStyleAccessEnabled: ${SF_APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
   exchangeRates:
-    providerUrl: ${APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
+    providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
   jobs:
     refreshExchangeRates:
-      cron: ${APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * 1}
+      cron: ${SF_APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * 1}
     materializeGoal:
-      cron: ${APP_MATERIALIZE_GOAL_CRON:0 0 0 * * *}
+      cron: ${SF_APP_MATERIALIZE_GOAL_CRON:0 0 0 * * *}
     generateEntry:
-      cron: ${APP_GENERATE_ENTRY_CRON:0 0 0 * * *}
+      cron: ${SF_APP_GENERATE_ENTRY_CRON:0 0 0 * * *}
     expireMfa:
-      cron: ${APP_EXPIRE_MFA_CRON:0 0 0/12 * * *}
+      cron: ${SF_APP_EXPIRE_MFA_CRON:0 0 0/12 * * *}
     expireInvites:
-      cron: ${APP_EXPIRE_INVITES_CRON:0 0/30 * * * *}
+      cron: ${SF_APP_EXPIRE_INVITES_CRON:0 0/30 * * * *}
     simulation:
       reconcile:
-        cron-enabled: ${APP_SIMULATION_RECONCILE_CRON_ENABLED:false}
-        cron: ${APP_SIMULATION_RECONCILE_CRON:0 */2 * * * *}
+        cron-enabled: ${SF_APP_SIMULATION_RECONCILE_CRON_ENABLED:false}
+        cron: ${SF_APP_SIMULATION_RECONCILE_CRON:0 */2 * * * *}
       purge:
-        cron: ${APP_SIMULATION_PURGE_CRON:0 30 3 * * *}
+        cron: ${SF_APP_SIMULATION_PURGE_CRON:0 30 3 * * *}
