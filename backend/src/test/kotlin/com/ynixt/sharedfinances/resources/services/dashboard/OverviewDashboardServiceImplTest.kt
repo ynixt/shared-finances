@@ -1058,6 +1058,17 @@ class OverviewDashboardServiceImplTest {
                         (maximumNextExecution == null || !it.date.isAfter(maximumNextExecution))
                 }
 
+            override suspend fun simulateGenerationForUsers(
+                minimumEndExecution: LocalDate?,
+                maximumNextExecution: LocalDate?,
+                userIds: Set<UUID>,
+                billDate: LocalDate?,
+            ): List<EventListResponse> =
+                events.filter {
+                    (minimumEndExecution == null || !it.date.isBefore(minimumEndExecution)) &&
+                        (maximumNextExecution == null || !it.date.isAfter(maximumNextExecution))
+                }
+
             override suspend fun simulateGenerationAsEntrySumResult(
                 minimumEndExecution: LocalDate?,
                 maximumNextExecution: LocalDate?,

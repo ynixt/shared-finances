@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteRepository
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -93,6 +94,25 @@ interface ExchangeRateQuoteSpringDataRepository :
         quoteCurrency: String,
         referenceDate: LocalDate,
     ): Mono<ExchangeRateQuoteEntity>
+
+    @Query(
+        """
+            SELECT *
+            FROM exchange_rate_quote
+            WHERE
+                base_currency = :baseCurrency
+                AND quote_currency = :quoteCurrency
+                AND quote_date >= :quoteDateFrom
+                AND quote_date <= :quoteDateTo
+            ORDER BY quote_date ASC, quoted_at DESC
+        """,
+    )
+    override fun findAllByPairAndQuoteDateBetween(
+        baseCurrency: String,
+        quoteCurrency: String,
+        quoteDateFrom: LocalDate,
+        quoteDateTo: LocalDate,
+    ): Flux<ExchangeRateQuoteEntity>
 
     @Query("SELECT COUNT(*) FROM exchange_rate_quote")
     override fun countAll(): Mono<Long>

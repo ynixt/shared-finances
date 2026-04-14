@@ -27,6 +27,13 @@ interface RecurrenceService {
         sort: Sort = Sort.unsorted(),
     ): Flow<RecurrenceEventEntity>
 
+    fun findAllEntryByUserIds(
+        minimumEndExecution: LocalDate? = null,
+        maximumNextExecution: LocalDate? = null,
+        userIds: Set<UUID>,
+        sort: Sort = Sort.unsorted(),
+    ): Flow<RecurrenceEventEntity>
+
     fun findAllEntryByGroupId(
         minimumEndExecution: LocalDate? = null,
         maximumNextExecution: LocalDate? = null,

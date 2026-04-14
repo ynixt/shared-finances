@@ -62,4 +62,17 @@ class RecurrenceEventRepositoryImpl(
             groupId = groupId,
             sort = sort,
         )
+
+    override fun findAllByUserIds(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        sort: Sort,
+    ): Flux<RecurrenceEventEntity> =
+        dcRepository.findAllByUserIds(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            userIds = userIds,
+            sort = sort,
+        )
 }

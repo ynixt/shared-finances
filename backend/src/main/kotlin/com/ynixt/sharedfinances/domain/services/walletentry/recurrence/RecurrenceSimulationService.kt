@@ -37,6 +37,13 @@ interface RecurrenceSimulationService {
         billDate: LocalDate?,
     ): List<EventListResponse>
 
+    suspend fun simulateGenerationForUsers(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        billDate: LocalDate?,
+    ): List<EventListResponse>
+
     suspend fun simulateGenerationAsEntrySumResult(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,

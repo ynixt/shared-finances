@@ -10,6 +10,7 @@ import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteList
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteKeysetRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteListCursor
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteRepository
+import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateProvider
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepository
@@ -95,6 +96,38 @@ class ExchangeRateServiceImplTest {
                     )
                 }
             }.isInstanceOf(ExchangeRateUnavailableException::class.java)
+        }
+
+    @Test
+    fun `convertBatch should group quote retrieval by pair instead of per request`() =
+        runBlocking {
+            val repository = FakeExchangeRateQuoteRepository()
+            repository.saveQuote("USD", "BRL", LocalDate.of(2026, 3, 10), "5.00")
+            repository.saveQuote("USD", "BRL", LocalDate.of(2026, 3, 13), "6.00")
+            repository.saveQuote("USD", "BRL", LocalDate.of(2026, 3, 20), "6.20")
+
+            val service =
+                createService(
+                    exchangeRateQuoteRepository = repository,
+                    exchangeRateProvider = FakeExchangeRateProvider(),
+                )
+
+            val requests =
+                (1..20).map { idx ->
+                    ConversionRequest(
+                        value = BigDecimal("10.00"),
+                        fromCurrency = "USD",
+                        toCurrency = "BRL",
+                        referenceDate = LocalDate.of(2026, 3, 10).plusDays((idx % 10).toLong()),
+                    )
+                }
+
+            val result = service.convertBatch(requests)
+
+            assertThat(result).hasSize(20)
+            assertThat(repository.closestBeforeCalls).isEqualTo(1)
+            assertThat(repository.closestAfterCalls).isEqualTo(1)
+            assertThat(repository.windowCalls).isEqualTo(1)
         }
 
     @Test
@@ -335,6 +368,9 @@ class ExchangeRateServiceImplTest {
         ExchangeRateQuoteKeysetRepository {
         private val byPairAndDate = linkedMapOf<Triple<String, String, LocalDate>, ExchangeRateQuoteEntity>()
         private val byId = linkedMapOf<UUID, ExchangeRateQuoteEntity>()
+        var closestBeforeCalls: Int = 0
+        var closestAfterCalls: Int = 0
+        var windowCalls: Int = 0
 
         fun saveQuote(
             base: String,
@@ -393,8 +429,9 @@ class ExchangeRateServiceImplTest {
             baseCurrency: String,
             quoteCurrency: String,
             referenceDate: LocalDate,
-        ): Mono<ExchangeRateQuoteEntity> =
-            Mono.justOrEmpty(
+        ): Mono<ExchangeRateQuoteEntity> {
+            closestBeforeCalls += 1
+            return Mono.justOrEmpty(
                 byPairAndDate.values
                     .filter {
                         it.baseCurrency == baseCurrency.uppercase() &&
@@ -402,13 +439,15 @@ class ExchangeRateServiceImplTest {
                             !it.quoteDate.isAfter(referenceDate)
                     }.maxByOrNull { it.quoteDate },
             )
+        }
 
         override fun findClosestOnOrAfterDate(
             baseCurrency: String,
             quoteCurrency: String,
             referenceDate: LocalDate,
-        ): Mono<ExchangeRateQuoteEntity> =
-            Mono.justOrEmpty(
+        ): Mono<ExchangeRateQuoteEntity> {
+            closestAfterCalls += 1
+            return Mono.justOrEmpty(
                 byPairAndDate.values
                     .filter {
                         it.baseCurrency == baseCurrency.uppercase() &&
@@ -416,6 +455,25 @@ class ExchangeRateServiceImplTest {
                             !it.quoteDate.isBefore(referenceDate)
                     }.minByOrNull { it.quoteDate },
             )
+        }
+
+        override fun findAllByPairAndQuoteDateBetween(
+            baseCurrency: String,
+            quoteCurrency: String,
+            quoteDateFrom: LocalDate,
+            quoteDateTo: LocalDate,
+        ): Flux<ExchangeRateQuoteEntity> {
+            windowCalls += 1
+            return Flux.fromIterable(
+                byPairAndDate.values
+                    .filter {
+                        it.baseCurrency == baseCurrency.uppercase() &&
+                            it.quoteCurrency == quoteCurrency.uppercase() &&
+                            !it.quoteDate.isBefore(quoteDateFrom) &&
+                            !it.quoteDate.isAfter(quoteDateTo)
+                    }.sortedBy { it.quoteDate },
+            )
+        }
 
         override fun countAll(): Mono<Long> = Mono.just(byPairAndDate.size.toLong())
 

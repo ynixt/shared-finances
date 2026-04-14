@@ -27,7 +27,6 @@ import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.Recurrenc
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -161,27 +160,43 @@ class RecurrenceSimulationServiceImpl(
                 else -> TODO()
             }.toList()
 
-        hydrateSeriesTotals(configs)
-
-        val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
-        val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.groupId }.toSet()).toList()
-        val users = userService.findAllByIdIn(configs.mapNotNull { config -> config.userId }.toSet()).toList()
-        val walletItems = walletItemService.findAllByIdIn(configs.flatMap { it.entries!! }.map { it.walletItemId }.toSet()).toList()
-
-        return simulateGeneration(
+        return simulateGenerationForConfigs(
             configs = configs,
-            walletItemsById = walletItems.associateBy { it.id!! },
-            userById = users.associateBy { it.id!! },
-            categoriesById = categories.associateBy { it.id!! },
-            groupById = groups.associateBy { it.id!! },
             minimumDate = fixedStartDate,
             maximumDate = maximumNextExecution,
             askedBillDate = billDate,
             askedWalletItemId = walletItemId,
             requestUserId = userId,
-        ).sortedWith(
-            compareByDescending<EventListResponse> { it.date }
-                .thenByDescending { it.id },
+        )
+    }
+
+    override suspend fun simulateGenerationForUsers(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        billDate: LocalDate?,
+    ): List<EventListResponse> {
+        val fixedStartDate = fixStartDate(minimumEndExecution)
+        if (userIds.isEmpty()) {
+            return emptyList()
+        }
+
+        val configs =
+            recurrenceService
+                .findAllEntryByUserIds(
+                    minimumEndExecution = fixedStartDate,
+                    maximumNextExecution = maximumNextExecution,
+                    userIds = userIds,
+                    sort = defaultSort,
+                ).toList()
+
+        return simulateGenerationForConfigs(
+            configs = configs,
+            minimumDate = fixedStartDate,
+            maximumDate = maximumNextExecution,
+            askedBillDate = billDate,
+            askedWalletItemId = null,
+            requestUserId = null,
         )
     }
 
@@ -329,10 +344,6 @@ class RecurrenceSimulationServiceImpl(
         simulatedInstallment: Int?,
         simulatedBillDateByWalletItemId: Map<UUID, LocalDate?>?,
     ): EventListResponse {
-        if (config.seriesQtyTotal == null) {
-            config.seriesQtyTotal = recurrenceSeriesRepository.findById(config.seriesId).awaitSingleOrNull()?.qtyTotal
-        }
-
         val installment =
             if (simulatedInstallment != null) {
                 simulatedInstallment
@@ -427,7 +438,43 @@ class RecurrenceSimulationServiceImpl(
             )
         } else {
             null
+            }
+    }
+
+    private suspend fun simulateGenerationForConfigs(
+        configs: List<RecurrenceEventEntity>,
+        minimumDate: LocalDate?,
+        maximumDate: LocalDate?,
+        askedBillDate: LocalDate?,
+        askedWalletItemId: UUID?,
+        requestUserId: UUID?,
+    ): List<EventListResponse> {
+        if (configs.isEmpty()) {
+            return emptyList()
         }
+
+        hydrateSeriesTotals(configs)
+
+        val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
+        val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.groupId }.toSet()).toList()
+        val users = userService.findAllByIdIn(configs.mapNotNull { config -> config.userId }.toSet()).toList()
+        val walletItems = walletItemService.findAllByIdIn(configs.flatMap { it.entries!! }.map { it.walletItemId }.toSet()).toList()
+
+        return simulateGeneration(
+            configs = configs,
+            walletItemsById = walletItems.associateBy { it.id!! },
+            userById = users.associateBy { it.id!! },
+            categoriesById = categories.associateBy { it.id!! },
+            groupById = groups.associateBy { it.id!! },
+            minimumDate = minimumDate,
+            maximumDate = maximumDate,
+            askedBillDate = askedBillDate,
+            askedWalletItemId = askedWalletItemId,
+            requestUserId = requestUserId,
+        ).sortedWith(
+            compareByDescending<EventListResponse> { it.date }
+                .thenByDescending { it.id },
+        )
     }
 
     private suspend fun hydrateSeriesTotals(configs: List<RecurrenceEventEntity>) {

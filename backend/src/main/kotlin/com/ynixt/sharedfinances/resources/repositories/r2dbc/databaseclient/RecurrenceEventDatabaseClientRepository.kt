@@ -29,8 +29,50 @@ class RecurrenceEventDatabaseClientRepository(
         userId: UUID?,
         groupId: UUID?,
         sort: Sort = Sort.unsorted(),
+    ): Flux<RecurrenceEventEntity> =
+        findAllInternal(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            billDate = billDate,
+            walletItemId = walletItemId,
+            userId = userId,
+            userIds = null,
+            groupId = groupId,
+            sort = sort,
+        )
+
+    fun findAllByUserIds(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        sort: Sort = Sort.unsorted(),
     ): Flux<RecurrenceEventEntity> {
-        // Query 1: find all event IDs
+        if (userIds.isEmpty()) {
+            return Flux.empty()
+        }
+
+        return findAllInternal(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            billDate = null,
+            walletItemId = null,
+            userId = null,
+            userIds = userIds,
+            groupId = null,
+            sort = sort,
+        )
+    }
+
+    private fun findAllInternal(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        billDate: LocalDate?,
+        walletItemId: UUID?,
+        userId: UUID?,
+        userIds: Set<UUID>?,
+        groupId: UUID?,
+        sort: Sort,
+    ): Flux<RecurrenceEventEntity> {
         var eventIdsSql = """
         SELECT re.id
         FROM recurrence_event re
@@ -53,8 +95,15 @@ class RecurrenceEventDatabaseClientRepository(
             eventIdsSql += ")"
         }
 
-        if (userId != null) eventIdsSql += " AND re.user_id = :userId"
-        if (groupId != null) eventIdsSql += " AND re.group_id = :groupId"
+        if (userId != null) {
+            eventIdsSql += " AND re.user_id = :userId"
+        }
+        if (userIds != null) {
+            eventIdsSql += " AND re.user_id = ANY(:userIds)"
+        }
+        if (groupId != null) {
+            eventIdsSql += " AND re.group_id = :groupId"
+        }
 
         eventIdsSql = eventIdsSql.replaceFirst(" AND ", " WHERE ")
 
@@ -88,6 +137,7 @@ class RecurrenceEventDatabaseClientRepository(
         if (walletItemId != null) spec = spec.bind("walletItemId", walletItemId)
         if (billDate != null && walletItemId != null) spec = spec.bind("billDate", billDate)
         if (userId != null) spec = spec.bind("userId", userId)
+        if (userIds != null) spec = spec.bind("userIds", userIds.toTypedArray())
         if (groupId != null) spec = spec.bind("groupId", groupId)
 
         return spec
@@ -97,7 +147,6 @@ class RecurrenceEventDatabaseClientRepository(
             .flatMapMany { eventIds ->
                 if (eventIds.isEmpty()) return@flatMapMany Flux.empty<RecurrenceEventEntity>()
 
-                // Query 2
                 var fullSql = """
                 SELECT
                     re.*,

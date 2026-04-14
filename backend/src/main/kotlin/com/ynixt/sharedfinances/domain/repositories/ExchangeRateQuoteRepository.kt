@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.repositories
 
 import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -30,6 +31,13 @@ interface ExchangeRateQuoteRepository : EntityRepository<ExchangeRateQuoteEntity
         quoteCurrency: String,
         referenceDate: LocalDate,
     ): Mono<ExchangeRateQuoteEntity>
+
+    fun findAllByPairAndQuoteDateBetween(
+        baseCurrency: String,
+        quoteCurrency: String,
+        quoteDateFrom: LocalDate,
+        quoteDateTo: LocalDate,
+    ): Flux<ExchangeRateQuoteEntity>
 
     fun countAll(): Mono<Long>
 }

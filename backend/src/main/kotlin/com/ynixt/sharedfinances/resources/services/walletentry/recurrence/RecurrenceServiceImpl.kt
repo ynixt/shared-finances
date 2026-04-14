@@ -63,6 +63,20 @@ class RecurrenceServiceImpl(
                 sort = sort,
             ).asFlow()
 
+    override fun findAllEntryByUserIds(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        sort: Sort,
+    ): Flow<RecurrenceEventEntity> =
+        repository
+            .findAllByUserIds(
+                minimumEndExecution = minimumEndExecution,
+                maximumNextExecution = maximumNextExecution,
+                userIds = userIds,
+                sort = sort,
+            ).asFlow()
+
     override fun findAllEntryByGroupId(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,

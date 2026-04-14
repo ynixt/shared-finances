@@ -414,6 +414,13 @@ class FinancialGoalManagementServiceImplTest {
             sort: Sort,
         ): Flow<RecurrenceEventEntity> = emptyFlow()
 
+        override fun findAllEntryByUserIds(
+            minimumEndExecution: LocalDate?,
+            maximumNextExecution: LocalDate?,
+            userIds: Set<UUID>,
+            sort: Sort,
+        ): Flow<RecurrenceEventEntity> = emptyFlow()
+
         override fun findAllEntryByGroupId(
             minimumEndExecution: LocalDate?,
             maximumNextExecution: LocalDate?,

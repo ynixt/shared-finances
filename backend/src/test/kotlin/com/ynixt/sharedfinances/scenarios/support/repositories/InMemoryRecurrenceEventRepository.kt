@@ -83,6 +83,26 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
         return Flux.fromIterable(filtered)
     }
 
+    override fun findAllByUserIds(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        sort: Sort,
+    ): Flux<RecurrenceEventEntity> {
+        if (userIds.isEmpty()) {
+            return Flux.empty()
+        }
+
+        val filtered =
+            data.values
+                .asSequence()
+                .filter { userIds.contains(it.userId) }
+                .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution.isAfter(maximumNextExecution)) }
+                .filter { minimumEndExecution == null || (it.endExecution == null || !it.endExecution.isBefore(minimumEndExecution)) }
+                .toList()
+        return Flux.fromIterable(filtered)
+    }
+
     override fun findById(id: UUID): Mono<RecurrenceEventEntity> = Mono.justOrEmpty(data[id])
 
     override fun deleteById(id: UUID): Mono<Long> = Mono.just(if (data.remove(id) != null) 1L else 0L)

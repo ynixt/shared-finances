@@ -270,23 +270,103 @@ class ExchangeRateServiceImpl(
     override suspend fun convertBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, BigDecimal> {
         if (requests.isEmpty()) return emptyMap()
 
-        val ratesByKey =
-            requests
-                .map { Triple(it.fromCurrency.uppercase(), it.toCurrency.uppercase(), it.referenceDate) }
-                .toSet()
-                .associateWith { (fromCurrency, toCurrency, referenceDate) ->
-                    getRate(
-                        fromCurrency = fromCurrency,
-                        toCurrency = toCurrency,
-                        referenceDate = referenceDate,
-                    )
+        val ratesByKey = linkedMapOf<Triple<String, String, LocalDate>, BigDecimal>()
+        val normalizedRequests =
+            requests.map { request ->
+                Triple(request.fromCurrency.uppercase(), request.toCurrency.uppercase(), request.referenceDate) to request
+            }
+
+        val requestsByPair =
+            normalizedRequests.groupBy(
+                keySelector = { (normalized, _) -> normalized.first to normalized.second },
+                valueTransform = { (normalized, _) -> normalized.third },
+            )
+
+        requestsByPair.forEach { (pair, referenceDates) ->
+            val fromCurrency = pair.first
+            val toCurrency = pair.second
+
+            if (fromCurrency == toCurrency) {
+                referenceDates.forEach { referenceDate ->
+                    ratesByKey[Triple(fromCurrency, toCurrency, referenceDate)] = BigDecimal.ONE
                 }
+                return@forEach
+            }
+
+            val minDate = referenceDates.minOrNull()!!
+            val maxDate = referenceDates.maxOrNull()!!
+
+            val before =
+                exchangeRateQuoteRepository
+                    .findClosestOnOrBeforeDate(
+                        baseCurrency = fromCurrency,
+                        quoteCurrency = toCurrency,
+                        referenceDate = minDate,
+                    ).awaitSingleOrNull()
+            val inWindow =
+                exchangeRateQuoteRepository
+                    .findAllByPairAndQuoteDateBetween(
+                        baseCurrency = fromCurrency,
+                        quoteCurrency = toCurrency,
+                        quoteDateFrom = minDate,
+                        quoteDateTo = maxDate,
+                    ).asFlow()
+                    .toList()
+            val after =
+                exchangeRateQuoteRepository
+                    .findClosestOnOrAfterDate(
+                        baseCurrency = fromCurrency,
+                        quoteCurrency = toCurrency,
+                        referenceDate = maxDate,
+                    ).awaitSingleOrNull()
+
+            val candidates =
+                (inWindow + listOfNotNull(before, after))
+                    .associateBy { it.quoteDate }
+                    .values
+                    .sortedBy { it.quoteDate }
+
+            referenceDates.forEach { referenceDate ->
+                val selected =
+                    chooseClosestFromSortedCandidates(referenceDate, candidates)
+                        ?: throw ExchangeRateUnavailableException(fromCurrency, toCurrency, referenceDate)
+                ratesByKey[Triple(fromCurrency, toCurrency, referenceDate)] = selected.rate
+            }
+        }
 
         return requests.associateWith { request ->
             val key = Triple(request.fromCurrency.uppercase(), request.toCurrency.uppercase(), request.referenceDate)
             request.value
                 .multiply(ratesByKey.getValue(key))
                 .setScale(2, RoundingMode.HALF_UP)
+        }
+    }
+
+    private fun chooseClosestFromSortedCandidates(
+        referenceDate: LocalDate,
+        sortedCandidates: List<ExchangeRateQuoteEntity>,
+    ): ExchangeRateQuoteEntity? {
+        if (sortedCandidates.isEmpty()) {
+            return null
+        }
+
+        var before: ExchangeRateQuoteEntity? = null
+        var after: ExchangeRateQuoteEntity? = null
+
+        sortedCandidates.forEach { candidate ->
+            if (!candidate.quoteDate.isAfter(referenceDate)) {
+                before = candidate
+            }
+            if (!candidate.quoteDate.isBefore(referenceDate) && after == null) {
+                after = candidate
+            }
+        }
+
+        return when {
+            before == null && after == null -> null
+            before == null -> after
+            after == null -> before
+            else -> chooseClosest(referenceDate, before = before!!, after = after!!)
         }
     }
 

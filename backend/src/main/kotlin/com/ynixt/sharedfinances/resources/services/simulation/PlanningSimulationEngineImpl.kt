@@ -14,7 +14,6 @@ import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRe
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
-import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.simulation.PlanningSimulationContext
 import com.ynixt.sharedfinances.domain.services.simulation.PlanningSimulationEngine
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
@@ -35,7 +34,6 @@ class PlanningSimulationEngineImpl(
     private val groupWalletItemRepository: GroupWalletItemRepository,
     private val groupUsersRepository: GroupUsersRepository,
     private val recurrenceSimulationService: RecurrenceSimulationService,
-    private val creditCardBillService: CreditCardBillService,
     private val goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository,
     private val dbClient: DatabaseClient,
     private val clock: Clock,
@@ -244,14 +242,12 @@ class PlanningSimulationEngineImpl(
         val projected = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
         val simulatedEvents = mutableListOf<com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse>()
 
-        scopeData.userIdsForProjection.forEach { userId ->
+        if (scopeData.userIdsForProjection.isNotEmpty()) {
             simulatedEvents +=
-                recurrenceSimulationService.simulateGeneration(
+                recurrenceSimulationService.simulateGenerationForUsers(
                     minimumEndExecution = fromDate,
                     maximumNextExecution = toDate,
-                    userId = userId,
-                    groupId = null,
-                    walletItemId = null,
+                    userIds = scopeData.userIdsForProjection,
                     billDate = null,
                 )
         }
@@ -299,31 +295,75 @@ class PlanningSimulationEngineImpl(
         }
 
         val map = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
-        scopeData.userIdsForProjection.forEach { userId ->
-            val bills =
-                creditCardBillService.findAllOpenByDueDateBetween(
-                    userId = userId,
-                    minimumDueDate = fromDate,
-                    maximumDueDate = toDate,
-                )
-
-            bills.forEach { bill ->
-                val card = cardsById[bill.creditCardId] ?: return@forEach
-                val outflow =
-                    bill.value
-                        .negate()
-                        .max(BigDecimal.ZERO)
-                        .asMoney()
-                if (outflow.compareTo(BigDecimal.ZERO) == 0) {
-                    return@forEach
-                }
-                val key = YearMonth.from(bill.dueDate) to card.currency.uppercase()
-                map[key] = map.getOrDefault(key, BigDecimal.ZERO).add(outflow).asMoney()
+        loadOpenCreditCardBillsForUsers(
+            userIds = scopeData.userIdsForProjection,
+            minimumDueDate = fromDate,
+            maximumDueDate = toDate,
+        ).forEach { bill ->
+            val card = cardsById[bill.creditCardId] ?: return@forEach
+            val outflow =
+                bill.value
+                    .negate()
+                    .max(BigDecimal.ZERO)
+                    .asMoney()
+            if (outflow.compareTo(BigDecimal.ZERO) == 0) {
+                return@forEach
             }
+            val key = YearMonth.from(bill.dueDate) to card.currency.uppercase()
+            map[key] = map.getOrDefault(key, BigDecimal.ZERO).add(outflow).asMoney()
         }
 
         return map
     }
+
+    private suspend fun loadOpenCreditCardBillsForUsers(
+        userIds: Set<UUID>,
+        minimumDueDate: LocalDate,
+        maximumDueDate: LocalDate,
+    ): List<OpenCreditCardBillRow> {
+        if (userIds.isEmpty() || minimumDueDate.isAfter(maximumDueDate)) {
+            return emptyList()
+        }
+
+        val sql =
+            """
+            SELECT
+                bill.credit_card_id,
+                bill.due_date,
+                bill.value
+            FROM credit_card_bill bill
+            INNER JOIN wallet_item credit_card ON credit_card.id = bill.credit_card_id
+            WHERE
+                credit_card.user_id = ANY(:userIds)
+                AND credit_card.type = 'CREDIT_CARD'
+                AND credit_card.enabled = TRUE
+                AND credit_card.show_on_dashboard = TRUE
+                AND bill.value < 0
+                AND bill.due_date >= :minimumDueDate
+                AND bill.due_date <= :maximumDueDate
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("userIds", userIds.toTypedArray())
+            .bind("minimumDueDate", minimumDueDate)
+            .bind("maximumDueDate", maximumDueDate)
+            .map { row, _ ->
+                OpenCreditCardBillRow(
+                    creditCardId = row.get("credit_card_id", UUID::class.java)!!,
+                    dueDate = row.get("due_date", LocalDate::class.java)!!,
+                    value = row.get("value", BigDecimal::class.java)!!.asMoney(),
+                )
+            }.all()
+            .collectList()
+            .awaitSingle()
+    }
+
+    private data class OpenCreditCardBillRow(
+        val creditCardId: UUID,
+        val dueDate: LocalDate,
+        val value: BigDecimal,
+    )
 
     private fun buildDebtOutflowByMonthCurrency(
         debts: List<PlanningSimulatedDebtRequest>,

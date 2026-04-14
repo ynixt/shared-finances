@@ -32,4 +32,11 @@ interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
         groupId: UUID?,
         sort: Sort = Sort.unsorted(),
     ): Flux<RecurrenceEventEntity>
+
+    fun findAllByUserIds(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userIds: Set<UUID>,
+        sort: Sort = Sort.unsorted(),
+    ): Flux<RecurrenceEventEntity>
 }
