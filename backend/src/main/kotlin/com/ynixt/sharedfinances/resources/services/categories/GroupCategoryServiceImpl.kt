@@ -52,53 +52,59 @@ class GroupCategoryServiceImpl(
         mountChildren: Boolean,
         query: String?,
         pageable: Pageable,
-    ): Page<WalletEntryCategoryEntity> =
-        groupPermissionService
-            .hasPermission(
-                userId = userId,
-                groupId = groupId,
-            ).let { hasPermission ->
-                if (hasPermission) {
-                    createPage(pageable, countFn = { repository.countByGroupId(groupId) }) {
-                        val items =
-                            if (onlyRoot) {
-                                if (query == null) {
-                                    repository.findAllByGroupIdAndParentIdIsNull(
-                                        groupId,
-                                        pageable,
-                                    )
-                                } else {
-                                    repository.findAllByGroupIdAndParentIdIsNullAndNameStartsWith(
-                                        groupId,
-                                        pageable,
-                                        name = query,
-                                    )
-                                }
-                            } else {
-                                if (query == null) {
-                                    repository.findAllByGroupId(
-                                        groupId,
-                                        pageable,
-                                    )
-                                } else {
-                                    repository.findAllByGroupIdAndNameStartsWith(
-                                        groupId,
-                                        pageable,
-                                        name = query,
-                                    )
-                                }
-                            }
+    ): Page<WalletEntryCategoryEntity> {
+        if (!groupPermissionService.hasPermission(userId = userId, groupId = groupId)) {
+            return Page.empty()
+        }
 
-                        if (mountChildren) {
-                            mono { mountChildren(items.collectList().awaitSingle()) }.flatMapIterable { it }
-                        } else {
-                            items
-                        }
-                    }
-                } else {
-                    Page.empty()
-                }
-            }
+        return createPage(pageable, countFn = { repository.countByGroupId(groupId) }) {
+            categoriesFluxForPage(
+                groupId = groupId,
+                onlyRoot = onlyRoot,
+                query = query,
+                pageable = pageable,
+                shouldMountChildren = mountChildren,
+            )
+        }
+    }
+
+    private fun categoriesFluxForPage(
+        groupId: UUID,
+        onlyRoot: Boolean,
+        query: String?,
+        pageable: Pageable,
+        shouldMountChildren: Boolean,
+    ) = baseCategoriesFlux(groupId, onlyRoot, query, pageable).let { items ->
+        if (shouldMountChildren) {
+            mono { mountChildren(items.collectList().awaitSingle()) }.flatMapIterable { it }
+        } else {
+            items
+        }
+    }
+
+    private fun baseCategoriesFlux(
+        groupId: UUID,
+        onlyRoot: Boolean,
+        query: String?,
+        pageable: Pageable,
+    ) = when {
+        onlyRoot && query == null ->
+            repository.findAllByGroupIdAndParentIdIsNull(groupId, pageable)
+        onlyRoot ->
+            repository.findAllByGroupIdAndParentIdIsNullAndNameStartsWith(
+                groupId,
+                pageable,
+                name = query!!,
+            )
+        query == null ->
+            repository.findAllByGroupId(groupId, pageable)
+        else ->
+            repository.findAllByGroupIdAndNameStartsWith(
+                groupId,
+                pageable,
+                name = query,
+            )
+    }
 
     override suspend fun findCategory(
         userId: UUID,

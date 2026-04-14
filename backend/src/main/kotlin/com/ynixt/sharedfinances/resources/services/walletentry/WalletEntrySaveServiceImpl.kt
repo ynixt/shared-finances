@@ -262,75 +262,34 @@ abstract class WalletEntrySaveServiceImpl(
         seriesOffset: Int = 0,
     ): RecurrenceEventEntity {
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
-
         val now = LocalDate.now(clock)
         val alreadyExecuted = !newEntryRequest.isInFuture(now)
         val qtyExecuted = if (alreadyExecuted) 1 else 0
-
         val lastExecution: LocalDate? = if (alreadyExecuted) now else null
 
         val resolvedSeriesQtyTotal =
-            if (seriesId == null) {
-                seriesQtyTotal ?: resolveInitialSeriesQtyTotal(
-                    paymentType = newEntryRequest.paymentType,
-                    qtyLimit = qtyLimit,
-                    qtyExecuted = qtyExecuted,
-                )
-            } else {
-                seriesQtyTotal ?: recurrenceSeriesRepository.findById(seriesId).awaitSingleOrNull()?.qtyTotal
-            }
-
-        val resolvedSeriesId =
-            seriesId
-                ?: recurrenceSeriesRepository
-                    .save(
-                        RecurrenceSeriesEntity(
-                            qtyTotal = resolvedSeriesQtyTotal,
-                        ),
-                    ).awaitSingle()
-                    .id!!
+            resolveSeriesQtyTotalForRecurrence(
+                seriesId = seriesId,
+                seriesQtyTotal = seriesQtyTotal,
+                paymentType = newEntryRequest.paymentType,
+                qtyLimit = qtyLimit,
+                qtyExecuted = qtyExecuted,
+            )
+        val resolvedSeriesId = resolveOrCreateSeriesId(seriesId, resolvedSeriesQtyTotal)
 
         val recurrenceToPersist =
-            RecurrenceEventEntity(
-                name = newEntryRequest.name,
-                categoryId = newEntryRequest.categoryId,
+            buildRecurrenceEventToPersist(
+                id = id,
                 userId = userId,
-                groupId = newEntryRequest.groupId,
-                tags = newEntryRequest.tags?.ifEmpty { null },
-                observations = newEntryRequest.observations,
-                type = newEntryRequest.type,
+                newEntryRequest = newEntryRequest,
                 periodicity = periodicity,
-                paymentType = newEntryRequest.paymentType,
-                qtyExecuted = qtyExecuted,
                 qtyLimit = qtyLimit,
+                qtyExecuted = qtyExecuted,
                 lastExecution = lastExecution,
-                nextExecution =
-                    if (alreadyExecuted) {
-                        recurrenceService.calculateNextExecution(
-                            lastExecution = lastExecution!!,
-                            periodicity = periodicity,
-                            qtyExecuted = qtyExecuted,
-                            qtyLimit = qtyLimit,
-                        )
-                    } else {
-                        newEntryRequest.date
-                    },
-                endExecution =
-                    recurrenceService.calculateEndDate(
-                        lastExecution = lastExecution ?: newEntryRequest.date,
-                        periodicity = periodicity,
-                        qtyExecuted = qtyExecuted,
-                        qtyLimit = qtyLimit?.let { if (lastExecution == null) it - 1 else it },
-                    ),
-                seriesId = resolvedSeriesId,
+                alreadyExecuted = alreadyExecuted,
+                resolvedSeriesId = resolvedSeriesId,
                 seriesOffset = seriesOffset,
-            ).also {
-                if (id != null) {
-                    it.id = id
-                } else {
-                    it.createdAt = OffsetDateTime.now(clock)
-                }
-            }
+            )
 
         return recurrenceEventRepository
             .save(recurrenceToPersist)
@@ -338,106 +297,14 @@ abstract class WalletEntrySaveServiceImpl(
             .also { savedRecurrence ->
                 savedRecurrence.seriesQtyTotal = resolvedSeriesQtyTotal
                 val entries =
-                    if (newEntryRequest.type == WalletEntryType.TRANSFER) {
-                        val requestOriginBillDate = newEntryRequest.originBill?.billDate
-                        val requestTargetBillDate = newEntryRequest.targetBill?.billDate
-
-                        val nextOriginBillDate =
-                            if (requestOriginBillDate == null) {
-                                null
-                            } else if (alreadyExecuted) {
-                                recurrenceService.calculateNextExecution(requestOriginBillDate, periodicity, qtyExecuted, qtyLimit)
-                            } else {
-                                requestOriginBillDate
-                            }
-
-                        val nextTargetBillDate =
-                            if (requestTargetBillDate == null) {
-                                null
-                            } else if (alreadyExecuted) {
-                                recurrenceService.calculateNextExecution(requestTargetBillDate, periodicity, qtyExecuted, qtyLimit)
-                            } else {
-                                requestTargetBillDate
-                            }
-
-                        listOf(
-                            RecurrenceEntryEntity(
-                                value = resolveTransferOriginValue(newEntryRequest).unaryMinus(),
-                                walletEventId = savedRecurrence.id!!,
-                                walletItemId = requireNotNull(newEntryRequest.originId),
-                                nextBillDate = nextOriginBillDate,
-                                lastBillDate =
-                                    if (requestOriginBillDate == null) {
-                                        null
-                                    } else {
-                                        recurrenceService
-                                            .calculateEndDate(
-                                                lastExecution = requestOriginBillDate,
-                                                periodicity = periodicity,
-                                                qtyExecuted = qtyExecuted,
-                                                qtyLimit = qtyLimit?.let { if (alreadyExecuted) it else it - 1 },
-                                            )?.withStartOfMonth()
-                                    },
-                                contributionPercent = null,
-                            ),
-                            RecurrenceEntryEntity(
-                                value = resolveTemplateTransferTargetValue(newEntryRequest),
-                                walletEventId = savedRecurrence.id!!,
-                                walletItemId = newEntryRequest.targetId!!,
-                                nextBillDate = nextTargetBillDate,
-                                lastBillDate =
-                                    if (nextTargetBillDate == null) {
-                                        null
-                                    } else {
-                                        recurrenceService
-                                            .calculateEndDate(
-                                                lastExecution = nextTargetBillDate,
-                                                periodicity = periodicity,
-                                                qtyExecuted = qtyExecuted,
-                                                qtyLimit = qtyLimit?.let { if (alreadyExecuted) it else it - 1 },
-                                            )?.withStartOfMonth()
-                                    },
-                                contributionPercent = null,
-                            ),
-                        )
-                    } else {
-                        val legs = requireNotNull(newEntryRequest.resolvedSources)
-                        val totalMag = requireNotNull(newEntryRequest.value).abs()
-                        val percents = legs.map { it.contributionPercent }
-                        val legValues = WalletSourceSplit.distributeLegValues(newEntryRequest.type, totalMag, percents)
-                        legs.mapIndexed { index, leg ->
-                            val requestBillDate = leg.bill?.billDate
-                            val nextBillDate =
-                                if (requestBillDate == null) {
-                                    null
-                                } else if (alreadyExecuted) {
-                                    recurrenceService.calculateNextExecution(requestBillDate, periodicity, qtyExecuted, qtyLimit)
-                                } else {
-                                    requestBillDate
-                                }
-                            val lastBillDate =
-                                if (requestBillDate == null) {
-                                    null
-                                } else {
-                                    recurrenceService
-                                        .calculateEndDate(
-                                            lastExecution = requestBillDate,
-                                            periodicity = periodicity,
-                                            qtyExecuted = qtyExecuted,
-                                            qtyLimit = qtyLimit?.let { if (alreadyExecuted) it else it - 1 },
-                                        )?.withStartOfMonth()
-                                }
-                            RecurrenceEntryEntity(
-                                value = legValues[index],
-                                walletEventId = savedRecurrence.id!!,
-                                walletItemId = leg.walletItemId,
-                                nextBillDate = nextBillDate,
-                                lastBillDate = lastBillDate,
-                                contributionPercent = leg.contributionPercent,
-                            )
-                        }
-                    }
-
+                    buildRecurrenceEntriesForSavedEvent(
+                        savedRecurrence = savedRecurrence,
+                        newEntryRequest = newEntryRequest,
+                        periodicity = periodicity,
+                        qtyExecuted = qtyExecuted,
+                        qtyLimit = qtyLimit,
+                        alreadyExecuted = alreadyExecuted,
+                    )
                 savedRecurrence.entries =
                     recurrenceEntryRepository.saveAll(entries).asFlow().toList().also { persisted ->
                         persisted.forEach { entry ->
@@ -446,6 +313,241 @@ abstract class WalletEntrySaveServiceImpl(
                     }
             }
     }
+
+    private fun entryQtyLimitForEndDate(
+        qtyLimit: Int?,
+        alreadyExecuted: Boolean,
+    ): Int? = qtyLimit?.let { if (alreadyExecuted) it else it - 1 }
+
+    private fun recurrenceEndQtyLimit(
+        qtyLimit: Int?,
+        lastExecution: LocalDate?,
+    ): Int? = qtyLimit?.let { if (lastExecution == null) it - 1 else it }
+
+    private fun nextBillDateForRecurrence(
+        billDate: LocalDate?,
+        alreadyExecuted: Boolean,
+        periodicity: RecurrenceType,
+        qtyExecuted: Int,
+        qtyLimit: Int?,
+    ): LocalDate? {
+        if (billDate == null) {
+            return null
+        }
+        return if (alreadyExecuted) {
+            recurrenceService.calculateNextExecution(billDate, periodicity, qtyExecuted, qtyLimit)
+        } else {
+            billDate
+        }
+    }
+
+    private fun lastBillDateEndingMonth(
+        lastExecutionAnchor: LocalDate?,
+        periodicity: RecurrenceType,
+        qtyExecuted: Int,
+        effectiveQtyLimit: Int?,
+    ): LocalDate? {
+        if (lastExecutionAnchor == null) {
+            return null
+        }
+        return recurrenceService
+            .calculateEndDate(
+                lastExecution = lastExecutionAnchor,
+                periodicity = periodicity,
+                qtyExecuted = qtyExecuted,
+                qtyLimit = effectiveQtyLimit,
+            )?.withStartOfMonth()
+    }
+
+    private fun buildRecurrenceEventToPersist(
+        id: UUID?,
+        userId: UUID,
+        newEntryRequest: NewEntryRequest,
+        periodicity: RecurrenceType,
+        qtyLimit: Int?,
+        qtyExecuted: Int,
+        lastExecution: LocalDate?,
+        alreadyExecuted: Boolean,
+        resolvedSeriesId: UUID,
+        seriesOffset: Int,
+    ): RecurrenceEventEntity {
+        val nextExecution =
+            if (alreadyExecuted) {
+                recurrenceService.calculateNextExecution(
+                    lastExecution = lastExecution!!,
+                    periodicity = periodicity,
+                    qtyExecuted = qtyExecuted,
+                    qtyLimit = qtyLimit,
+                )
+            } else {
+                newEntryRequest.date
+            }
+        val endExecution =
+            recurrenceService.calculateEndDate(
+                lastExecution = lastExecution ?: newEntryRequest.date,
+                periodicity = periodicity,
+                qtyExecuted = qtyExecuted,
+                qtyLimit = recurrenceEndQtyLimit(qtyLimit, lastExecution),
+            )
+        return RecurrenceEventEntity(
+            name = newEntryRequest.name,
+            categoryId = newEntryRequest.categoryId,
+            userId = userId,
+            groupId = newEntryRequest.groupId,
+            tags = newEntryRequest.tags?.ifEmpty { null },
+            observations = newEntryRequest.observations,
+            type = newEntryRequest.type,
+            periodicity = periodicity,
+            paymentType = newEntryRequest.paymentType,
+            qtyExecuted = qtyExecuted,
+            qtyLimit = qtyLimit,
+            lastExecution = lastExecution,
+            nextExecution = nextExecution,
+            endExecution = endExecution,
+            seriesId = resolvedSeriesId,
+            seriesOffset = seriesOffset,
+        ).also {
+            if (id != null) {
+                it.id = id
+            } else {
+                it.createdAt = OffsetDateTime.now(clock)
+            }
+        }
+    }
+
+    private fun buildRecurrenceEntriesForSavedEvent(
+        savedRecurrence: RecurrenceEventEntity,
+        newEntryRequest: NewEntryRequest,
+        periodicity: RecurrenceType,
+        qtyExecuted: Int,
+        qtyLimit: Int?,
+        alreadyExecuted: Boolean,
+    ): List<RecurrenceEntryEntity> =
+        if (newEntryRequest.type == WalletEntryType.TRANSFER) {
+            buildTransferRecurrenceEntries(
+                savedRecurrence,
+                newEntryRequest,
+                periodicity,
+                qtyExecuted,
+                qtyLimit,
+                alreadyExecuted,
+            )
+        } else {
+            buildResolvedSourceRecurrenceEntries(
+                savedRecurrence,
+                newEntryRequest,
+                periodicity,
+                qtyExecuted,
+                qtyLimit,
+                alreadyExecuted,
+            )
+        }
+
+    private fun buildTransferRecurrenceEntries(
+        savedRecurrence: RecurrenceEventEntity,
+        newEntryRequest: NewEntryRequest,
+        periodicity: RecurrenceType,
+        qtyExecuted: Int,
+        qtyLimit: Int?,
+        alreadyExecuted: Boolean,
+    ): List<RecurrenceEntryEntity> {
+        val requestOriginBillDate = newEntryRequest.originBill?.billDate
+        val requestTargetBillDate = newEntryRequest.targetBill?.billDate
+        val nextOriginBillDate =
+            nextBillDateForRecurrence(requestOriginBillDate, alreadyExecuted, periodicity, qtyExecuted, qtyLimit)
+        val nextTargetBillDate =
+            nextBillDateForRecurrence(requestTargetBillDate, alreadyExecuted, periodicity, qtyExecuted, qtyLimit)
+        val entryEndLimit = entryQtyLimitForEndDate(qtyLimit, alreadyExecuted)
+        return listOf(
+            RecurrenceEntryEntity(
+                value = resolveTransferOriginValue(newEntryRequest).unaryMinus(),
+                walletEventId = savedRecurrence.id!!,
+                walletItemId = requireNotNull(newEntryRequest.originId),
+                nextBillDate = nextOriginBillDate,
+                lastBillDate =
+                    lastBillDateEndingMonth(
+                        requestOriginBillDate,
+                        periodicity,
+                        qtyExecuted,
+                        entryEndLimit,
+                    ),
+                contributionPercent = null,
+            ),
+            RecurrenceEntryEntity(
+                value = resolveTemplateTransferTargetValue(newEntryRequest),
+                walletEventId = savedRecurrence.id!!,
+                walletItemId = newEntryRequest.targetId!!,
+                nextBillDate = nextTargetBillDate,
+                lastBillDate =
+                    lastBillDateEndingMonth(
+                        nextTargetBillDate,
+                        periodicity,
+                        qtyExecuted,
+                        entryEndLimit,
+                    ),
+                contributionPercent = null,
+            ),
+        )
+    }
+
+    private fun buildResolvedSourceRecurrenceEntries(
+        savedRecurrence: RecurrenceEventEntity,
+        newEntryRequest: NewEntryRequest,
+        periodicity: RecurrenceType,
+        qtyExecuted: Int,
+        qtyLimit: Int?,
+        alreadyExecuted: Boolean,
+    ): List<RecurrenceEntryEntity> {
+        val legs = requireNotNull(newEntryRequest.resolvedSources)
+        val totalMag = requireNotNull(newEntryRequest.value).abs()
+        val percents = legs.map { it.contributionPercent }
+        val legValues = WalletSourceSplit.distributeLegValues(newEntryRequest.type, totalMag, percents)
+        val entryEndLimit = entryQtyLimitForEndDate(qtyLimit, alreadyExecuted)
+        return legs.mapIndexed { index, leg ->
+            val requestBillDate = leg.bill?.billDate
+            val nextBillDate =
+                nextBillDateForRecurrence(requestBillDate, alreadyExecuted, periodicity, qtyExecuted, qtyLimit)
+            RecurrenceEntryEntity(
+                value = legValues[index],
+                walletEventId = savedRecurrence.id!!,
+                walletItemId = leg.walletItemId,
+                nextBillDate = nextBillDate,
+                lastBillDate = lastBillDateEndingMonth(requestBillDate, periodicity, qtyExecuted, entryEndLimit),
+                contributionPercent = leg.contributionPercent,
+            )
+        }
+    }
+
+    private suspend fun resolveSeriesQtyTotalForRecurrence(
+        seriesId: UUID?,
+        seriesQtyTotal: Int?,
+        paymentType: PaymentType,
+        qtyLimit: Int?,
+        qtyExecuted: Int,
+    ): Int? =
+        if (seriesId == null) {
+            seriesQtyTotal
+                ?: resolveInitialSeriesQtyTotal(
+                    paymentType = paymentType,
+                    qtyLimit = qtyLimit,
+                    qtyExecuted = qtyExecuted,
+                )
+        } else {
+            seriesQtyTotal ?: recurrenceSeriesRepository.findById(seriesId).awaitSingleOrNull()?.qtyTotal
+        }
+
+    private suspend fun resolveOrCreateSeriesId(
+        seriesId: UUID?,
+        resolvedSeriesQtyTotal: Int?,
+    ): UUID =
+        seriesId
+            ?: recurrenceSeriesRepository
+                .save(
+                    RecurrenceSeriesEntity(
+                        qtyTotal = resolvedSeriesQtyTotal,
+                    ),
+                ).awaitSingle()
+                .id!!
 
     private fun resolveInitialSeriesQtyTotal(
         paymentType: PaymentType,
