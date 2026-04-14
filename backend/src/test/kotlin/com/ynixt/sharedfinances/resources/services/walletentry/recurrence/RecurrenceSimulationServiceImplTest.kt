@@ -112,15 +112,18 @@ class RecurrenceSimulationServiceImplTest {
 
             val service =
                 RecurrenceSimulationServiceImpl(
-                    genericCategoryService = mock(GenericCategoryService::class.java).also {
-                        `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
-                    },
-                    groupService = mock(GroupService::class.java).also {
-                        `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
-                    },
-                    userService = mock(UserService::class.java).also {
-                        `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
-                    },
+                    genericCategoryService =
+                        mock(GenericCategoryService::class.java).also {
+                            `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                        },
+                    groupService =
+                        mock(GroupService::class.java).also {
+                            `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                        },
+                    userService =
+                        mock(UserService::class.java).also {
+                            `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                        },
                     walletItemService = walletItemService,
                     creditCardBillService = mock(CreditCardBillService::class.java),
                     walletItemMapper = mock(WalletItemMapper::class.java),

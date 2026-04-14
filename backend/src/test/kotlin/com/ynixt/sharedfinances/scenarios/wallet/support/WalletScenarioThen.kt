@@ -301,7 +301,11 @@ class WalletScenarioThen internal constructor(
         expectedLabels: Collection<String>,
     ) {
         val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
-        val labels = overview.cards.first { it.key == key }.details.map { it.label }
+        val labels =
+            overview.cards
+                .first { it.key == key }
+                .details
+                .map { it.label }
 
         assertThat(labels)
             .describedAs("overview card detail labels for $key")
@@ -313,7 +317,11 @@ class WalletScenarioThen internal constructor(
         unexpectedLabels: Collection<String>,
     ) {
         val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
-        val labels = overview.cards.first { it.key == key }.details.map { it.label }
+        val labels =
+            overview.cards
+                .first { it.key == key }
+                .details
+                .map { it.label }
 
         assertThat(labels)
             .describedAs("overview card detail labels for $key")

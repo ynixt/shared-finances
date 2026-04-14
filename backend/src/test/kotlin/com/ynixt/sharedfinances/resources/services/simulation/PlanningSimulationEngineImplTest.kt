@@ -5,7 +5,6 @@ import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
-import com.ynixt.sharedfinances.domain.enums.PlanningSimulationOutcomeBand
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.WalletItem
@@ -19,26 +18,19 @@ import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.reactor.awaitSingle
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.springframework.data.domain.Pageable
 import org.springframework.r2dbc.core.DatabaseClient
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.YearMonth
 import java.util.UUID
+import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.primaryConstructor
-import kotlin.reflect.full.callSuspend
 import kotlin.reflect.jvm.isAccessible
 
 class PlanningSimulationEngineImplTest {
@@ -50,44 +42,46 @@ class PlanningSimulationEngineImplTest {
             val fromDate = LocalDate.of(2026, 4, 2)
             val toDate = LocalDate.of(2026, 4, 30)
 
-            val recurrenceService = FakeRecurrenceSimulationService(
-                events =
-                    listOf(
-                        EventListResponse(
-                            id = null,
-                            type = WalletEntryType.EXPENSE,
-                            name = "Projected",
-                            category = null,
-                            user = null,
-                            group = null,
-                            tags = emptyList(),
-                            observations = null,
-                            date = LocalDate.of(2026, 4, 10),
-                            confirmed = false,
-                            installment = null,
-                            recurrenceConfigId = null,
-                            recurrenceConfig = null,
-                            currency = "BRL",
-                            entries =
-                                listOf(
-                                    EventListResponse.EntryResponse(
-                                        value = BigDecimal("-10.00"),
-                                        walletItem =
-                                            com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount(
-                                                name = "Main",
-                                                enabled = true,
-                                                userId = userIds.first(),
-                                                currency = "BRL",
-                                                balance = BigDecimal.ZERO,
-                                            ).also { it.id = bankId },
-                                        walletItemId = bankId,
-                                        billDate = null,
-                                        billId = null,
+            val recurrenceService =
+                FakeRecurrenceSimulationService(
+                    events =
+                        listOf(
+                            EventListResponse(
+                                id = null,
+                                type = WalletEntryType.EXPENSE,
+                                name = "Projected",
+                                category = null,
+                                user = null,
+                                group = null,
+                                tags = emptyList(),
+                                observations = null,
+                                date = LocalDate.of(2026, 4, 10),
+                                confirmed = false,
+                                installment = null,
+                                recurrenceConfigId = null,
+                                recurrenceConfig = null,
+                                currency = "BRL",
+                                entries =
+                                    listOf(
+                                        EventListResponse.EntryResponse(
+                                            value = BigDecimal("-10.00"),
+                                            walletItem =
+                                                com.ynixt.sharedfinances.domain.models.bankaccount
+                                                    .BankAccount(
+                                                        name = "Main",
+                                                        enabled = true,
+                                                        userId = userIds.first(),
+                                                        currency = "BRL",
+                                                        balance = BigDecimal.ZERO,
+                                                    ).also { it.id = bankId },
+                                            walletItemId = bankId,
+                                            billDate = null,
+                                            billId = null,
+                                        ),
                                     ),
-                                ),
+                            ),
                         ),
-                    ),
-            )
+                )
 
             val engine =
                 PlanningSimulationEngineImpl(

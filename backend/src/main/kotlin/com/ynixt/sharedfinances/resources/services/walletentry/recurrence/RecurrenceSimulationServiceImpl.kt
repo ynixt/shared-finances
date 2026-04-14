@@ -438,7 +438,7 @@ class RecurrenceSimulationServiceImpl(
             )
         } else {
             null
-            }
+        }
     }
 
     private suspend fun simulateGenerationForConfigs(
