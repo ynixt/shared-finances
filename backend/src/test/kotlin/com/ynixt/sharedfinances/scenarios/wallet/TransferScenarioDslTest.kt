@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEn
 import com.ynixt.sharedfinances.domain.exceptions.http.TransferTargetValueRequiredException
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 class TransferScenarioDslTest {
@@ -191,6 +193,51 @@ class TransferScenarioDslTest {
             then {
                 balanceShouldBe(expected = originInitialBalance.subtract(originValue), bankAccountId = originBankAccountId)
                 balanceShouldBe(expected = targetInitialBalance.add(targetValue), bankAccountId = targetBankAccountId)
+            }
+        }
+    }
+
+    @Test
+    fun `should exclude projected internal bank transfers from overview cash totals`() {
+        val today = LocalDate.of(2026, 4, 15)
+        val selectedMonth = YearMonth.of(2026, 4)
+
+        lateinit var originBankAccountId: UUID
+        lateinit var targetBankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                originBankAccountId =
+                    bankAccount(
+                        name = "Origin",
+                        balance = BigDecimal("1000.00"),
+                        currency = "BRL",
+                    )
+                targetBankAccountId =
+                    bankAccount(
+                        name = "Target",
+                        balance = BigDecimal("900.00"),
+                        currency = "BRL",
+                    )
+            }
+
+            `when` {
+                transfer(
+                    value = BigDecimal("100.00"),
+                    date = LocalDate.of(2026, 4, 20),
+                    originId = originBankAccountId,
+                    targetId = targetBankAccountId,
+                    name = "Projected internal transfer",
+                    confirmed = true,
+                )
+                fetchOverview(selectedMonth)
+            }
+
+            then {
+                overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_CASH_IN, 0)
+                overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_CASH_OUT, 0)
+                overviewCardShouldBe(OverviewDashboardCardKey.END_OF_PERIOD_NET_CASH_FLOW, 0)
             }
         }
     }

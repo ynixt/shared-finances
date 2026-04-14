@@ -296,6 +296,45 @@ class WalletScenarioThen internal constructor(
             .isEqualByComparingTo(expected.toBigDecimalSafe())
     }
 
+    fun overviewCardDetailLabelsShouldContain(
+        key: OverviewDashboardCardKey,
+        expectedLabels: Collection<String>,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val labels = overview.cards.first { it.key == key }.details.map { it.label }
+
+        assertThat(labels)
+            .describedAs("overview card detail labels for $key")
+            .containsAll(expectedLabels)
+    }
+
+    fun overviewCardDetailLabelsShouldNotContain(
+        key: OverviewDashboardCardKey,
+        unexpectedLabels: Collection<String>,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val labels = overview.cards.first { it.key == key }.details.map { it.label }
+
+        assertThat(labels)
+            .describedAs("overview card detail labels for $key")
+            .doesNotContainAnyElementsOf(unexpectedLabels)
+    }
+
+    fun overviewBalanceForMonthShouldBe(
+        month: YearMonth,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastOverview) { "Overview was not fetched yet" }
+        val actual =
+            overview.charts.balance
+                .first { it.month == month }
+                .value
+
+        assertThat(actual)
+            .describedAs("overview balance chart for $month")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
     fun overviewExpenseForMonthShouldBe(
         month: YearMonth,
         expected: Number,

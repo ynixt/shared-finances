@@ -210,4 +210,99 @@ class CreditCardScenarioDslTest {
             }
         }
     }
+
+    @Test
+    fun `should include projected unpaid credit card bills and exclude hidden items from overview`() {
+        val today = LocalDate.of(2026, 4, 15)
+        val selectedMonth = YearMonth.of(2026, 4)
+        val billDate = LocalDate.of(2026, 4, 1)
+
+        lateinit var visibleBankId: UUID
+        lateinit var hiddenBankId: UUID
+        lateinit var visibleCardId: UUID
+        lateinit var hiddenCardId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                visibleBankId =
+                    bankAccount(
+                        name = "Visible bank",
+                        balance = 1000,
+                        currency = "BRL",
+                        showOnDashboard = true,
+                    )
+                hiddenBankId =
+                    bankAccount(
+                        name = "Hidden bank",
+                        balance = 9999,
+                        currency = "BRL",
+                        showOnDashboard = false,
+                    )
+
+                visibleCardId =
+                    creditCard(
+                        limit = 1000,
+                        name = "Visible card",
+                        currency = "BRL",
+                        dueDay = 10,
+                        daysBetweenDueAndClosing = 7,
+                        dueOnNextBusinessDay = false,
+                        showOnDashboard = true,
+                    )
+                hiddenCardId =
+                    creditCard(
+                        limit = 1000,
+                        name = "Hidden card",
+                        currency = "BRL",
+                        dueDay = 10,
+                        daysBetweenDueAndClosing = 7,
+                        dueOnNextBusinessDay = false,
+                        showOnDashboard = false,
+                    )
+
+                creditCardBill(
+                    billDate = billDate,
+                    startValue = -400,
+                    creditCardId = visibleCardId,
+                )
+                creditCardBill(
+                    billDate = billDate,
+                    startValue = -700,
+                    creditCardId = hiddenCardId,
+                )
+            }
+
+            `when` {
+                expense(
+                    originId = visibleBankId,
+                    value = 100,
+                    date = LocalDate.of(2026, 4, 20),
+                    name = "Visible projected expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = hiddenBankId,
+                    value = 500,
+                    date = LocalDate.of(2026, 4, 21),
+                    name = "Hidden projected expense",
+                    confirmed = true,
+                )
+                fetchOverview(selectedMonth)
+            }
+
+            then {
+                overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_CASH_OUT, 500)
+                overviewCardShouldBe(OverviewDashboardCardKey.END_OF_PERIOD_NET_CASH_FLOW, -500)
+                overviewCardDetailLabelsShouldContain(
+                    key = OverviewDashboardCardKey.PROJECTED_CASH_OUT,
+                    expectedLabels = listOf("Visible bank", "Visible card"),
+                )
+                overviewCardDetailLabelsShouldNotContain(
+                    key = OverviewDashboardCardKey.PROJECTED_CASH_OUT,
+                    unexpectedLabels = listOf("Hidden bank", "Hidden card"),
+                )
+            }
+        }
+    }
 }

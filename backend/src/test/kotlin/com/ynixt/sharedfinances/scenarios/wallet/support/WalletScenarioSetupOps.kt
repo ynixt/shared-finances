@@ -20,6 +20,7 @@ internal class WalletScenarioSetupOps(
         name: String = "Bank Account",
         balance: Number = BigDecimal.ZERO,
         currency: String = context.currentCurrency,
+        showOnDashboard: Boolean = true,
     ): UUID {
         val userId = resolver.ensureUser()
         val account =
@@ -30,6 +31,7 @@ internal class WalletScenarioSetupOps(
                         name = name,
                         balance = balance.toBigDecimalSafe(),
                         currency = currency,
+                        showOnDashboard = showOnDashboard,
                     ),
             )
         return requireNotNull(account.id).also { id ->
@@ -44,6 +46,7 @@ internal class WalletScenarioSetupOps(
         dueDay: Int = 10,
         daysBetweenDueAndClosing: Int = 7,
         dueOnNextBusinessDay: Boolean = true,
+        showOnDashboard: Boolean = true,
     ): UUID {
         val userId = resolver.ensureUser()
         val card =
@@ -57,6 +60,7 @@ internal class WalletScenarioSetupOps(
                         dueDay = dueDay,
                         daysBetweenDueAndClosing = daysBetweenDueAndClosing,
                         dueOnNextBusinessDay = dueOnNextBusinessDay,
+                        showOnDashboard = showOnDashboard,
                     ),
             )
         return requireNotNull(card.id).also { id ->

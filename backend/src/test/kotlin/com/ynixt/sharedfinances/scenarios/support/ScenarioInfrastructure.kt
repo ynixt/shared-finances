@@ -298,6 +298,7 @@ internal class ScenarioBankAccountMapper : BankAccountMapper {
             userId = from.userId,
             currency = from.currency,
             balance = from.balance,
+            showOnDashboard = from.showOnDashboard,
             totalLimit = null,
             dueDay = null,
             daysBetweenDueAndClosing = null,
@@ -313,6 +314,7 @@ internal class ScenarioBankAccountMapper : BankAccountMapper {
             userId = from.userId,
             currency = from.currency,
             balance = from.balance,
+            showOnDashboard = from.showOnDashboard,
         ).also {
             it.id = from.id
             it.createdAt = from.createdAt
@@ -333,6 +335,7 @@ internal class ScenarioCreditCardMapper : CreditCardMapper {
             dueDay = from.dueDay,
             daysBetweenDueAndClosing = from.daysBetweenDueAndClosing,
             dueOnNextBusinessDay = from.dueOnNextBusinessDay,
+            showOnDashboard = from.showOnDashboard,
         ).also {
             it.id = from.id
         }
@@ -348,6 +351,7 @@ internal class ScenarioCreditCardMapper : CreditCardMapper {
             dueDay = requireNotNull(from.dueDay),
             daysBetweenDueAndClosing = requireNotNull(from.daysBetweenDueAndClosing),
             dueOnNextBusinessDay = requireNotNull(from.dueOnNextBusinessDay),
+            showOnDashboard = from.showOnDashboard,
         ).also {
             it.id = from.id
             it.createdAt = from.createdAt

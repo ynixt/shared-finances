@@ -31,10 +31,12 @@ class WalletScenarioGiven internal constructor(
         name: String = "Bank Account",
         balance: Number = BigDecimal.ZERO,
         currency: String = walletSetupOps.currentCurrency,
+        showOnDashboard: Boolean = true,
     ) = walletSetupOps.createBankAccount(
         name = name,
         balance = balance,
         currency = currency,
+        showOnDashboard = showOnDashboard,
     )
 
     suspend fun creditCard(
@@ -44,6 +46,7 @@ class WalletScenarioGiven internal constructor(
         dueDay: Int = 10,
         daysBetweenDueAndClosing: Int = 7,
         dueOnNextBusinessDay: Boolean = true,
+        showOnDashboard: Boolean = true,
     ) = walletSetupOps.createCreditCard(
         limit = limit,
         name = name,
@@ -51,6 +54,7 @@ class WalletScenarioGiven internal constructor(
         dueDay = dueDay,
         daysBetweenDueAndClosing = daysBetweenDueAndClosing,
         dueOnNextBusinessDay = dueOnNextBusinessDay,
+        showOnDashboard = showOnDashboard,
     )
 
     suspend fun creditCardBill(
