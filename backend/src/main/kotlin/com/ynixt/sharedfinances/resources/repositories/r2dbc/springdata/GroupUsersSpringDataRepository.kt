@@ -55,4 +55,16 @@ interface GroupUsersSpringDataRepository : R2dbcRepository<GroupUserEntity, Stri
         groupId: UUID,
         allowPlanningSimulator: Boolean,
     ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM group_user
+        WHERE group_id = :groupId AND user_id = :userId
+        """,
+    )
+    fun deleteByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
 }

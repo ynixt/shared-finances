@@ -17,3 +17,10 @@ financesPage:
     addPhoto: Add from file
     fromGravatar: Add from Gravatar
     avatar: Avatar
+    dangerArea: Danger area
+    dangerAreaDescription: Permanently delete your account and remove your personal data from this service. This cannot be undone.
+    deleteAccount: Delete my account
+    deleteAccountConfirmHeader: Delete account?
+    deleteAccountConfirmMessage: This will permanently delete your account and related data. Are you sure you want to continue?
+    deleteAccountSuccess: Your account was deleted.
+    deleteAccountError: We could not delete your account. Please try again or contact support.

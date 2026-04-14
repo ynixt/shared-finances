@@ -9,8 +9,8 @@ export interface SimulationJobDto {
   errorMessage?: string | null;
   finishedAt?: any | null;
   id: string;
-  requestedByUserId: string;
   requestPayload?: string | null;
+  requestedByUserId: string;
   resultPayload?: string | null;
   retries: number;
   startedAt?: any | null;

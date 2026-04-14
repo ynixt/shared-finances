@@ -142,9 +142,12 @@ class GroupServiceImpl(
                         groupId = id,
                     )
 
-                group.copy(
-                    itemsAssociated = associatedBanks + associatedCreditCards,
-                )
+                group
+                    .copy(
+                        itemsAssociated = associatedBanks + associatedCreditCards,
+                    ).also {
+                        it.permissions = group.permissions
+                    }
             }
 
     @Transactional

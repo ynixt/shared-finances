@@ -20,7 +20,7 @@
                 {{ detail.value | localCurrency: currency() }}
               </span>
             </div>
-            @if (detail.children?.length) {
+            @if (detail.children.length) {
               @for (child of detail.children!; track $index) {
                 <div
                   class="ml-4 flex flex-wrap gap-2 items-center justify-between rounded-md border-l-2 border-surface-200 bg-surface-50/80 py-2 pr-3 pl-4 dark:border-surface-600 dark:bg-surface-800/80"

@@ -23,6 +23,7 @@ import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.queue.producer.GenerateEntryRecurrenceQueueProducer
+import com.ynixt.sharedfinances.domain.services.AccountDeletionService
 import com.ynixt.sharedfinances.domain.services.AvatarService
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
@@ -95,6 +96,10 @@ internal class NoOpAvatarService : AvatarService {
         userId: UUID,
         file: FilePart,
     ): String = "scenario://avatar/$userId"
+}
+
+internal object NoOpAccountDeletionService : AccountDeletionService {
+    override suspend fun deleteAccountForUser(userId: UUID) {}
 }
 
 internal class NoOpWalletEventActionEventService : WalletEventActionEventService {

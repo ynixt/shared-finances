@@ -298,6 +298,27 @@ class SimulationJobServiceImpl(
             .deleteAllByCreatedAtBefore(OffsetDateTime.now(clock).minusDays(RETENTION_DAYS))
             .awaitSingle()
 
+    override suspend fun cancelAndRemoveAllJobsLinkedToUserForCompliance(userId: UUID) {
+        val scopes =
+            simulationJobDatabaseClientRepository
+                .findDispatchScopesForPendingJobsLinkedToUser(userId)
+                .collectList()
+                .awaitSingle()
+
+        simulationJobRepository.cancelAllPendingLinkedToUser(userId).awaitSingle()
+        simulationJobRepository.deleteAllLinkedToUser(userId).awaitSingle()
+
+        val userOwners = scopes.mapNotNull { it.ownerUserId }.toSet()
+        val groupOwners = scopes.mapNotNull { it.ownerGroupId }.toSet()
+
+        for (ownerId in userOwners) {
+            dispatchNextQueuedForOwner(ownerId)
+        }
+        for (groupId in groupOwners) {
+            dispatchNextQueuedForGroup(groupId)
+        }
+    }
+
     private suspend fun claimNextQueuedForScope(
         scope: JobOwnerScope,
         workerId: String,

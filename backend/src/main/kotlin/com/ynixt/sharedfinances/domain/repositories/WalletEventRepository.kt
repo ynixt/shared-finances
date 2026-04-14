@@ -32,6 +32,17 @@ interface WalletEventRepository {
         userId: UUID,
     ): Mono<Long>
 
+    fun deleteAllByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    /**
+     * Deletes all wallet events authored by the user or backed by lines on wallet items they own,
+     * including group-visible transactions, so CASCADE removes dependent wallet_entry rows before wallet_item is deleted.
+     */
+    fun deleteAllForAccountDeletion(userId: UUID): Mono<Long>
+
     fun findAll(
         userId: UUID?,
         groupId: UUID?,

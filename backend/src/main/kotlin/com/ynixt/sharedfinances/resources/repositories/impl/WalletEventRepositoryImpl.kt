@@ -41,6 +41,13 @@ class WalletEventRepositoryImpl(
             userId = userId,
         )
 
+    override fun deleteAllByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long> = springDataRepository.deleteAllByGroupIdAndUserId(groupId, userId)
+
+    override fun deleteAllForAccountDeletion(userId: UUID): Mono<Long> = springDataRepository.deleteAllForAccountDeletion(userId)
+
     override fun findAll(
         userId: UUID?,
         groupId: UUID?,

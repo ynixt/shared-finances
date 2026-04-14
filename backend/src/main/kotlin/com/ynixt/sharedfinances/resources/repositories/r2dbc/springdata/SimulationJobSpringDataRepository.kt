@@ -129,4 +129,31 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
         id: UUID,
         groupId: UUID,
     ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        UPDATE simulation_job
+        SET
+            status = 'CANCELLED',
+            cancelled_at = NOW(),
+            lease_expires_at = NULL,
+            worker_id = NULL,
+            finished_at = NOW(),
+            updated_at = NOW()
+        WHERE
+            (owner_user_id = :userId OR requested_by_user_id = :userId)
+            AND status IN ('QUEUED', 'RUNNING')
+        """,
+    )
+    fun cancelAllPendingLinkedToUser(userId: UUID): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM simulation_job
+        WHERE owner_user_id = :userId OR requested_by_user_id = :userId
+        """,
+    )
+    fun deleteAllLinkedToUser(userId: UUID): Mono<Long>
 }

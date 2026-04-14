@@ -76,4 +76,6 @@ interface SimulationJobService {
     suspend fun reconcileExpiredLeases(): Long
 
     suspend fun purgeOldJobs(): Long
+
+    suspend fun cancelAndRemoveAllJobsLinkedToUserForCompliance(userId: UUID)
 }

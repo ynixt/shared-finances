@@ -34,4 +34,32 @@ interface WalletEventSpringDataRepository : R2dbcRepository<WalletEventEntity, S
         walletItemId: UUID,
         userId: UUID,
     ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM wallet_event
+        WHERE group_id = :groupId AND user_id = :userId
+        """,
+    )
+    fun deleteAllByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM wallet_event we
+        WHERE we.user_id = :userId
+           OR EXISTS (
+                SELECT 1
+                FROM wallet_entry wen
+                INNER JOIN wallet_item wi ON wi.id = wen.wallet_item_id
+                WHERE wen.wallet_event_id = we.id
+                  AND wi.user_id = :userId
+           )
+        """,
+    )
+    fun deleteAllForAccountDeletion(userId: UUID): Mono<Long>
 }

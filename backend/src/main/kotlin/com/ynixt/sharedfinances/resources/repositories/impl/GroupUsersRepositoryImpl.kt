@@ -52,4 +52,9 @@ class GroupUsersRepositoryImpl(
             groupId = groupId,
             allowPlanningSimulator = allowPlanningSimulator,
         )
+
+    override fun deleteByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long> = springDataRepository.deleteByGroupIdAndUserId(groupId, userId)
 }

@@ -165,6 +165,7 @@ internal class ScenarioRuntime(
             passwordEncoder = ScenarioPasswordEncoder(),
             databaseHelperService = NoOpDatabaseHelperService(),
             avatarService = NoOpAvatarService(),
+            accountDeletionService = NoOpAccountDeletionService,
         )
 
     val recurrenceOccurrenceSimulationService: RecurrenceOccurrenceSimulationService =

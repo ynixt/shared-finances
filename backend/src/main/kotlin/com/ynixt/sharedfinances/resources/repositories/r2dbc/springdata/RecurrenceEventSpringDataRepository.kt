@@ -39,6 +39,34 @@ interface RecurrenceEventSpringDataRepository :
     @Modifying
     @Query(
         """
+        DELETE FROM recurrence_event
+        WHERE group_id = :groupId AND user_id = :userId
+        """,
+    )
+    fun deleteAllByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        DELETE FROM recurrence_event re
+        WHERE re.user_id = :userId
+           OR EXISTS (
+                SELECT 1
+                FROM recurrence_entry ren
+                INNER JOIN wallet_item wi ON wi.id = ren.wallet_item_id
+                WHERE ren.wallet_event_id = re.id
+                  AND wi.user_id = :userId
+           )
+        """,
+    )
+    fun deleteAllForAccountDeletion(userId: UUID): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
             update recurrence_event
             set
                 last_execution = next_execution,

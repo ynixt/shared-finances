@@ -91,4 +91,12 @@ export class UserService {
 
     await lastValueFrom(this.http.post(`/api/mfa-settings/disable`, request).pipe(take(1)));
   }
+
+  async deleteCurrentAccount(): Promise<void> {
+    const currentUser = this.user();
+
+    if (currentUser == null) throw new UserMissingError();
+
+    await lastValueFrom(this.http.delete(`/api/users/current`).pipe(take(1)));
+  }
 }

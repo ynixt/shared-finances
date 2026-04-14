@@ -1,0 +1,7 @@
+:host ::ng-deep .user-settings-danger-panel .p-panel-header {
+  color: var(--p-red-500);
+}
+
+:host ::ng-deep .user-settings-danger-panel .p-panel-content {
+  border-inline-start: 3px solid var(--p-red-500);
+}

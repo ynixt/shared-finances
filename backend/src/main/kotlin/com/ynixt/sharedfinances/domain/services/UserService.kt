@@ -28,4 +28,6 @@ interface UserService {
         currentPasswordHash: String?,
         newPasswordHash: String,
     )
+
+    suspend fun deleteCurrentAccount(userId: UUID)
 }

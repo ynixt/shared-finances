@@ -7,10 +7,33 @@ import reactor.core.publisher.Mono
 import java.time.OffsetDateTime
 import java.util.UUID
 
+data class UserLinkedSimulationJobDispatchScope(
+    val ownerUserId: UUID?,
+    val ownerGroupId: UUID?,
+)
+
 @Repository
 class SimulationJobDatabaseClientRepository(
     private val dbClient: DatabaseClient,
 ) {
+    fun findDispatchScopesForPendingJobsLinkedToUser(userId: UUID): Flux<UserLinkedSimulationJobDispatchScope> =
+        dbClient
+            .sql(
+                """
+                SELECT DISTINCT owner_user_id, owner_group_id
+                FROM simulation_job
+                WHERE
+                    (owner_user_id = :userId OR requested_by_user_id = :userId)
+                    AND status IN ('QUEUED', 'RUNNING')
+                """,
+            ).bind("userId", userId)
+            .map { row, _ ->
+                UserLinkedSimulationJobDispatchScope(
+                    ownerUserId = row.get("owner_user_id", UUID::class.java),
+                    ownerGroupId = row.get("owner_group_id", UUID::class.java),
+                )
+            }.all()
+
     fun promoteOldestQueuedUserJobToRunning(
         ownerUserId: UUID,
         workerId: String,

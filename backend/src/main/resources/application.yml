@@ -67,8 +67,8 @@ logging:
     #org.springframework.web: TRACE
 #    org.springframework.security: TRACE
 #    reactor.netty.http.server: DEBUG
-    io.r2dbc.postgresql.QUERY: DEBUG
-    io.r2dbc.postgresql.PARAM: DEBUG
+    io.r2dbc.postgresql.QUERY: ${SF_APP_DEBUG_QUERY_LEVEL:INFO}
+    io.r2dbc.postgresql.PARAM: ${SF_APP_DEBUG_QUERY_LEVEL:INFO}
 
 app:
   nats:

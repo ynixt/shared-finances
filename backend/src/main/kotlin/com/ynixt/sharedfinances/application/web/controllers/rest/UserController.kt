@@ -16,6 +16,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -87,4 +88,13 @@ class UserController(
                 userId = principalToken.principal.id,
                 onboardingDto = body,
             ).let { ResponseEntity.noContent().build() }
+
+    @DeleteMapping("/current")
+    @Operation(summary = "Permanently delete the authenticated user account")
+    suspend fun deleteCurrentAccount(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+    ): ResponseEntity<Unit> =
+        userService
+            .deleteCurrentAccount(principalToken.principal.id)
+            .let { ResponseEntity.noContent().build() }
 }

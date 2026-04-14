@@ -177,6 +177,26 @@
               }
             </form>
           </p-panel>
+
+          <p-panel
+            class="mt-4 user-settings-danger-panel"
+            [header]="'financesPage.userSettingsPage.dangerArea' | translate"
+            [toggleable]="true"
+            [collapsed]="true"
+            toggler="header"
+          >
+            <p class="text-surface-700 dark:text-surface-200 mb-4">
+              {{ 'financesPage.userSettingsPage.dangerAreaDescription' | translate }}
+            </p>
+            <p-button
+              [loading]="submitting"
+              [label]="'financesPage.userSettingsPage.deleteAccount' | translate"
+              severity="danger"
+              styleClass="w-full md:w-auto"
+              type="button"
+              (click)="confirmDeleteAccount()"
+            />
+          </p-panel>
         </p-tabpanel>
       </p-tabpanels>
     </p-tabs>
@@ -228,4 +248,6 @@
       </form>
     }
   </p-dialog>
+
+  <p-confirm-dialog />
 </div>

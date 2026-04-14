@@ -17,6 +17,14 @@ interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
         userId: UUID,
     ): Mono<Long>
 
+    fun deleteAllByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    /** Deletes recurrence configs owned by the user or tied to their wallet items (CASCADE cleans linked wallet_event / recurrence_entry). */
+    fun deleteAllForAccountDeletion(userId: UUID): Mono<Long>
+
     fun updateConfigCausedByExecution(
         id: UUID,
         oldNextExecution: LocalDate,

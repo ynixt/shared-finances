@@ -43,6 +43,21 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
         return Mono.just((initial - data.size).toLong())
     }
 
+    override fun deleteAllByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long> {
+        val initial = data.size
+        data.entries.removeIf { (_, value) -> value.groupId == groupId && value.userId == userId }
+        return Mono.just((initial - data.size).toLong())
+    }
+
+    override fun deleteAllForAccountDeletion(userId: UUID): Mono<Long> {
+        val initial = data.size
+        data.entries.removeIf { (_, value) -> value.userId == userId }
+        return Mono.just((initial - data.size).toLong())
+    }
+
     override fun updateConfigCausedByExecution(
         id: UUID,
         oldNextExecution: LocalDate,

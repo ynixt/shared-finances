@@ -4,8 +4,9 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { QRCodeComponent } from 'angularx-qrcode';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { InputOtp } from 'primeng/inputotp';
 import { InputText } from 'primeng/inputtext';
@@ -23,6 +24,7 @@ import {
   EnableMfaResponseDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/auth/mfa';
 import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { AuthService } from '../../../services/auth.service';
 import { ErrorMessageService } from '../../../services/error-message.service';
 import { UserService } from '../../../services/user.service';
 import { DEFAULT_SUCCESS_LIFE } from '../../../util/success-util';
@@ -49,12 +51,16 @@ import { confirmPasswordValidator } from './confirm-password.validator';
     Dialog,
     InputOtp,
     QRCodeComponent,
+    ConfirmDialog,
   ],
   templateUrl: './user-settings.component.html',
   styleUrl: './user-settings.component.scss',
+  providers: [ConfirmationService],
 })
 export class UserSettingsComponent {
   private readonly userService = inject(UserService);
+  private readonly authService = inject(AuthService);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly errorMessageService = inject(ErrorMessageService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
@@ -286,5 +292,51 @@ export class UserSettingsComponent {
   clearGenerateNewTwoStepValuesTimeout() {
     clearTimeout(this.generateNewTwoStepValuesTimeout);
     this.generateNewTwoStepValuesTimeout = undefined;
+  }
+
+  confirmDeleteAccount() {
+    this.confirmationService.confirm({
+      message: this.translateService.instant('financesPage.userSettingsPage.deleteAccountConfirmMessage'),
+      header: this.translateService.instant('financesPage.userSettingsPage.deleteAccountConfirmHeader'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translateService.instant('financesPage.userSettingsPage.deleteAccount'),
+      rejectLabel: this.translateService.instant('general.cancel'),
+      acceptButtonProps: {
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        severity: 'secondary',
+      },
+      accept: () => {
+        void this.deleteAccountAfterConfirm();
+      },
+    });
+  }
+
+  private async deleteAccountAfterConfirm() {
+    if (this.submitting) return;
+
+    this.submitting = true;
+
+    try {
+      await this.userService.deleteCurrentAccount();
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('financesPage.userSettingsPage.deleteAccountSuccess'),
+        life: DEFAULT_SUCCESS_LIFE,
+      });
+      await this.authService.logout({
+        sync: true,
+        callHttpLogout: true,
+        ignoreError: true,
+      });
+    } catch (err) {
+      this.errorMessageService.handleError(err, this.messageService);
+    } finally {
+      this.submitting = false;
+    }
   }
 }

@@ -34,4 +34,9 @@ interface GroupUsersRepository {
         groupId: UUID,
         allowPlanningSimulator: Boolean,
     ): Mono<Long>
+
+    fun deleteByGroupIdAndUserId(
+        groupId: UUID,
+        userId: UUID,
+    ): Mono<Long>
 }

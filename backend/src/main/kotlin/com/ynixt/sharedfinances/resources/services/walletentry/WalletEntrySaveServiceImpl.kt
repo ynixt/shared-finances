@@ -66,6 +66,7 @@ abstract class WalletEntrySaveServiceImpl(
         newEntryRequest: NewEntryRequest,
     ): NewEntryRequest {
         val withGroup = newEntryRequest.attachGroup(userId)
+
         return if (withGroup.type == WalletEntryType.TRANSFER) {
             withGroup
                 .attachOriginForTransfer()

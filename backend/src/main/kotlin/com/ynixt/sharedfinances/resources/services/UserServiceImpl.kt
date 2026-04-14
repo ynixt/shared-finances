@@ -6,11 +6,13 @@ import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.exceptions.http.EmailAlreadyInUseException
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
+import com.ynixt.sharedfinances.domain.services.AccountDeletionService
 import com.ynixt.sharedfinances.domain.services.AvatarService
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.UserService
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -24,6 +26,7 @@ class UserServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val databaseHelperService: DatabaseHelperService,
     private val avatarService: AvatarService,
+    @Lazy private val accountDeletionService: AccountDeletionService,
 ) : EntityServiceImpl<UserEntity, UserEntity>(),
     UserService {
     @Transactional
@@ -133,4 +136,8 @@ class UserServiceImpl(
 
                 repository.save(user).awaitSingle()
             }
+
+    override suspend fun deleteCurrentAccount(userId: UUID) {
+        accountDeletionService.deleteAccountForUser(userId)
+    }
 }

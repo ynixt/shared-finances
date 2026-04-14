@@ -29,6 +29,9 @@ interface GroupWalletItemRepository {
         walletItemId: UUID,
     ): Mono<Long>
 
+    /** Removes every group association for wallet items owned by the user (required before deleting the user / CASCADE on wallet_item). */
+    fun deleteAllForWalletItemsOwnedByUser(userId: UUID): Mono<Long>
+
     fun findAllAllowedForGroup(
         groupId: UUID,
         type: WalletItemType,

@@ -51,4 +51,7 @@ class GroupWalletItemRepositoryImpl(
         groupId: UUID,
         walletItemId: UUID,
     ): Mono<Long> = springDataRepository.countByGroupIdAndWalletItemId(groupId, walletItemId)
+
+    override fun deleteAllForWalletItemsOwnedByUser(userId: UUID): Mono<Long> =
+        springDataRepository.deleteAllForWalletItemsOwnedByUser(userId)
 }
