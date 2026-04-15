@@ -30,6 +30,7 @@ import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.readValue
 import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
 
 @Component
 class GenerateEntryRecurrenceQueueListener(
@@ -45,6 +46,8 @@ class GenerateEntryRecurrenceQueueListener(
     private val delayBetweenAttempts = Duration.ofSeconds(10)
 
     private lateinit var subscription: JetStreamSubscription
+
+    private var gracefulShutdownInProgress = false
 
     @EventListener(ApplicationReadyEvent::class)
     fun startListening() {
@@ -74,7 +77,7 @@ class GenerateEntryRecurrenceQueueListener(
         scope.launch {
             while (isActive) {
                 try {
-                    val msgs = subscription.fetch(5, Duration.ofSeconds(1))
+                    val msgs: List<Message> = subscription.fetch(5, Duration.ofSeconds(1))
 
                     val jobs =
                         msgs.map { msg ->
@@ -84,12 +87,13 @@ class GenerateEntryRecurrenceQueueListener(
                         }
 
                     jobs.joinAll()
-                } catch (e: InterruptedException) {
-                    // Shutdown graceful
-                    break
                 } catch (e: Exception) {
+                    if (gracefulShutdownInProgress) {
+                        break
+                    }
+
                     logger.error("Error in JetStream consumer loop: ${e.message}", e)
-                    delay(3000)
+                    delay(3000.milliseconds)
                 }
             }
         }
@@ -188,7 +192,11 @@ class GenerateEntryRecurrenceQueueListener(
     @PreDestroy
     fun cleanup() {
         logger.info("Stopping JetStream consumer...")
+
+        gracefulShutdownInProgress = true
+
         scope.cancel()
+
         try {
             if (::subscription.isInitialized && subscription.isActive) {
                 subscription.unsubscribe()
