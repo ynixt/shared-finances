@@ -6,9 +6,9 @@ import com.ynixt.sharedfinances.application.web.dto.auth.ConfirmEmailRequestDto
 import com.ynixt.sharedfinances.application.web.dto.auth.EmailTurnstileRequestDto
 import com.ynixt.sharedfinances.application.web.dto.auth.GenericAckDto
 import com.ynixt.sharedfinances.application.web.dto.auth.LoginDto
-import com.ynixt.sharedfinances.application.web.dto.auth.OpenAuthPreferencesDto
 import com.ynixt.sharedfinances.application.web.dto.auth.LoginMfaDto
 import com.ynixt.sharedfinances.application.web.dto.auth.LoginResultDto
+import com.ynixt.sharedfinances.application.web.dto.auth.OpenAuthPreferencesDto
 import com.ynixt.sharedfinances.application.web.dto.auth.PasswordResetConfirmRequestDto
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterResultDto

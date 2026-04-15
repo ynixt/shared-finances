@@ -8,8 +8,6 @@ import java.util.UUID
 interface MfaEnrollmentRepository : EntityRepository<MfaEnrollmentEntity> {
     fun deleteAllByUserId(userId: UUID): Mono<Long>
 
-    fun deleteAllExpired(): Mono<Long>
-
     fun consumeValidEnrollmentReturningSecret(
         id: UUID,
         userId: UUID,

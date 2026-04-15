@@ -145,8 +145,6 @@ app:
       cron: ${SF_APP_MATERIALIZE_GOAL_CRON:0 0 0 * * *}
     generateEntry:
       cron: ${SF_APP_GENERATE_ENTRY_CRON:0 0 0 * * *}
-    expireMfa:
-      cron: ${SF_APP_EXPIRE_MFA_CRON:0 0 0/12 * * *}
     expireInvites:
       cron: ${SF_APP_EXPIRE_INVITES_CRON:0 0/30 * * * *}
     unconfirmedAccountCleanup:

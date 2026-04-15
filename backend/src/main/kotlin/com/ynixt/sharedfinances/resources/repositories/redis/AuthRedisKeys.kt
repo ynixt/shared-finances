@@ -33,6 +33,13 @@ internal object AuthRedisKeys {
         providerId: String,
         dayUtc: String,
     ): String = "sf:mail:quota:$providerId:$dayUtc"
+
+    fun mfaChallenge(id: UUID): String = "sf:auth:mfa:challenge:$id"
+
+    fun mfaEnrollment(id: UUID): String = "sf:auth:mfa:enrollment:$id"
+
+    /** Points to the current pending enrollment id for a user (replaced on each begin). */
+    fun mfaEnrollmentPending(userId: UUID): String = "sf:auth:mfa:enrollment:pending:$userId"
 }
 
 internal fun ByteArray.toHexLower(): String = joinToString("") { b -> "%02x".format(b.toInt() and 0xff) }

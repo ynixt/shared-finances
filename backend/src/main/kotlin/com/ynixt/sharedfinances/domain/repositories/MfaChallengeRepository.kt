@@ -10,6 +10,4 @@ interface MfaChallengeRepository : EntityRepository<MfaChallengeEntity> {
         id: UUID,
         now: OffsetDateTime,
     ): Mono<UUID>
-
-    fun deleteAllExpired(): Mono<Long>
 }

@@ -154,7 +154,8 @@ class AuthServiceImpl(
                         ip = error.ip,
                         email = error.email,
                         ttlSeconds = wrongPasswordTtlSeconds,
-                    ).awaitSingle()
+                    ).then()
+                    .awaitSingleOrNull()
             }
 
             throw error

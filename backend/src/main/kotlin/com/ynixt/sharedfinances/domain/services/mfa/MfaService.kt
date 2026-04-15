@@ -21,6 +21,4 @@ interface MfaService {
         code: String,
         ip: InetAddress?,
     ): UserEntity
-
-    suspend fun expireOld()
 }

@@ -83,26 +83,39 @@ class MfaSettingsServiceImpl(
     ): ConfirmMfaResponseDto {
         val now = OffsetDateTime.now()
 
-        return mfaEnrollmentRepository
-            .consumeValidEnrollmentReturningSecret(
-                id = enrollmentId,
-                userId = userId,
-                now = now,
-            ).awaitSingleOrNull()
-            ?.let { secretEnc ->
-                if (mfaService.decryptAndVerify(secret = secretEnc, code = code)) {
-                    userRepository
-                        .enableMfa(
-                            userId = userId,
-                            totpSecret = secretEnc,
-                        ).awaitSingle()
+        val enrollment =
+            mfaEnrollmentRepository.findById(enrollmentId).awaitSingleOrNull()
+                ?: throw MfaEnrollmentNotFoundException()
 
-                    val recoveryCodes = generateNewRecoveryCodes(userId)
-                    ConfirmMfaResponseDto(recoveryCodes = recoveryCodes)
-                } else {
-                    throw WrongMfaCodeException()
-                }
-            } ?: throw MfaEnrollmentNotFoundException()
+        if (enrollment.userId != userId) {
+            throw MfaEnrollmentNotFoundException()
+        }
+
+        if (!enrollment.expiresAt.isAfter(now)) {
+            throw MfaEnrollmentNotFoundException()
+        }
+
+        if (!mfaService.decryptAndVerify(secret = enrollment.secretEnc, code = code)) {
+            throw WrongMfaCodeException()
+        }
+
+        val secretEnc =
+            mfaEnrollmentRepository
+                .consumeValidEnrollmentReturningSecret(
+                    id = enrollmentId,
+                    userId = userId,
+                    now = now,
+                ).awaitSingleOrNull()
+                ?: throw MfaEnrollmentNotFoundException()
+
+        userRepository
+            .enableMfa(
+                userId = userId,
+                totpSecret = secretEnc,
+            ).awaitSingle()
+
+        val recoveryCodes = generateNewRecoveryCodes(userId)
+        return ConfirmMfaResponseDto(recoveryCodes = recoveryCodes)
     }
 
     override suspend fun generateNewRecoveryCodes(userId: UUID): List<String> {
