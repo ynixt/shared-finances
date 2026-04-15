@@ -191,7 +191,7 @@ class GenerateEntryRecurrenceQueueListener(
 
     @PreDestroy
     fun cleanup() {
-        logger.info("Stopping JetStream consumer...")
+        logger.info("Stopping JetStream generate entry recurrence consumer...")
 
         gracefulShutdownInProgress = true
 
