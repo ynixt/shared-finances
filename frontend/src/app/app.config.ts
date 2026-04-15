@@ -1,5 +1,5 @@
 import { HTTP_INTERCEPTORS, HttpBackend, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, inject, provideZoneChangeDetection } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { InMemoryCache } from '@apollo/client/core';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
@@ -15,6 +15,7 @@ import { routes } from './app.routes';
 import { CustomTranslateYamlLoader } from './custom-translate-yaml-loader';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { apiAuthInterceptor } from './interceptors/unauthorized.interceptor';
+import { OpenAuthPreferencesService } from './services/open-auth-preferences.service';
 
 const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateYamlLoader => new CustomTranslateYamlLoader();
 
@@ -22,6 +23,13 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    provideHttpClient(withInterceptorsFromDi(), withInterceptors([apiAuthInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      useFactory: (openAuthPreferences: OpenAuthPreferencesService) => () => openAuthPreferences.load(),
+      deps: [OpenAuthPreferencesService],
+    },
     ConfirmationService,
     providePrimeNG({
       theme: {
@@ -35,7 +43,6 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
-    provideHttpClient(withInterceptorsFromDi(), withInterceptors([apiAuthInterceptor])),
     provideApollo(() => {
       const httpLink = inject(HttpLink);
 

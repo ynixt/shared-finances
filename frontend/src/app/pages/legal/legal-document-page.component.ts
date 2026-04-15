@@ -5,7 +5,16 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 const LEGAL_PARAGRAPH_KEYS: Record<string, string[]> = {
-  terms: ['legal.terms.p1', 'legal.terms.p2', 'legal.terms.p3', 'legal.terms.p4', 'legal.terms.p5', 'legal.terms.p6', 'legal.terms.p7'],
+  terms: [
+    'legal.terms.p1',
+    'legal.terms.p2',
+    'legal.terms.p3',
+    'legal.terms.p4',
+    'legal.terms.p5',
+    'legal.terms.p6',
+    'legal.terms.p7',
+    'legal.terms.p8',
+  ],
   privacy: [
     'legal.privacy.p1',
     'legal.privacy.p2',
@@ -15,6 +24,7 @@ const LEGAL_PARAGRAPH_KEYS: Record<string, string[]> = {
     'legal.privacy.p6',
     'legal.privacy.p7',
     'legal.privacy.p8',
+    'legal.privacy.p9',
   ],
 };
 

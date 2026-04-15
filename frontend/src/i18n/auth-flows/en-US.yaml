@@ -1,0 +1,28 @@
+authFlows:
+  pending:
+    title: Confirm your email
+    body: >-
+      We sent a confirmation link to {{email}}. You must confirm within 3 hours before the account may
+      be removed. Login stays disabled until confirmation completes.
+    resend: Resend email
+    resendIn: Resend in {{seconds}}s
+    newEmail: New email address
+    changeEmail: Update email and resend
+  confirmEmail:
+    title: Confirm your email
+    intro: Complete the check below, then confirm to activate your account.
+    cta: Confirm email
+    retry: Try again
+    success: Your email is confirmed. You can sign in now.
+    goLogin: Go to login
+    error: This confirmation link is invalid or has expired.
+  forgot:
+    title: Forgot password
+    submit: Send reset link
+    sent: If an account exists for this email, you will receive reset instructions shortly.
+    backLogin: Back to login
+  reset:
+    title: Choose a new password
+    hint: This link is valid for about one hour.
+    submit: Save new password
+    backLogin: Back to login

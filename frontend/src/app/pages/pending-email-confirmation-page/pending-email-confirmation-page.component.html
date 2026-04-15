@@ -1,0 +1,31 @@
+<app-navbar></app-navbar>
+
+<div class="max-w-lg mx-auto mt-12 px-4 space-y-6">
+  <h1 class="text-xl font-semibold">{{ 'authFlows.pending.title' | translate }}</h1>
+  <p class="leading-relaxed whitespace-pre-wrap">{{ 'authFlows.pending.body' | translate: { email: email } }}</p>
+
+  <app-turnstile-widget #turnstile (resolved)="turnstileToken = $event" />
+
+  <div class="space-y-2">
+    <p-button
+      type="button"
+      [disabled]="cooldownSeconds > 0"
+      [label]="
+        cooldownSeconds > 0
+          ? ('authFlows.pending.resendIn' | translate: { seconds: cooldownSeconds })
+          : ('authFlows.pending.resend' | translate)
+      "
+      (click)="resend()"
+    />
+  </div>
+
+  <form [formGroup]="changeForm" (ngSubmit)="changeEmail()" class="space-y-2">
+    <label class="flex flex-col gap-1">
+      <span>{{ 'authFlows.pending.newEmail' | translate }}</span>
+      <input pInputText formControlName="newEmail" type="email" class="w-full" />
+    </label>
+    <p-button type="submit" [disabled]="changeForm.invalid" [label]="'authFlows.pending.changeEmail' | translate" />
+  </form>
+</div>
+
+<p-toast />

@@ -4,4 +4,5 @@
 export interface LoginMfaDto {
   challengeId: string;
   code: string;
+  turnstileToken?: string | null;
 }

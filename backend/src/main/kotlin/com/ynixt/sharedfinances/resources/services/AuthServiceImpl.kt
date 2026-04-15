@@ -1,11 +1,13 @@
 package com.ynixt.sharedfinances.resources.services
 
+import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.domain.entities.RefreshTokenEntity
 import com.ynixt.sharedfinances.domain.entities.SessionEntity
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.exceptions.MfaIsNeededException
 import com.ynixt.sharedfinances.domain.exceptions.http.AccountTemporaryBlocked
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidCredentialsException
+import com.ynixt.sharedfinances.domain.exceptions.http.auth.EmailNotVerifiedLoginException
 import com.ynixt.sharedfinances.domain.models.LoginResult
 import com.ynixt.sharedfinances.domain.repositories.FailedLoginRepository
 import com.ynixt.sharedfinances.domain.repositories.RefreshTokenRepository
@@ -43,6 +45,7 @@ class AuthServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val jwtEncoder: JwtEncoder,
     private val mfaService: MfaService,
+    private val authProperties: AuthProperties,
     @param:Value("\${app.security.jwt.kid}") private val kid: String,
     @param:Value("\${app.security.jwt.issuer}") private val issuer: String,
     @param:Value("\${app.security.jwt.accessTokenTTLMinutes}") private val accessTtlMinutes: Int,
@@ -85,6 +88,10 @@ class AuthServiceImpl(
                     email = normalizedEmail,
                     ip = ip?.toString(),
                 )
+            }
+
+            if (authProperties.features.emailConfirmationEnabled && !user.emailVerified) {
+                throw EmailNotVerifiedLoginException()
             }
 
             if (user.mfaEnabled) {
@@ -130,6 +137,10 @@ class AuthServiceImpl(
                     )
 
             refuseLoginIfTooManyFails(email = user.email, ip = ip)
+
+            if (authProperties.features.emailConfirmationEnabled && !user.emailVerified) {
+                throw EmailNotVerifiedLoginException()
+            }
 
             loginSuccess(
                 user = user,

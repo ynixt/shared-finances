@@ -12,4 +12,5 @@ export interface RegisterDto {
   lastName: string;
   password: string;
   tmz: string;
+  turnstileToken?: string | null;
 }

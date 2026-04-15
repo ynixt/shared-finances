@@ -1,0 +1,28 @@
+authFlows:
+  pending:
+    title: Confirme seu e-mail
+    body: >-
+      Enviamos um link de confirmação para {{email}}. Você deve confirmar em até 3 horas; após isso a
+      conta pode ser removida. O login permanece bloqueado até a confirmação.
+    resend: Reenviar e-mail
+    resendIn: Reenviar em {{seconds}}s
+    newEmail: Novo endereço de e-mail
+    changeEmail: Atualizar e-mail e reenviar
+  confirmEmail:
+    title: Confirme seu e-mail
+    intro: Complete a verificação abaixo e confirme para ativar sua conta.
+    cta: Confirmar e-mail
+    retry: Tentar novamente
+    success: E-mail confirmado. Você já pode entrar.
+    goLogin: Ir para o login
+    error: Este link de confirmação é inválido ou expirou.
+  forgot:
+    title: Esqueci a senha
+    submit: Enviar link de redefinição
+    sent: Se existir uma conta para este e-mail, você receberá instruções em breve.
+    backLogin: Voltar ao login
+  reset:
+    title: Escolha uma nova senha
+    hint: Este link é válido por cerca de uma hora.
+    submit: Salvar nova senha
+    backLogin: Voltar ao login

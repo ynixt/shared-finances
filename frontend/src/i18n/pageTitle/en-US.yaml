@@ -2,6 +2,10 @@ pageTitle:
   home: Shared Finances
   login: Login
   register: Register
+  pendingEmail: Confirm email
+  confirmEmail: Email confirmation
+  forgotPassword: Forgot password
+  resetPassword: Reset password
   legalTerms: Terms of Use
   legalPrivacy: Privacy Policy
   notFound: 404 - Not Found

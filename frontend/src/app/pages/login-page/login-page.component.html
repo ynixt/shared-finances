@@ -8,9 +8,18 @@
     </label>
 
     <label class="flex flex-col gap-2">
-      <span>{{ 'loginPage.password' | translate }}</span>
+      <span class="flex flex-wrap justify-between items-baseline gap-x-2 gap-y-1">
+        <span>{{ 'loginPage.password' | translate }}</span>
+        @if (openAuthPreferences.passwordRecoveryEnabled()) {
+          <a routerLink="/forgot-password" class="text-primary text-sm no-underline hover:underline shrink-0">
+            {{ 'loginPage.forgotPassword' | translate }}
+          </a>
+        }
+      </span>
       <p-password fluid formControlName="password" [toggleMask]="true" [feedback]="false" />
     </label>
+
+    <app-turnstile-widget (resolved)="loginTurnstileToken = $event" />
 
     <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>
   </form>
@@ -22,6 +31,8 @@
       <span>{{ 'loginPage.2faCode' | translate }}</span>
       <p-input-otp formControlName="code" [integerOnly]="true" [length]="6" [autofocus]="true" (keydown.enter)="submitMfa()" />
     </label>
+
+    <app-turnstile-widget (resolved)="mfaTurnstileToken = $event" />
 
     <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>
   </form>

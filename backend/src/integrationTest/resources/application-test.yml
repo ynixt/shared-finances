@@ -5,6 +5,17 @@ server:
 spring:
   application:
     name: shared-finances
+  mail:
+    host: localhost
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
   r2dbc:
     url: mock
     username: mock
@@ -56,8 +67,33 @@ management:
   endpoints:
     web:
       base-path: /open/actuator
+  health:
+    mail:
+      enabled: false
 
 app:
+  public-web:
+    base-url: http://localhost:4200
+  auth:
+    features:
+      email-confirmation-enabled: false
+      password-recovery-enabled: true
+      turnstile-enabled: false
+    email-confirmation:
+      ttl-minutes: 180
+    password-recovery:
+      ttl-minutes: 60
+    email-resend:
+      cooldown-seconds: 60
+    turnstile:
+      secret-key: test-turnstile-secret
+    transactional-mail:
+      provider-priority: ${SF_APP_TX_MAIL_PROVIDER_PRIORITY:smtp,brevo}
+      smtp:
+        from-address: noreply@test.local
+      brevo:
+        daily-quota: 300
+        api-key: ""
   legal:
     terms-version: test-terms-1
     privacy-version: test-privacy-1
@@ -89,6 +125,8 @@ app:
   exchangeRates:
     providerUrl: http://localhost/mock-exchange
   jobs:
+    unconfirmedAccountCleanup:
+      cron: "0 0 0 * * *"
     simulation:
       reconcile:
         cron-enabled: false

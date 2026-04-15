@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.services
 
 import com.fasterxml.uuid.Generators
+import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
@@ -30,6 +31,7 @@ class UserServiceImpl(
     private val databaseHelperService: DatabaseHelperService,
     private val avatarService: AvatarService,
     private val legalDocumentProperties: LegalDocumentProperties,
+    private val authProperties: AuthProperties,
     private val clock: Clock,
     @Lazy private val accountDeletionService: AccountDeletionService,
 ) : EntityServiceImpl<UserEntity, UserEntity>(),
@@ -46,7 +48,7 @@ class UserServiceImpl(
                 defaultCurrency = request.defaultCurrency,
                 tmz = request.tmz,
                 photoUrl = null,
-                emailVerified = false,
+                emailVerified = !authProperties.features.emailConfirmationEnabled,
                 mfaEnabled = false,
                 totpSecret = null,
                 onboardingDone = false,

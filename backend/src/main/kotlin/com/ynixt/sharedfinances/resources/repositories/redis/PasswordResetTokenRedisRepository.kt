@@ -1,0 +1,89 @@
+package com.ynixt.sharedfinances.resources.repositories.redis
+
+import org.springframework.data.redis.core.ReactiveRedisTemplate
+import org.springframework.data.redis.core.script.DefaultRedisScript
+import org.springframework.stereotype.Repository
+import reactor.core.publisher.Mono
+import tools.jackson.databind.ObjectMapper
+import java.security.MessageDigest
+import java.time.Duration
+import java.util.Base64
+import java.util.UUID
+
+data class PasswordResetTokenPayload(
+    val userId: UUID,
+    val email: String,
+)
+
+@Repository
+class PasswordResetTokenRedisRepository(
+    private val redisTemplate: ReactiveRedisTemplate<String, String>,
+    private val objectMapper: ObjectMapper,
+) {
+    private val getDelScript =
+        DefaultRedisScript<String>().apply {
+            setScriptText(
+                """
+                local v = redis.call('GET', KEYS[1])
+                if v == false then return nil end
+                redis.call('DEL', KEYS[1])
+                return v
+                """.trimIndent(),
+            )
+            resultType = String::class.java
+        }
+
+    fun issueToken(
+        userId: UUID,
+        email: String,
+        ttl: Duration,
+    ): Mono<String> {
+        val raw = newOpaqueToken()
+        val hashHex = sha256Hex(raw)
+        val payload = PasswordResetTokenPayload(userId = userId, email = email.lowercase())
+        val json = objectMapper.writeValueAsString(payload)
+        val tokenKey = AuthRedisKeys.passwordResetToken(hashHex)
+        val activeKey = AuthRedisKeys.passwordResetActive(userId)
+
+        return redisTemplate
+            .opsForValue()
+            .get(activeKey)
+            .filter { it.isNotBlank() }
+            .flatMap { oldHash -> redisTemplate.delete(AuthRedisKeys.passwordResetToken(oldHash)) }
+            .then(
+                redisTemplate
+                    .opsForValue()
+                    .set(tokenKey, json, ttl),
+            ).then(
+                redisTemplate
+                    .opsForValue()
+                    .set(activeKey, hashHex, ttl),
+            ).thenReturn(raw)
+    }
+
+    fun consumeRawToken(rawToken: String): Mono<PasswordResetTokenPayload> {
+        val hashHex = sha256Hex(rawToken)
+        val tokenKey = AuthRedisKeys.passwordResetToken(hashHex)
+        return redisTemplate
+            .execute(
+                getDelScript,
+                listOf(tokenKey),
+            ).next()
+            .map { json ->
+                objectMapper.readValue(json, PasswordResetTokenPayload::class.java)
+            }
+    }
+
+    fun deleteActivePointer(userId: UUID): Mono<Long> = redisTemplate.delete(AuthRedisKeys.passwordResetActive(userId))
+
+    private fun newOpaqueToken(): String {
+        val data = ByteArray(48)
+        java.security.SecureRandom().nextBytes(data)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(data)
+    }
+
+    private fun sha256Hex(input: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))
+        return digest.joinToString("") { b -> "%02x".format(b.toInt() and 0xff) }
+    }
+}

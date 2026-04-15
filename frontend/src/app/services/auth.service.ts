@@ -6,7 +6,13 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { lastValueFrom, take } from 'rxjs';
 
 import { authGuard } from '../guards/auth.guard';
-import { LoginDto, LoginMfaDto, LoginResultDto, RegisterDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
+import {
+  LoginDto,
+  LoginMfaDto,
+  LoginResultDto,
+  RegisterDto,
+  RegisterResultDto,
+} from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { AuthHttpService } from './auth-http.service';
 import { GuardInspector } from './guard-inspector.service';
@@ -149,7 +155,7 @@ export class AuthService {
     }
   }
 
-  async submitRegistration(body: RegisterDto): Promise<object> {
+  async submitRegistration(body: RegisterDto): Promise<RegisterResultDto> {
     return this.authHttpService.register(body);
   }
 

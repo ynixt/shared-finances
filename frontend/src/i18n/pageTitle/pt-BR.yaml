@@ -2,6 +2,10 @@ pageTitle:
   home: Shared Finances
   login: Entrar
   register: Cadastrar
+  pendingEmail: Confirmar e-mail
+  confirmEmail: Confirmação de e-mail
+  forgotPassword: Esqueci a senha
+  resetPassword: Redefinir senha
   legalTerms: Termos de Uso
   legalPrivacy: Política de Privacidade
   notFound: 404 - Não encontrado

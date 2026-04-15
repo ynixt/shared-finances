@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.UserSpri
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Repository
@@ -49,4 +50,14 @@ class UserRepositoryImpl(
     override fun disableMfa(userId: UUID): Mono<Int> = springDataRepository.disableMfa(userId)
 
     override fun insert(user: UserEntity): Mono<UserEntity> = userEntityTemplateRepository.insert(user)
+
+    override fun findUnverifiedUserIdsCreatedBefore(cutoff: OffsetDateTime): Flux<UUID> =
+        springDataRepository.findUnverifiedUserIdsCreatedBefore(cutoff)
+
+    override fun markEmailVerifiedIfUnverified(userId: UUID): Mono<Int> = springDataRepository.markEmailVerifiedIfUnverified(userId)
+
+    override fun updateEmailWhenUnverified(
+        userId: UUID,
+        newEmail: String,
+    ): Mono<Int> = springDataRepository.updateEmailWhenUnverified(userId, newEmail)
 }

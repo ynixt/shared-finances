@@ -112,7 +112,7 @@ class AuthRegistrationAndSessionIntegrationTest : IntegrationTestContainers() {
                     ),
                 ).exchange()
                 .expectStatus()
-                .isNoContent
+                .isOk
 
             val user = userRepository.findOneByEmail(email).awaitSingle()
             assertThat(user.termsAcceptedAt).isNotNull

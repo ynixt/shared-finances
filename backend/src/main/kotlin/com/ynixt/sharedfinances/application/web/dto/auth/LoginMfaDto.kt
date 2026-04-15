@@ -5,4 +5,5 @@ import java.util.UUID
 data class LoginMfaDto(
     val challengeId: UUID,
     val code: String,
+    val turnstileToken: String? = null,
 )

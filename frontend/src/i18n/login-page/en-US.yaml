@@ -1,6 +1,7 @@
 loginPage:
   email: Email
   password: Password
+  forgotPassword: Forgot password?
   2faCode: Code 2-step
   login: Login
   error:

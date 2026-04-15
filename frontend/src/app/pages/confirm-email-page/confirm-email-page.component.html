@@ -1,0 +1,25 @@
+<app-navbar></app-navbar>
+
+<div class="max-w-lg mx-auto mt-12 px-4 space-y-4">
+  @if (status === 'noToken') {
+    <p>{{ 'authFlows.confirmEmail.error' | translate }}</p>
+  }
+  @if (status === 'ready' || status === 'submitting') {
+    <h1 class="text-xl font-semibold">{{ 'authFlows.confirmEmail.title' | translate }}</h1>
+    <p class="leading-relaxed">{{ 'authFlows.confirmEmail.intro' | translate }}</p>
+    <div class="space-y-2">
+      <app-turnstile-widget (resolved)="turnstileToken = $event" />
+      <p-button type="button" [disabled]="status === 'submitting'" [label]="'authFlows.confirmEmail.cta' | translate" (click)="confirm()" />
+    </div>
+  }
+  @if (status === 'ok') {
+    <p>{{ 'authFlows.confirmEmail.success' | translate }}</p>
+    <button type="button" class="text-primary underline" (click)="goToLogin()">{{ 'authFlows.confirmEmail.goLogin' | translate }}</button>
+  }
+  @if (status === 'error') {
+    <p>{{ 'authFlows.confirmEmail.error' | translate }}</p>
+    <p-button type="button" [label]="'authFlows.confirmEmail.retry' | translate" (click)="status = 'ready'" />
+  }
+</div>
+
+<p-toast />

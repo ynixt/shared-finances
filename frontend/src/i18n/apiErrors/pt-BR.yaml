@@ -1,4 +1,15 @@
 apiErrors:
+  auth:
+    emailNotVerified: Confirme seu e-mail antes de entrar.
+    turnstileFailed: A verificação humana falhou. Tente novamente.
+    emailConfirmationTokenInvalid: Este link de confirmação é inválido ou expirou.
+    passwordResetTokenInvalid: Este link de redefinição é inválido ou expirou.
+    resendCooldownActive: Aguarde {{retryAfterSeconds}} segundos antes de solicitar outro e-mail.
+    emailProviderQuotaExhausted: Não foi possível enviar o e-mail agora. Tente mais tarde.
+    passwordRecoveryDisabled: A recuperação de senha está desativada.
+    emailConfirmationDisabled: A confirmação de e-mail está desativada.
+    emailConfirmationResendInvalid: Não foi possível reenviar a confirmação para este e-mail.
+    pendingEmailChangeInvalid: Não foi possível alterar o e-mail nesta tela.
   memberAlreadyInGroup: Usuário já pertence a este grupo.
   bankAccountAlreadyInGroup: Conta bancária já associada a este grupo.
   duplicatedCategory: Este nome já está em uso por outra categoria.

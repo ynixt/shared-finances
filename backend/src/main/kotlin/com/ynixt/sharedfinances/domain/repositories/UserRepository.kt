@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.domain.repositories
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.OffsetDateTime
 import java.util.UUID
 
 interface UserRepository : EntityRepository<UserEntity> {
@@ -39,5 +40,14 @@ interface UserRepository : EntityRepository<UserEntity> {
     fun changeOnboardingDone(
         userId: UUID,
         newOnboardingDone: Boolean,
+    ): Mono<Int>
+
+    fun findUnverifiedUserIdsCreatedBefore(cutoff: OffsetDateTime): Flux<UUID>
+
+    fun markEmailVerifiedIfUnverified(userId: UUID): Mono<Int>
+
+    fun updateEmailWhenUnverified(
+        userId: UUID,
+        newEmail: String,
     ): Mono<Int>
 }

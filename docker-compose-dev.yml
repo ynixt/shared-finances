@@ -75,6 +75,12 @@ services:
     - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD}
     ports:
       - "8082:8081"
+  mailpit:
+    image: axllent/mailpit:v1.22
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
     restart: unless-stopped

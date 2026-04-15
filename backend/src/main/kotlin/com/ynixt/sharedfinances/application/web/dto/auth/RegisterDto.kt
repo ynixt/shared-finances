@@ -36,4 +36,5 @@ data class RegisterDto(
     @field:AssertTrue(message = "apiErrors.registration.privacyNotAccepted")
     val acceptPrivacy: Boolean?,
     val gravatarOptIn: Boolean = false,
+    val turnstileToken: String? = null,
 )

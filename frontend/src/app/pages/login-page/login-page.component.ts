@@ -1,6 +1,6 @@
-import { Component, OnInit, effect } from '@angular/core';
+import { Component, OnInit, effect, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
@@ -14,27 +14,44 @@ import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { TurnstileWidgetComponent } from '../../components/turnstile-widget/turnstile-widget.component';
 import { LoginResultDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
+import { OpenAuthPreferencesService } from '../../services/open-auth-preferences.service';
 import { TokenSyncService } from '../../services/token-sync.service';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, Toast, TranslatePipe, NavbarComponent, ButtonDirective, Password, InputText, InputOtp],
+  imports: [
+    ReactiveFormsModule,
+    Toast,
+    TranslatePipe,
+    RouterLink,
+    NavbarComponent,
+    ButtonDirective,
+    Password,
+    InputText,
+    InputOtp,
+    TurnstileWidgetComponent,
+  ],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
   providers: [MessageService],
 })
 @UntilDestroy()
 export class LoginPageComponent implements OnInit {
+  protected readonly openAuthPreferences = inject(OpenAuthPreferencesService);
+
   loginForm!: FormGroup;
   mfaForm!: FormGroup;
 
   loading = false;
   loginResponse: LoginResultDto | undefined;
+  loginTurnstileToken: string | null = null;
+  mfaTurnstileToken: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -99,6 +116,7 @@ export class LoginPageComponent implements OnInit {
       this.loginResponse = await this.authService.submitLogin({
         email: this.loginForm.value.identifier,
         password: this.loginForm.value.password,
+        turnstileToken: this.loginTurnstileToken ?? undefined,
       });
 
       if (this.loginResponse.mfaRequired) {
@@ -124,6 +142,7 @@ export class LoginPageComponent implements OnInit {
       await this.authService.submitMfa({
         code: this.mfaForm.value.code,
         challengeId: this.loginResponse.mfaChallengeId,
+        turnstileToken: this.mfaTurnstileToken ?? undefined,
       });
 
       await this.authService.waitForLoginSuccess();

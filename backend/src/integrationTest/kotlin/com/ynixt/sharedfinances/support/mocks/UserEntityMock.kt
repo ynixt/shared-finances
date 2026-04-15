@@ -6,6 +6,7 @@ object UserEntityMock {
     fun defaultUser(
         email: String = "a@a.c",
         passwordHash: String?,
+        emailVerified: Boolean = true,
     ) = UserEntity(
         email = email,
         passwordHash = passwordHash,
@@ -15,7 +16,7 @@ object UserEntityMock {
         defaultCurrency = "BRL",
         tmz = "America/Sao_Paulo",
         photoUrl = null,
-        emailVerified = true,
+        emailVerified = emailVerified,
         mfaEnabled = false,
         totpSecret = null,
         onboardingDone = true,

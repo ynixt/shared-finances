@@ -15,6 +15,7 @@ import { LanguagePickerComponent } from '../../components/language-picker/langua
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { RequiredFieldAsteriskComponent } from '../../components/required-field-asterisk/required-field-asterisk.component';
 import { TimeZoneSelectorComponent, allTimezones } from '../../components/timezone-selector/time-zone-selector.component';
+import { TurnstileWidgetComponent } from '../../components/turnstile-widget/turnstile-widget.component';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
 import { groupArrayBy } from '../../util/collection-util';
@@ -39,6 +40,7 @@ import { passwordValidator } from './password-validator';
     RequiredFieldAsteriskComponent,
     CurrencySelectorComponent,
     TimeZoneSelectorComponent,
+    TurnstileWidgetComponent,
   ],
   templateUrl: './registration-page.component.html',
   styleUrl: './registration-page.component.scss',
@@ -47,6 +49,7 @@ import { passwordValidator } from './password-validator';
 export class RegistrationPageComponent implements OnInit {
   form!: FormGroup;
   submitting = false;
+  turnstileToken: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -74,7 +77,7 @@ export class RegistrationPageComponent implements OnInit {
     this.submitting = true;
 
     try {
-      await this.auth.submitRegistration({
+      const registerResult = await this.auth.submitRegistration({
         email: this.form.value.email,
         password: this.form.value.password,
         firstName: this.form.value.name.first,
@@ -85,7 +88,19 @@ export class RegistrationPageComponent implements OnInit {
         acceptTerms: this.form.value.acceptTerms,
         acceptPrivacy: this.form.value.acceptPrivacy,
         gravatarOptIn: this.form.value.gravatarOptIn,
+        turnstileToken: this.turnstileToken ?? undefined,
       });
+
+      if (registerResult.pendingEmailConfirmation) {
+        const return_to = this.route.snapshot.queryParamMap.get('return_to');
+        await this.router.navigate(['/pending-email-confirmation'], {
+          queryParams: {
+            email: registerResult.email,
+            ...(return_to ? { return_to } : {}),
+          },
+        });
+        return;
+      }
 
       this.messageService.add({
         severity: 'success',

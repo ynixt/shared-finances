@@ -27,6 +27,11 @@ legal:
       Reservamo-nos o direito de suspender ou excluir contas que violem nossa política de uso justo
       ou estes Termos de Uso, inclusive em casos de abuso, fraude ou atividade que comprometa o
       serviço ou outros usuários, a nosso critério e quando permitido pela legislação aplicável.
+    p8: >-
+      Proteção contra bots: cadastro, login e solicitações de recuperação de senha podem passar pelo
+      Cloudflare Turnstile. O Turnstile pode coletar sinais técnicos limitados para distinguir
+      humanos de tráfego automatizado; consulte a documentação da Cloudflare sobre o tratamento de
+      dados do Turnstile.
   privacy:
     title: Política de Privacidade
     p1: >-
@@ -61,3 +66,7 @@ legal:
       Os documentos legais estão disponíveis em inglês e português (Brasil). Se houver divergências
       entre traduções, buscamos manter o alinhamento; a versão registrada no cadastro é definida pelo
       servidor.
+    p9: >-
+      Quando o Cloudflare Turnstile estiver habilitado, ele pode processar dados técnicos limitados
+      durante desafios interativos em telas relacionadas à autenticação, para reduzir abuso
+      automatizado; consulte os avisos da Cloudflare sobre o Turnstile.

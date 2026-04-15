@@ -6,6 +6,17 @@ server:
 spring:
   application:
     name: shared-finances
+  mail:
+    host: ${SF_APP_SMTP_HOST:localhost}
+    port: ${SF_APP_SMTP_PORT:1025}
+    username: ${SF_APP_SMTP_USERNAME:}
+    password: ${SF_APP_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SF_APP_SMTP_AUTH:false}
+          starttls:
+            enable: ${SF_APP_SMTP_STARTTLS:false}
   r2dbc:
     url: r2dbc:${SF_APP_POSTGRES_CONNECTION_STRING}
     username: ${SF_APP_POSTGRES_USER}
@@ -71,6 +82,32 @@ logging:
     io.r2dbc.postgresql.PARAM: ${SF_APP_DEBUG_QUERY_LEVEL:INFO}
 
 app:
+  public-web:
+    base-url: ${SF_APP_PUBLIC_WEB_BASE_URL:http://localhost:4200}
+  auth:
+    features:
+      email-confirmation-enabled: ${SF_APP_EMAIL_CONFIRMATION_ENABLED:true}
+      password-recovery-enabled: ${SF_APP_PASSWORD_RECOVERY_ENABLED:true}
+      turnstile-enabled: ${SF_APP_TURNSTILE_ENABLED:true}
+    email-confirmation:
+      ttl-minutes: ${SF_APP_EMAIL_CONFIRMATION_TOKEN_TTL_MINUTES:180}
+    password-recovery:
+      ttl-minutes: ${SF_APP_PASSWORD_RECOVERY_TOKEN_TTL_MINUTES:60}
+    email-resend:
+      cooldown-seconds: ${SF_APP_EMAIL_RESEND_COOLDOWN_SECONDS:60}
+    turnstile:
+      secret-key: ${SF_APP_TURNSTILE_SECRET_KEY:}
+      verify-url: ${SF_APP_TURNSTILE_VERIFY_URL:https://challenges.cloudflare.com/turnstile/v0/siteverify}
+    transactional-mail:
+      provider-priority: ${SF_APP_TX_MAIL_PROVIDER_PRIORITY:brevo}
+      smtp:
+        from-address: ${SF_APP_TX_MAIL_SMTP_FROM:noreply@localhost}
+        from-name: ${SF_APP_TX_MAIL_SMTP_FROM_NAME:Shared Finances}
+      brevo:
+        daily-quota: ${SF_APP_BREVO_DAILY_QUOTA:300}
+        api-key: ${SF_APP_BREVO_API_KEY:}
+        from-address: ${SF_APP_BREVO_FROM_ADDRESS:}
+        from-name: ${SF_APP_BREVO_FROM_NAME:Shared Finances}
   legal:
     terms-version: ${SF_APP_LEGAL_TERMS_VERSION:2026-04-14}
     privacy-version: ${SF_APP_LEGAL_PRIVACY_VERSION:2026-04-14}
@@ -112,6 +149,8 @@ app:
       cron: ${SF_APP_EXPIRE_MFA_CRON:0 0 0/12 * * *}
     expireInvites:
       cron: ${SF_APP_EXPIRE_INVITES_CRON:0 0/30 * * * *}
+    unconfirmedAccountCleanup:
+      cron: ${SF_APP_UNCONFIRMED_ACCOUNT_CLEANUP_CRON:0 0 0 * * *}
     simulation:
       reconcile:
         cron-enabled: ${SF_APP_SIMULATION_RECONCILE_CRON_ENABLED:false}

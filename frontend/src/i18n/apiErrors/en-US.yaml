@@ -1,4 +1,15 @@
 apiErrors:
+  auth:
+    emailNotVerified: Confirm your email before signing in.
+    turnstileFailed: Human verification failed. Try again.
+    emailConfirmationTokenInvalid: This confirmation link is invalid or has expired.
+    passwordResetTokenInvalid: This reset link is invalid or has expired.
+    resendCooldownActive: Please wait {{retryAfterSeconds}} seconds before requesting another email.
+    emailProviderQuotaExhausted: Email could not be sent right now. Try again later.
+    passwordRecoveryDisabled: Password recovery is disabled.
+    emailConfirmationDisabled: Email confirmation is disabled.
+    emailConfirmationResendInvalid: Unable to resend confirmation for this email.
+    pendingEmailChangeInvalid: Unable to change email from this screen.
   memberAlreadyInGroup: User is already on this group.
   bankAccountAlreadyInGroup: Bank account is already associated to this group.
   duplicatedCategory: This name is already in use in another category.

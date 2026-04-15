@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './guards/auth.guard';
 import { notLoggedGuard } from './guards/not-logged.guard';
+import { emailConfirmationFlowsEnabledGuard, passwordRecoveryEnabledGuard } from './guards/open-auth-feature.guards';
 
 export const routes: Routes = [
   {
@@ -27,6 +28,37 @@ export const routes: Routes = [
     data: {
       pageTitleKey: 'pageTitle.register',
     },
+  },
+  {
+    path: 'pending-email-confirmation',
+    canActivate: [notLoggedGuard],
+    canMatch: [emailConfirmationFlowsEnabledGuard],
+    loadComponent: () =>
+      import('./pages/pending-email-confirmation-page/pending-email-confirmation-page.component').then(
+        m => m.PendingEmailConfirmationPageComponent,
+      ),
+    data: { pageTitleKey: 'pageTitle.pendingEmail' },
+  },
+  {
+    path: 'confirm-email',
+    canActivate: [notLoggedGuard],
+    canMatch: [emailConfirmationFlowsEnabledGuard],
+    loadComponent: () => import('./pages/confirm-email-page/confirm-email-page.component').then(m => m.ConfirmEmailPageComponent),
+    data: { pageTitleKey: 'pageTitle.confirmEmail' },
+  },
+  {
+    path: 'forgot-password',
+    canActivate: [notLoggedGuard],
+    canMatch: [passwordRecoveryEnabledGuard],
+    loadComponent: () => import('./pages/forgot-password-page/forgot-password-page.component').then(m => m.ForgotPasswordPageComponent),
+    data: { pageTitleKey: 'pageTitle.forgotPassword' },
+  },
+  {
+    path: 'reset-password',
+    canActivate: [notLoggedGuard],
+    canMatch: [passwordRecoveryEnabledGuard],
+    loadComponent: () => import('./pages/reset-password-page/reset-password-page.component').then(m => m.ResetPasswordPageComponent),
+    data: { pageTitleKey: 'pageTitle.resetPassword' },
   },
   {
     path: 'legal/terms',

@@ -26,6 +26,10 @@ legal:
       We reserve the right to suspend or delete accounts that violate our fair use policy or these
       Terms of Use, including abuse, fraud, or activity that compromises the service or other users,
       at our discretion and where permitted by applicable law.
+    p8: >-
+      Bot protection: registration, sign-in, and password-recovery requests may be processed through
+      Cloudflare Turnstile. Turnstile may collect limited technical signals to distinguish humans from
+      automated traffic; see Cloudflare’s documentation for details on data handling for Turnstile.
   privacy:
     title: Privacy Policy
     p1: >-
@@ -54,3 +58,7 @@ legal:
     p8: >-
       Legal documents are provided in English and Portuguese (Brazil). If translations diverge, we aim
       to keep them consistent; the version stored on registration is defined by the server.
+    p9: >-
+      Where Cloudflare Turnstile is enabled, it may process limited technical data during interactive
+      challenges on authentication-related screens to reduce automated abuse; refer to Cloudflare’s
+      notices for Turnstile.

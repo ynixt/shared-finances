@@ -68,7 +68,8 @@ class RedisSessionRepository(
                     if (sessionIdStrs.isEmpty()) {
                         Mono.just(0L)
                     } else {
-                        Flux.fromIterable(sessionIdStrs)
+                        Flux
+                            .fromIterable(sessionIdStrs)
                             .concatMap { sid -> deleteById(UUID.fromString(sid)) }
                             .reduce(0L) { acc, n -> acc + n }
                     }

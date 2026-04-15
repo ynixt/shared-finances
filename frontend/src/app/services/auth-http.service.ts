@@ -3,7 +3,19 @@ import { Injectable } from '@angular/core';
 
 import { lastValueFrom, take } from 'rxjs';
 
-import { LoginDto, LoginMfaDto, LoginResultDto, RegisterDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
+import {
+  ChangePendingEmailRequestDto,
+  ConfirmEmailRequestDto,
+  EmailTurnstileRequestDto,
+  GenericAckDto,
+  LoginDto,
+  LoginMfaDto,
+  LoginResultDto,
+  PasswordResetConfirmRequestDto,
+  RegisterDto,
+  RegisterResultDto,
+  ResendEmailAckDto,
+} from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 
 @Injectable({ providedIn: 'root' })
@@ -34,8 +46,32 @@ export class AuthHttpService {
     );
   }
 
-  async register(body: RegisterDto): Promise<object> {
-    return lastValueFrom(this.httpClient.post('/api/open/auth/register', body).pipe(take(1)));
+  register(body: RegisterDto): Promise<RegisterResultDto> {
+    return lastValueFrom(this.httpClient.post<RegisterResultDto>('/api/open/auth/register', body).pipe(take(1)));
+  }
+
+  confirmEmail(body: ConfirmEmailRequestDto): Promise<void> {
+    return lastValueFrom(this.httpClient.post<void>('/api/open/auth/confirm-email', body).pipe(take(1)));
+  }
+
+  resendConfirmationEmail(body: EmailTurnstileRequestDto): Promise<ResendEmailAckDto> {
+    return lastValueFrom(this.httpClient.post<ResendEmailAckDto>('/api/open/auth/resend-confirmation-email', body).pipe(take(1)));
+  }
+
+  changePendingEmail(body: ChangePendingEmailRequestDto): Promise<ResendEmailAckDto> {
+    return lastValueFrom(this.httpClient.post<ResendEmailAckDto>('/api/open/auth/change-pending-email', body).pipe(take(1)));
+  }
+
+  forgotPassword(body: EmailTurnstileRequestDto): Promise<GenericAckDto> {
+    return lastValueFrom(this.httpClient.post<GenericAckDto>('/api/open/auth/forgot-password', body).pipe(take(1)));
+  }
+
+  resendForgotPassword(body: EmailTurnstileRequestDto): Promise<ResendEmailAckDto> {
+    return lastValueFrom(this.httpClient.post<ResendEmailAckDto>('/api/open/auth/resend-forgot-password', body).pipe(take(1)));
+  }
+
+  resetPassword(body: PasswordResetConfirmRequestDto): Promise<void> {
+    return lastValueFrom(this.httpClient.post<void>('/api/open/auth/reset-password', body).pipe(take(1)));
   }
 
   async logout(): Promise<void> {

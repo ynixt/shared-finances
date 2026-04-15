@@ -1,5 +1,7 @@
 package com.ynixt.sharedfinances.scenarios.support
 
+import com.ynixt.sharedfinances.application.config.AuthProperties
+import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
@@ -34,7 +36,6 @@ import com.ynixt.sharedfinances.resources.services.BankAccountServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardBillPaymentServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardBillServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardServiceImpl
-import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
 import com.ynixt.sharedfinances.resources.services.WalletItemServiceImpl
 import com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardServiceImpl
@@ -167,6 +168,7 @@ internal class ScenarioRuntime(
             databaseHelperService = NoOpDatabaseHelperService(),
             avatarService = NoOpAvatarService(),
             legalDocumentProperties = LegalDocumentProperties(),
+            authProperties = AuthProperties(),
             clock = clock,
             accountDeletionService = NoOpAccountDeletionService,
         )

@@ -127,6 +127,10 @@
           <p class="text-sm text-surface-600 dark:text-surface-300">{{ 'registerPage.gravatar.hint' | translate }}</p>
         </div>
 
+        <div class="w-full mb-8">
+          <app-turnstile-widget (resolved)="turnstileToken = $event" />
+        </div>
+
         <p-button
           [loading]="submitting"
           [disabled]="form.invalid"

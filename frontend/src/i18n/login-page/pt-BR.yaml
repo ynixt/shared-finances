@@ -1,6 +1,7 @@
 loginPage:
   email: Email
   password: Senha
+  forgotPassword: Esqueceu a senha?
   2faCode: Código 2-step
   login: Entrar
   error:

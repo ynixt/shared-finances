@@ -7,6 +7,7 @@ import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.OffsetDateTime
 import java.util.UUID
 
 interface UserSpringDataRepository :
@@ -116,4 +117,40 @@ interface UserSpringDataRepository :
     """,
     )
     fun disableMfa(userId: UUID): Mono<Int>
+
+    @Query(
+        """
+        select id from users
+        where email_verified = false
+          and created_at < :cutoff
+        """,
+    )
+    fun findUnverifiedUserIdsCreatedBefore(cutoff: OffsetDateTime): Flux<UUID>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set email_verified = true,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+          and email_verified = false
+        """,
+    )
+    fun markEmailVerifiedIfUnverified(userId: UUID): Mono<Int>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set email = :newEmail,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+          and email_verified = false
+        """,
+    )
+    fun updateEmailWhenUnverified(
+        userId: UUID,
+        newEmail: String,
+    ): Mono<Int>
 }

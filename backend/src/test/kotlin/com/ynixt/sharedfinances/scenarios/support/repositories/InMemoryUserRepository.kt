@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.OffsetDateTime
 import java.util.UUID
 
 internal class InMemoryUserRepository : UserRepository {
@@ -108,4 +109,39 @@ internal class InMemoryUserRepository : UserRepository {
     override fun <S : UserEntity> saveAll(entity: Iterable<S>): Flux<S> = Flux.fromIterable(entity).flatMap { save(it) }
 
     override fun findAllByIdIn(id: Collection<UUID>): Flux<UserEntity> = Flux.fromIterable(id.mapNotNull { data[it] })
+
+    override fun findUnverifiedUserIdsCreatedBefore(cutoff: OffsetDateTime): Flux<UUID> =
+        Flux.fromIterable(
+            data.values
+                .filter { u ->
+                    !u.emailVerified && (u.createdAt?.isBefore(cutoff) == true)
+                }.mapNotNull { it.id },
+        )
+
+    override fun markEmailVerifiedIfUnverified(userId: UUID): Mono<Int> =
+        Mono.just(
+            data[userId]?.let { u ->
+                if (!u.emailVerified) {
+                    u.emailVerified = true
+                    1
+                } else {
+                    0
+                }
+            } ?: 0,
+        )
+
+    override fun updateEmailWhenUnverified(
+        userId: UUID,
+        newEmail: String,
+    ): Mono<Int> =
+        Mono.just(
+            data[userId]?.let { u ->
+                if (!u.emailVerified) {
+                    u.email = newEmail
+                    1
+                } else {
+                    0
+                }
+            } ?: 0,
+        )
 }
