@@ -3,29 +3,10 @@ package com.ynixt.sharedfinances.application.web.jobs
 import com.ynixt.sharedfinances.domain.services.simulation.SimulationJobService
 import kotlinx.coroutines.reactor.mono
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import reactor.core.scheduler.Schedulers
-
-@Component("simulationJobSchedulingConfig")
-class SimulationJobSchedulingConfig(
-    @param:Value("\${app.jobs.simulation.reconcile.cron-enabled:false}")
-    private val reconcileCronEnabled: Boolean,
-    @param:Value("\${app.jobs.simulation.reconcile.cron}")
-    private val reconcileCron: String,
-) {
-    @Suppress("unused")
-    val reconcileScheduledCron: String
-        get() =
-            if (reconcileCronEnabled) {
-                reconcileCron
-            } else {
-                Scheduled.CRON_DISABLED
-            }
-}
 
 @Component
 class SimulationJobsMaintenanceJob(
@@ -44,25 +25,15 @@ class SimulationJobsMaintenanceJob(
             .subscribe()
     }
 
-    @Scheduled(cron = "#{@simulationJobSchedulingConfig.reconcileScheduledCron}")
-    fun reconcileLease() {
+    suspend fun executeReconcile() {
         logger.info("Simulation jobs periodic reconciliation started")
-        mono {
-            simulationJobService.reconcileExpiredLeases()
-        }.subscribeOn(Schedulers.boundedElastic())
-            .doOnSuccess { changed -> logger.info("Simulation jobs periodic reconciliation finished with $changed lease(s) recovered") }
-            .doOnError { ex -> logger.error("Simulation jobs periodic reconciliation failed", ex) }
-            .subscribe()
+        val changed = simulationJobService.reconcileExpiredLeases()
+        logger.info("Simulation jobs periodic reconciliation finished with $changed lease(s) recovered")
     }
 
-    @Scheduled(cron = "\${app.jobs.simulation.purge.cron}")
-    fun purge() {
+    suspend fun executePurge() {
         logger.info("Simulation jobs purge started")
-        mono {
-            simulationJobService.purgeOldJobs()
-        }.subscribeOn(Schedulers.boundedElastic())
-            .doOnSuccess { deleted -> logger.info("Simulation jobs purge finished with $deleted row(s) removed") }
-            .doOnError { ex -> logger.error("Simulation jobs purge failed", ex) }
-            .subscribe()
+        val deleted = simulationJobService.purgeOldJobs()
+        logger.info("Simulation jobs purge finished with $deleted row(s) removed")
     }
 }

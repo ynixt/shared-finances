@@ -56,6 +56,9 @@ spring:
     error:
       include-message: always
 
+db-scheduler:
+  enabled: false
+
 springdoc:
   show-actuator: true
   api-docs:

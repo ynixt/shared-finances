@@ -135,6 +135,9 @@ dependencies {
     implementation("com.github.slugify:slugify:3.0.7")
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.13.0")
 
+    implementation("com.github.kagkarlsson:db-scheduler:16.7.1")
+    implementation("com.zaxxer:HikariCP")
+
     implementation(platform("software.amazon.awssdk:bom:2.25.60"))
     implementation("software.amazon.awssdk:s3")
 
