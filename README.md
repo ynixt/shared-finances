@@ -1,1 +1,5 @@
-This project is under development. Stay tuned :)
+This project is under development.
+
+## License
+
+GNU Affero General Public License v3.0 (AGPL-3.0). See [LICENSE](LICENSE).
