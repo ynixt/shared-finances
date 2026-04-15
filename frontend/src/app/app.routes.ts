@@ -29,6 +29,22 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'legal/terms',
+    loadComponent: () => import('./pages/legal/legal-document-page.component').then(m => m.LegalDocumentPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.legalTerms',
+      legalDoc: 'terms',
+    },
+  },
+  {
+    path: 'legal/privacy',
+    loadComponent: () => import('./pages/legal/legal-document-page.component').then(m => m.LegalDocumentPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.legalPrivacy',
+      legalDoc: 'privacy',
+    },
+  },
+  {
     path: 'welcome',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/onboarding-page/onboarding-page.component').then(m => m.OnboardingPageComponent),

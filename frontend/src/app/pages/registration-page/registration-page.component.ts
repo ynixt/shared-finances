@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
@@ -8,6 +8,7 @@ import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../components/currency-selector/currency-selector.component';
 import { LanguagePickerComponent } from '../../components/language-picker/language-picker.component';
@@ -26,11 +27,13 @@ import { passwordValidator } from './password-validator';
   selector: 'app-registration-page',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     Button,
     Password,
     InputText,
     TranslatePipe,
     Toast,
+    ToggleSwitch,
     LanguagePickerComponent,
     NavbarComponent,
     RequiredFieldAsteriskComponent,
@@ -79,6 +82,9 @@ export class RegistrationPageComponent implements OnInit {
         lang: this.form.value.language,
         tmz: this.form.value.tmz,
         defaultCurrency: this.form.value.defaultCurrency,
+        acceptTerms: this.form.value.acceptTerms,
+        acceptPrivacy: this.form.value.acceptPrivacy,
+        gravatarOptIn: this.form.value.gravatarOptIn,
       });
 
       this.messageService.add({
@@ -118,6 +124,9 @@ export class RegistrationPageComponent implements OnInit {
         language: [undefined, [Validators.required]],
         tmz: [this.getBrowserTmz(), [Validators.required]],
         defaultCurrency: [undefined, [Validators.required]],
+        acceptTerms: [false, [Validators.requiredTrue]],
+        acceptPrivacy: [false, [Validators.requiredTrue]],
+        gravatarOptIn: [false],
       },
       { validators: confirmPasswordValidator },
     );

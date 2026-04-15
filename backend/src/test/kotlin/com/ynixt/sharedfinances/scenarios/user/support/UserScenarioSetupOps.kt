@@ -28,6 +28,9 @@ internal class UserScenarioSetupOps(
                     lang = lang,
                     defaultCurrency = defaultCurrency,
                     tmz = tmz,
+                    acceptTerms = true,
+                    acceptPrivacy = true,
+                    gravatarOptIn = false,
                 ),
             )
 

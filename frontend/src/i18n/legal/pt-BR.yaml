@@ -1,0 +1,63 @@
+legal:
+  terms:
+    title: Termos de Uso
+    p1: >-
+      Estes Termos de Uso regem o acesso e o uso do Shared Finances. O serviço é operado com
+      jurisdição no Brasil. Ao criar uma conta, você concorda com estes termos.
+    p2: >-
+      Você é responsável pela veracidade das informações que fornecer e pela proteção das suas
+      credenciais. Não deve usar o serviço de forma indevida, tentar acesso não autorizado ou
+      interferir na operação normal da plataforma.
+    p3: >-
+      Podemos atualizar estes termos periodicamente. Quando isso ocorrer, ajustaremos a versão
+      registrada nos novos cadastros. Contas existentes não precisam reaceitar automaticamente nesta
+      entrega, salvo se comunicarmos o contrário.
+    p4: >-
+      Infraestrutura: o tráfego pode passar pela Cloudflare, que pode oferecer proxy, cache,
+      proteções de segurança e analytics próprios, conforme a documentação da Cloudflare para os
+      recursos habilitados na nossa configuração.
+    p5: >-
+      O aplicativo não utiliza Google Analytics nem soluções similares de analytics de terceiros na
+      interface do produto nesta versão dos termos. Podemos introduzir métricas operacionais
+      estritamente agregadas e anônimas no futuro para manter a confiabilidade do serviço; se isso
+      ocorrer, descreveremos na Política de Privacidade.
+    p6: >-
+      Para solicitações relacionadas à privacidade sob a LGPD, contate lgdp-finances@gabrielsilva.dev.
+    p7: >-
+      Reservamo-nos o direito de suspender ou excluir contas que violem nossa política de uso justo
+      ou estes Termos de Uso, inclusive em casos de abuso, fraude ou atividade que comprometa o
+      serviço ou outros usuários, a nosso critério e quando permitido pela legislação aplicável.
+  privacy:
+    title: Política de Privacidade
+    p1: >-
+      Esta Política de Privacidade explica como o Shared Finances trata dados pessoais quando você usa
+      o serviço. Aplica-se a usuários em todos os idiomas suportados e está alinhada à nossa operação
+      no Brasil (LGPD).
+    p2: >-
+      Tratamos dados que você informa (por exemplo dados de conta, perfil e informações financeiras que
+      você registra) e dados técnicos necessários para autenticação e segurança (como endereço IP e
+      user agent do navegador) enquanto a sessão de autenticação for relevante para login e proteção
+      da sessão.
+    p3: >-
+      Sessões autenticadas e refresh tokens são armazenados com retenção limitada no tempo (incluindo
+      em Redis com TTL), de modo que metadados relacionados não permaneçam além dos tempos de sessão
+      e de token configurados.
+    p4: >-
+      O tráfego pode ser encaminhado pela Cloudflare, que pode atuar como proxy reverso e oferecer
+      cache, segurança e processamentos relacionados. Dependendo da configuração, a Cloudflare pode
+      tratar dados técnicos para essas finalidades; consulte os avisos da Cloudflare para os recursos
+      em uso.
+    p5: >-
+      Não utilizamos Google Analytics nem scripts similares de analytics de terceiros dentro do
+      aplicativo nesta versão da política.
+    p6: >-
+      Podemos, futuramente, coletar métricas operacionais estritamente agregadas e anônimas (por
+      exemplo taxas de erro ou resumos de desempenho) que não identifiquem você; se forem introduzidas,
+      atualizaremos esta política.
+    p7: >-
+      Você pode exercer direitos previstos na LGPD (como acesso ou exclusão, quando aplicável)
+      contatando lgdp-finances@gabrielsilva.dev. Alguns pedidos podem exigir verificação de identidade.
+    p8: >-
+      Os documentos legais estão disponíveis em inglês e português (Brasil). Se houver divergências
+      entre traduções, buscamos manter o alinhamento; a versão registrada no cadastro é definida pelo
+      servidor.

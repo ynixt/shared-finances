@@ -8,6 +8,8 @@ apiErrors:
   generic:
     fieldInvalid: "Invalid field '{{field}}'."
   registration:
+    termsNotAccepted: You must accept the Terms of Use to register.
+    privacyNotAccepted: You must accept the Privacy Policy to register.
     emailInvalid: Invalid e-mail.
     emailSize: 'Email must have between {{min}} and {{max}} characters.'
     emailAlreadyInUse: Email already in use.

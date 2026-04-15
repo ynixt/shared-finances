@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.SessionRepository
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.AccountDeletionService
@@ -27,11 +28,14 @@ class AccountDeletionServiceImpl(
     private val walletEventRepository: WalletEventRepository,
     private val recurrenceEventRepository: RecurrenceEventRepository,
     private val simulationJobService: SimulationJobService,
+    private val sessionRepository: SessionRepository,
     private val avatarService: AvatarService,
 ) : AccountDeletionService {
     @Transactional
     override suspend fun deleteAccountForUser(userId: UUID) {
         userRepository.findById(userId).awaitSingleOrNull() ?: return
+
+        sessionRepository.deleteAllByUserId(userId).awaitSingle()
 
         val memberships = groupRepository.findAllByUserIdOrderByName(userId).collectList().awaitSingle()
 

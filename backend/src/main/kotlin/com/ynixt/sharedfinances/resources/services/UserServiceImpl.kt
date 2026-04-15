@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.services
 
 import com.fasterxml.uuid.Generators
+import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
@@ -18,6 +19,8 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
@@ -26,6 +29,8 @@ class UserServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val databaseHelperService: DatabaseHelperService,
     private val avatarService: AvatarService,
+    private val legalDocumentProperties: LegalDocumentProperties,
+    private val clock: Clock,
     @Lazy private val accountDeletionService: AccountDeletionService,
 ) : EntityServiceImpl<UserEntity, UserEntity>(),
     UserService {
@@ -49,9 +54,15 @@ class UserServiceImpl(
                 it.id = Generators.timeBasedEpochRandomGenerator().generate()
             }
 
-        user.photoUrl =
-            avatarService
-                .getPhotoFromGravatar(user.email, user.id!!)
+        val acceptedAt = OffsetDateTime.ofInstant(clock.instant(), clock.zone)
+        user.termsAcceptedAt = acceptedAt
+        user.termsVersion = legalDocumentProperties.termsVersion
+        user.privacyAcceptedAt = acceptedAt
+        user.privacyVersion = legalDocumentProperties.privacyVersion
+
+        if (request.gravatarOptIn) {
+            user.photoUrl = avatarService.getPhotoFromGravatar(user.email, user.id!!)
+        }
 
         return repository
             .insert(user)

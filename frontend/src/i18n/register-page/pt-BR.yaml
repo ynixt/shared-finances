@@ -1,5 +1,13 @@
 registerPage:
   register: Cadastrar
+  consent:
+    termsLabel: Li e aceito os
+    termsLink: Termos de Uso
+    privacyLabel: Li e aceito a
+    privacyLink: Política de Privacidade
+  gravatar:
+    label: Buscar foto de perfil automaticamente no Gravatar (opcional)
+    hint: Quando ativado, contatamos o Gravatar com seu e-mail para tentar importar um avatar.
   error:
     title: Não foi possível se cadastar
     genericMessage: Um erro aconteceu

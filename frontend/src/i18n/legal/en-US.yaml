@@ -1,0 +1,56 @@
+legal:
+  terms:
+    title: Terms of Use
+    p1: >-
+      These Terms of Use govern access to and use of Shared Finances. The service is operated with
+      jurisdiction in Brazil. By creating an account, you agree to these terms.
+    p2: >-
+      You are responsible for the accuracy of information you provide and for safeguarding your
+      credentials. You must not misuse the service, attempt unauthorized access, or interfere with
+      its normal operation.
+    p3: >-
+      We may update these terms from time to time. When we do, we will adjust the version recorded
+      with new registrations. Existing accounts are not automatically required to re-accept in this
+      release, unless we notify you otherwise.
+    p4: >-
+      Infrastructure note: traffic may pass through Cloudflare, which can provide proxying, caching,
+      security protections, and its own analytics as described in Cloudflare’s documentation for the
+      features enabled in our setup.
+    p5: >-
+      The application does not use Google Analytics or similar third-party web analytics in the product
+      UI as of these terms. We may introduce strictly aggregated, anonymous operational metrics in the
+      future to keep the service reliable; if we do, we will describe them in the Privacy Policy.
+    p6: >-
+      For privacy-related requests under Brazilian law (LGPD), contact lgdp-finances@gabrielsilva.dev.
+    p7: >-
+      We reserve the right to suspend or delete accounts that violate our fair use policy or these
+      Terms of Use, including abuse, fraud, or activity that compromises the service or other users,
+      at our discretion and where permitted by applicable law.
+  privacy:
+    title: Privacy Policy
+    p1: >-
+      This Privacy Policy explains how Shared Finances handles personal data when you use the service.
+      It applies to users in all supported locales and is aligned with our operation in Brazil (LGPD).
+    p2: >-
+      We process data you provide (for example account, profile, and financial information you enter)
+      and technical data needed to operate authentication and security (such as IP address and browser
+      user agent) while an authentication session is meaningful for login and session protection.
+    p3: >-
+      Authentication sessions and refresh tokens are stored with time-limited retention (including in
+      Redis with TTL), so related metadata does not outlive the configured session and token lifetimes.
+    p4: >-
+      Traffic may be routed through Cloudflare, which can act as a reverse proxy and provide caching,
+      security, and related processing. Depending on configuration, Cloudflare may process technical
+      data for those purposes; see Cloudflare’s notices for the features in use.
+    p5: >-
+      We do not use Google Analytics or similar third-party analytics scripts inside the application
+      as of this policy.
+    p6: >-
+      We may later collect strictly aggregated, anonymous operational metrics (for example error rates
+      or performance summaries) that do not identify you; if introduced, we will update this policy.
+    p7: >-
+      You may exercise LGPD rights (such as access or deletion where applicable) by contacting
+      lgdp-finances@gabrielsilva.dev. Some requests may require verifying your identity.
+    p8: >-
+      Legal documents are provided in English and Portuguese (Brazil). If translations diverge, we aim
+      to keep them consistent; the version stored on registration is defined by the server.

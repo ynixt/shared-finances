@@ -45,6 +45,7 @@ class AccountDeletionScenarioDsl {
             walletEventRepository = walletEventRepository,
             recurrenceEventRepository = recurrenceEventRepository,
             simulationJobService = simulationJobService,
+            sessionRepository = NoOpSessionRepository,
             avatarService = avatarService,
         )
 

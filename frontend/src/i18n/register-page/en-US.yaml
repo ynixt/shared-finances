@@ -1,5 +1,13 @@
 registerPage:
   register: Register
+  consent:
+    termsLabel: I have read and accept the
+    termsLink: Terms of Use
+    privacyLabel: I have read and accept the
+    privacyLink: Privacy Policy
+  gravatar:
+    label: Automatically fetch profile photo from Gravatar (optional)
+    hint: When enabled, we contact Gravatar using your email to try to import an avatar.
   error:
     title: Unable to register
     genericMessage: An error occurred

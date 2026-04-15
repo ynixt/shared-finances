@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.entities
 
 import org.springframework.data.relational.core.mapping.Table
+import java.time.OffsetDateTime
 
 @Table("users")
 class UserEntity(
@@ -16,4 +17,8 @@ class UserEntity(
     var mfaEnabled: Boolean,
     var totpSecret: String?,
     var onboardingDone: Boolean,
+    var termsAcceptedAt: OffsetDateTime? = null,
+    var termsVersion: String? = null,
+    var privacyAcceptedAt: OffsetDateTime? = null,
+    var privacyVersion: String? = null,
 ) : AuditedEntity()

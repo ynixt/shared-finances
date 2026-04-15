@@ -71,6 +71,9 @@ logging:
     io.r2dbc.postgresql.PARAM: ${SF_APP_DEBUG_QUERY_LEVEL:INFO}
 
 app:
+  legal:
+    terms-version: ${SF_APP_LEGAL_TERMS_VERSION:2026-04-14}
+    privacy-version: ${SF_APP_LEGAL_PRIVACY_VERSION:2026-04-14}
   nats:
     url: nats://${SF_APP_NATS_HOST}:${SF_APP_NATS_PORT}
   invitationExpirationMinutes: ${SF_APP_INVITATION_EXPIRATION_MINUTES:15}

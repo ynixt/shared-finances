@@ -8,6 +8,8 @@ apiErrors:
   generic:
     fieldInvalid: "Campo '{{field}}' inválido."
   registration:
+    termsNotAccepted: É necessário aceitar os Termos de Uso para se cadastrar.
+    privacyNotAccepted: É necessário aceitar a Política de Privacidade para se cadastrar.
     emailInvalid: E-mail inválido.
     emailSize: 'E-mail deve possuir entre {{min}} e {{max}} caracteres.'
     emailAlreadyInUse: E-mail já está em uso.

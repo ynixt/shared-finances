@@ -58,6 +58,9 @@ management:
       base-path: /open/actuator
 
 app:
+  legal:
+    terms-version: test-terms-1
+    privacy-version: test-privacy-1
   nats:
     url: mock
   invitationExpirationMinutes: ${SF_APP_INVITATION_EXPIRATION_MINUTES:15}

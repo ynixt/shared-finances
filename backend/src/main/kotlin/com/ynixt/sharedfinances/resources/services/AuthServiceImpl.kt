@@ -214,7 +214,7 @@ class AuthServiceImpl(
             .deleteByIpAndEmail(
                 ip = ip.toString(),
                 email = user.email,
-            ).awaitSingle()
+            ).awaitSingleOrNull()
 
         return sessionRepository
             .save(
@@ -235,14 +235,11 @@ class AuthServiceImpl(
                         ),
                     ).awaitSingle()
 
-                mintAccessToken(user, session.id!!)
-                    .let { access ->
-                        LoginResult(
-                            accessToken = access,
-                            refreshToken = refreshToken,
-                            refreshExpiresInSeconds = refreshTtlSeconds,
-                        )
-                    }
+                LoginResult(
+                    accessToken = mintAccessToken(user, session.id!!),
+                    refreshToken = refreshToken,
+                    refreshExpiresInSeconds = refreshTtlSeconds,
+                )
             }
     }
 

@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.application.web.dto.auth
 
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 
 data class RegisterDto(
@@ -27,4 +29,11 @@ data class RegisterDto(
     @field:NotBlank(message = "apiErrors.generic.fieldInvalid")
     @field:Size(min = 1, max = 255, message = "apiErrors.generic.fieldInvalid")
     val tmz: String,
+    @field:NotNull(message = "apiErrors.registration.termsNotAccepted")
+    @field:AssertTrue(message = "apiErrors.registration.termsNotAccepted")
+    val acceptTerms: Boolean?,
+    @field:NotNull(message = "apiErrors.registration.privacyNotAccepted")
+    @field:AssertTrue(message = "apiErrors.registration.privacyNotAccepted")
+    val acceptPrivacy: Boolean?,
+    val gravatarOptIn: Boolean = false,
 )

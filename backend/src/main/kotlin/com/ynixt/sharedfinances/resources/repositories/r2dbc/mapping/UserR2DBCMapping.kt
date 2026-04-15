@@ -24,7 +24,11 @@ class UserR2DBCMapping {
             $tableAlias.photo_url         AS ${columnPrefix}photo_url,
             $tableAlias.mfa_enabled       AS ${columnPrefix}mfa_enabled,
             $tableAlias.default_currency  AS ${columnPrefix}default_currency,
-            $tableAlias.onboarding_done   AS ${columnPrefix}onboarding_done
+            $tableAlias.onboarding_done   AS ${columnPrefix}onboarding_done,
+            $tableAlias.terms_accepted_at AS ${columnPrefix}terms_accepted_at,
+            $tableAlias.terms_version     AS ${columnPrefix}terms_version,
+            $tableAlias.privacy_accepted_at AS ${columnPrefix}privacy_accepted_at,
+            $tableAlias.privacy_version   AS ${columnPrefix}privacy_version
             """.trimIndent()
 
         fun userFromRow(
@@ -44,6 +48,10 @@ class UserR2DBCMapping {
                 mfaEnabled = row.get("${columnPrefix}mfa_enabled", Boolean::class.java)!!,
                 totpSecret = null,
                 onboardingDone = row.get("${columnPrefix}onboarding_done", Boolean::class.java)!!,
+                termsAcceptedAt = row.get("${columnPrefix}terms_accepted_at", OffsetDateTime::class.java),
+                termsVersion = row.get("${columnPrefix}terms_version", String::class.java),
+                privacyAcceptedAt = row.get("${columnPrefix}privacy_accepted_at", OffsetDateTime::class.java),
+                privacyVersion = row.get("${columnPrefix}privacy_version", String::class.java),
             ).also { u ->
                 u.id = row.get("${columnPrefix}id", UUID::class.java)!!
                 u.createdAt = row.get("${columnPrefix}created_at", OffsetDateTime::class.java)

@@ -85,12 +85,54 @@
           <app-time-zone-selector id="timezoneSelector" formControlName="tmz"></app-time-zone-selector>
         </div>
 
+        <div class="w-full mb-6 space-y-4">
+          <label class="flex items-start gap-3 cursor-pointer text-surface-800 dark:text-surface-100">
+            <input
+              id="acceptTerms"
+              type="checkbox"
+              formControlName="acceptTerms"
+              class="mt-1.5 h-4 w-4 shrink-0 rounded border-surface-300 text-primary focus:ring-primary"
+            />
+            <span class="text-base leading-snug">
+              {{ 'registerPage.consent.termsLabel' | translate }}
+              <a routerLink="/legal/terms" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">{{
+                'registerPage.consent.termsLink' | translate
+              }}</a>
+              <app-required-field-asterisk></app-required-field-asterisk>
+            </span>
+          </label>
+
+          <label class="flex items-start gap-3 cursor-pointer text-surface-800 dark:text-surface-100">
+            <input
+              id="acceptPrivacy"
+              type="checkbox"
+              formControlName="acceptPrivacy"
+              class="mt-1.5 h-4 w-4 shrink-0 rounded border-surface-300 text-primary focus:ring-primary"
+            />
+            <span class="text-base leading-snug">
+              {{ 'registerPage.consent.privacyLabel' | translate }}
+              <a routerLink="/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">{{
+                'registerPage.consent.privacyLink' | translate
+              }}</a>
+              <app-required-field-asterisk></app-required-field-asterisk>
+            </span>
+          </label>
+        </div>
+
+        <div class="w-full mb-8 flex flex-col gap-2">
+          <label for="gravatarOptIn" class="text-surface-900 dark:text-surface-0 font-medium text-lg">
+            {{ 'registerPage.gravatar.label' | translate }}
+          </label>
+          <p-toggleswitch formControlName="gravatarOptIn" inputId="gravatarOptIn" />
+          <p class="text-sm text-surface-600 dark:text-surface-300">{{ 'registerPage.gravatar.hint' | translate }}</p>
+        </div>
+
         <p-button
           [loading]="submitting"
           [disabled]="form.invalid"
           type="submit"
           [label]="'registerPage.register' | translate"
-          styleClass="w-full mt-8"
+          styleClass="w-full mt-8 mb-4"
         ></p-button>
       </form>
     }

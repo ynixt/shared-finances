@@ -34,6 +34,7 @@ import com.ynixt.sharedfinances.resources.services.BankAccountServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardBillPaymentServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardBillServiceImpl
 import com.ynixt.sharedfinances.resources.services.CreditCardServiceImpl
+import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
 import com.ynixt.sharedfinances.resources.services.WalletItemServiceImpl
 import com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardServiceImpl
@@ -165,6 +166,8 @@ internal class ScenarioRuntime(
             passwordEncoder = ScenarioPasswordEncoder(),
             databaseHelperService = NoOpDatabaseHelperService(),
             avatarService = NoOpAvatarService(),
+            legalDocumentProperties = LegalDocumentProperties(),
+            clock = clock,
             accountDeletionService = NoOpAccountDeletionService,
         )
 
