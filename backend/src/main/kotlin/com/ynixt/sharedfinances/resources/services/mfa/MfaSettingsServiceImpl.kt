@@ -15,7 +15,6 @@ import com.ynixt.sharedfinances.domain.services.mfa.MfaSecretCryptoService
 import com.ynixt.sharedfinances.domain.services.mfa.MfaService
 import com.ynixt.sharedfinances.domain.services.mfa.MfaSettingsService
 import com.ynixt.sharedfinances.domain.services.mfa.TotpService
-import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -129,8 +128,8 @@ class MfaSettingsServiceImpl(
                 )
             }
 
-        mfaRecoveryCodeRepository.deleteAllUnusedByUserId(userId).awaitSingle()
-        mfaRecoveryCodeRepository.saveAll(entities).awaitSingle()
+        mfaRecoveryCodeRepository.deleteAllUnusedByUserId(userId).then().awaitSingleOrNull()
+        mfaRecoveryCodeRepository.saveAll(entities).then().awaitSingleOrNull()
 
         return secretWords
     }
