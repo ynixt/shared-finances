@@ -16,6 +16,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
+import java.util.Locale
 import java.util.UUID
 
 class WalletScenarioWhen internal constructor(
@@ -331,6 +332,7 @@ class WalletScenarioWhen internal constructor(
             date = date,
             amount = amount.toBigDecimalSafe(),
             observations = observations,
+            locale = Locale.getDefault(),
         )
     }
 

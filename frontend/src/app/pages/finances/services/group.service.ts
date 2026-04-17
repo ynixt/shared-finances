@@ -15,6 +15,8 @@ import {
   UpdateGroupPlanningSimulatorOptInDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserGroupRole } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { Page, PageRequest } from '../../../models/pagination';
+import { PaginationService } from '../../../services/pagination.service';
 import { UserService } from '../../../services/user.service';
 import { UserMissingError } from '../errors/user-missing.error';
 
@@ -26,6 +28,7 @@ export class GroupService {
     private http: HttpClient,
     private userService: UserService,
     private translateService: TranslateService,
+    private paginationService: PaginationService,
   ) {}
 
   async getAllGroups(): Promise<Array<GroupWithRoleDto>> {
@@ -33,6 +36,18 @@ export class GroupService {
 
     if (user != null) {
       return lastValueFrom(this.http.get<Array<GroupWithRoleDto>>('/api/groups').pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async searchGroups(request?: PageRequest, query?: string): Promise<Page<GroupWithRoleDto>> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(
+        this.paginationService.get<GroupWithRoleDto>('/api/groups/search', request, { query: query?.trim() || undefined }).pipe(take(1)),
+      );
     }
 
     throw new UserMissingError();

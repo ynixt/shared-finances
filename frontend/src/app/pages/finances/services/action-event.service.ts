@@ -1,6 +1,22 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 
-import { EMPTY, Observable, Subject, defer, filter, from, lastValueFrom, map, merge, share, switchMap, take, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  defer,
+  distinctUntilChanged,
+  filter,
+  from,
+  lastValueFrom,
+  map,
+  merge,
+  pairwise,
+  share,
+  switchMap,
+  take,
+  tap,
+} from 'rxjs';
 
 import { createEventSource } from 'eventsource-client';
 
@@ -94,7 +110,7 @@ export abstract class ActionEventService implements OnDestroy {
         }),
       );
 
-      this.resyncRequiredSignal$ = this.sseCoordinator.resyncRequired$;
+      this.resyncRequiredSignal$ = EMPTY;
       return;
     }
 

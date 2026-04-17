@@ -11,6 +11,15 @@ financesPage:
     actions:
       details: Detalhar
       close: Fechar
+    filters:
+      title: Filtros
+      clear: Limpar filtros
+      groups: Grupos
+      members: Membros
+      bankAccounts: Contas bancárias
+      creditCards: Cartões de crédito
+      entryTypes: Tipo de transação
+      noOptions: Sem opções disponíveis
     cards:
       balance: Saldo
       goalCommitted: Comprometimento em metas
@@ -22,7 +31,11 @@ financesPage:
       projectedCashOut: Saída projetada do período
       endOfPeriodBalance: Saldo estimado no fim do período
       endOfPeriodNetCashFlow: Alterações estimadas no fim do período
+      expenses: Despesas
+      projectedExpenses: Despesas projetadas
+      periodExpenses: Despesas do período
     charts:
+      includeProjectedToggle: Incluir projetado
       balance: Saldo (12 meses)
       cashIn: Entrada em caixa (12 meses)
       cashOut: Saída de caixa (12 meses)
@@ -50,3 +63,5 @@ financesPage:
         goal: Meta
         formula: Fórmula
         unknown: Origem desconhecida
+    feed:
+      title: Transações do período

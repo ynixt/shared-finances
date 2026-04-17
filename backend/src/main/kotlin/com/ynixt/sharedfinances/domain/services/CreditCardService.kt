@@ -11,6 +11,7 @@ interface CreditCardService {
     suspend fun findAll(
         userId: UUID,
         pageable: Pageable,
+        query: String? = null,
     ): Page<CreditCard>
 
     suspend fun findOne(

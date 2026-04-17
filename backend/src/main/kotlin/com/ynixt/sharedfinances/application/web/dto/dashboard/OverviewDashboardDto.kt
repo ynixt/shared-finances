@@ -42,10 +42,14 @@ data class OverviewDashboardChartsDto(
 data class OverviewDashboardChartPointDto(
     val month: String,
     val value: BigDecimal,
+    val executedValue: BigDecimal,
+    val projectedValue: BigDecimal,
 )
 
 data class OverviewDashboardPieSliceDto(
     val id: UUID?,
     val label: String,
     val value: BigDecimal,
+    val executedValue: BigDecimal,
+    val projectedValue: BigDecimal,
 )

@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { ONLY_DATE_FORMAT } from '../../../util/date-util';
 import { DateRange } from '../components/wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 
-export type DateQueryParamMode = 'range' | 'single';
+export type DateQueryParamMode = 'normal' | 'day_only';
 
 export const MONTH_QUERY_PARAM_FORMAT = 'MM-YYYY';
 
@@ -16,7 +16,7 @@ export const readDateRangeFromQueryParams = (queryParamMap: Pick<ParamMap, 'get'
     return createMonthDateRange(monthDate, mode);
   }
 
-  if (mode === 'single') {
+  if (mode === 'day_only') {
     return undefined;
   }
 
@@ -35,7 +35,7 @@ export const readDateRangeFromQueryParams = (queryParamMap: Pick<ParamMap, 'get'
 };
 
 export const createMonthDateRange = (referenceDate: dayjs.Dayjs, mode: DateQueryParamMode): DateRange =>
-  mode === 'single'
+  mode === 'day_only'
     ? {
         startDate: referenceDate,
         endDate: referenceDate,
@@ -83,7 +83,7 @@ const buildDateQueryParams = (dateRange: DateRange | undefined, mode: DateQueryP
     };
   }
 
-  if (mode === 'single') {
+  if (mode === 'day_only') {
     return {
       date: dateRange.startDate.format(MONTH_QUERY_PARAM_FORMAT),
       startDate: null,

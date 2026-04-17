@@ -18,10 +18,9 @@ class AuthTransactionalMailMessageComposer(
 ) {
     fun buildEmailConfirmation(
         toAddress: String,
-        userLang: String,
+        locale: Locale,
         rawToken: String,
     ): AuthTransactionalEmailMessage {
-        val locale = MailLocaleResolver.resolve(userLang)
         val link = buildConfirmLink(rawToken)
         val ttlMin = authProperties.emailConfirmation.ttlMinutes
         val window = formatValidityWindow(locale, ttlMin)
@@ -43,10 +42,9 @@ class AuthTransactionalMailMessageComposer(
 
     fun buildPasswordReset(
         toAddress: String,
-        userLang: String,
+        locale: Locale,
         rawToken: String,
     ): AuthTransactionalEmailMessage {
-        val locale = MailLocaleResolver.resolve(userLang)
         val link = buildResetLink(rawToken)
         val ttlMin = authProperties.passwordRecovery.ttlMinutes
         val window = formatValidityWindow(locale, ttlMin)

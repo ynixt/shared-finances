@@ -10,6 +10,7 @@ import com.ynixt.sharedfinances.domain.enums.GoalLedgerMovementKind
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.FinancialGoalForbiddenException
 import com.ynixt.sharedfinances.domain.exceptions.http.FinancialGoalUnsupportedCurrencyException
@@ -425,6 +426,18 @@ class FinancialGoalManagementServiceImplTest {
             minimumEndExecution: LocalDate?,
             maximumNextExecution: LocalDate?,
             groupId: UUID,
+            sort: Sort,
+        ): Flow<RecurrenceEventEntity> = emptyFlow()
+
+        override fun findAllEntries(
+            minimumEndExecution: LocalDate?,
+            maximumNextExecution: LocalDate?,
+            billDate: LocalDate?,
+            walletItemId: UUID?,
+            walletItemIds: Set<UUID>,
+            userIds: Set<UUID>,
+            groupIds: Set<UUID>,
+            entryTypes: Set<WalletEntryType>,
             sort: Sort,
         ): Flow<RecurrenceEventEntity> = emptyFlow()
 

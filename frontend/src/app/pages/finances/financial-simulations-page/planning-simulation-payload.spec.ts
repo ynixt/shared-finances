@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -9,11 +10,26 @@ import {
 
 describe('planning-simulation-payload helpers', () => {
   it('builds default debt form for month start', () => {
-    const debt = defaultPlanningDebtForm(new Date('2026-04-13T10:00:00Z'));
+    const debt = defaultPlanningDebtForm(
+      {
+        id: 'user-1',
+        firstName: 'Test',
+        lastName: 'User',
+        email: 'test@example.com',
+        lang: 'pt-BR',
+        tmz: 'America/Sao_Paulo',
+        defaultCurrency: 'BRL',
+        emailVerified: true,
+        mfaEnabled: false,
+        onboardingDone: true,
+        photoUrl: null,
+      },
+      dayjs('2026-04-13T10:00:00Z'),
+    );
 
-    expect(debt.firstPaymentDate).toBe('2026-04-01');
+    expect(debt.firstPaymentDate.format('YYYY-MM-DD')).toBe('2026-04-13');
     expect(debt.installments).toBe(1);
-    expect(debt.currency).toBe('');
+    expect(debt.currency).toBe('BRL');
   });
 
   it('normalizes horizon months to supported limits', () => {
@@ -29,14 +45,14 @@ describe('planning-simulation-payload helpers', () => {
         {
           amount: 1200,
           installments: 12,
-          firstPaymentDate: '2026-05-01',
+          firstPaymentDate: dayjs('2026-05-01'),
           currency: 'brl',
         },
       ],
       pendingDebt: {
         amount: 300,
         installments: 3,
-        firstPaymentDate: '2026-06-01',
+        firstPaymentDate: dayjs('2026-06-01'),
         currency: '',
       },
     });

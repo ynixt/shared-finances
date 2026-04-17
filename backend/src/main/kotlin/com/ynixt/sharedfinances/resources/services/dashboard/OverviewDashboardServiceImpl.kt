@@ -1,45 +1,24 @@
 package com.ynixt.sharedfinances.resources.services.dashboard
 
-import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
-import com.ynixt.sharedfinances.domain.models.WalletItem
-import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
-import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboard
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardChartPoint
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCharts
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetail
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
-import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardPieSlice
-import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRepository
-import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
-import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
-import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.dashboard.OverviewDashboardService
-import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
-import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
-import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
-import kotlinx.coroutines.reactor.awaitSingle
-import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
 
 @Service
-class OverviewDashboardServiceImpl(
-    private val walletItemRepository: WalletItemRepository,
-    private val walletItemMapper: WalletItemMapper,
-    private val walletEntryRepository: WalletEntryRepository,
-    private val recurrenceSimulationService: RecurrenceSimulationService,
-    private val creditCardBillService: CreditCardBillService,
-    private val exchangeRateService: ExchangeRateService,
-    private val goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository,
+internal class OverviewDashboardServiceImpl(
+    private val dataService: OverviewDashboardDataServiceImpl,
+    private val balanceService: OverviewDashboardBalanceServiceImpl,
+    private val contributionService: OverviewDashboardContributionServiceImpl,
+    private val goalService: OverviewDashboardGoalServiceImpl,
+    private val assemblyService: OverviewDashboardAssemblyServiceImpl,
+    private val cardService: OverviewDashboardCardServiceImpl,
+    private val chartService: OverviewDashboardChartServiceImpl,
     private val clock: Clock,
 ) : OverviewDashboardService {
     override suspend fun getOverview(
@@ -47,1142 +26,225 @@ class OverviewDashboardServiceImpl(
         defaultCurrency: String,
         selectedMonth: YearMonth,
     ): OverviewDashboard {
-        val normalizedTargetCurrency = defaultCurrency.uppercase()
+        val targetCurrency = defaultCurrency.uppercase()
         val today = LocalDate.now(clock)
         val currentMonth = YearMonth.from(today)
         val selectedMonthStart = selectedMonth.atDay(1)
         val selectedMonthEnd = selectedMonth.atEndOfMonth()
-        val chartStartMonth = selectedMonth.minusMonths(11)
-        val chartMonths = buildMonthRange(chartStartMonth, selectedMonth)
-
-        val visibleWalletItems =
-            walletItemRepository
-                .findAllByUserIdAndEnabled(
-                    userId = userId,
-                    enabled = true,
-                    pageable = Pageable.unpaged(),
-                ).map(walletItemMapper::toModel)
-                .collectList()
-                .awaitSingle()
-                .filter(WalletItem::showOnDashboard)
-
-        val visibleBankAccounts = visibleWalletItems.filterIsInstance<BankAccount>()
-        val visibleCreditCards = visibleWalletItems.filterIsInstance<CreditCard>()
-        val bankAccountById = visibleBankAccounts.associateBy { it.id!! }
-        val bankAccountIds = bankAccountById.keys
+        val chartMonths = buildMonthRange(selectedMonth.minusMonths(11), selectedMonth)
         val maximumExecutedDate = minOf(today, selectedMonthEnd)
 
+        val visibleItems = dataService.loadVisibleItems(userId)
         val executedByMonthByBankId =
-            fetchExecutedByMonthByBank(
+            dataService.fetchExecutedByMonthByBank(
                 userId = userId,
-                minimumDate = chartStartMonth.atDay(1),
+                minimumDate = chartMonths.first().atDay(1),
                 maximumDate = maximumExecutedDate,
             )
-
         val projectedByMonthByBankId =
-            fetchProjectedByMonthByBank(
+            dataService.fetchProjectedByMonthByBank(
                 userId = userId,
                 minimumDate = today.plusDays(1),
                 maximumDate = selectedMonthEnd,
-                visibleBankAccountIds = bankAccountIds,
+                visibleBankAccountIds = visibleItems.bankAccountIds,
             )
-
-        val projectedCreditCardDetails =
-            fetchProjectedCreditCardCashOut(
+        val projectedCreditCardDetailsByMonth =
+            dataService.fetchProjectedCreditCardCashOutByMonth(
                 userId = userId,
+                minimumMonth = currentMonth,
+                maximumMonth = selectedMonth,
+                creditCards = visibleItems.creditCards,
+            )
+        val projectedExpenseContributions =
+            dataService.fetchProjectedExpenseContributions(
+                userId = userId,
+                minimumDate = maxOf(today.plusDays(1), chartMonths.first().atDay(1)),
+                maximumDate = selectedMonthEnd,
                 selectedMonth = selectedMonth,
-                creditCards = visibleCreditCards,
+                visibleWalletItemIds = visibleItems.walletItemIds,
             )
-
-        val rawExpenseChartContributions =
-            fetchExecutedExpenseByMonth(
+        val projectedCashBreakdownContributions =
+            dataService.fetchProjectedCashBreakdownContributions(
                 userId = userId,
-                minimumDate = chartStartMonth.atDay(1),
+                minimumDate = maxOf(today.plusDays(1), selectedMonthStart),
+                maximumDate = selectedMonthEnd,
+                selectedMonth = selectedMonth,
+                visibleBankAccountIds = visibleItems.bankAccountIds,
+            )
+        val executedExpenseSourceSummaries =
+            dataService.fetchExecutedExpenseBySource(
+                userId = userId,
+                minimumDate = selectedMonthStart,
                 maximumDate = maximumExecutedDate,
-            ).map { summary ->
-                RawChartContribution(
-                    chartSeries = ChartSeries.EXPENSE,
-                    month = summary.month,
-                    value = summary.expense,
-                    currency = summary.currency,
-                    referenceDate = summary.month.atEndOfMonth(),
-                )
-            }
-
+            )
+        val rawExpenseChartContributions =
+            dataService.fetchExecutedExpenseChartContributions(
+                userId = userId,
+                minimumDate = chartMonths.first().atDay(1),
+                maximumDate = maximumExecutedDate,
+            ) + projectedExpenseContributions.chartContributions
         val rawBreakdownContributions =
-            walletEntryRepository
-                .summarizeOverviewCashBreakdown(
+            dataService.fetchExecutedCashBreakdownContributions(
+                userId = userId,
+                minimumDate = selectedMonthStart,
+                maximumDate = selectedMonthEnd,
+                referenceDate = selectedMonthEnd,
+            ) +
+                projectedCashBreakdownContributions +
+                dataService.fetchExecutedExpenseBreakdownContributions(
                     userId = userId,
                     minimumDate = selectedMonthStart,
                     maximumDate = selectedMonthEnd,
-                ).collectList()
-                .awaitSingle()
-                .map { summary ->
-                    RawBreakdownContribution(
-                        breakdownType =
-                            when (summary.direction) {
-                                OverviewCashDirection.IN -> BreakdownType.CASH_IN_CATEGORY
-                                OverviewCashDirection.OUT -> BreakdownType.CASH_OUT_CATEGORY
-                            },
-                        sliceId = summary.categoryId,
-                        label = summary.categoryName ?: PREDEFINED_UNCATEGORIZED_LABEL,
-                        value = summary.amount,
-                        currency = summary.currency,
-                        referenceDate = selectedMonthEnd,
-                    )
-                } +
-                walletEntryRepository
-                    .summarizeOverviewExpenseBreakdown(
-                        userId = userId,
-                        minimumDate = selectedMonthStart,
-                        maximumDate = selectedMonthEnd,
-                    ).collectList()
-                    .awaitSingle()
-                    .flatMap { summary ->
-                        listOf(
-                            RawBreakdownContribution(
-                                breakdownType = BreakdownType.EXPENSE_GROUP,
-                                sliceId = summary.groupId,
-                                label = summary.groupName ?: PREDEFINED_INDIVIDUAL_LABEL,
-                                value = summary.expense,
-                                currency = summary.currency,
-                                referenceDate = selectedMonthEnd,
-                            ),
-                            RawBreakdownContribution(
-                                breakdownType = BreakdownType.EXPENSE_CATEGORY,
-                                sliceId = summary.categoryId,
-                                label = summary.categoryName ?: PREDEFINED_UNCATEGORIZED_LABEL,
-                                value = summary.expense,
-                                currency = summary.currency,
-                                referenceDate = selectedMonthEnd,
-                            ),
-                        )
-                    }
-
-        val rawDetailByCardKey = linkedMapOf<OverviewDashboardCardKey, MutableList<RawDetail>>()
-
-        fun addRawDetail(
-            cardKey: OverviewDashboardCardKey,
-            detail: RawDetail,
-        ) {
-            rawDetailByCardKey.getOrPut(cardKey) { mutableListOf() }.add(detail)
-        }
-
-        visibleBankAccounts.forEach { bankAccount ->
-            val bankId = bankAccount.id!!
-            val selectedMonthBalance =
-                calculateBalanceForMonth(
-                    bankAccount = bankAccount,
-                    month = selectedMonth,
-                    currentMonth = currentMonth,
-                    executedByMonthByBankId = executedByMonthByBankId,
-                    projectedByMonthByBankId = projectedByMonthByBankId,
-                )
-            val selectedMonthBalanceReferenceDate = balanceReferenceDateForMonth(selectedMonth, currentMonth, today)
-
-            val selectedExecuted = executedByMonthByBankId.getMonthAmount(selectedMonth, bankId)
-            val selectedProjected = projectedByMonthByBankId.getMonthAmount(selectedMonth, bankId)
-
-            addRawDetail(
-                OverviewDashboardCardKey.BALANCE,
-                RawDetail(
-                    sourceId = bankId,
-                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                    label = bankAccount.name,
-                    value = selectedMonthBalance,
-                    currency = bankAccount.currency,
-                    referenceDate = selectedMonthBalanceReferenceDate,
-                ),
-            )
-
-            addRawDetail(
-                OverviewDashboardCardKey.PERIOD_CASH_IN,
-                RawDetail(
-                    sourceId = bankId,
-                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                    label = bankAccount.name,
-                    value = selectedExecuted.cashIn,
-                    currency = bankAccount.currency,
                     referenceDate = selectedMonthEnd,
-                ),
+                ) +
+                projectedExpenseContributions.breakdownContributions
+
+        val rawDetailByCardKey =
+            contributionService.buildRawDetailByCardKey(
+                selectedMonth = selectedMonth,
+                selectedMonthEnd = selectedMonthEnd,
+                currentMonth = currentMonth,
+                today = today,
+                visibleBankAccounts = visibleItems.bankAccounts,
+                executedByMonthByBankId = executedByMonthByBankId,
+                projectedByMonthByBankId = projectedByMonthByBankId,
+                projectedCreditCardDetails = projectedCreditCardDetailsByMonth[selectedMonth].orEmpty(),
+                executedExpenseSourceSummaries = executedExpenseSourceSummaries,
+                projectedExpenseDetails = projectedExpenseContributions.selectedMonthDetails,
+            )
+        val rawChartContributions =
+            contributionService.buildRawChartContributions(
+                chartMonths = chartMonths,
+                currentMonth = currentMonth,
+                today = today,
+                visibleBankAccounts = visibleItems.bankAccounts,
+                executedByMonthByBankId = executedByMonthByBankId,
+                projectedByMonthByBankId = projectedByMonthByBankId,
+                projectedCreditCardDetailsByMonth = projectedCreditCardDetailsByMonth,
+                rawExpenseChartContributions = rawExpenseChartContributions,
             )
 
-            addRawDetail(
-                OverviewDashboardCardKey.PERIOD_CASH_OUT,
-                RawDetail(
-                    sourceId = bankId,
-                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                    label = bankAccount.name,
-                    value = selectedExecuted.cashOut,
-                    currency = bankAccount.currency,
-                    referenceDate = selectedMonthEnd,
-                ),
-            )
-
-            addRawDetail(
-                OverviewDashboardCardKey.PROJECTED_CASH_IN,
-                RawDetail(
-                    sourceId = bankId,
-                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                    label = bankAccount.name,
-                    value = selectedProjected.cashIn,
-                    currency = bankAccount.currency,
-                    referenceDate = selectedMonthEnd,
-                ),
-            )
-
-            addRawDetail(
-                OverviewDashboardCardKey.PROJECTED_CASH_OUT,
-                RawDetail(
-                    sourceId = bankId,
-                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                    label = bankAccount.name,
-                    value = selectedProjected.cashOut,
-                    currency = bankAccount.currency,
-                    referenceDate = selectedMonthEnd,
-                ),
-            )
-        }
-
-        projectedCreditCardDetails.forEach { creditCardProjected ->
-            addRawDetail(
-                OverviewDashboardCardKey.PROJECTED_CASH_OUT,
-                RawDetail(
-                    sourceId = creditCardProjected.creditCardId,
-                    sourceType = OverviewDashboardDetailSourceType.CREDIT_CARD_BILL,
-                    label = creditCardProjected.creditCardName,
-                    value = creditCardProjected.projectedExpense,
-                    currency = creditCardProjected.currency,
-                    referenceDate = selectedMonthEnd,
-                ),
-            )
-        }
-
-        val rawChartContributions = mutableListOf<RawChartContribution>()
-        chartMonths.forEach { month ->
-            val monthEnd = month.atEndOfMonth()
-
-            visibleBankAccounts.forEach { bankAccount ->
-                val bankId = bankAccount.id!!
-                val executed = executedByMonthByBankId.getMonthAmount(month, bankId)
-                val balance =
-                    calculateBalanceForMonth(
-                        bankAccount = bankAccount,
-                        month = month,
-                        currentMonth = currentMonth,
-                        executedByMonthByBankId = executedByMonthByBankId,
-                        projectedByMonthByBankId = projectedByMonthByBankId,
-                    )
-                val balanceReferenceDate = balanceReferenceDateForMonth(month, currentMonth, today)
-
-                rawChartContributions.add(
-                    RawChartContribution(
-                        chartSeries = ChartSeries.BALANCE,
-                        month = month,
-                        value = balance,
-                        currency = bankAccount.currency,
-                        referenceDate = balanceReferenceDate,
-                    ),
-                )
-
-                rawChartContributions.add(
-                    RawChartContribution(
-                        chartSeries = ChartSeries.CASH_IN,
-                        month = month,
-                        value = executed.cashIn,
-                        currency = bankAccount.currency,
-                        referenceDate = monthEnd,
-                    ),
-                )
-
-                rawChartContributions.add(
-                    RawChartContribution(
-                        chartSeries = ChartSeries.CASH_OUT,
-                        month = month,
-                        value = executed.cashOut,
-                        currency = bankAccount.currency,
-                        referenceDate = monthEnd,
-                    ),
-                )
-            }
-        }
-        rawChartContributions.addAll(rawExpenseChartContributions)
-
-        val goalCommitmentReferenceDate = balanceReferenceDateForMonth(selectedMonth, currentMonth, today)
+        val goalCommitmentReferenceDate = balanceService.balanceReferenceDateForMonth(selectedMonth, currentMonth, today)
         val rawGoalCommittedDetails =
-            goalLedgerSummaryRepository
-                .summarizeCommittedByUserGoalsDetailed(userId)
-                .collectList()
-                .awaitSingle()
-                .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
-                .map { committed ->
-                    RawDetail(
-                        sourceId = committed.goalId,
-                        sourceType = OverviewDashboardDetailSourceType.GOAL,
-                        label = committed.goalName,
-                        value = committed.committed.asMoney(),
-                        currency = committed.currency,
-                        referenceDate = goalCommitmentReferenceDate,
-                        walletItemId = committed.walletItemId,
-                    )
-                }
+            goalService.loadCommittedRawDetails(
+                userId = userId,
+                bankAccountIds = visibleItems.bankAccountIds,
+                referenceDate = goalCommitmentReferenceDate,
+            )
         val rawBalanceByBankId =
-            rawDetailByCardKey[OverviewDashboardCardKey.BALANCE]
-                .orEmpty()
-                .mapNotNull { detail ->
-                    val sourceId = detail.sourceId
-                    if (sourceId == null || detail.sourceType != OverviewDashboardDetailSourceType.BANK_ACCOUNT) {
-                        null
-                    } else {
-                        sourceId to detail.value.asMoney()
-                    }
-                }.toMap()
+            contributionService.buildRawBalanceByBankId(
+                rawDetailByCardKey[OverviewDashboardCardKey.BALANCE].orEmpty(),
+            )
         val hasAccountOverCommittedBalance =
-            goalLedgerSummaryRepository
-                .summarizeCommittedByUserGoals(userId)
-                .collectList()
-                .awaitSingle()
-                .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
-                .any { committed ->
-                    val bankAccount = bankAccountById[committed.walletItemId] ?: return@any false
-                    if (!committed.currency.equals(bankAccount.currency, ignoreCase = true)) {
-                        return@any false
-                    }
-                    val balance = rawBalanceByBankId[committed.walletItemId] ?: BigDecimal.ZERO
-                    committed.committed.asMoney().compareTo(balance) > 0
-                }
-
-        val rawValues = mutableListOf<RawValue>()
-        rawDetailByCardKey.values.flatten().forEach { rawDetail ->
-            rawValues.add(
-                RawValue(
-                    key = rawDetail.key,
-                    value = rawDetail.value,
-                    currency = rawDetail.currency,
-                    referenceDate = rawDetail.referenceDate,
-                ),
+            goalService.hasAccountOverCommittedBalance(
+                userId = userId,
+                bankAccountIds = visibleItems.bankAccountIds,
+                bankAccountById = visibleItems.bankAccountById,
+                rawBalanceByBankId = rawBalanceByBankId,
             )
-        }
-        rawChartContributions.forEach { rawChartContribution ->
-            rawValues.add(
-                RawValue(
-                    key = rawChartContribution.key,
-                    value = rawChartContribution.value,
-                    currency = rawChartContribution.currency,
-                    referenceDate = rawChartContribution.referenceDate,
-                ),
-            )
-        }
-        rawGoalCommittedDetails.forEach { rawDetail ->
-            rawValues.add(
-                RawValue(
-                    key = rawDetail.key,
-                    value = rawDetail.value,
-                    currency = rawDetail.currency,
-                    referenceDate = rawDetail.referenceDate,
-                ),
-            )
-        }
-        rawBreakdownContributions.forEach { rawBreakdownContribution ->
-            rawValues.add(
-                RawValue(
-                    key = rawBreakdownContribution.key,
-                    value = rawBreakdownContribution.value,
-                    currency = rawBreakdownContribution.currency,
-                    referenceDate = rawBreakdownContribution.referenceDate,
-                ),
-            )
-        }
 
-        val convertedValueByKey = convertRawValues(rawValues, normalizedTargetCurrency)
+        val convertedValueByKey =
+            assemblyService.convertRawValues(
+                rawValues =
+                    contributionService.collectRawValues(
+                        rawDetailByCardKey = rawDetailByCardKey,
+                        rawChartContributions = rawChartContributions,
+                        rawGoalCommittedDetails = rawGoalCommittedDetails,
+                        rawBreakdownContributions = rawBreakdownContributions,
+                    ),
+                targetCurrency = targetCurrency,
+            )
+        val convertedDetailByCardKey = assemblyService.buildConvertedDetails(rawDetailByCardKey, convertedValueByKey)
 
-        val convertedDetailByCardKey =
-            rawDetailByCardKey.mapValues { (_, details) ->
-                details.map { detail ->
-                    OverviewDashboardDetail(
-                        sourceId = detail.sourceId,
-                        sourceType = detail.sourceType,
-                        label = detail.label,
-                        value = convertedValueByKey.getOrDefault(detail.key, BigDecimal.ZERO).asMoney(),
-                    )
-                }
-            }
-
-        val balanceTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE])
+        val balanceTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE])
         val goalCommittedTotal =
             rawGoalCommittedDetails
-                .fold(BigDecimal.ZERO) { acc, raw ->
-                    acc.add(convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO))
-                }.asMoney()
+                .fold(BigDecimal.ZERO) { acc, raw -> acc.add(convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO)) }
+                .asMoney()
         val goalCommittedDetails =
-            buildGoalCommittedDetailsByWallet(
+            goalService.buildGoalCommittedDetailsByWallet(
                 rawGoalCommittedDetails = rawGoalCommittedDetails,
                 convertedValueByKey = convertedValueByKey,
-                visibleBankAccounts = visibleBankAccounts,
+                visibleBankAccounts = visibleItems.bankAccounts,
                 rawBalanceByBankId = rawBalanceByBankId,
             )
         val freeBalanceTotal = balanceTotal.subtract(goalCommittedTotal).asMoney()
-        val goalOverCommittedWarning = goalCommittedTotal.compareTo(balanceTotal) > 0 || hasAccountOverCommittedBalance
         val freeBalanceDetails =
-            buildFreeBalanceDetailsByWallet(
+            goalService.buildFreeBalanceDetailsByWallet(
                 balanceTotal = balanceTotal,
                 balanceDetails = convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE].orEmpty(),
                 rawGoalCommittedDetails = rawGoalCommittedDetails,
                 convertedValueByKey = convertedValueByKey,
-                visibleBankAccounts = visibleBankAccounts,
+                visibleBankAccounts = visibleItems.bankAccounts,
                 rawBalanceByBankId = rawBalanceByBankId,
             )
+        val goalOverCommittedWarning = goalCommittedTotal.compareTo(balanceTotal) > 0 || hasAccountOverCommittedBalance
 
-        val periodCashInTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN])
-        val periodCashOutTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT])
-        val projectedCashInTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_IN])
-        val projectedCashOutTotal = sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_OUT])
+        val periodCashInTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN])
+        val periodCashOutTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT])
+        val projectedCashInTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_IN])
+        val projectedCashOutTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_OUT])
+        val expensesTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.EXPENSES])
+        val projectedExpensesTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_EXPENSES])
+        val periodExpensesTotal = (expensesTotal + projectedExpensesTotal).asMoney()
 
         val periodNetCashFlowTotal = (periodCashInTotal - periodCashOutTotal).asMoney()
         val projectedNetCashFlowTotal = (projectedCashInTotal - projectedCashOutTotal).asMoney()
         val endOfPeriodBalanceTotal = (balanceTotal + projectedNetCashFlowTotal).asMoney()
         val endOfPeriodNetCashFlowTotal = (endOfPeriodBalanceTotal - balanceTotal).asMoney()
 
-        val periodNetCashFlowDetails =
-            listOf(
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.periodCashIn",
-                    value = periodCashInTotal,
-                ),
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.periodCashOut",
-                    value = periodCashOutTotal.negate().asMoney(),
-                ),
-            )
-
-        val endOfPeriodBalanceDetails =
-            listOf(
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.balance",
-                    value = balanceTotal,
-                ),
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.projectedCashIn",
-                    value = projectedCashInTotal,
-                ),
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.projectedCashOut",
-                    value = projectedCashOutTotal.negate().asMoney(),
-                ),
-            )
-
-        val endOfPeriodNetCashFlowDetails =
-            listOf(
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.endOfPeriodBalance",
-                    value = endOfPeriodBalanceTotal,
-                ),
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.balance",
-                    value = balanceTotal.negate().asMoney(),
-                ),
-            )
-
-        val chartValueBySeriesAndMonth = linkedMapOf<Pair<ChartSeries, YearMonth>, BigDecimal>()
-        rawChartContributions.forEach { rawChartContribution ->
-            val key = rawChartContribution.chartSeries to rawChartContribution.month
-            chartValueBySeriesAndMonth[key] =
-                chartValueBySeriesAndMonth
-                    .getOrDefault(key, BigDecimal.ZERO)
-                    .add(convertedValueByKey.getOrDefault(rawChartContribution.key, BigDecimal.ZERO))
-        }
-
-        val breakdownValueByKey = linkedMapOf<BreakdownSliceKey, BigDecimal>()
-        rawBreakdownContributions.forEach { rawBreakdownContribution ->
-            val key =
-                BreakdownSliceKey(
-                    breakdownType = rawBreakdownContribution.breakdownType,
-                    sliceId = rawBreakdownContribution.sliceId,
-                    label = rawBreakdownContribution.label,
-                )
-            breakdownValueByKey[key] =
-                breakdownValueByKey
-                    .getOrDefault(key, BigDecimal.ZERO)
-                    .add(convertedValueByKey.getOrDefault(rawBreakdownContribution.key, BigDecimal.ZERO))
-        }
+        val chartValuesBySeriesAndMonth = chartService.accumulateChartValues(rawChartContributions, convertedValueByKey)
+        val breakdownValueByKey = chartService.accumulateBreakdownValues(rawBreakdownContributions, convertedValueByKey)
 
         val expenseByGroup =
-            buildPieSlices(
-                slices =
-                    breakdownValueByKey.entries
-                        .filter { it.key.breakdownType == BreakdownType.EXPENSE_GROUP }
-                        .map { (key, value) ->
-                            OverviewDashboardPieSlice(
-                                id = key.sliceId,
-                                label = key.label,
-                                value = value.asMoney(),
-                            )
-                        },
+            chartService.buildPieSlices(
+                breakdownValueByKey = breakdownValueByKey,
+                breakdownType = BreakdownType.EXPENSE_GROUP,
                 alwaysIncludeLabel = PREDEFINED_INDIVIDUAL_LABEL,
             )
         val expenseByCategory =
-            buildPieSlices(
-                slices =
-                    breakdownValueByKey.entries
-                        .filter { it.key.breakdownType == BreakdownType.EXPENSE_CATEGORY }
-                        .map { (key, value) ->
-                            OverviewDashboardPieSlice(
-                                id = key.sliceId,
-                                label = key.label,
-                                value = value.asMoney(),
-                            )
-                        },
+            chartService.buildPieSlices(
+                breakdownValueByKey = breakdownValueByKey,
+                breakdownType = BreakdownType.EXPENSE_CATEGORY,
                 alwaysIncludeLabel = PREDEFINED_UNCATEGORIZED_LABEL,
             )
-        val cashInByCategory =
-            buildPieSlices(
-                slices =
-                    breakdownValueByKey.entries
-                        .filter { it.key.breakdownType == BreakdownType.CASH_IN_CATEGORY }
-                        .map { (key, value) ->
-                            OverviewDashboardPieSlice(
-                                id = key.sliceId,
-                                label = key.label,
-                                value = value.asMoney(),
-                            )
-                        },
-            )
-        val cashOutByCategory =
-            buildPieSlices(
-                slices =
-                    breakdownValueByKey.entries
-                        .filter { it.key.breakdownType == BreakdownType.CASH_OUT_CATEGORY }
-                        .map { (key, value) ->
-                            OverviewDashboardPieSlice(
-                                id = key.sliceId,
-                                label = key.label,
-                                value = value.asMoney(),
-                            )
-                        },
-            )
-
-        val cards =
-            listOf(
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.BALANCE,
-                    value = balanceTotal,
-                    details = convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE].orEmpty(),
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.GOAL_FREE_BALANCE,
-                    value = freeBalanceTotal,
-                    details = freeBalanceDetails,
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.GOAL_COMMITTED,
-                    value = goalCommittedTotal,
-                    details = goalCommittedDetails,
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.PERIOD_CASH_IN,
-                    value = periodCashInTotal,
-                    details = convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN].orEmpty(),
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.PERIOD_CASH_OUT,
-                    value = periodCashOutTotal,
-                    details = convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT].orEmpty(),
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.PERIOD_NET_CASH_FLOW,
-                    value = periodNetCashFlowTotal,
-                    details = periodNetCashFlowDetails,
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.PROJECTED_CASH_IN,
-                    value = projectedCashInTotal,
-                    details = convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_IN].orEmpty(),
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.PROJECTED_CASH_OUT,
-                    value = projectedCashOutTotal,
-                    details = convertedDetailByCardKey[OverviewDashboardCardKey.PROJECTED_CASH_OUT].orEmpty(),
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.END_OF_PERIOD_NET_CASH_FLOW,
-                    value = endOfPeriodNetCashFlowTotal,
-                    details = endOfPeriodNetCashFlowDetails,
-                ),
-                OverviewDashboardCard(
-                    key = OverviewDashboardCardKey.END_OF_PERIOD_BALANCE,
-                    value = endOfPeriodBalanceTotal,
-                    details = endOfPeriodBalanceDetails,
-                ),
-            )
-
-        val charts =
-            OverviewDashboardCharts(
-                balance =
-                    chartMonths.map { month ->
-                        OverviewDashboardChartPoint(
-                            month = month,
-                            value = chartValueBySeriesAndMonth.getOrDefault(ChartSeries.BALANCE to month, BigDecimal.ZERO).asMoney(),
-                        )
-                    },
-                cashIn =
-                    chartMonths.map { month ->
-                        OverviewDashboardChartPoint(
-                            month = month,
-                            value = chartValueBySeriesAndMonth.getOrDefault(ChartSeries.CASH_IN to month, BigDecimal.ZERO).asMoney(),
-                        )
-                    },
-                cashOut =
-                    chartMonths.map { month ->
-                        OverviewDashboardChartPoint(
-                            month = month,
-                            value = chartValueBySeriesAndMonth.getOrDefault(ChartSeries.CASH_OUT to month, BigDecimal.ZERO).asMoney(),
-                        )
-                    },
-                expense =
-                    chartMonths.map { month ->
-                        OverviewDashboardChartPoint(
-                            month = month,
-                            value = chartValueBySeriesAndMonth.getOrDefault(ChartSeries.EXPENSE to month, BigDecimal.ZERO).asMoney(),
-                        )
-                    },
-                cashInByCategory = cashInByCategory,
-                cashOutByCategory = cashOutByCategory,
-                expenseByGroup = expenseByGroup,
-                expenseByCategory = expenseByCategory,
-            )
+        val cashInByCategory = chartService.buildPieSlices(breakdownValueByKey, BreakdownType.CASH_IN_CATEGORY)
+        val cashOutByCategory = chartService.buildPieSlices(breakdownValueByKey, BreakdownType.CASH_OUT_CATEGORY)
 
         return OverviewDashboard(
             selectedMonth = selectedMonth,
-            currency = normalizedTargetCurrency,
-            cards = cards,
-            charts = charts,
+            currency = targetCurrency,
+            cards =
+                cardService.buildCards(
+                    convertedDetailByCardKey = convertedDetailByCardKey,
+                    balanceTotal = balanceTotal,
+                    goalCommittedTotal = goalCommittedTotal,
+                    goalCommittedDetails = goalCommittedDetails,
+                    freeBalanceTotal = freeBalanceTotal,
+                    freeBalanceDetails = freeBalanceDetails,
+                    periodCashInTotal = periodCashInTotal,
+                    periodCashOutTotal = periodCashOutTotal,
+                    periodNetCashFlowTotal = periodNetCashFlowTotal,
+                    projectedCashInTotal = projectedCashInTotal,
+                    projectedCashOutTotal = projectedCashOutTotal,
+                    endOfPeriodNetCashFlowTotal = endOfPeriodNetCashFlowTotal,
+                    expensesTotal = expensesTotal,
+                    projectedExpensesTotal = projectedExpensesTotal,
+                    periodExpensesTotal = periodExpensesTotal,
+                    endOfPeriodBalanceTotal = endOfPeriodBalanceTotal,
+                ),
+            charts =
+                chartService.buildCharts(
+                    chartMonths = chartMonths,
+                    chartValuesBySeriesAndMonth = chartValuesBySeriesAndMonth,
+                    cashInByCategory = cashInByCategory,
+                    cashOutByCategory = cashOutByCategory,
+                    expenseByGroup = expenseByGroup,
+                    expenseByCategory = expenseByCategory,
+                ),
             goalCommittedTotal = goalCommittedTotal,
             freeBalanceTotal = freeBalanceTotal,
             goalOverCommittedWarning = goalOverCommittedWarning,
         )
-    }
-
-    private suspend fun fetchExecutedByMonthByBank(
-        userId: UUID,
-        minimumDate: LocalDate,
-        maximumDate: LocalDate,
-    ): Map<YearMonth, Map<UUID, MonthlyAmount>> {
-        if (minimumDate.isAfter(maximumDate)) {
-            return emptyMap()
-        }
-
-        val map = mutableMapOf<YearMonth, MutableMap<UUID, MonthlyAmount>>()
-
-        walletEntryRepository
-            .summarizeBankAccountsByMonth(
-                userId = userId,
-                minimumDate = minimumDate,
-                maximumDate = maximumDate,
-            ).collectList()
-            .awaitSingle()
-            .forEach { summary ->
-                val byWallet = map.getOrPut(summary.month) { mutableMapOf() }
-                val current = byWallet.getOrDefault(summary.walletItemId, MonthlyAmount.ZERO)
-                byWallet[summary.walletItemId] =
-                    current +
-                    MonthlyAmount(
-                        net = summary.net,
-                        cashIn = summary.cashIn,
-                        cashOut = summary.cashOut,
-                    )
-            }
-
-        return map
-    }
-
-    private suspend fun fetchExecutedExpenseByMonth(
-        userId: UUID,
-        minimumDate: LocalDate,
-        maximumDate: LocalDate,
-    ) = if (minimumDate.isAfter(maximumDate)) {
-        emptyList()
-    } else {
-        walletEntryRepository
-            .summarizeOverviewExpenseByMonth(
-                userId = userId,
-                minimumDate = minimumDate,
-                maximumDate = maximumDate,
-            ).collectList()
-            .awaitSingle()
-    }
-
-    private suspend fun fetchProjectedByMonthByBank(
-        userId: UUID,
-        minimumDate: LocalDate,
-        maximumDate: LocalDate,
-        visibleBankAccountIds: Set<UUID>,
-    ): Map<YearMonth, Map<UUID, MonthlyAmount>> {
-        if (minimumDate.isAfter(maximumDate) || visibleBankAccountIds.isEmpty()) {
-            return emptyMap()
-        }
-
-        val map = mutableMapOf<YearMonth, MutableMap<UUID, MonthlyAmount>>()
-
-        recurrenceSimulationService
-            .simulateGeneration(
-                minimumEndExecution = minimumDate,
-                maximumNextExecution = maximumDate,
-                userId = userId,
-                groupId = null,
-                walletItemId = null,
-                billDate = null,
-            ).forEach { simulated ->
-                val month = YearMonth.from(simulated.date)
-                val byWallet = map.getOrPut(month) { mutableMapOf() }
-                val isInternalBankTransfer =
-                    simulated.type == com.ynixt.sharedfinances.domain.enums.WalletEntryType.TRANSFER &&
-                        simulated.entries.size == 2 &&
-                        simulated.entries.all { entry ->
-                            entry.walletItem.type == com.ynixt.sharedfinances.domain.enums.WalletItemType.BANK_ACCOUNT &&
-                                entry.walletItem.userId == userId
-                        }
-
-                simulated.entries.forEach { entry ->
-                    if (!visibleBankAccountIds.contains(entry.walletItemId)) {
-                        return@forEach
-                    }
-
-                    val value = entry.value
-                    val current = byWallet.getOrDefault(entry.walletItemId, MonthlyAmount.ZERO)
-                    byWallet[entry.walletItemId] =
-                        current +
-                        MonthlyAmount(
-                            net = value,
-                            cashIn = if (value > BigDecimal.ZERO && !isInternalBankTransfer) value else BigDecimal.ZERO,
-                            cashOut = if (value < BigDecimal.ZERO && !isInternalBankTransfer) value.abs() else BigDecimal.ZERO,
-                        )
-                }
-            }
-
-        return map
-    }
-
-    private suspend fun fetchProjectedCreditCardCashOut(
-        userId: UUID,
-        selectedMonth: YearMonth,
-        creditCards: List<CreditCard>,
-    ): List<ProjectedCreditCardExpense> {
-        if (creditCards.isEmpty()) {
-            return emptyList()
-        }
-
-        val visibleCardsById = creditCards.mapNotNull { card -> card.id?.let { it to card } }.toMap()
-        val openBills =
-            creditCardBillService.findAllOpenByDueDateBetween(
-                userId = userId,
-                minimumDueDate = selectedMonth.atDay(1),
-                maximumDueDate = selectedMonth.atEndOfMonth(),
-            )
-
-        return openBills
-            .mapNotNull { bill ->
-                val creditCard = visibleCardsById[bill.creditCardId] ?: return@mapNotNull null
-                val projectedExpense = bill.value.negate().max(BigDecimal.ZERO)
-                if (projectedExpense.compareTo(BigDecimal.ZERO) == 0) {
-                    return@mapNotNull null
-                }
-
-                ProjectedCreditCardExpense(
-                    creditCardId = bill.creditCardId,
-                    creditCardName = creditCard.name,
-                    currency = creditCard.currency,
-                    projectedExpense = projectedExpense,
-                )
-            }
-    }
-
-    private fun calculateBalanceForMonth(
-        bankAccount: BankAccount,
-        month: YearMonth,
-        currentMonth: YearMonth,
-        executedByMonthByBankId: Map<YearMonth, Map<UUID, MonthlyAmount>>,
-        projectedByMonthByBankId: Map<YearMonth, Map<UUID, MonthlyAmount>>,
-    ): BigDecimal {
-        val bankId = bankAccount.id!!
-        var result = bankAccount.balance
-
-        if (month.isAfter(currentMonth)) {
-            var cursor = currentMonth
-            while (cursor.isBefore(month)) {
-                result = result.add(projectedByMonthByBankId.getMonthAmount(cursor, bankId).net)
-                cursor = cursor.plusMonths(1)
-            }
-            return result
-        }
-
-        var cursor = currentMonth
-        while (cursor.isAfter(month)) {
-            result = result.subtract(executedByMonthByBankId.getMonthAmount(cursor, bankId).net)
-            cursor = cursor.minusMonths(1)
-        }
-
-        return result
-    }
-
-    private fun balanceReferenceDateForMonth(
-        month: YearMonth,
-        currentMonth: YearMonth,
-        today: LocalDate,
-    ): LocalDate =
-        when {
-            month.isBefore(currentMonth) -> month.atEndOfMonth()
-            month == currentMonth -> today
-            else -> month.atDay(1)
-        }
-
-    private suspend fun convertRawValues(
-        rawValues: List<RawValue>,
-        targetCurrency: String,
-    ): Map<String, BigDecimal> {
-        if (rawValues.isEmpty()) {
-            return emptyMap()
-        }
-
-        val conversionRequestByKey = linkedMapOf<String, ConversionRequest>()
-
-        rawValues.forEach { rawValue ->
-            val fromCurrency = rawValue.currency.uppercase()
-            if (fromCurrency == targetCurrency || rawValue.value.compareTo(BigDecimal.ZERO) == 0) {
-                return@forEach
-            }
-
-            conversionRequestByKey[rawValue.key] =
-                ConversionRequest(
-                    value = rawValue.value,
-                    fromCurrency = fromCurrency,
-                    toCurrency = targetCurrency,
-                    referenceDate = rawValue.referenceDate,
-                )
-        }
-
-        val convertedByRequest =
-            if (conversionRequestByKey.isEmpty()) {
-                emptyMap()
-            } else {
-                exchangeRateService.convertBatch(conversionRequestByKey.values)
-            }
-
-        return rawValues.associate { rawValue ->
-            val request = conversionRequestByKey[rawValue.key]
-            val converted =
-                if (request == null) {
-                    rawValue.value
-                } else {
-                    convertedByRequest.getValue(request)
-                }
-
-            rawValue.key to converted.asMoney()
-        }
-    }
-
-    private fun sumDetails(details: List<OverviewDashboardDetail>?): BigDecimal =
-        details
-            .orEmpty()
-            .fold(BigDecimal.ZERO) { acc, detail -> acc.add(detail.value) }
-            .asMoney()
-
-    private fun buildGoalCommittedDetailsByWallet(
-        rawGoalCommittedDetails: List<RawDetail>,
-        convertedValueByKey: Map<String, BigDecimal>,
-        visibleBankAccounts: List<BankAccount>,
-        rawBalanceByBankId: Map<UUID, BigDecimal>,
-    ): List<OverviewDashboardDetail> {
-        val byWallet = rawGoalCommittedDetails.groupBy { it.walletItemId }
-        val result = mutableListOf<OverviewDashboardDetail>()
-        for (bank in visibleBankAccounts) {
-            val walletId = bank.id!!
-            val raws = byWallet[walletId].orEmpty()
-            if (raws.isEmpty()) {
-                continue
-            }
-            val children =
-                raws
-                    .map { raw ->
-                        OverviewDashboardDetail(
-                            sourceId = raw.sourceId,
-                            sourceType = OverviewDashboardDetailSourceType.GOAL,
-                            label = raw.label,
-                            value = convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO).asMoney(),
-                        )
-                    }.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
-                    .sortedWith(
-                        compareByDescending<OverviewDashboardDetail> { it.value.abs() }.thenBy { it.label.lowercase() },
-                    )
-            if (children.isEmpty()) {
-                continue
-            }
-            val parentValue =
-                children.fold(BigDecimal.ZERO) { acc, child -> acc.add(child.value) }.asMoney()
-            result.add(
-                OverviewDashboardDetail(
-                    sourceId = walletId,
-                    sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                    label = bank.name,
-                    value = parentValue,
-                    children = children,
-                    accountOverCommitted =
-                        accountOverCommittedForWallet(
-                            bank = bank,
-                            raws = raws,
-                            rawBalanceByBankId = rawBalanceByBankId,
-                        ),
-                ),
-            )
-        }
-        return result
-    }
-
-    private fun buildFreeBalanceDetailsByWallet(
-        balanceTotal: BigDecimal,
-        balanceDetails: List<OverviewDashboardDetail>,
-        rawGoalCommittedDetails: List<RawDetail>,
-        convertedValueByKey: Map<String, BigDecimal>,
-        visibleBankAccounts: List<BankAccount>,
-        rawBalanceByBankId: Map<UUID, BigDecimal>,
-    ): List<OverviewDashboardDetail> {
-        val byWallet = rawGoalCommittedDetails.groupBy { it.walletItemId }
-        val balanceByWalletId = balanceDetails.associateBy { it.sourceId }
-        return buildList {
-            add(
-                OverviewDashboardDetail(
-                    sourceId = null,
-                    sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                    label = "financesPage.overviewPage.detail.formula.balance",
-                    value = balanceTotal,
-                ),
-            )
-            for (bank in visibleBankAccounts) {
-                val walletId = bank.id!!
-                val balanceConv =
-                    balanceByWalletId[walletId]?.value ?: BigDecimal.ZERO.asMoney()
-                val raws = byWallet[walletId].orEmpty()
-                val committedSumConv =
-                    raws
-                        .fold(BigDecimal.ZERO) { acc, raw ->
-                            acc.add(convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO))
-                        }.asMoney()
-                val freeOnAccount = balanceConv.subtract(committedSumConv).asMoney()
-                val children =
-                    raws
-                        .map { raw ->
-                            OverviewDashboardDetail(
-                                sourceId = raw.sourceId,
-                                sourceType = OverviewDashboardDetailSourceType.GOAL,
-                                label = raw.label,
-                                value =
-                                    convertedValueByKey
-                                        .getOrDefault(raw.key, BigDecimal.ZERO)
-                                        .asMoney()
-                                        .negate()
-                                        .asMoney(),
-                            )
-                        }.filter { it.value.compareTo(BigDecimal.ZERO) != 0 }
-                        .sortedWith(
-                            compareByDescending<OverviewDashboardDetail> { it.value.abs() }.thenBy { it.label.lowercase() },
-                        )
-                add(
-                    OverviewDashboardDetail(
-                        sourceId = walletId,
-                        sourceType = OverviewDashboardDetailSourceType.BANK_ACCOUNT,
-                        label = bank.name,
-                        value = freeOnAccount,
-                        children = children,
-                        accountOverCommitted =
-                            accountOverCommittedForWallet(
-                                bank = bank,
-                                raws = raws,
-                                rawBalanceByBankId = rawBalanceByBankId,
-                            ),
-                    ),
-                )
-            }
-        }
-    }
-
-    private fun accountOverCommittedForWallet(
-        bank: BankAccount,
-        raws: List<RawDetail>,
-        rawBalanceByBankId: Map<UUID, BigDecimal>,
-    ): Boolean {
-        val walletId = bank.id ?: return false
-        val balance = rawBalanceByBankId[walletId] ?: BigDecimal.ZERO
-        val nativeCommitted =
-            raws
-                .filter { it.currency.equals(bank.currency, ignoreCase = true) }
-                .fold(BigDecimal.ZERO) { acc, raw -> acc.add(raw.value) }
-                .asMoney()
-        return nativeCommitted.compareTo(balance) > 0
-    }
-
-    private fun buildMonthRange(
-        start: YearMonth,
-        end: YearMonth,
-    ): List<YearMonth> {
-        val result = mutableListOf<YearMonth>()
-        var cursor = start
-
-        while (!cursor.isAfter(end)) {
-            result.add(cursor)
-            cursor = cursor.plusMonths(1)
-        }
-
-        return result
-    }
-
-    private fun buildPieSlices(
-        slices: List<OverviewDashboardPieSlice>,
-        alwaysIncludeLabel: String? = null,
-    ): List<OverviewDashboardPieSlice> {
-        val sortedSlices =
-            slices
-                .filter { it.value.compareTo(BigDecimal.ZERO) > 0 }
-                .sortedWith(compareByDescending<OverviewDashboardPieSlice> { it.value }.thenBy { it.label })
-
-        if (sortedSlices.isEmpty()) {
-            return emptyList()
-        }
-
-        val naturalNamed = sortedSlices.take(MAX_NAMED_BREAKDOWN_SLICES)
-        val forcedSlice = alwaysIncludeLabel?.let { label -> sortedSlices.firstOrNull { it.label == label } }
-        val namedSlices =
-            if (forcedSlice == null || naturalNamed.any { it.sliceIdentity() == forcedSlice.sliceIdentity() }) {
-                naturalNamed
-            } else {
-                (
-                    sortedSlices.filterNot { it.sliceIdentity() == forcedSlice.sliceIdentity() }.take(MAX_NAMED_BREAKDOWN_SLICES - 1) +
-                        forcedSlice
-                ).sortedWith(compareByDescending<OverviewDashboardPieSlice> { it.value }.thenBy { it.label })
-            }
-
-        val namedIdentity = namedSlices.map { it.sliceIdentity() }.toSet()
-        val otherSlices = sortedSlices.filterNot { namedIdentity.contains(it.sliceIdentity()) }
-        val othersValue = otherSlices.fold(BigDecimal.ZERO) { acc, slice -> acc.add(slice.value) }.asMoney()
-
-        if (othersValue.compareTo(BigDecimal.ZERO) <= 0) {
-            return namedSlices
-        }
-
-        return namedSlices +
-            OverviewDashboardPieSlice(
-                id = null,
-                label = PREDEFINED_OTHERS_LABEL,
-                value = othersValue,
-            )
-    }
-
-    private fun Map<YearMonth, Map<UUID, MonthlyAmount>>.getMonthAmount(
-        month: YearMonth,
-        walletItemId: UUID,
-    ): MonthlyAmount = this[month]?.get(walletItemId) ?: MonthlyAmount.ZERO
-
-    private fun BigDecimal.asMoney(): BigDecimal = this.setScale(2, RoundingMode.HALF_UP)
-
-    private fun OverviewDashboardPieSlice.sliceIdentity(): Pair<UUID?, String> = id to label
-
-    private data class MonthlyAmount(
-        val net: BigDecimal,
-        val cashIn: BigDecimal,
-        val cashOut: BigDecimal,
-    ) {
-        companion object {
-            val ZERO = MonthlyAmount(net = BigDecimal.ZERO, cashIn = BigDecimal.ZERO, cashOut = BigDecimal.ZERO)
-        }
-
-        operator fun plus(other: MonthlyAmount): MonthlyAmount =
-            MonthlyAmount(
-                net = net + other.net,
-                cashIn = cashIn + other.cashIn,
-                cashOut = cashOut + other.cashOut,
-            )
-    }
-
-    private data class ProjectedCreditCardExpense(
-        val creditCardId: UUID,
-        val creditCardName: String,
-        val currency: String,
-        val projectedExpense: BigDecimal,
-    )
-
-    private data class RawValue(
-        val key: String,
-        val value: BigDecimal,
-        val currency: String,
-        val referenceDate: LocalDate,
-    )
-
-    private data class RawDetail(
-        val sourceId: UUID?,
-        val sourceType: OverviewDashboardDetailSourceType,
-        val label: String,
-        val value: BigDecimal,
-        val currency: String,
-        val referenceDate: LocalDate,
-        val walletItemId: UUID? = null,
-        val key: String = UUID.randomUUID().toString(),
-    )
-
-    private data class RawChartContribution(
-        val chartSeries: ChartSeries,
-        val month: YearMonth,
-        val value: BigDecimal,
-        val currency: String,
-        val referenceDate: LocalDate,
-        val key: String = UUID.randomUUID().toString(),
-    )
-
-    private data class RawBreakdownContribution(
-        val breakdownType: BreakdownType,
-        val sliceId: UUID?,
-        val label: String,
-        val value: BigDecimal,
-        val currency: String,
-        val referenceDate: LocalDate,
-        val key: String = UUID.randomUUID().toString(),
-    )
-
-    private data class BreakdownSliceKey(
-        val breakdownType: BreakdownType,
-        val sliceId: UUID?,
-        val label: String,
-    )
-
-    private enum class ChartSeries {
-        BALANCE,
-        CASH_IN,
-        CASH_OUT,
-        EXPENSE,
-    }
-
-    private enum class BreakdownType {
-        CASH_IN_CATEGORY,
-        CASH_OUT_CATEGORY,
-        EXPENSE_GROUP,
-        EXPENSE_CATEGORY,
-    }
-
-    companion object {
-        private const val MAX_NAMED_BREAKDOWN_SLICES = 9
-        private const val PREDEFINED_INDIVIDUAL_LABEL = "PREDEFINED_INDIVIDUAL"
-        private const val PREDEFINED_UNCATEGORIZED_LABEL = "PREDEFINED_UNCATEGORIZED"
-        private const val PREDEFINED_OTHERS_LABEL = "PREDEFINED_OTHERS"
     }
 }

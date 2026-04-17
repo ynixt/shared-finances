@@ -19,6 +19,7 @@ financesPage:
       successDeleteMessage: Cartão de crédito excluído com sucesso
     viewCreditCardPage:
       title: 'Cartão de crédito: {{name}}'
+      tableTitle: Transações da fatura
       status: Situação
       billValue: Valor da fatura
       payBill: Pagar fatura

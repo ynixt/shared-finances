@@ -42,8 +42,10 @@ financesPage:
       future: Agendado
     newTransactionPage:
       title: Nova transação
+      success: Transação criada com sucesso.
     editTransactionPage:
       title: Editar transação
+      success: Transação editada com sucesso.
     editScope:
       title: Escolha o escopo da edição
       description: Essa transação é recorrente. Você quer editar somente esta ocorrência ou esta e futuras?

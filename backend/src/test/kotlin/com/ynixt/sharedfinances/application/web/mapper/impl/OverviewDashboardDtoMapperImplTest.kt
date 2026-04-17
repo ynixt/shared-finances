@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardChartPo
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCharts
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetail
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardPieSlice
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -94,11 +95,28 @@ class OverviewDashboardDtoMapperImplTest {
                     ),
                 charts =
                     OverviewDashboardCharts(
-                        balance = listOf(OverviewDashboardChartPoint(YearMonth.of(2026, 4), BigDecimal("1000.00"))),
+                        balance =
+                            listOf(
+                                OverviewDashboardChartPoint(
+                                    YearMonth.of(2026, 4),
+                                    BigDecimal("1000.00"),
+                                    BigDecimal("1000.00"),
+                                    BigDecimal.ZERO,
+                                ),
+                            ),
                         cashIn = emptyList(),
                         cashOut = emptyList(),
                         expense = emptyList(),
-                        cashInByCategory = emptyList(),
+                        cashInByCategory =
+                            listOf(
+                                OverviewDashboardPieSlice(
+                                    id = UUID.randomUUID(),
+                                    label = "Salary",
+                                    value = BigDecimal("120.00"),
+                                    executedValue = BigDecimal("100.00"),
+                                    projectedValue = BigDecimal("20.00"),
+                                ),
+                            ),
                         cashOutByCategory = emptyList(),
                         expenseByGroup = emptyList(),
                         expenseByCategory = emptyList(),
@@ -142,6 +160,17 @@ class OverviewDashboardDtoMapperImplTest {
                 assertThat(child.sourceType).isEqualTo("GOAL")
                 assertThat(child.value).isEqualByComparingTo("-250.00")
             })
+        })
+        assertThat(dto.charts.balance).singleElement().satisfies({ point ->
+            assertThat(point.value).isEqualByComparingTo("1000.00")
+            assertThat(point.executedValue).isEqualByComparingTo("1000.00")
+            assertThat(point.projectedValue).isEqualByComparingTo("0.00")
+        })
+        assertThat(dto.charts.cashInByCategory).singleElement().satisfies({ slice ->
+            assertThat(slice.label).isEqualTo("Salary")
+            assertThat(slice.value).isEqualByComparingTo("120.00")
+            assertThat(slice.executedValue).isEqualByComparingTo("100.00")
+            assertThat(slice.projectedValue).isEqualByComparingTo("20.00")
         })
     }
 }

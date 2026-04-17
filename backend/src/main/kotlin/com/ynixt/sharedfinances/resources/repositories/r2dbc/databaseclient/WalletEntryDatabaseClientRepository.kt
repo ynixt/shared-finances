@@ -1,10 +1,12 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySum
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import org.springframework.r2dbc.core.DatabaseClient
@@ -50,10 +52,11 @@ class WalletEntryDatabaseClientRepository(
             from 
                 wallet_entry we
             join wallet_event wev on wev.id = we.wallet_event_id
+            join wallet_item wi on wi.id = we.wallet_item_id
             where
         """
 
-        if (userId != null) sql += " wev.user_id = :userId"
+        if (userId != null) sql += " wi.user_id = :userId"
         if (groupId != null) sql += " wev.group_id = :groupId"
 
         if (walletItemId != null) {
@@ -197,6 +200,56 @@ class WalletEntryDatabaseClientRepository(
 
                 OverviewExpenseMonthlySummary(
                     month = java.time.YearMonth.from(monthDate),
+                    currency = row.get("currency", String::class.java)!!,
+                    expense = row.get("expense", BigDecimal::class.java)!!,
+                )
+            }.all()
+    }
+
+    fun summarizeOverviewExpenseBySource(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExpenseSourceSummary> {
+        val sql =
+            """
+            SELECT
+                we.wallet_item_id AS wallet_item_id,
+                wi.name AS wallet_item_name,
+                wi.type::text AS wallet_item_type,
+                wi.currency AS currency,
+                COALESCE(SUM(ABS(LEAST(we.value, 0))), 0) AS expense
+            FROM wallet_entry we
+            JOIN wallet_event wev ON wev.id = we.wallet_event_id
+            JOIN wallet_item wi ON wi.id = we.wallet_item_id
+            WHERE
+                wi.user_id = :userId
+                AND wi.type IN ('BANK_ACCOUNT', 'CREDIT_CARD')
+                AND wi.enabled = true
+                AND wi.show_on_dashboard = true
+                AND NOT wev.initial_balance
+                AND wev.type = 'EXPENSE'
+                AND we.value < 0
+                AND wev.date >= :minimumDate
+                AND wev.date <= :maximumDate
+            GROUP BY
+                we.wallet_item_id,
+                wi.name,
+                wi.type,
+                wi.currency
+            ORDER BY wi.name ASC
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("userId", userId)
+            .bind("minimumDate", minimumDate)
+            .bind("maximumDate", maximumDate)
+            .map { row, _ ->
+                OverviewExpenseSourceSummary(
+                    walletItemId = row.get("wallet_item_id", UUID::class.java)!!,
+                    walletItemName = row.get("wallet_item_name", String::class.java)!!,
+                    walletItemType = WalletItemType.valueOf(row.get("wallet_item_type", String::class.java)!!),
                     currency = row.get("currency", String::class.java)!!,
                     expense = row.get("expense", BigDecimal::class.java)!!,
                 )

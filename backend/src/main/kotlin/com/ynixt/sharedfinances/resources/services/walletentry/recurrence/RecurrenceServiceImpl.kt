@@ -3,8 +3,10 @@ package com.ynixt.sharedfinances.resources.services.walletentry.recurrence
 import com.ynixt.sharedfinances.application.web.dto.GenerateEntryRecurrenceRequestDto
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.queue.producer.GenerateEntryRecurrenceQueueProducer
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.services.EntityServiceImpl
 import kotlinx.coroutines.flow.Flow
@@ -34,16 +36,15 @@ class RecurrenceServiceImpl(
     ): Flow<RecurrenceEventEntity> {
         require((userId != null) xor (groupId != null))
 
-        return repository
-            .findAll(
-                minimumEndExecution = minimumEndExecution,
-                maximumNextExecution = maximumNextExecution,
-                billDate = billDate,
-                walletItemId = walletItemId,
-                userId = userId,
-                groupId = groupId,
-                sort = sort,
-            ).asFlow()
+        return findAllEntries(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            billDate = billDate,
+            walletItemId = walletItemId,
+            userIds = setOfNotNull(userId),
+            groupIds = setOfNotNull(groupId),
+            sort = sort,
+        )
     }
 
     override fun findAllEntryByUserId(
@@ -52,16 +53,15 @@ class RecurrenceServiceImpl(
         userId: UUID,
         sort: Sort,
     ): Flow<RecurrenceEventEntity> =
-        repository
-            .findAll(
-                minimumEndExecution = minimumEndExecution,
-                maximumNextExecution = maximumNextExecution,
-                billDate = null,
-                walletItemId = null,
-                userId = userId,
-                groupId = null,
-                sort = sort,
-            ).asFlow()
+        findAllEntries(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            billDate = null,
+            walletItemId = null,
+            userIds = setOf(userId),
+            groupIds = emptySet(),
+            sort = sort,
+        )
 
     override fun findAllEntryByUserIds(
         minimumEndExecution: LocalDate?,
@@ -69,13 +69,21 @@ class RecurrenceServiceImpl(
         userIds: Set<UUID>,
         sort: Sort,
     ): Flow<RecurrenceEventEntity> =
-        repository
-            .findAllByUserIds(
-                minimumEndExecution = minimumEndExecution,
-                maximumNextExecution = maximumNextExecution,
-                userIds = userIds,
-                sort = sort,
-            ).asFlow()
+        if (userIds.isEmpty()) {
+            kotlinx.coroutines.flow.emptyFlow()
+        } else {
+            repository
+                .findAllEntries(
+                    scope = WalletTransactionQueryScope.ownership(ownerUserIds = userIds),
+                    minimumEndExecution = minimumEndExecution,
+                    maximumNextExecution = maximumNextExecution,
+                    billDate = null,
+                    walletItemId = null,
+                    walletItemIds = emptySet(),
+                    entryTypes = emptySet(),
+                    sort = sort,
+                ).asFlow()
+        }
 
     override fun findAllEntryByGroupId(
         minimumEndExecution: LocalDate?,
@@ -83,16 +91,50 @@ class RecurrenceServiceImpl(
         groupId: UUID,
         sort: Sort,
     ): Flow<RecurrenceEventEntity> =
-        repository
-            .findAll(
+        findAllEntries(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            billDate = null,
+            walletItemId = null,
+            userIds = emptySet(),
+            groupIds = setOf(groupId),
+            sort = sort,
+        )
+
+    override fun findAllEntries(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        billDate: LocalDate?,
+        walletItemId: UUID?,
+        walletItemIds: Set<UUID>,
+        userIds: Set<UUID>,
+        groupIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
+        sort: Sort,
+    ): Flow<RecurrenceEventEntity> {
+        val scope =
+            when {
+                userIds.isNotEmpty() ->
+                    WalletTransactionQueryScope.ownership(
+                        ownerUserIds = userIds,
+                        groupIds = groupIds,
+                    )
+                groupIds.isNotEmpty() -> WalletTransactionQueryScope.group(groupIds = groupIds)
+                else -> return kotlinx.coroutines.flow.emptyFlow()
+            }
+
+        return repository
+            .findAllEntries(
+                scope = scope,
                 minimumEndExecution = minimumEndExecution,
                 maximumNextExecution = maximumNextExecution,
-                billDate = null,
-                walletItemId = null,
-                userId = null,
-                groupId = groupId,
+                billDate = billDate,
+                walletItemId = walletItemId,
+                walletItemIds = walletItemIds,
+                entryTypes = entryTypes,
                 sort = sort,
             ).asFlow()
+    }
 
     override fun calculateNextExecution(
         lastExecution: LocalDate,

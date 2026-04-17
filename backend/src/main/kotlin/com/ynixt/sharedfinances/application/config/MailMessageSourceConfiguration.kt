@@ -14,10 +14,16 @@ class MailMessageSourceConfiguration {
     @Qualifier("mailMessageSource")
     fun mailMessageSource(): MessageSource {
         val source = ReloadableResourceBundleMessageSource()
-        source.setBasename("classpath:mail/messages")
+
+        source.setBasenames(
+            "classpath:i18n/mail/messages",
+            "classpath:i18n/transaction/messages",
+        )
+
         source.setDefaultEncoding(StandardCharsets.UTF_8.name())
         source.setFallbackToSystemLocale(false)
         source.setDefaultLocale(Locale.ENGLISH)
+
         return source
     }
 }

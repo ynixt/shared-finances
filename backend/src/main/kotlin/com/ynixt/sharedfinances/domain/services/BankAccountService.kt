@@ -11,6 +11,7 @@ interface BankAccountService {
     suspend fun findAllBanks(
         userId: UUID,
         pageable: Pageable,
+        query: String? = null,
     ): Page<BankAccount>
 
     suspend fun findBankAccount(

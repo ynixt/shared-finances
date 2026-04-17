@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import org.springframework.data.domain.Sort
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -31,20 +32,14 @@ interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
         nextExecution: LocalDate?,
     ): Mono<Int>
 
-    fun findAll(
+    fun findAllEntries(
+        scope: WalletTransactionQueryScope,
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
         billDate: LocalDate?,
         walletItemId: UUID?,
-        userId: UUID?,
-        groupId: UUID?,
-        sort: Sort = Sort.unsorted(),
-    ): Flux<RecurrenceEventEntity>
-
-    fun findAllByUserIds(
-        minimumEndExecution: LocalDate?,
-        maximumNextExecution: LocalDate?,
-        userIds: Set<UUID>,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
         sort: Sort = Sort.unsorted(),
     ): Flux<RecurrenceEventEntity>
 }

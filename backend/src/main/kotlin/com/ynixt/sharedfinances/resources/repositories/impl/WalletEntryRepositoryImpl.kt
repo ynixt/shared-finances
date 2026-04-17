@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummar
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.WalletEntryDatabaseClientRepository
@@ -60,6 +61,17 @@ class WalletEntryRepositoryImpl(
         maximumDate: LocalDate,
     ): Flux<OverviewExpenseMonthlySummary> =
         dcRepository.summarizeOverviewExpenseByMonth(
+            userId = userId,
+            minimumDate = minimumDate,
+            maximumDate = maximumDate,
+        )
+
+    override fun summarizeOverviewExpenseBySource(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExpenseSourceSummary> =
+        dcRepository.summarizeOverviewExpenseBySource(
             userId = userId,
             minimumDate = minimumDate,
             maximumDate = maximumDate,

@@ -14,6 +14,16 @@ interface GroupRepository : EntityRepository<GroupEntity> {
         id: UUID,
     ): Mono<GroupWithRole>
 
+    fun searchByUserIdAndNameContainingIgnoreCase(
+        userId: UUID,
+        name: String,
+    ): Flux<GroupWithRole>
+
+    fun countByUserIdAndNameContainingIgnoreCase(
+        userId: UUID,
+        name: String,
+    ): Mono<Long>
+
     fun edit(
         id: UUID,
         newName: String,

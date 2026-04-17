@@ -39,7 +39,7 @@ interface WalletEventSpringDataRepository : R2dbcRepository<WalletEventEntity, S
     @Query(
         """
         DELETE FROM wallet_event
-        WHERE group_id = :groupId AND user_id = :userId
+        WHERE group_id = :groupId AND created_by_user_id = :userId
         """,
     )
     fun deleteAllByGroupIdAndUserId(
@@ -51,7 +51,7 @@ interface WalletEventSpringDataRepository : R2dbcRepository<WalletEventEntity, S
     @Query(
         """
         DELETE FROM wallet_event we
-        WHERE we.user_id = :userId
+        WHERE we.created_by_user_id = :userId
            OR EXISTS (
                 SELECT 1
                 FROM wallet_entry wen

@@ -40,8 +40,31 @@ class BankAccountServiceImpl(
     override suspend fun findAllBanks(
         userId: UUID,
         pageable: Pageable,
+        query: String?,
     ): Page<BankAccount> =
-        createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.BANK_ACCOUNT) }) {
+        query
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { normalizedQuery ->
+                createPage(
+                    pageable,
+                    countFn = {
+                        walletItemRepository.countByUserIdAndTypeAndNameContainingIgnoreCase(
+                            userId = userId,
+                            type = WalletItemType.BANK_ACCOUNT,
+                            name = normalizedQuery,
+                        )
+                    },
+                ) {
+                    walletItemRepository
+                        .findAllByUserIdAndTypeAndNameContainingIgnoreCase(
+                            userId = userId,
+                            type = WalletItemType.BANK_ACCOUNT,
+                            name = normalizedQuery,
+                            pageable = pageable,
+                        ).map(bankAccountMapper::toModel)
+                }
+            } ?: createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.BANK_ACCOUNT) }) {
             walletItemRepository
                 .findAllByUserIdAndType(
                     userId,

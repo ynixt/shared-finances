@@ -323,7 +323,7 @@ abstract class WalletEntryMutationSupportServiceImpl(
                 RecurrenceEventEntity(
                     name = current.name,
                     categoryId = current.categoryId,
-                    userId = current.userId,
+                    createdByUserId = current.createdByUserId,
                     groupId = current.groupId,
                     tags = current.tags,
                     observations = current.observations,

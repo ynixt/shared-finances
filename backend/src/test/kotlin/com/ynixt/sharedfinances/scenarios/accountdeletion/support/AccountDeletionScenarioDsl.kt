@@ -9,16 +9,17 @@ import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.resources.services.AccountDeletionServiceImpl
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupWalletItemRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
-import org.springframework.data.domain.Sort
 import java.time.LocalDate
 import java.util.UUID
 
@@ -30,8 +31,9 @@ fun accountDeletionScenario(block: suspend AccountDeletionScenarioDsl.() -> Unit
 class AccountDeletionScenarioDsl {
     internal val userRepository = InMemoryUserRepository()
     internal val groupStore = InMemoryAccountDeletionGroupStore()
-    internal val walletEventRepository = InMemoryWalletEventRepository()
-    internal val recurrenceEventRepository = InMemoryRecurrenceEventRepository()
+    internal val walletItemRepository = InMemoryWalletItemRepository()
+    internal val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
+    internal val recurrenceEventRepository = InMemoryRecurrenceEventRepository(walletItemRepository)
     internal val simulationJobService = RecordingComplianceSimulationJobService()
     internal val avatarService = RecordingAvatarService()
 
@@ -125,7 +127,7 @@ class AccountDeletionScenarioDsl {
                         type = WalletEntryType.EXPENSE,
                         name = "Coffee",
                         categoryId = null,
-                        userId = userId,
+                        createdByUserId = userId,
                         groupId = groupId,
                         tags = null,
                         observations = null,
@@ -149,7 +151,7 @@ class AccountDeletionScenarioDsl {
                         type = WalletEntryType.EXPENSE,
                         name = "Groceries",
                         categoryId = null,
-                        userId = userId,
+                        createdByUserId = userId,
                         groupId = null,
                         tags = null,
                         observations = null,
@@ -171,7 +173,7 @@ class AccountDeletionScenarioDsl {
                     RecurrenceEventEntity(
                         name = "Rent",
                         categoryId = null,
-                        userId = userId,
+                        createdByUserId = userId,
                         groupId = groupId,
                         tags = null,
                         observations = null,
@@ -195,7 +197,7 @@ class AccountDeletionScenarioDsl {
                     RecurrenceEventEntity(
                         name = "Subscription",
                         categoryId = null,
-                        userId = userId,
+                        createdByUserId = userId,
                         groupId = null,
                         tags = null,
                         observations = null,
@@ -260,21 +262,28 @@ class AccountDeletionScenarioDsl {
         ) {
             val count =
                 dsl.walletEventRepository.snapshot().count {
-                    it.userId == userId && it.groupId == groupId
+                    it.createdByUserId == userId && it.groupId == groupId
                 }
             Assertions.assertEquals(0, count)
         }
 
         suspend fun noWalletEventsForUser(userId: UUID) {
-            val count = dsl.walletEventRepository.snapshot().count { it.userId == userId }
+            val count = dsl.walletEventRepository.snapshot().count { it.createdByUserId == userId }
             Assertions.assertEquals(0, count)
         }
 
         suspend fun noRecurrenceEventsForUser(userId: UUID) {
             val list =
                 dsl.recurrenceEventRepository
-                    .findAll(null, null, null, null, userId, null, Sort.unsorted())
-                    .collectList()
+                    .findAllEntries(
+                        scope = WalletTransactionQueryScope.ownership(ownerUserIds = setOf(userId)),
+                        minimumEndExecution = null,
+                        maximumNextExecution = null,
+                        billDate = null,
+                        walletItemId = null,
+                        walletItemIds = emptySet(),
+                        entryTypes = emptySet(),
+                    ).collectList()
                     .awaitSingle()
             Assertions.assertTrue(list.isEmpty())
         }
@@ -285,10 +294,17 @@ class AccountDeletionScenarioDsl {
         ) {
             val list =
                 dsl.recurrenceEventRepository
-                    .findAll(null, null, null, null, userId, groupId, Sort.unsorted())
-                    .collectList()
+                    .findAllEntries(
+                        scope = WalletTransactionQueryScope.group(groupIds = setOf(groupId)),
+                        minimumEndExecution = null,
+                        maximumNextExecution = null,
+                        billDate = null,
+                        walletItemId = null,
+                        walletItemIds = emptySet(),
+                        entryTypes = emptySet(),
+                    ).collectList()
                     .awaitSingle()
-            Assertions.assertTrue(list.isEmpty())
+            Assertions.assertTrue(list.none { event -> event.createdByUserId == userId && event.groupId == groupId })
         }
 
         fun complianceCleanupRecordedFor(userId: UUID) {

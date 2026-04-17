@@ -38,6 +38,96 @@ import java.util.UUID
 
 class RecurrenceSimulationServiceImplTest {
     @Test
+    fun `simulateGeneration should reject userIds when groupIds is empty`() =
+        runBlocking {
+            val recurrenceService = mock(RecurrenceService::class.java)
+            val service = createService(recurrenceService = recurrenceService)
+
+            org.assertj.core.api.Assertions
+                .assertThatThrownBy {
+                    runBlocking {
+                        service.simulateGeneration(
+                            minimumEndExecution = LocalDate.of(2026, 4, 1),
+                            maximumNextExecution = LocalDate.of(2026, 4, 30),
+                            userId = UUID.randomUUID(),
+                            groupIds = emptySet(),
+                            userIds = setOf(UUID.randomUUID()),
+                            walletItemId = null,
+                            billDate = null,
+                        )
+                    }
+                }.isInstanceOf(IllegalArgumentException::class.java)
+                .hasMessageContaining("Filter userIds requires at least one groupId")
+
+            verify(recurrenceService, never()).findAllEntries(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.any(),
+            )
+        }
+
+    @Test
+    fun `simulateGeneration should perform a single set-based recurrence query for group plus userIds`() =
+        runBlocking {
+            val requesterId = UUID.randomUUID()
+            val ownerA = UUID.randomUUID()
+            val ownerB = UUID.randomUUID()
+            val groupA = UUID.randomUUID()
+            val groupB = UUID.randomUUID()
+            val minimum = LocalDate.of(2026, 4, 1)
+            val maximum = LocalDate.of(2026, 6, 1)
+            val fixedStart = LocalDate.of(2026, 4, 2)
+            val expectedSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
+
+            val recurrenceService = mock(RecurrenceService::class.java)
+            `when`(
+                recurrenceService.findAllEntries(
+                    fixedStart,
+                    maximum,
+                    null,
+                    null,
+                    emptySet(),
+                    setOf(ownerA, ownerB),
+                    setOf(groupA, groupB),
+                    emptySet(),
+                    expectedSort,
+                ),
+            ).thenReturn(emptyFlow())
+
+            val service = createService(recurrenceService = recurrenceService)
+
+            val result =
+                service.simulateGeneration(
+                    minimumEndExecution = minimum,
+                    maximumNextExecution = maximum,
+                    userId = requesterId,
+                    groupIds = setOf(groupA, groupB),
+                    userIds = setOf(ownerA, ownerB),
+                    walletItemId = null,
+                    billDate = null,
+                )
+
+            assertThat(result).isEmpty()
+            verify(recurrenceService, times(1)).findAllEntries(
+                fixedStart,
+                maximum,
+                null,
+                null,
+                emptySet(),
+                setOf(ownerA, ownerB),
+                setOf(groupA, groupB),
+                emptySet(),
+                expectedSort,
+            )
+        }
+
+    @Test
     fun `simulateGeneration should batch load series totals and avoid per-config findById`() =
         runBlocking {
             val userId = UUID.randomUUID()
@@ -56,10 +146,15 @@ class RecurrenceSimulationServiceImplTest {
 
             val recurrenceService = mock(RecurrenceService::class.java)
             `when`(
-                recurrenceService.findAllEntryByUserId(
+                recurrenceService.findAllEntries(
                     fixedStart,
                     maximum,
-                    userId,
+                    null,
+                    null,
+                    emptySet(),
+                    setOf(userId),
+                    emptySet(),
+                    emptySet(),
                     expectedSort,
                 ),
             ).thenReturn(flowOf(configA, configB, configC))
@@ -138,7 +233,8 @@ class RecurrenceSimulationServiceImplTest {
                     minimumEndExecution = minimum,
                     maximumNextExecution = maximum,
                     userId = userId,
-                    groupId = null,
+                    groupIds = emptySet(),
+                    userIds = emptySet(),
                     walletItemId = null,
                     billDate = null,
                 )
@@ -157,7 +253,7 @@ class RecurrenceSimulationServiceImplTest {
             RecurrenceEventEntity(
                 name = "Recurring",
                 categoryId = null,
-                userId = null,
+                createdByUserId = UUID.randomUUID(),
                 groupId = null,
                 tags = emptyList(),
                 observations = null,
@@ -186,4 +282,30 @@ class RecurrenceSimulationServiceImplTest {
             )
         return event
     }
+
+    private fun createService(recurrenceService: RecurrenceService): RecurrenceSimulationServiceImpl =
+        RecurrenceSimulationServiceImpl(
+            genericCategoryService =
+                mock(GenericCategoryService::class.java).also {
+                    `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                },
+            groupService =
+                mock(GroupService::class.java).also {
+                    `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                },
+            userService =
+                mock(UserService::class.java).also {
+                    `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                },
+            walletItemService =
+                mock(WalletItemService::class.java).also {
+                    `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                },
+            creditCardBillService = mock(CreditCardBillService::class.java),
+            walletItemMapper = mock(WalletItemMapper::class.java),
+            recurrenceService = recurrenceService,
+            recurrenceOccurrenceSimulationService = mock(RecurrenceOccurrenceSimulationService::class.java),
+            recurrenceSeriesRepository = mock(RecurrenceSeriesRepository::class.java),
+            clock = Clock.fixed(Instant.parse("2026-04-01T12:00:00Z"), ZoneOffset.UTC),
+        )
 }

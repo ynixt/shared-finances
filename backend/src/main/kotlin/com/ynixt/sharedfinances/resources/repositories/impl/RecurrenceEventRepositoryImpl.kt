@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.RecurrenceEventDatabaseClientRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventSpringDataRepository
 import org.springframework.data.domain.Sort
@@ -51,35 +53,24 @@ class RecurrenceEventRepositoryImpl(
             nextExecution = nextExecution,
         )
 
-    override fun findAll(
+    override fun findAllEntries(
+        scope: WalletTransactionQueryScope,
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
         billDate: LocalDate?,
         walletItemId: UUID?,
-        userId: UUID?,
-        groupId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
         sort: Sort,
     ): Flux<RecurrenceEventEntity> =
-        dcRepository.findAll(
+        dcRepository.findAllEntries(
+            scope = scope,
             minimumEndExecution = minimumEndExecution,
             maximumNextExecution = maximumNextExecution,
             billDate = billDate,
             walletItemId = walletItemId,
-            userId = userId,
-            groupId = groupId,
-            sort = sort,
-        )
-
-    override fun findAllByUserIds(
-        minimumEndExecution: LocalDate?,
-        maximumNextExecution: LocalDate?,
-        userIds: Set<UUID>,
-        sort: Sort,
-    ): Flux<RecurrenceEventEntity> =
-        dcRepository.findAllByUserIds(
-            minimumEndExecution = minimumEndExecution,
-            maximumNextExecution = maximumNextExecution,
-            userIds = userIds,
+            walletItemIds = walletItemIds,
+            entryTypes = entryTypes,
             sort = sort,
         )
 }

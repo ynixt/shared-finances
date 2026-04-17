@@ -1,83 +1,34 @@
+// @vitest-environment jsdom
+import { BroadcastChannel, type LeaderElector, enforceOptions } from 'broadcast-channel';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SingleSseCoordinatorService } from './single-sse-coordinator.service';
 
-const TAB_STORAGE_KEY = 'sf-user-events-tab-id-v1';
+type CoordinatorInternals = {
+  channel: BroadcastChannel<unknown> | null;
+  elector: LeaderElector | null;
+};
 
-class FakeBroadcastChannel {
-  private static readonly channels = new Map<string, Set<FakeBroadcastChannel>>();
-
-  static reset() {
-    this.channels.clear();
-  }
-
-  onmessage: ((event: MessageEvent<any>) => void) | null = null;
-  private closed = false;
-
-  constructor(private readonly name: string) {
-    if (!FakeBroadcastChannel.channels.has(name)) {
-      FakeBroadcastChannel.channels.set(name, new Set());
-    }
-
-    FakeBroadcastChannel.channels.get(name)!.add(this);
-  }
-
-  postMessage(data: unknown) {
-    if (this.closed) {
-      return;
-    }
-
-    const peers = FakeBroadcastChannel.channels.get(this.name);
-    if (peers == null) {
-      return;
-    }
-
-    for (const peer of peers) {
-      if (peer === this || peer.closed) {
-        continue;
-      }
-      peer.onmessage?.({ data } as MessageEvent<any>);
-    }
-  }
-
-  close() {
-    if (this.closed) {
-      return;
-    }
-    this.closed = true;
-    FakeBroadcastChannel.channels.get(this.name)?.delete(this);
-  }
+async function settleCoordinator(ms = 50) {
+  await vi.advanceTimersByTimeAsync(ms);
 }
 
 describe('SingleSseCoordinatorService', () => {
-  function createDistinctTabs() {
-    const tabA = new SingleSseCoordinatorService();
-    // In real browsers, each tab has isolated sessionStorage. In jsdom tests we must emulate that isolation.
-    window.sessionStorage.removeItem(TAB_STORAGE_KEY);
-    const tabB = new SingleSseCoordinatorService();
-    return { tabA, tabB };
-  }
-
   beforeEach(() => {
     vi.useFakeTimers();
-    FakeBroadcastChannel.reset();
-    window.sessionStorage.clear();
-
-    Object.defineProperty(window, 'BroadcastChannel', {
-      configurable: true,
-      writable: true,
-      value: FakeBroadcastChannel,
-    });
+    enforceOptions({ type: 'simulate' });
   });
 
   afterEach(() => {
+    enforceOptions(null);
     vi.useRealTimers();
   });
 
-  it('elects exactly one leader and performs failover when leader closes', () => {
-    const { tabA, tabB } = createDistinctTabs();
+  it('elects exactly one leader and performs failover when leader closes', async () => {
+    const tabA = new SingleSseCoordinatorService();
+    const tabB = new SingleSseCoordinatorService();
 
-    vi.advanceTimersByTime(1_000);
+    await settleCoordinator();
 
     const leaders = [tabA, tabB].filter(tab => tab.isLeaderSnapshot());
     expect(leaders).toHaveLength(1);
@@ -86,22 +37,24 @@ describe('SingleSseCoordinatorService', () => {
     const follower = leader === tabA ? tabB : tabA;
 
     leader.ngOnDestroy();
-    vi.advanceTimersByTime(5_000);
+    await settleCoordinator();
 
     expect(follower.isLeaderSnapshot()).toBe(true);
 
     follower.ngOnDestroy();
+    await settleCoordinator();
   });
 
-  it('broadcasts events from leader and deduplicates repeated sourceEventId', () => {
-    const { tabA, tabB } = createDistinctTabs();
+  it('broadcasts events from the leader and deduplicates repeated sourceEventId', async () => {
+    const tabA = new SingleSseCoordinatorService();
+    const tabB = new SingleSseCoordinatorService();
 
-    vi.advanceTimersByTime(1_000);
+    await settleCoordinator();
 
     const leader = tabA.isLeaderSnapshot() ? tabA : tabB;
     const follower = leader === tabA ? tabB : tabA;
-
     const received: string[] = [];
+
     follower.distributedEvent$.subscribe(event => {
       received.push(event.sourceEventId);
     });
@@ -111,38 +64,61 @@ describe('SingleSseCoordinatorService', () => {
       data: '{"id":"tx-1"}',
       sourceEventId: 'evt-1',
     });
-
     leader.forwardEvent({
       event: 'WALLET_EVENT',
       data: '{"id":"tx-1"}',
       sourceEventId: 'evt-1',
     });
 
+    await settleCoordinator();
+
     expect(received).toEqual(['evt-1']);
 
     tabA.ngOnDestroy();
     tabB.ngOnDestroy();
+    await settleCoordinator();
   });
 
-  it('emits resync-required after leadership handoff', () => {
-    const { tabA, tabB } = createDistinctTabs();
+  it('does not forward events when this tab is not the leader', async () => {
+    const tabA = new SingleSseCoordinatorService();
+    const tabB = new SingleSseCoordinatorService();
 
-    vi.advanceTimersByTime(1_000);
+    await settleCoordinator();
 
-    const leader = tabA.isLeaderSnapshot() ? tabA : tabB;
-    const follower = leader === tabA ? tabB : tabA;
+    const follower = tabA.isLeaderSnapshot() ? tabB : tabA;
+    const peer = follower === tabA ? tabB : tabA;
+    const received: string[] = [];
 
-    let resyncCount = 0;
-    follower.resyncRequired$.subscribe(() => {
-      resyncCount++;
+    peer.distributedEvent$.subscribe(event => {
+      received.push(event.sourceEventId);
     });
 
-    leader.ngOnDestroy();
-    vi.advanceTimersByTime(5_000);
+    follower.forwardEvent({
+      event: 'WALLET_EVENT',
+      data: '{"id":"tx-1"}',
+      sourceEventId: 'evt-1',
+    });
 
-    expect(resyncCount).toBeGreaterThanOrEqual(1);
-    expect(follower.isLeaderSnapshot()).toBe(true);
+    await settleCoordinator();
 
-    follower.ngOnDestroy();
+    expect(received).toEqual([]);
+
+    tabA.ngOnDestroy();
+    tabB.ngOnDestroy();
+    await settleCoordinator();
+  });
+
+  it('releases the leader elector and closes the channel on destroy', async () => {
+    const service = new SingleSseCoordinatorService();
+
+    await settleCoordinator();
+
+    const { channel, elector } = service as unknown as CoordinatorInternals;
+
+    service.ngOnDestroy();
+    await settleCoordinator();
+
+    expect(channel?.isClosed).toBe(true);
+    expect(elector?.isDead).toBe(true);
   });
 });

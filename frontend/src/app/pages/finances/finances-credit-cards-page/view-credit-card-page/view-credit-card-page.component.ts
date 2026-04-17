@@ -98,7 +98,7 @@ export class ViewCreditCardPageComponent {
   readonly formToPayBill = new FormGroup({
     bankAccount: new FormControl<WalletItemSearchResponseDtoWithIcon | undefined>(undefined, [Validators.required]),
     date: new FormControl<Date | undefined>(undefined, [Validators.required]),
-    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
+    amount: new FormControl<number>(0, [Validators.required, Validators.min(0.01)]),
     observations: new FormControl<string>(''),
   });
 
@@ -214,7 +214,7 @@ export class ViewCreditCardPageComponent {
     this.dateRange = dateRange;
 
     if (syncUrl) {
-      void syncDateQueryParams(this.route, this.router, dateRange, 'single', this.openBillDate()!!);
+      void syncDateQueryParams(this.route, this.router, dateRange, 'day_only', this.openBillDate()!!);
     }
 
     void this.getCreditCardBill();
@@ -391,7 +391,7 @@ export class ViewCreditCardPageComponent {
       this.creditCard = await this.creditCardService.getCreditCard(id);
 
       const defaultRange = this.getDefaultDateRange();
-      const initialDateRange = readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'single') ?? defaultRange;
+      const initialDateRange = readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'day_only') ?? defaultRange;
       this.dateControl.setValue(initialDateRange, { emitEvent: false });
       this.applyDateRange(initialDateRange, false);
 

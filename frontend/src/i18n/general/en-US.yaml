@@ -36,6 +36,7 @@ general:
   refresh: Refresh
   previous: Previous
   next: Next
+  all: All
 
 error:
   genericTitle: Error

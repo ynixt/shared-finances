@@ -117,7 +117,7 @@ class WalletEntryCreateServiceImpl(
                     nextExecution = nextExecution,
                 ).awaitSingle()
 
-        if (linesModified == 0 || event.userId == null) {
+        if (linesModified == 0) {
             return null
         }
 
@@ -155,7 +155,7 @@ class WalletEntryCreateServiceImpl(
                 .save(
                     WalletEventEntity(
                         type = event.type,
-                        userId = event.userId,
+                        createdByUserId = event.createdByUserId,
                         groupId = event.groupId,
                         name = event.name,
                         categoryId = event.categoryId,
@@ -234,7 +234,7 @@ class WalletEntryCreateServiceImpl(
                     }
                 }
 
-        walletEventActionEventService.sendInsertedWalletEvent(event.userId, walletEventSaved)
+        walletEventActionEventService.sendInsertedWalletEvent(event.createdByUserId, walletEventSaved)
 
         return walletEventSaved
     }

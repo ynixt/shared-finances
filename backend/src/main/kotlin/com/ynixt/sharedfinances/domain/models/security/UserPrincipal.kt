@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.models.security
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.resources.services.mail.UserLocaleResolver
 import org.springframework.security.core.GrantedAuthority
 import java.security.Principal
 import java.util.UUID
@@ -35,4 +36,6 @@ class UserPrincipal(
     )
 
     override fun getName(): String = firstName
+
+    val locale = UserLocaleResolver.resolve(lang)
 }

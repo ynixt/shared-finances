@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.repositories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDate
@@ -44,10 +45,11 @@ interface WalletEventRepository {
     fun deleteAllForAccountDeletion(userId: UUID): Mono<Long>
 
     fun findAll(
-        userId: UUID?,
-        groupId: UUID?,
+        scope: WalletTransactionQueryScope,
         limit: Int,
         walletItemId: UUID?,
+        walletItemIds: Set<UUID> = emptySet(),
+        entryTypes: Set<WalletEntryType> = emptySet(),
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,

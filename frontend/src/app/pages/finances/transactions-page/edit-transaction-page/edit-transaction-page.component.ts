@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
@@ -16,6 +16,7 @@ import {
 import { ScheduledEditScope__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
+import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 import { TransactionFormComponent } from '../shared/transaction-form/transaction-form.component';
@@ -32,6 +33,7 @@ export class EditTransactionPageComponent {
   private readonly walletEntryService = inject(WalletEntryService);
   private readonly messageService = inject(MessageService);
   private readonly errorMessageService = inject(ErrorMessageService);
+  private readonly translateService = inject(TranslateService);
 
   readonly loading = signal(true);
   readonly submitting = signal(false);
@@ -73,7 +75,7 @@ export class EditTransactionPageComponent {
         await this.walletEntryService.editWalletEntry(currentEntry.id!!, request);
       }
 
-      await this.loadEntry();
+      await this.submitSuccess(request);
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
       throw error;
@@ -107,6 +109,21 @@ export class EditTransactionPageComponent {
       throw error;
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async submitSuccess(request: NewEntryDto) {
+    this.messageService.add({
+      severity: 'success',
+      summary: this.translateService.instant('general.success'),
+      detail: this.translateService.instant('financesPage.transactionsPage.editTransactionPage.success'),
+      life: DEFAULT_ERROR_LIFE,
+    });
+
+    if (request.groupId == null) {
+      await this.router.navigate(['/app']);
+    } else {
+      await this.router.navigate(['/app', 'groups', request.groupId]);
     }
   }
 }

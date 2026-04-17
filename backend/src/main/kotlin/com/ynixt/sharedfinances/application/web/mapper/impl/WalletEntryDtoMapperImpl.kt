@@ -102,6 +102,11 @@ class WalletEntryDtoMapperImpl(
         override fun map(from: ListEntryRequestDto) =
             mapping {
                 to::pageRequest fromProperty from::pageRequest transform { it ?: CursorPageRequest() }
+                to::groupIds fromProperty from::groupIds transform { it?.toSet() ?: emptySet() }
+                to::userIds fromProperty from::userIds transform { it?.toSet() ?: emptySet() }
+                to::creditCardIds fromProperty from::creditCardIds transform { it?.toSet() ?: emptySet() }
+                to::bankAccountIds fromProperty from::bankAccountIds transform { it?.toSet() ?: emptySet() }
+                to::entryTypes fromProperty from::entryTypes transform { it?.toSet() ?: emptySet() }
             }
     }
 

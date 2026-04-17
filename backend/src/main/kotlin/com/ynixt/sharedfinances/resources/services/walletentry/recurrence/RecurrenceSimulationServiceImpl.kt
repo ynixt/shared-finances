@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEn
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
@@ -76,14 +77,35 @@ class RecurrenceSimulationServiceImpl(
             bill = bill,
             walletItemId = walletItemId,
             userId = userId,
-            groupId = groupId,
+            groupIds = if (groupId == null) emptySet() else setOf(groupId),
+            userIds = emptySet(),
         ).sumOf { it.entries.filter { entry -> entry.walletItemId == walletItemId }.sumOf { entry -> entry.value } }
 
     override suspend fun simulateGenerationForCreditCard(
         billDate: LocalDate,
         userId: UUID,
-        groupId: UUID?,
+        groupIds: Set<UUID>,
+        userIds: Set<UUID>,
         walletItemId: UUID,
+    ): List<EventListResponse> =
+        simulateGenerationForCreditCardWithFilters(
+            billDate = billDate,
+            userId = userId,
+            groupIds = groupIds,
+            userIds = userIds,
+            walletItemId = walletItemId,
+            walletItemIds = emptySet(),
+            entryTypes = emptySet(),
+        )
+
+    override suspend fun simulateGenerationForCreditCardWithFilters(
+        billDate: LocalDate,
+        userId: UUID,
+        walletItemId: UUID,
+        groupIds: Set<UUID>,
+        userIds: Set<UUID>,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
     ): List<EventListResponse> {
         val bill =
             creditCardBillService.getBillFromDatabaseOrSimulate(
@@ -95,70 +117,109 @@ class RecurrenceSimulationServiceImpl(
         return simulateGenerationForCreditCard(
             bill = bill,
             userId = userId,
-            groupId = groupId,
             walletItemId = walletItemId,
+            groupIds = groupIds,
+            userIds = userIds,
+            walletItemIds = walletItemIds,
+            entryTypes = entryTypes,
         )
     }
 
     override suspend fun simulateGenerationForCreditCard(
         bill: CreditCardBill,
         userId: UUID,
-        groupId: UUID?,
+        groupIds: Set<UUID>,
+        userIds: Set<UUID>,
         walletItemId: UUID?,
     ): List<EventListResponse> =
         simulateGeneration(
             minimumEndExecution = null,
             maximumNextExecution = null,
             userId = userId,
-            groupId = groupId,
+            groupIds = groupIds,
+            userIds = userIds,
             walletItemId = walletItemId,
             billDate = bill.billDate,
+        )
+
+    private suspend fun simulateGenerationForCreditCard(
+        bill: CreditCardBill,
+        userId: UUID,
+        walletItemId: UUID?,
+        groupIds: Set<UUID>,
+        userIds: Set<UUID>,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
+    ): List<EventListResponse> =
+        simulateGenerationWithFilters(
+            minimumEndExecution = null,
+            maximumNextExecution = null,
+            userId = userId,
+            walletItemId = walletItemId,
+            billDate = bill.billDate,
+            groupIds = groupIds,
+            userIds = userIds,
+            walletItemIds = walletItemIds,
+            entryTypes = entryTypes,
         )
 
     override suspend fun simulateGeneration(
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
         userId: UUID?,
-        groupId: UUID?,
+        groupIds: Set<UUID>,
+        userIds: Set<UUID>,
         walletItemId: UUID?,
         billDate: LocalDate?,
+    ): List<EventListResponse> =
+        simulateGenerationWithFilters(
+            minimumEndExecution = minimumEndExecution,
+            maximumNextExecution = maximumNextExecution,
+            userId = userId,
+            walletItemId = walletItemId,
+            billDate = billDate,
+            groupIds = groupIds,
+            userIds = userIds,
+            walletItemIds = emptySet(),
+            entryTypes = emptySet(),
+        )
+
+    override suspend fun simulateGenerationWithFilters(
+        minimumEndExecution: LocalDate?,
+        maximumNextExecution: LocalDate?,
+        userId: UUID?,
+        walletItemId: UUID?,
+        billDate: LocalDate?,
+        groupIds: Set<UUID>,
+        userIds: Set<UUID>,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
     ): List<EventListResponse> {
+        require(groupIds.isNotEmpty() || userIds.isEmpty()) {
+            "Filter userIds requires at least one groupId."
+        }
+
         val fixedStartDate = fixStartDate(minimumEndExecution)
+        val ownerUserIds =
+            when {
+                userIds.isNotEmpty() -> userIds
+                groupIds.isEmpty() -> setOfNotNull(userId)
+                else -> emptySet()
+            }
 
         val configs =
-            when {
-                walletItemId != null -> {
-                    recurrenceService.findAllEntryByWalletId(
-                        minimumEndExecution = fixedStartDate,
-                        maximumNextExecution = maximumNextExecution,
-                        walletItemId = walletItemId,
-                        userId = if (groupId == null) userId else null,
-                        groupId = groupId,
-                        billDate = billDate,
-                        sort = defaultSort,
-                    )
-                }
-
-                groupId != null -> {
-                    recurrenceService.findAllEntryByGroupId(
-                        minimumEndExecution = fixedStartDate,
-                        maximumNextExecution = maximumNextExecution,
-                        groupId = groupId,
-                        sort = defaultSort,
-                    )
-                }
-
-                userId != null -> {
-                    recurrenceService.findAllEntryByUserId(
-                        minimumEndExecution = fixedStartDate,
-                        maximumNextExecution = maximumNextExecution,
-                        userId = userId,
-                        sort = defaultSort,
-                    )
-                }
-
-                else -> TODO()
-            }.toList()
+            recurrenceService
+                .findAllEntries(
+                    minimumEndExecution = fixedStartDate,
+                    maximumNextExecution = maximumNextExecution,
+                    billDate = billDate,
+                    walletItemId = walletItemId,
+                    walletItemIds = walletItemIds,
+                    userIds = ownerUserIds,
+                    groupIds = groupIds,
+                    entryTypes = entryTypes,
+                    sort = defaultSort,
+                ).toList()
 
         return simulateGenerationForConfigs(
             configs = configs,
@@ -213,7 +274,8 @@ class RecurrenceSimulationServiceImpl(
 
         simulateGeneration(
             userId = userId,
-            groupId = groupId,
+            groupIds = if (groupId == null) emptySet() else setOf(groupId),
+            userIds = emptySet(),
             walletItemId = walletItemId,
             minimumEndExecution = minimumEndExecution,
             maximumNextExecution = maximumNextExecution,
@@ -279,7 +341,7 @@ class RecurrenceSimulationServiceImpl(
 
             val originWalletItem = walletItemsById[originEntry.walletItemId]!!
             val targetWalletItem = targetEntry?.walletItemId?.let { targetId -> walletItemsById[targetId]!! }
-            val user = it.userId?.let { userId -> userById[userId]!! }
+            val user = userById[it.createdByUserId]
             val group = it.groupId?.let { groupId -> groupById[groupId]!! }
             val category = it.categoryId?.let { categoryId -> categoriesById[categoryId]!! }
             val walletItems = listOfNotNull(originWalletItem, targetWalletItem)
@@ -364,7 +426,7 @@ class RecurrenceSimulationServiceImpl(
                 } else if (simulateBillForRecurrence &&
                     it.type == WalletItemType.CREDIT_CARD
                 ) {
-                    simulateBill(it, executionDate, config.userId)
+                    simulateBill(it, executionDate, config.createdByUserId)
                 } else {
                     null
                 }
@@ -457,7 +519,7 @@ class RecurrenceSimulationServiceImpl(
 
         val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
         val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.groupId }.toSet()).toList()
-        val users = userService.findAllByIdIn(configs.mapNotNull { config -> config.userId }.toSet()).toList()
+        val users = userService.findAllByIdIn(configs.map { config -> config.createdByUserId }.toSet()).toList()
         val walletItems = walletItemService.findAllByIdIn(configs.flatMap { it.entries!! }.map { it.walletItemId }.toSet()).toList()
 
         return simulateGeneration(

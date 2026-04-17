@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSum
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.nowOffset
@@ -145,6 +146,51 @@ internal class InMemoryWalletEntryRepository(
                         expense = expense,
                     )
                 },
+        )
+    }
+
+    override fun summarizeOverviewExpenseBySource(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExpenseSourceSummary> {
+        val support = buildSupport() ?: return Flux.empty()
+        val summaries = mutableMapOf<UUID, OverviewExpenseSourceSummary>()
+
+        data.values.forEach { entry ->
+            val walletItem = support.itemById[entry.walletItemId] ?: return@forEach
+            val event = support.eventById[entry.walletEventId] ?: return@forEach
+            if (walletItem.userId != userId ||
+                walletItem.type !in setOf(WalletItemType.BANK_ACCOUNT, WalletItemType.CREDIT_CARD) ||
+                !walletItem.enabled ||
+                !walletItem.showOnDashboard ||
+                event.initialBalance ||
+                event.type != WalletEntryType.EXPENSE ||
+                entry.value >= BigDecimal.ZERO ||
+                event.date.isBefore(minimumDate) ||
+                event.date.isAfter(maximumDate)
+            ) {
+                return@forEach
+            }
+
+            val expenseValue = entry.value.abs()
+            val current = summaries[entry.walletItemId]
+            summaries[entry.walletItemId] =
+                if (current == null) {
+                    OverviewExpenseSourceSummary(
+                        walletItemId = entry.walletItemId,
+                        walletItemName = walletItem.name,
+                        walletItemType = walletItem.type,
+                        currency = walletItem.currency,
+                        expense = expenseValue,
+                    )
+                } else {
+                    current.copy(expense = current.expense.add(expenseValue))
+                }
+        }
+
+        return Flux.fromIterable(
+            summaries.values.sortedBy { it.walletItemName.lowercase() },
         )
     }
 

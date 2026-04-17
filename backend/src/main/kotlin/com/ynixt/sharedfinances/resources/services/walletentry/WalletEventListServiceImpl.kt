@@ -20,6 +20,7 @@ import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
@@ -54,18 +55,15 @@ class WalletEventListServiceImpl(
 ) : WalletEventListService {
     override suspend fun list(
         userId: UUID,
-        groupId: UUID?,
         request: ListEntryRequest,
     ): CursorPage<EventListResponse> {
-        if (groupId != null) {
-            if (!groupPermissionService.hasPermission(
-                    userId = userId,
-                    groupId = groupId,
-                )
-            ) {
-                return CursorPage.empty()
-            }
+        if (!validateScopeBeforeSelect(userId, request)) {
+            return CursorPage.empty()
         }
+
+        val requestedWalletItemIds = (request.bankAccountIds + request.creditCardIds).toSet()
+        val requestedEntryTypes = request.entryTypes
+        val queryScope = buildQueryScope(userId = userId, request = request)
 
         val now = LocalDate.now()
         var simulatedEntries: List<EventListResponse> = emptyList()
@@ -73,20 +71,26 @@ class WalletEventListServiceImpl(
         if (!request.skipFuture || request.maximumDate != null && request.maximumDate > now) {
             simulatedEntries =
                 if (request.billDate != null && request.walletItemId != null) {
-                    recurrenceSimulationService.simulateGenerationForCreditCard(
+                    recurrenceSimulationService.simulateGenerationForCreditCardWithFilters(
                         userId = userId,
-                        groupId = groupId,
                         walletItemId = request.walletItemId,
                         billDate = request.billDate,
+                        groupIds = request.groupIds,
+                        userIds = request.userIds,
+                        walletItemIds = requestedWalletItemIds,
+                        entryTypes = requestedEntryTypes,
                     )
                 } else {
-                    recurrenceSimulationService.simulateGeneration(
+                    recurrenceSimulationService.simulateGenerationWithFilters(
                         userId = userId,
-                        groupId = groupId,
                         walletItemId = request.walletItemId,
                         minimumEndExecution = request.minimumDate,
                         maximumNextExecution = request.maximumDate,
                         billDate = null,
+                        groupIds = request.groupIds,
+                        userIds = request.userIds,
+                        walletItemIds = requestedWalletItemIds,
+                        entryTypes = requestedEntryTypes,
                     )
                 }
         }
@@ -107,10 +111,11 @@ class WalletEventListServiceImpl(
         val rawList =
             walletEventRepository
                 .findAll(
-                    userId = if (groupId == null) userId else null,
-                    groupId = groupId,
+                    scope = queryScope,
                     limit = missingQtyAfterFuture + 1,
                     walletItemId = request.walletItemId,
+                    walletItemIds = requestedWalletItemIds,
+                    entryTypes = requestedEntryTypes,
                     minimumDate = request.minimumDate,
                     maximumDate = request.maximumDate,
                     billId = request.billId,
@@ -145,6 +150,39 @@ class WalletEventListServiceImpl(
         }
     }
 
+    private suspend fun validateScopeBeforeSelect(
+        userId: UUID,
+        request: ListEntryRequest,
+    ): Boolean {
+        if (request.groupIds.isEmpty()) {
+            return request.userIds.isEmpty()
+        }
+
+        return request.groupIds.none { groupId ->
+            !groupPermissionService.hasPermission(
+                userId = userId,
+                groupId = groupId,
+            )
+        }
+    }
+
+    private fun buildQueryScope(
+        userId: UUID,
+        request: ListEntryRequest,
+    ): WalletTransactionQueryScope =
+        when {
+            request.groupIds.isEmpty() ->
+                WalletTransactionQueryScope.ownership(
+                    ownerUserIds = setOf(userId),
+                )
+            request.userIds.isNotEmpty() ->
+                WalletTransactionQueryScope.ownership(
+                    ownerUserIds = request.userIds,
+                    groupIds = request.groupIds,
+                )
+            else -> WalletTransactionQueryScope.group(groupIds = request.groupIds)
+        }
+
     override suspend fun findById(
         userId: UUID,
         walletEventId: UUID,
@@ -158,8 +196,8 @@ class WalletEventListServiceImpl(
                         userId = userId,
                         groupId = event.groupId,
                     )
-                event.userId != null -> event.userId == userId
-                else -> false
+
+                else -> event.createdByUserId == userId
             }
 
         if (!hasReadPermission) {
@@ -197,8 +235,8 @@ class WalletEventListServiceImpl(
                         userId = userId,
                         groupId = config.groupId,
                     )
-                config.userId != null -> config.userId == userId
-                else -> false
+
+                else -> config.createdByUserId == userId
             }
 
         if (!hasReadPermission || config.nextExecution == null) {
@@ -236,7 +274,7 @@ class WalletEventListServiceImpl(
 
         val usersById =
             userService
-                .findAllByIdIn(setOfNotNull(config.userId))
+                .findAllByIdIn(setOf(config.createdByUserId))
                 .toList()
                 .associateBy { user -> user.id!! }
         val groupsById =
@@ -256,7 +294,7 @@ class WalletEventListServiceImpl(
             .simulateGeneration(
                 config = config,
                 walletItems = walletItems,
-                user = config.userId?.let { usersById[it] },
+                user = usersById[config.createdByUserId],
                 group = config.groupId?.let { groupsById[it] },
                 category = config.categoryId?.let { categoriesById[it] },
                 simulateBillForRecurrence = false,
@@ -301,7 +339,7 @@ class WalletEventListServiceImpl(
                 events.flatMap { it.entries!! }.filter { it.walletItem != null }.map { it.walletItem }
             ).map { walletItemMapper.toModel(it!!) }
                 .toSet()
-        val userIds = (events.map { it.userId } + walletEntries.map { it.userId }).filterNotNull().toSet()
+        val userIds = (events.map { it.createdByUserId } + walletEntries.map { it.userId }).toSet()
 
         return userService.findAllByIdIn(userIds).toList().let { users ->
             val walletEntriesById = walletEntries.associateBy { it.id!! }
@@ -359,7 +397,7 @@ class WalletEventListServiceImpl(
         val originValue = if (event.type == WalletEntryType.TRANSFER) originEntry.value.abs() else null
         val targetValue = if (event.type == WalletEntryType.TRANSFER) targetEntry?.value?.abs() else null
 
-        val user = event.userId?.let { usersById[it] }
+        val user = usersById[event.createdByUserId]
         val group = event.groupId?.let { groupsById[it] }
         val category = event.categoryId?.let { categoriesById[it] }
 

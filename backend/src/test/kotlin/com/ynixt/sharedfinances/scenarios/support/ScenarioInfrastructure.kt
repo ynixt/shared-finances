@@ -34,6 +34,9 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.crypto.password.PasswordEncoder
 import java.time.Clock
@@ -193,6 +196,12 @@ internal class NoOpBankAccountActionEventService : BankAccountActionEventService
 
 internal class NoOpGroupService : GroupService {
     override suspend fun findAllGroups(userId: UUID): List<GroupWithRole> = emptyList()
+
+    override suspend fun searchGroups(
+        userId: UUID,
+        pageable: Pageable,
+        query: String?,
+    ): Page<GroupWithRole> = PageImpl(emptyList(), pageable, 0)
 
     override suspend fun findGroup(
         userId: UUID,

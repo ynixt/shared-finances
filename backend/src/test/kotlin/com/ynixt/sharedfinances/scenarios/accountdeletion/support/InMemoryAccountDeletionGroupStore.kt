@@ -65,6 +65,22 @@ internal class InMemoryAccountDeletionGroupStore :
                 },
         )
 
+    override fun searchByUserIdAndNameContainingIgnoreCase(
+        userId: UUID,
+        name: String,
+    ): Flux<GroupWithRole> {
+        val normalized = name.trim().lowercase()
+        return findAllByUserIdOrderByName(userId)
+            .filter { group -> group.name.lowercase().contains(normalized) }
+    }
+
+    override fun countByUserIdAndNameContainingIgnoreCase(
+        userId: UUID,
+        name: String,
+    ): Mono<Long> =
+        searchByUserIdAndNameContainingIgnoreCase(userId, name)
+            .count()
+
     override fun edit(
         id: UUID,
         newName: String,

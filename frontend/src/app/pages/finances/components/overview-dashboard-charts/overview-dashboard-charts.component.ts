@@ -1,10 +1,12 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { ChartData, ChartOptions, TooltipItem } from 'chart.js';
 import 'chart.js/auto';
 import dayjs from 'dayjs';
 import { ChartModule } from 'primeng/chart';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import {
   OverviewDashboardChartPointDto,
@@ -12,13 +14,20 @@ import {
   OverviewDashboardPieSliceDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/dashboard';
 import { LocalCurrencyPipeService } from '../../../../pipes/local-currency.pipe';
+import { LocalDatePipeService } from '../../../../pipes/local-date.pipe';
+import { capitalize } from '../../../../util/string-util';
+import { DateRange } from '../wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 
 @Component({
   selector: 'app-overview-dashboard-charts',
-  imports: [TranslatePipe, ChartModule],
+  imports: [TranslatePipe, FormsModule, ChartModule, ToggleSwitch],
   templateUrl: './overview-dashboard-charts.component.html',
 })
 export class OverviewDashboardChartsComponent {
+  private readonly localCurrencyPipeService = inject(LocalCurrencyPipeService);
+  private readonly translateService = inject(TranslateService);
+  private readonly localDatePipeService = inject(LocalDatePipeService);
+
   private readonly piePalette = [
     '#e11d48',
     '#f97316',
@@ -31,9 +40,35 @@ export class OverviewDashboardChartsComponent {
     '#d946ef',
     '#64748b',
   ];
+  private readonly expenseCategoryPersistentLabels = new Set(['PREDEFINED_UNCATEGORIZED']);
+  private readonly expenseGroupPersistentLabels = new Set(['PREDEFINED_INDIVIDUAL']);
 
   readonly charts = input<OverviewDashboardChartsDto | undefined>(undefined);
   readonly currency = input<string | undefined>(undefined);
+  /** Month selection from the overview page (same as `dateControl` there); drives default projected toggles by month/year vs today. */
+  readonly overviewDateRange = input<DateRange | undefined | null>(undefined);
+  readonly includeBalanceProjected = signal(false);
+  readonly includeCashInProjected = signal(false);
+  readonly includeCashOutProjected = signal(false);
+  readonly includeExpenseProjected = signal(false);
+  readonly includeCashInByCategoryProjected = signal(false);
+  readonly includeCashOutByCategoryProjected = signal(false);
+  readonly includeExpenseByGroupProjected = signal(false);
+  readonly includeExpenseByCategoryProjected = signal(false);
+
+  constructor() {
+    effect(() => {
+      const include = this.resolveIncludeProjectedDefault(this.overviewDateRange());
+      this.includeBalanceProjected.set(include);
+      this.includeCashInProjected.set(include);
+      this.includeCashOutProjected.set(include);
+      this.includeExpenseProjected.set(include);
+      this.includeCashInByCategoryProjected.set(include);
+      this.includeCashOutByCategoryProjected.set(include);
+      this.includeExpenseByGroupProjected.set(include);
+      this.includeExpenseByCategoryProjected.set(include);
+    });
+  }
   readonly lineChartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -102,30 +137,69 @@ export class OverviewDashboardChartsComponent {
       },
     },
   };
-  readonly balanceChartData = computed(() => this.buildChartData(this.charts()?.balance ?? [], '#0284c7', 'rgba(14, 165, 233, 0.16)'));
-  readonly cashInChartData = computed(() => this.buildChartData(this.charts()?.cashIn ?? [], '#059669', 'rgba(16, 185, 129, 0.16)'));
-  readonly cashOutChartData = computed(() => this.buildChartData(this.charts()?.cashOut ?? [], '#f97316', 'rgba(249, 115, 22, 0.16)'));
-  readonly expenseChartData = computed(() => this.buildChartData(this.charts()?.expense ?? [], '#e11d48', 'rgba(244, 63, 94, 0.16)'));
-  readonly cashInByCategoryChartData = computed(() => this.buildPieChartData(this.charts()?.cashInByCategory ?? []));
-  readonly cashOutByCategoryChartData = computed(() => this.buildPieChartData(this.charts()?.cashOutByCategory ?? []));
-  readonly expenseByGroupChartData = computed(() => this.buildPieChartData(this.charts()?.expenseByGroup ?? []));
-  readonly expenseByCategoryChartData = computed(() => this.buildPieChartData(this.charts()?.expenseByCategory ?? []));
-  readonly hasCashInByCategoryData = computed(() => (this.charts()?.cashInByCategory ?? []).length > 0);
-  readonly hasCashOutByCategoryData = computed(() => (this.charts()?.cashOutByCategory ?? []).length > 0);
-  readonly hasExpenseByGroupData = computed(() => (this.charts()?.expenseByGroup ?? []).length > 0);
-  readonly hasExpenseByCategoryData = computed(() => (this.charts()?.expenseByCategory ?? []).length > 0);
+  readonly balanceChartData = computed(() =>
+    this.buildChartData(this.charts()?.balance ?? [], '#0284c7', 'rgba(14, 165, 233, 0.16)', this.includeBalanceProjected()),
+  );
+  readonly balanceLineChartOptions = computed(() => this.buildLineChartOptions(this.resolveLineAxisMax(this.charts()?.balance ?? [])));
+  readonly cashInChartData = computed(() =>
+    this.buildChartData(this.charts()?.cashIn ?? [], '#059669', 'rgba(16, 185, 129, 0.16)', this.includeCashInProjected()),
+  );
+  readonly cashInLineChartOptions = computed(() => this.buildLineChartOptions(this.resolveLineAxisMax(this.charts()?.cashIn ?? [])));
+  readonly cashOutChartData = computed(() =>
+    this.buildChartData(this.charts()?.cashOut ?? [], '#f97316', 'rgba(249, 115, 22, 0.16)', this.includeCashOutProjected()),
+  );
+  readonly cashOutLineChartOptions = computed(() => this.buildLineChartOptions(this.resolveLineAxisMax(this.charts()?.cashOut ?? [])));
+  readonly expenseChartData = computed(() =>
+    this.buildChartData(this.charts()?.expense ?? [], '#e11d48', 'rgba(244, 63, 94, 0.16)', this.includeExpenseProjected()),
+  );
+  readonly expenseLineChartOptions = computed(() => this.buildLineChartOptions(this.resolveLineAxisMax(this.charts()?.expense ?? [])));
+  readonly cashInByCategorySlices = computed(() =>
+    this.buildPieSlices(this.charts()?.cashInByCategory ?? [], this.includeCashInByCategoryProjected()),
+  );
+  readonly cashOutByCategorySlices = computed(() =>
+    this.buildPieSlices(this.charts()?.cashOutByCategory ?? [], this.includeCashOutByCategoryProjected()),
+  );
+  readonly expenseByGroupSlices = computed(() =>
+    this.buildPieSlices(this.charts()?.expenseByGroup ?? [], this.includeExpenseByGroupProjected(), this.expenseGroupPersistentLabels),
+  );
+  readonly expenseByCategorySlices = computed(() =>
+    this.buildPieSlices(
+      this.charts()?.expenseByCategory ?? [],
+      this.includeExpenseByCategoryProjected(),
+      this.expenseCategoryPersistentLabels,
+    ),
+  );
+  readonly cashInByCategoryChartData = computed(() => this.buildPieChartData(this.cashInByCategorySlices()));
+  readonly cashOutByCategoryChartData = computed(() => this.buildPieChartData(this.cashOutByCategorySlices()));
+  readonly expenseByGroupChartData = computed(() => this.buildPieChartData(this.expenseByGroupSlices()));
+  readonly expenseByCategoryChartData = computed(() => this.buildPieChartData(this.expenseByCategorySlices()));
+  readonly hasCashInByCategoryData = computed(() => this.cashInByCategorySlices().length > 0);
+  readonly hasCashOutByCategoryData = computed(() => this.cashOutByCategorySlices().length > 0);
+  readonly hasExpenseByGroupData = computed(() => this.expenseByGroupSlices().length > 0);
+  readonly hasExpenseByCategoryData = computed(() => this.expenseByCategorySlices().length > 0);
 
-  constructor(
-    private readonly localCurrencyPipeService: LocalCurrencyPipeService,
-    private readonly translateService: TranslateService,
-  ) {}
+  private resolveIncludeProjectedDefault(dateRange: DateRange | undefined | null): boolean {
+    if (dateRange?.startDate == null) {
+      return false;
+    }
 
-  private buildChartData(points: OverviewDashboardChartPointDto[], borderColor: string, backgroundColor: string): ChartData<'line'> {
+    const selectedMonth = dateRange.startDate.startOf('month');
+    const currentMonth = dayjs().startOf('month');
+    return selectedMonth.isAfter(currentMonth, 'month');
+  }
+
+  private buildChartData(
+    points: OverviewDashboardChartPointDto[],
+    borderColor: string,
+    backgroundColor: string,
+    includeProjected: boolean,
+  ): ChartData<'line'> {
     return {
       labels: points.map(point => this.monthLabel(point.month)),
       datasets: [
         {
-          data: points.map(point => point.value),
+          tension: 0,
+          data: points.map(point => point.executedValue + (includeProjected ? point.projectedValue : 0)),
           borderColor,
           backgroundColor,
           fill: true,
@@ -134,7 +208,55 @@ export class OverviewDashboardChartsComponent {
     };
   }
 
-  private buildPieChartData(slices: OverviewDashboardPieSliceDto[]): ChartData<'pie'> {
+  private buildLineChartOptions(max: number | undefined): ChartOptions<'line'> {
+    return {
+      ...this.lineChartOptions,
+      scales: {
+        ...this.lineChartOptions.scales,
+        y: {
+          ...this.lineChartOptions.scales?.['y'],
+          ...(max == null ? {} : { max }),
+        },
+      },
+    };
+  }
+
+  private resolveLineAxisMax(points: OverviewDashboardChartPointDto[]): number | undefined {
+    if (points.length === 0) {
+      return undefined;
+    }
+
+    const max = points.reduce((currentMax, point) => {
+      const withProjected = point.executedValue + point.projectedValue;
+      return Math.max(currentMax, point.executedValue, withProjected);
+    }, Number.NEGATIVE_INFINITY);
+
+    if (Number.isFinite(max)) {
+      if (max == 0) {
+        return 50;
+      }
+
+      return max + max * 0.1;
+    }
+
+    return undefined;
+  }
+
+  private buildPieSlices(
+    slices: OverviewDashboardPieSliceDto[],
+    includeProjected: boolean,
+    persistentLabels: ReadonlySet<string> = new Set<string>(),
+  ): PieSlicePoint[] {
+    return slices
+      .map(slice => ({
+        id: slice.id ?? null,
+        label: slice.label,
+        value: slice.executedValue + (includeProjected ? slice.projectedValue : 0),
+      }))
+      .filter(slice => slice.value > 0 || persistentLabels.has(slice.label));
+  }
+
+  private buildPieChartData(slices: PieSlicePoint[]): ChartData<'pie'> {
     return {
       labels: slices.map(slice => this.pieSliceLabel(slice)),
       datasets: [
@@ -153,7 +275,7 @@ export class OverviewDashboardChartsComponent {
     const [m, y] = month.split('-');
     if (m == null || y == null) return month;
 
-    return dayjs(`${y}-${m}-01`).format('MMM/YY');
+    return capitalize(this.localDatePipeService.transform(dayjs(`${y}-${m}-01`), 'MMM yy').replace('.', ''));
   }
 
   private formatCurrency(value: unknown): string {
@@ -161,13 +283,13 @@ export class OverviewDashboardChartsComponent {
     return this.localCurrencyPipeService.transform(Number.isNaN(numericValue) ? 0 : numericValue, this.currency());
   }
 
-  private pieSliceLabel(slice: OverviewDashboardPieSliceDto): string {
-    if (slice.id != null) {
-      return slice.label;
+  private pieSliceLabel(slice: Pick<OverviewDashboardPieSliceDto, 'id' | 'label'>): string {
+    const translationKey = this.breakdownFallbackLabelKey(slice.label);
+    if (translationKey != null) {
+      return this.translateService.instant(translationKey);
     }
 
-    const translationKey = this.breakdownFallbackLabelKey(slice.label);
-    return translationKey == null ? slice.label : this.translateService.instant(translationKey);
+    return slice.label;
   }
 
   private breakdownFallbackLabelKey(label: string): string | undefined {
@@ -178,3 +300,9 @@ export class OverviewDashboardChartsComponent {
     }[label];
   }
 }
+
+type PieSlicePoint = {
+  id?: string | null;
+  label: string;
+  value: number;
+};

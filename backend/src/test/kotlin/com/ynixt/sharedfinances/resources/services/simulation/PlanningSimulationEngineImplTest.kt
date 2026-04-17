@@ -162,7 +162,8 @@ class PlanningSimulationEngineImplTest {
             minimumEndExecution: LocalDate?,
             maximumNextExecution: LocalDate?,
             userId: UUID?,
-            groupId: UUID?,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
             walletItemId: UUID?,
             billDate: LocalDate?,
         ): List<EventListResponse> {
@@ -194,14 +195,16 @@ class PlanningSimulationEngineImplTest {
         override suspend fun simulateGenerationForCreditCard(
             billDate: LocalDate,
             userId: UUID,
-            groupId: UUID?,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
             walletItemId: UUID,
         ): List<EventListResponse> = emptyList()
 
         override suspend fun simulateGenerationForCreditCard(
             bill: CreditCardBill,
             userId: UUID,
-            groupId: UUID?,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
             walletItemId: UUID?,
         ): List<EventListResponse> = emptyList()
 

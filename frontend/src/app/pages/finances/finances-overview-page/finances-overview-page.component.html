@@ -17,9 +17,24 @@
     </p-message>
   }
   <app-overview-dashboard-cards class="block" [cards]="dashboard.cards" [currency]="dashboard.currency"></app-overview-dashboard-cards>
+
   <app-overview-dashboard-charts
     class="mt-10 block"
     [charts]="dashboard.charts"
     [currency]="dashboard.currency"
+    [overviewDateRange]="dateControl.value"
   ></app-overview-dashboard-charts>
+
+  <app-individual-dashboard-filters class="mt-10 block" (filtersChange)="onFiltersChange($event)"></app-individual-dashboard-filters>
+
+  <app-wallet-entry-table
+    class="mt-10 block"
+    [dateRange]="dateControl.value == null ? undefined : dateControl.value"
+    [groupIds]="dashboardFilters.groupIds"
+    [creditCardIds]="dashboardFilters.creditCardIds"
+    [bankAccountIds]="dashboardFilters.bankAccountIds"
+    [entryTypes]="dashboardFilters.entryTypes"
+    [refreshKey]="tableRefreshKey"
+    [listenToUserEvents]="false"
+  ></app-wallet-entry-table>
 }

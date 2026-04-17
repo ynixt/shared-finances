@@ -79,6 +79,9 @@ export class OverviewDashboardCardsComponent {
         PROJECTED_CASH_IN: 'financesPage.overviewPage.cards.projectedCashIn',
         PROJECTED_CASH_OUT: 'financesPage.overviewPage.cards.projectedCashOut',
         END_OF_PERIOD_BALANCE: 'financesPage.overviewPage.cards.endOfPeriodBalance',
+        EXPENSES: 'financesPage.overviewPage.cards.expenses',
+        PROJECTED_EXPENSES: 'financesPage.overviewPage.cards.projectedExpenses',
+        PERIOD_EXPENSES: 'financesPage.overviewPage.cards.periodExpenses',
         END_OF_PERIOD_NET_CASH_FLOW: 'financesPage.overviewPage.cards.endOfPeriodNetCashFlow',
       }[cardKey] ?? 'financesPage.overviewPage.unknownCard'
     );
@@ -97,6 +100,9 @@ export class OverviewDashboardCardsComponent {
         PROJECTED_CASH_OUT: this.projectedCashOutIcon,
         END_OF_PERIOD_BALANCE: this.endBalanceIcon,
         END_OF_PERIOD_NET_CASH_FLOW: this.endNetCashFlowIcon,
+        EXPENSES: this.periodCashOutIcon,
+        PROJECTED_EXPENSES: this.periodCashOutIcon,
+        PERIOD_EXPENSES: this.periodCashOutIcon,
       }[cardKey] ?? this.balanceIcon
     );
   }

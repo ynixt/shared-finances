@@ -98,7 +98,7 @@ class BankAccountScenarioDslTest {
                 overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_CASH_OUT, 50)
                 overviewCardShouldBe(OverviewDashboardCardKey.END_OF_PERIOD_BALANCE, 1050)
                 overviewCardShouldBe(OverviewDashboardCardKey.END_OF_PERIOD_NET_CASH_FLOW, 50)
-                overviewBalanceForMonthShouldBe(selectedMonth, 1000)
+                overviewChartBalanceForMonthShouldBe(selectedMonth, 1050)
             }
         }
     }

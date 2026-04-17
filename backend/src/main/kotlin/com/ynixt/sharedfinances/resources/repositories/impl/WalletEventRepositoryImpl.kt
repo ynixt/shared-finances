@@ -1,8 +1,10 @@
 package com.ynixt.sharedfinances.resources.repositories.impl
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.WalletEventDatabaseClientRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventSpringDataRepository
 import org.springframework.stereotype.Repository
@@ -49,20 +51,22 @@ class WalletEventRepositoryImpl(
     override fun deleteAllForAccountDeletion(userId: UUID): Mono<Long> = springDataRepository.deleteAllForAccountDeletion(userId)
 
     override fun findAll(
-        userId: UUID?,
-        groupId: UUID?,
+        scope: WalletTransactionQueryScope,
         limit: Int,
         walletItemId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
         cursor: WalletEventCursorFindAll?,
     ): Flux<WalletEventEntity> =
         dcRepository.findAll(
-            userId = userId,
-            groupId = groupId,
+            scope = scope,
             limit = limit,
             walletItemId = walletItemId,
+            walletItemIds = walletItemIds,
+            entryTypes = entryTypes,
             minimumDate = minimumDate,
             maximumDate = maximumDate,
             billId = billId,

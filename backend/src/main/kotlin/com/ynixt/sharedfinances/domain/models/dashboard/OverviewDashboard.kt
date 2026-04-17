@@ -43,12 +43,16 @@ data class OverviewDashboardCharts(
 data class OverviewDashboardChartPoint(
     val month: YearMonth,
     val value: BigDecimal,
+    val executedValue: BigDecimal,
+    val projectedValue: BigDecimal,
 )
 
 data class OverviewDashboardPieSlice(
     val id: UUID?,
     val label: String,
     val value: BigDecimal,
+    val executedValue: BigDecimal,
+    val projectedValue: BigDecimal,
 )
 
 enum class OverviewDashboardCardKey {
@@ -62,6 +66,9 @@ enum class OverviewDashboardCardKey {
     PROJECTED_CASH_OUT,
     END_OF_PERIOD_BALANCE,
     END_OF_PERIOD_NET_CASH_FLOW,
+    EXPENSES,
+    PROJECTED_EXPENSES,
+    PERIOD_EXPENSES,
 }
 
 enum class OverviewDashboardDetailSourceType {

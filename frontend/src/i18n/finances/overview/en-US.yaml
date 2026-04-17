@@ -11,6 +11,15 @@ financesPage:
     actions:
       details: Details
       close: Close
+    filters:
+      title: Filters
+      clear: Clear filters
+      groups: Groups
+      members: Members
+      bankAccounts: Bank accounts
+      creditCards: Credit cards
+      entryTypes: Transaction type
+      noOptions: No options available
     cards:
       balance: Balance
       goalCommitted: Goal commitment
@@ -22,7 +31,11 @@ financesPage:
       projectedCashOut: Projected cash out
       endOfPeriodBalance: Estimated end-of-period balance
       endOfPeriodNetCashFlow: Estimated end-of-period change
+      expenses: Expenses
+      projectedExpenses: Projected expenses
+      periodExpenses: Period expenses
     charts:
+      includeProjectedToggle: Include projected
       balance: Balance (12 months)
       cashIn: Cash in (12 months)
       cashOut: Cash out (12 months)
@@ -50,3 +63,5 @@ financesPage:
         goal: Goal
         formula: Formula
         unknown: Unknown source
+    feed:
+      title: Transactions in period

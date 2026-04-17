@@ -349,6 +349,12 @@ class WalletEntryTransferQuoteServiceImplTest {
     private class NoOpGroupService : GroupService {
         override suspend fun findAllGroups(userId: UUID): List<GroupWithRole> = throw NotImplementedError()
 
+        override suspend fun searchGroups(
+            userId: UUID,
+            pageable: Pageable,
+            query: String?,
+        ): Page<GroupWithRole> = throw NotImplementedError()
+
         override suspend fun findGroup(
             userId: UUID,
             id: UUID,

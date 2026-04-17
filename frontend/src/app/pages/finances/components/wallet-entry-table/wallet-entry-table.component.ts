@@ -18,7 +18,7 @@ import { TableModule } from 'primeng/table';
 import { InfinitePaginatorComponent } from '../../../../components/infinite-paginator/infinite-paginator.component';
 import { CursorPage } from '../../../../models/cursor-pagination';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
-import { ScheduledEditScope } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { ScheduledEditScope, WalletEntryType } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../../pipes/local-date.pipe';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
@@ -67,8 +67,15 @@ export class WalletEntryTableComponent {
   currentPageNumber = 0;
   page: CursorPage<EventForListDto> | undefined;
 
+  readonly title = input<string | undefined>('financesPage.overviewPage.feed.title');
   readonly loading = input<boolean>(false);
   readonly dateRange = input<DateRange | undefined>(undefined);
+  readonly groupIds = input<string[] | undefined>(undefined);
+  readonly creditCardIds = input<string[] | undefined>(undefined);
+  readonly bankAccountIds = input<string[] | undefined>(undefined);
+  readonly entryTypes = input<WalletEntryType[] | undefined>(undefined);
+  readonly refreshKey = input<number>(0);
+  readonly listenToUserEvents = input<boolean>(true);
   readonly creditCardBillId = input<string | undefined | null>(undefined);
   readonly creditCardBillDate = input<dayjs.Dayjs | undefined>(undefined);
   readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
@@ -96,7 +103,19 @@ export class WalletEntryTableComponent {
     effect(async () => {
       const wId = this.walletItemId();
       const dRange = this.dateRange();
+      const filterGroupIds = this.groupIds();
+      const filterCreditCardIds = this.creditCardIds();
+      const filterBankAccountIds = this.bankAccountIds();
+      const filterEntryTypes = this.entryTypes();
+      const refreshKey = this.refreshKey();
       const isLoading = this.loading();
+      void wId;
+      void dRange;
+      void filterGroupIds;
+      void filterCreditCardIds;
+      void filterBankAccountIds;
+      void filterEntryTypes;
+      void refreshKey;
 
       if (isLoading) return;
 
@@ -132,6 +151,10 @@ export class WalletEntryTableComponent {
         billDate: billDate?.format(ONLY_DATE_FORMAT),
         minimumDate: dateRange?.startDate?.format(ONLY_DATE_FORMAT),
         maximumDate: dateRange?.endDate?.format(ONLY_DATE_FORMAT),
+        groupIds: this.groupIds(),
+        creditCardIds: this.creditCardIds(),
+        bankAccountIds: this.bankAccountIds(),
+        entryTypes: this.entryTypes(),
       },
     );
   };
@@ -166,21 +189,56 @@ export class WalletEntryTableComponent {
   }
 
   private newTransactionInserted(dto: EventForListDto) {
-    // TODO: improve this
+    if (!this.listenToUserEvents()) return;
+    if (!this.shouldReloadForEvent(dto)) return;
+    void this.reload();
+  }
 
+  private shouldReloadForEvent(dto: EventForListDto): boolean {
     const dateRange = this.dateRange();
-    const walletItemId = this.walletItemId();
-    const creditCardBillDate = this.creditCardBillDate();
-
-    if (dateRange == null || walletItemId == null || dto.entries.find(e => e.walletItemId == walletItemId) == null) return;
-
-    if (
-      (creditCardBillDate != null && dto.entries.find(e => e.billDate && creditCardBillDate.isSame(dayjs(e.billDate))) != null) ||
-      ((dateRange.startDate.isBefore(dto.date) || dateRange.startDate.isSame(dto.date)) &&
-        (dateRange.endDate == null || dateRange.endDate.isAfter(dto.date) || dateRange.endDate.isSame(dto.date)))
-    ) {
-      this.reload();
+    if (dateRange == null) {
+      return false;
     }
+
+    const eventDate = dayjs(dto.date);
+    const isDateInRange =
+      (dateRange.startDate.isBefore(eventDate) || dateRange.startDate.isSame(eventDate, 'day')) &&
+      (dateRange.endDate == null || dateRange.endDate.isAfter(eventDate) || dateRange.endDate.isSame(eventDate, 'day'));
+    if (!isDateInRange) {
+      return false;
+    }
+
+    const walletItemId = this.walletItemId();
+    if (walletItemId != null && dto.entries.find(entry => entry.walletItemId === walletItemId) == null) {
+      return false;
+    }
+
+    const bankAccountIds = this.bankAccountIds() ?? [];
+    if (bankAccountIds.length > 0 && dto.entries.find(entry => bankAccountIds.includes(entry.walletItemId)) == null) {
+      return false;
+    }
+
+    const creditCardIds = this.creditCardIds() ?? [];
+    if (creditCardIds.length > 0 && dto.entries.find(entry => creditCardIds.includes(entry.walletItemId)) == null) {
+      return false;
+    }
+
+    const groupIds = this.groupIds() ?? [];
+    if (groupIds.length > 0 && (dto.group?.id == null || !groupIds.includes(dto.group.id))) {
+      return false;
+    }
+
+    const entryTypes = this.entryTypes() ?? [];
+    if (entryTypes.length > 0 && !entryTypes.includes(dto.type)) {
+      return false;
+    }
+
+    const creditCardBillDate = this.creditCardBillDate();
+    if (creditCardBillDate != null) {
+      return dto.entries.find(entry => entry.billDate && creditCardBillDate.isSame(dayjs(entry.billDate), 'day')) != null;
+    }
+
+    return true;
   }
 
   canEdit(entry: EventForListDto): boolean {

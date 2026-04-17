@@ -1,34 +1,99 @@
 <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.balance' | translate }}</h3>
-    <div class="h-80">
-      <p-chart type="line" [data]="balanceChartData()" [options]="lineChartOptions"></p-chart>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.balance' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeBalanceProjected()"
+          (ngModelChange)="includeBalanceProjected.set($event)"
+          inputId="balanceProjectedToggle"
+        ></p-toggleswitch>
+        <label for="balanceProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div>
+      <p-chart type="line" [data]="balanceChartData()" [options]="balanceLineChartOptions()"></p-chart>
     </div>
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashIn' | translate }}</h3>
-    <div class="h-72">
-      <p-chart type="line" [data]="cashInChartData()" [options]="lineChartOptions"></p-chart>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashIn' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeCashInProjected()"
+          (ngModelChange)="includeCashInProjected.set($event)"
+          inputId="cashInProjectedToggle"
+        ></p-toggleswitch>
+        <label for="cashInProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div>
+      <p-chart type="line" [data]="cashInChartData()" [options]="cashInLineChartOptions()"></p-chart>
     </div>
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashOut' | translate }}</h3>
-    <div class="h-72">
-      <p-chart type="line" [data]="cashOutChartData()" [options]="lineChartOptions"></p-chart>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashOut' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeCashOutProjected()"
+          (ngModelChange)="includeCashOutProjected.set($event)"
+          inputId="cashOutProjectedToggle"
+        ></p-toggleswitch>
+        <label for="cashOutProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div>
+      <p-chart type="line" [data]="cashOutChartData()" [options]="cashOutLineChartOptions()"></p-chart>
     </div>
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expense' | translate }}</h3>
-    <div class="h-72">
-      <p-chart type="line" [data]="expenseChartData()" [options]="lineChartOptions"></p-chart>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expense' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeExpenseProjected()"
+          (ngModelChange)="includeExpenseProjected.set($event)"
+          inputId="expenseProjectedToggle"
+        ></p-toggleswitch>
+        <label for="expenseProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div>
+      <p-chart type="line" [data]="expenseChartData()" [options]="expenseLineChartOptions()"></p-chart>
     </div>
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashInByCategory' | translate }}</h3>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashInByCategory' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeCashInByCategoryProjected()"
+          (ngModelChange)="includeCashInByCategoryProjected.set($event)"
+          inputId="cashInByCategoryProjectedToggle"
+        ></p-toggleswitch>
+        <label for="cashInByCategoryProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
     @if (hasCashInByCategoryData()) {
       <div class="h-80">
         <p-chart type="pie" [data]="cashInByCategoryChartData()" [options]="pieChartOptions"></p-chart>
@@ -43,7 +108,20 @@
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashOutByCategory' | translate }}</h3>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashOutByCategory' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeCashOutByCategoryProjected()"
+          (ngModelChange)="includeCashOutByCategoryProjected.set($event)"
+          inputId="cashOutByCategoryProjectedToggle"
+        ></p-toggleswitch>
+        <label for="cashOutByCategoryProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
     @if (hasCashOutByCategoryData()) {
       <div class="h-80">
         <p-chart type="pie" [data]="cashOutByCategoryChartData()" [options]="pieChartOptions"></p-chart>
@@ -58,7 +136,20 @@
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expenseByGroup' | translate }}</h3>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expenseByGroup' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeExpenseByGroupProjected()"
+          (ngModelChange)="includeExpenseByGroupProjected.set($event)"
+          inputId="expenseByGroupProjectedToggle"
+        ></p-toggleswitch>
+        <label for="expenseByGroupProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
     @if (hasExpenseByGroupData()) {
       <div class="h-80">
         <p-chart type="pie" [data]="expenseByGroupChartData()" [options]="pieChartOptions"></p-chart>
@@ -73,7 +164,20 @@
   </div>
 
   <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-    <h3 class="mb-3 font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expenseByCategory' | translate }}</h3>
+    <div class="flex gap-4 flex-col md:flex-row mb-4">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expenseByCategory' | translate }}</h3>
+
+      <div class="flex items-center gap-3 md:ml-auto flex-wrap">
+        <p-toggleswitch
+          [ngModel]="includeExpenseByCategoryProjected()"
+          (ngModelChange)="includeExpenseByCategoryProjected.set($event)"
+          inputId="expenseByCategoryProjectedToggle"
+        ></p-toggleswitch>
+        <label for="expenseByCategoryProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
     @if (hasExpenseByCategoryData()) {
       <div class="h-80">
         <p-chart type="pie" [data]="expenseByCategoryChartData()" [options]="pieChartOptions"></p-chart>

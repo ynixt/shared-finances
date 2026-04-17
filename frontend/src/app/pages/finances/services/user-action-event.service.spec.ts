@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { environment } from '../../../../environments/environment';
 import { TokenStateService } from '../../../services/token-state.service';
-import { SingleSseCoordinatorService } from './single-sse-coordinator.service';
+import { SingleSseCoordinatorService, type SseCoordinatorState } from './single-sse-coordinator.service';
 import { UserActionEventService } from './user-action-event.service';
 
 const eventSourceHarness = vi.hoisted(() => {
@@ -27,20 +27,25 @@ vi.mock('eventsource-client', () => ({
 
 type CoordinatorMock = {
   isSupported: boolean;
+  state$: BehaviorSubject<SseCoordinatorState>;
   isLeader$: BehaviorSubject<boolean>;
   distributedEvent$: Subject<{ event?: string; data: string; sourceEventId: string }>;
-  resyncRequired$: Subject<void>;
   forwardEvent: ReturnType<typeof vi.fn>;
 };
 
-function buildCoordinatorMock(): CoordinatorMock {
+function buildCoordinatorMock(initialState: SseCoordinatorState = 'follower'): CoordinatorMock {
   return {
     isSupported: true,
-    isLeader$: new BehaviorSubject<boolean>(false),
+    state$: new BehaviorSubject<SseCoordinatorState>(initialState),
+    isLeader$: new BehaviorSubject<boolean>(initialState === 'leader'),
     distributedEvent$: new Subject<{ event?: string; data: string; sourceEventId: string }>(),
-    resyncRequired$: new Subject<void>(),
     forwardEvent: vi.fn(),
   };
+}
+
+function setCoordinatorState(coordinator: CoordinatorMock, state: SseCoordinatorState) {
+  coordinator.state$.next(state);
+  coordinator.isLeader$.next(state === 'leader');
 }
 
 function buildZoneMock() {
@@ -112,8 +117,7 @@ describe('UserActionEventService', () => {
 
   it('delivers transaction updates from cross-tab broadcast when follower', async () => {
     environment.singleSsePerBrowser = true;
-    const coordinator = buildCoordinatorMock();
-    coordinator.isLeader$.next(false);
+    const coordinator = buildCoordinatorMock('follower');
     const service = new UserActionEventService(
       { token$: of('token-1') } as unknown as TokenStateService,
       buildZoneMock() as unknown as NgZone,
@@ -137,8 +141,7 @@ describe('UserActionEventService', () => {
 
   it('forwards SSE events through coordinator when tab is leader', async () => {
     environment.singleSsePerBrowser = true;
-    const coordinator = buildCoordinatorMock();
-    coordinator.isLeader$.next(true);
+    const coordinator = buildCoordinatorMock('leader');
     const service = new UserActionEventService(
       { token$: of('token-1') } as unknown as TokenStateService,
       buildZoneMock() as unknown as NgZone,
@@ -166,9 +169,9 @@ describe('UserActionEventService', () => {
     });
   });
 
-  it('exposes coordinator resync signal unchanged', async () => {
+  it('emits resync when this tab acquires leadership', async () => {
     environment.singleSsePerBrowser = true;
-    const coordinator = buildCoordinatorMock();
+    const coordinator = buildCoordinatorMock('follower');
     const service = new UserActionEventService(
       { token$: of('token-1') } as unknown as TokenStateService,
       buildZoneMock() as unknown as NgZone,
@@ -180,11 +183,10 @@ describe('UserActionEventService', () => {
       count++;
     });
 
-    coordinator.resyncRequired$.next();
-    coordinator.resyncRequired$.next();
+    setCoordinatorState(coordinator, 'leader');
 
     await flushAsyncWork();
 
-    expect(count).toBe(2);
+    expect(count).toBe(1);
   });
 });

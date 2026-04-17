@@ -68,7 +68,7 @@ class WalletEntryRemovalServiceImpl(
             return null
         }
 
-        if (!hasDeletePermission(userId = userId, ownerUserId = existingEvent.userId, groupId = existingEvent.groupId)) {
+        if (!hasDeletePermission(userId = userId, ownerUserId = existingEvent.createdByUserId, groupId = existingEvent.groupId)) {
             return null
         }
 
@@ -91,7 +91,7 @@ class WalletEntryRemovalServiceImpl(
     ): MinimumWalletEventEntity? {
         val config = loadRecurrenceConfigWithEntries(recurrenceConfigId) ?: return null
 
-        if (!hasDeletePermission(userId = userId, ownerUserId = config.userId, groupId = config.groupId)) {
+        if (!hasDeletePermission(userId = userId, ownerUserId = config.createdByUserId, groupId = config.groupId)) {
             return null
         }
 
@@ -282,7 +282,7 @@ class WalletEntryRemovalServiceImpl(
         RecurrenceEventEntity(
             name = config.name,
             categoryId = config.categoryId,
-            userId = config.userId,
+            createdByUserId = config.createdByUserId,
             groupId = config.groupId,
             tags = config.tags,
             observations = config.observations,
@@ -306,7 +306,7 @@ class WalletEntryRemovalServiceImpl(
 
     private suspend fun hasDeletePermission(
         userId: UUID,
-        ownerUserId: UUID?,
+        ownerUserId: UUID,
         groupId: UUID?,
     ): Boolean {
         if (groupId == null) {

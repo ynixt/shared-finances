@@ -13,7 +13,7 @@ import java.util.UUID
 class RecurrenceEventEntity(
     name: String?,
     categoryId: UUID?,
-    userId: UUID?,
+    createdByUserId: UUID,
     groupId: UUID?,
     tags: List<String>?,
     observations: String?,
@@ -32,7 +32,7 @@ class RecurrenceEventEntity(
         type = type,
         name = name,
         categoryId = categoryId,
-        userId = userId,
+        createdByUserId = createdByUserId,
         groupId = groupId,
         tags = tags,
         observations = observations,

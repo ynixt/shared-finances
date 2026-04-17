@@ -167,7 +167,7 @@ abstract class WalletEntrySaveServiceImpl(
     ): WalletEventEntity =
         WalletEventEntity(
             type = newEntryRequest.type,
-            userId = if (newEntryRequest.groupId == null) userId else null,
+            createdByUserId = userId,
             groupId = newEntryRequest.groupId,
             name = newEntryRequest.name,
             categoryId = newEntryRequest.categoryId,
@@ -393,7 +393,7 @@ abstract class WalletEntrySaveServiceImpl(
         return RecurrenceEventEntity(
             name = newEntryRequest.name,
             categoryId = newEntryRequest.categoryId,
-            userId = userId,
+            createdByUserId = userId,
             groupId = newEntryRequest.groupId,
             tags = newEntryRequest.tags?.ifEmpty { null },
             observations = newEntryRequest.observations,

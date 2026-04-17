@@ -578,7 +578,7 @@ class WalletEntryEditServiceImpl(
                 type = preparedRequest.type,
                 name = preparedRequest.name,
                 categoryId = preparedRequest.categoryId,
-                userId = if (preparedRequest.groupId == null) userId else null,
+                createdByUserId = userId,
                 groupId = preparedRequest.groupId,
                 tags = preparedRequest.tags?.ifEmpty { null },
                 observations = preparedRequest.observations,

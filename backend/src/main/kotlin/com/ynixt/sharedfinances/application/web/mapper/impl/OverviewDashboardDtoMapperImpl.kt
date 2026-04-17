@@ -78,6 +78,8 @@ class OverviewDashboardDtoMapperImpl : OverviewDashboardDtoMapper {
                 to::id fromProperty from::id
                 to::label fromProperty from::label
                 to::value fromProperty from::value
+                to::executedValue fromProperty from::executedValue
+                to::projectedValue fromProperty from::projectedValue
             }
     }
 

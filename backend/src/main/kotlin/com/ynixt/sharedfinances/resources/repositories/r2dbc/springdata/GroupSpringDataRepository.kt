@@ -39,6 +39,37 @@ interface GroupSpringDataRepository :
         id: UUID,
     ): Mono<GroupWithRole>
 
+    @Query(
+        """
+            select g.*, gu.role as role
+            from "group" g
+            join group_user gu on gu.group_id = g.id
+            where
+                gu.user_id = :userId
+                and lower(g.name) like concat('%', lower(:name), '%')
+            order by g.name
+        """,
+    )
+    override fun searchByUserIdAndNameContainingIgnoreCase(
+        userId: UUID,
+        name: String,
+    ): Flux<GroupWithRole>
+
+    @Query(
+        """
+            select count(*)
+            from "group" g
+            join group_user gu on gu.group_id = g.id
+            where
+                gu.user_id = :userId
+                and lower(g.name) like concat('%', lower(:name), '%')
+        """,
+    )
+    override fun countByUserIdAndNameContainingIgnoreCase(
+        userId: UUID,
+        name: String,
+    ): Mono<Long>
+
     @Modifying
     @Query(
         """

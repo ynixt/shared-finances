@@ -12,6 +12,9 @@ import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import java.math.BigDecimal
 import java.util.UUID
 
@@ -72,6 +75,24 @@ internal class ScenarioGroupService : GroupService {
                 }
             }
         }
+
+    override suspend fun searchGroups(
+        userId: UUID,
+        pageable: Pageable,
+        query: String?,
+    ): Page<GroupWithRole> {
+        val normalized = query?.trim()?.lowercase().orEmpty()
+        val items =
+            findAllGroups(userId)
+                .filter { group ->
+                    normalized.isBlank() || group.name.lowercase().contains(normalized)
+                }
+
+        val start = pageable.offset.toInt().coerceAtMost(items.size)
+        val end = (start + pageable.pageSize).coerceAtMost(items.size)
+        val content = if (start >= end) emptyList() else items.subList(start, end)
+        return PageImpl(content, pageable, items.size.toLong())
+    }
 
     override suspend fun findGroup(
         userId: UUID,

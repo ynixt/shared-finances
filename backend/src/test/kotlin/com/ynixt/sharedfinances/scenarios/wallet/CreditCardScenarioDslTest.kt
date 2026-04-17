@@ -212,6 +212,140 @@ class CreditCardScenarioDslTest {
     }
 
     @Test
+    fun `should calculate expense cards with executed and projected values from visible bank and credit card sources`() {
+        val today = LocalDate.of(2026, 4, 15)
+        val selectedMonth = YearMonth.of(2026, 4)
+
+        lateinit var visibleBankId: UUID
+        lateinit var hiddenBankId: UUID
+        lateinit var visibleCardId: UUID
+        lateinit var hiddenCardId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                visibleBankId =
+                    bankAccount(
+                        name = "Visible bank",
+                        balance = 1000,
+                        currency = "BRL",
+                        showOnDashboard = true,
+                    )
+                hiddenBankId =
+                    bankAccount(
+                        name = "Hidden bank",
+                        balance = 1000,
+                        currency = "BRL",
+                        showOnDashboard = false,
+                    )
+                visibleCardId =
+                    creditCard(
+                        name = "Visible card",
+                        limit = 1000,
+                        currency = "BRL",
+                        dueDay = 10,
+                        daysBetweenDueAndClosing = 7,
+                        dueOnNextBusinessDay = false,
+                        showOnDashboard = true,
+                    )
+                hiddenCardId =
+                    creditCard(
+                        name = "Hidden card",
+                        limit = 1000,
+                        currency = "BRL",
+                        dueDay = 10,
+                        daysBetweenDueAndClosing = 7,
+                        dueOnNextBusinessDay = false,
+                        showOnDashboard = false,
+                    )
+            }
+
+            `when` {
+                expense(
+                    originId = visibleBankId,
+                    value = 70,
+                    date = LocalDate.of(2026, 4, 10),
+                    name = "Executed visible bank expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = visibleCardId,
+                    value = 200,
+                    date = LocalDate.of(2026, 4, 12),
+                    name = "Executed visible card expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = hiddenBankId,
+                    value = 30,
+                    date = LocalDate.of(2026, 4, 11),
+                    name = "Executed hidden bank expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = hiddenCardId,
+                    value = 90,
+                    date = LocalDate.of(2026, 4, 13),
+                    name = "Executed hidden card expense",
+                    confirmed = true,
+                )
+
+                expense(
+                    originId = visibleBankId,
+                    value = 100,
+                    date = LocalDate.of(2026, 4, 20),
+                    name = "Projected visible bank expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = visibleCardId,
+                    value = 300,
+                    date = LocalDate.of(2026, 4, 22),
+                    name = "Projected visible card expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = hiddenBankId,
+                    value = 50,
+                    date = LocalDate.of(2026, 4, 21),
+                    name = "Projected hidden bank expense",
+                    confirmed = true,
+                )
+                expense(
+                    originId = hiddenCardId,
+                    value = 60,
+                    date = LocalDate.of(2026, 4, 23),
+                    name = "Projected hidden card expense",
+                    confirmed = true,
+                )
+                fetchOverview(selectedMonth)
+            }
+
+            then {
+                overviewCardShouldBe(OverviewDashboardCardKey.EXPENSES, 270)
+                overviewCardShouldBe(OverviewDashboardCardKey.PROJECTED_EXPENSES, 400)
+                overviewCardShouldBe(OverviewDashboardCardKey.PERIOD_EXPENSES, 670)
+                overviewCardDetailLabelsShouldContain(
+                    key = OverviewDashboardCardKey.EXPENSES,
+                    expectedLabels = listOf("Visible bank", "Visible card"),
+                )
+                overviewCardDetailLabelsShouldNotContain(
+                    key = OverviewDashboardCardKey.EXPENSES,
+                    unexpectedLabels = listOf("Hidden bank", "Hidden card"),
+                )
+                overviewCardDetailLabelsShouldContain(
+                    key = OverviewDashboardCardKey.PROJECTED_EXPENSES,
+                    expectedLabels = listOf("Visible bank", "Visible card"),
+                )
+                overviewCardDetailLabelsShouldNotContain(
+                    key = OverviewDashboardCardKey.PROJECTED_EXPENSES,
+                    unexpectedLabels = listOf("Hidden bank", "Hidden card"),
+                )
+            }
+        }
+    }
+
+    @Test
     fun `should include projected unpaid credit card bills and exclude hidden items from overview`() {
         val today = LocalDate.of(2026, 4, 15)
         val selectedMonth = YearMonth.of(2026, 4)

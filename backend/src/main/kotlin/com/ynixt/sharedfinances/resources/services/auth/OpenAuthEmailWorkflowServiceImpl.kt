@@ -22,6 +22,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.Duration
+import java.util.Locale
 
 @Service
 class OpenAuthEmailWorkflowServiceImpl(
@@ -48,7 +49,7 @@ class OpenAuthEmailWorkflowServiceImpl(
                 .issueToken(userId, user.email, ttl)
                 .awaitSingle()
 
-        dispatchConfirmationEmail(user.email, user.lang, raw)
+        dispatchConfirmationEmail(user.email, getUserLocale(user), raw)
         markEmailConfirmationResendCooldown(user.email)
     }
 
@@ -109,7 +110,7 @@ class OpenAuthEmailWorkflowServiceImpl(
                 .issueToken(userId, user.email, ttl)
                 .awaitSingle()
 
-        dispatchConfirmationEmail(user.email, user.lang, raw)
+        dispatchConfirmationEmail(user.email, getUserLocale(user), raw)
         markResendCooldown(cooldownKey)
 
         return authProperties.emailResend.cooldownSeconds
@@ -160,7 +161,7 @@ class OpenAuthEmailWorkflowServiceImpl(
                 .issueToken(userId, updated.email, ttl)
                 .awaitSingle()
 
-        dispatchConfirmationEmail(updated.email, updated.lang, raw)
+        dispatchConfirmationEmail(updated.email, getUserLocale(updated), raw)
         markResendCooldown(AuthRedisKeys.emailVerifyResend(userId))
         markEmailConfirmationResendCooldown(updated.email)
 
@@ -188,7 +189,7 @@ class OpenAuthEmailWorkflowServiceImpl(
                 passwordResetTokenRedisRepository
                     .issueToken(userId, user.email, ttl)
                     .awaitSingle()
-            dispatchPasswordResetEmail(user.email, user.lang, raw)
+            dispatchPasswordResetEmail(user.email, getUserLocale(user), raw)
         }
 
         markResendCooldown(cooldownKey)
@@ -231,13 +232,13 @@ class OpenAuthEmailWorkflowServiceImpl(
 
     private suspend fun dispatchConfirmationEmail(
         to: String,
-        userLang: String,
+        locale: Locale,
         rawToken: String,
     ) {
         transactionalEmailDispatchService.send(
             authTransactionalMailMessageComposer.buildEmailConfirmation(
                 toAddress = to,
-                userLang = userLang,
+                locale = locale,
                 rawToken = rawToken,
             ),
         )
@@ -245,13 +246,13 @@ class OpenAuthEmailWorkflowServiceImpl(
 
     private suspend fun dispatchPasswordResetEmail(
         to: String,
-        userLang: String,
+        locale: Locale,
         rawToken: String,
     ) {
         transactionalEmailDispatchService.send(
             authTransactionalMailMessageComposer.buildPasswordReset(
                 toAddress = to,
-                userLang = userLang,
+                locale = locale,
                 rawToken = rawToken,
             ),
         )
@@ -281,4 +282,6 @@ class OpenAuthEmailWorkflowServiceImpl(
     }
 
     private fun normalizeEmail(email: String): String = email.trim().lowercase()
+
+    private fun getUserLocale(user: UserEntity): Locale = Locale.forLanguageTag(user.lang)
 }

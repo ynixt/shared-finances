@@ -36,6 +36,7 @@ general:
   refresh: Atualizar
   previous: Anterior
   next: Próximo
+  all: Todos
 
 error:
   genericTitle: Erro

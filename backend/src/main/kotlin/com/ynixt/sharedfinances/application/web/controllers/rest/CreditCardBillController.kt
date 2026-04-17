@@ -94,5 +94,6 @@ class CreditCardBillController(
                 date = request.date,
                 amount = request.amount,
                 observations = request.observations,
+                locale = principalToken.principal.locale,
             ).let { ResponseEntity.noContent().build() }
 }

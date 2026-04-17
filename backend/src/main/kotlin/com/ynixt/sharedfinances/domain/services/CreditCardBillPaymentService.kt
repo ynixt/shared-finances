@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.services
 
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.Locale
 import java.util.UUID
 
 interface CreditCardBillPaymentService {
@@ -12,5 +13,6 @@ interface CreditCardBillPaymentService {
         date: LocalDate,
         amount: BigDecimal,
         observations: String?,
+        locale: Locale,
     )
 }

@@ -1,7 +1,11 @@
 package com.ynixt.sharedfinances.scenarios.support.repositories
 
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryPath
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import org.springframework.data.domain.Sort
 import reactor.core.publisher.Flux
@@ -9,7 +13,9 @@ import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
-internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
+internal class InMemoryRecurrenceEventRepository(
+    private val walletItemRepository: InMemoryWalletItemRepository,
+) : RecurrenceEventRepository {
     private val data = linkedMapOf<UUID, RecurrenceEventEntity>()
 
     fun findIdsBySeriesId(seriesId: UUID): Set<UUID> =
@@ -39,7 +45,14 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
         userId: UUID,
     ): Mono<Long> {
         val initial = data.size
-        data.entries.removeIf { (_, value) -> value.userId == userId }
+        data.entries.removeIf { (_, value) ->
+            value.entries
+                .orEmpty()
+                .any { entry ->
+                    entry.walletItemId == walletItemId &&
+                        walletItemRepository.getOrNull(entry.walletItemId)?.userId == userId
+                }
+        }
         return Mono.just((initial - data.size).toLong())
     }
 
@@ -48,13 +61,18 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
         userId: UUID,
     ): Mono<Long> {
         val initial = data.size
-        data.entries.removeIf { (_, value) -> value.groupId == groupId && value.userId == userId }
+        data.entries.removeIf { (_, value) -> value.groupId == groupId && value.createdByUserId == userId }
         return Mono.just((initial - data.size).toLong())
     }
 
     override fun deleteAllForAccountDeletion(userId: UUID): Mono<Long> {
         val initial = data.size
-        data.entries.removeIf { (_, value) -> value.userId == userId }
+        data.entries.removeIf { (_, value) ->
+            value.createdByUserId == userId ||
+                value.entries
+                    .orEmpty()
+                    .any { entry -> walletItemRepository.getOrNull(entry.walletItemId)?.userId == userId }
+        }
         return Mono.just((initial - data.size).toLong())
     }
 
@@ -78,43 +96,59 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
         return Mono.just(1)
     }
 
-    override fun findAll(
+    override fun findAllEntries(
+        scope: WalletTransactionQueryScope,
         minimumEndExecution: LocalDate?,
         maximumNextExecution: LocalDate?,
         billDate: LocalDate?,
         walletItemId: UUID?,
-        userId: UUID?,
-        groupId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
         sort: Sort,
     ): Flux<RecurrenceEventEntity> {
         val filtered =
             data.values
                 .asSequence()
-                .filter { userId == null || it.userId == userId }
-                .filter { groupId == null || it.groupId == groupId }
                 .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution.isAfter(maximumNextExecution)) }
                 .filter { minimumEndExecution == null || (it.endExecution == null || !it.endExecution.isBefore(minimumEndExecution)) }
-                .toList()
-        return Flux.fromIterable(filtered)
-    }
+                .filter { entryTypes.isEmpty() || entryTypes.contains(it.type) }
+                .filter { event ->
+                    when (scope.path) {
+                        WalletTransactionQueryPath.OWNERSHIP -> {
+                            val ownedEntries =
+                                event.entries
+                                    .orEmpty()
+                                    .any { entry ->
+                                        walletItemRepository.getOrNull(entry.walletItemId)?.userId?.let(scope.ownerUserIds::contains) ==
+                                            true
+                                    }
+                            val groupMatches = scope.groupIds.isEmpty() || (event.groupId != null && scope.groupIds.contains(event.groupId))
+                            ownedEntries && groupMatches
+                        }
+                        WalletTransactionQueryPath.GROUP_SCOPE -> event.groupId != null && scope.groupIds.contains(event.groupId)
+                    }
+                }.filter { event ->
+                    val entries = event.entries.orEmpty().filterIsInstance<RecurrenceEntryEntity>()
+                    val walletItemMatches =
+                        walletItemId == null ||
+                            entries.any { entry ->
+                                entry.walletItemId == walletItemId &&
+                                    (
+                                        billDate == null ||
+                                            entry.nextBillDate == null ||
+                                            (
+                                                !entry.nextBillDate.isAfter(billDate) &&
+                                                    (entry.lastBillDate == null || !entry.lastBillDate.isBefore(billDate))
+                                            )
+                                    )
+                            }
 
-    override fun findAllByUserIds(
-        minimumEndExecution: LocalDate?,
-        maximumNextExecution: LocalDate?,
-        userIds: Set<UUID>,
-        sort: Sort,
-    ): Flux<RecurrenceEventEntity> {
-        if (userIds.isEmpty()) {
-            return Flux.empty()
-        }
+                    val walletItemIdsMatches =
+                        walletItemIds.isEmpty() ||
+                            entries.any { entry -> walletItemIds.contains(entry.walletItemId) }
 
-        val filtered =
-            data.values
-                .asSequence()
-                .filter { userIds.contains(it.userId) }
-                .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution.isAfter(maximumNextExecution)) }
-                .filter { minimumEndExecution == null || (it.endExecution == null || !it.endExecution.isBefore(minimumEndExecution)) }
-                .toList()
+                    walletItemMatches && walletItemIdsMatches
+                }.toList()
         return Flux.fromIterable(filtered)
     }
 
@@ -146,7 +180,7 @@ internal class InMemoryRecurrenceEventRepository : RecurrenceEventRepository {
         RecurrenceEventEntity(
             name = current.name,
             categoryId = current.categoryId,
-            userId = current.userId,
+            createdByUserId = current.createdByUserId,
             groupId = current.groupId,
             tags = current.tags,
             observations = current.observations,

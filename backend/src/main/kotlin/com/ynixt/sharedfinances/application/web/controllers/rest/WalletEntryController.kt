@@ -206,7 +206,6 @@ class WalletEntryController(
         walletEventListService
             .list(
                 userId = principalToken.principal.id,
-                groupId = null,
                 request = listEntryRequest.let { walletEntryDtoMapper.fromEntryListRequestDtoToModel(it) },
             ).mapCursorPageToDto(walletEventDtoMapper::fromListResponseToListDto)
 

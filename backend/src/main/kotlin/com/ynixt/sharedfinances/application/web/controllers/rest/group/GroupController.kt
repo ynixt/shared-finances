@@ -16,6 +16,8 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupInviteService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
@@ -49,6 +52,20 @@ class GroupController(
         groupService
             .findAllGroups(
                 principalToken.principal.id,
+            ).map(groupDtoMapper::toDto)
+
+    @Operation(summary = "Search groups by name")
+    @GetMapping("/search")
+    suspend fun search(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        pageable: Pageable,
+        @RequestParam(required = false) query: String?,
+    ): Page<GroupWithRoleDto> =
+        groupService
+            .searchGroups(
+                userId = principalToken.principal.id,
+                pageable = pageable,
+                query = query,
             ).map(groupDtoMapper::toDto)
 
     @Operation(summary = "Get a group by id")

@@ -1,17 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ContentChild, TemplateRef, ViewChild, computed, forwardRef, input, signal } from '@angular/core';
-import { FormControl, FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { Component, ContentChild, TemplateRef, ViewChild, forwardRef } from '@angular/core';
+import { FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs';
-
-import { ScrollerOptions } from 'primeng/api';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
-import { Select, SelectChangeEvent, SelectLazyLoadEvent } from 'primeng/select';
+import { Select, SelectChangeEvent } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 
-import { SimpleControlValueAccessor } from '../simple-control-value-accessor';
+import { PagedSelectControlValueAccessor } from '../paged-select-control-value-accessor';
 
 @Component({
   selector: 'app-paged-select',
@@ -26,64 +23,11 @@ import { SimpleControlValueAccessor } from '../simple-control-value-accessor';
     },
   ],
 })
-export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
-  optionsGetter = input<(page: number, query?: string | undefined) => Promise<any[]>>();
-  placeholder = input<string>();
-  componentClass = input<string>();
-  pageSize = input<number>(10);
-  allowFilter = input<boolean>(true);
-  filterInMemory = input<boolean>(false);
-  optionLabel = input<string>('name');
-  dataKey = input<string>('id');
-
+export class PagedSelectComponent extends PagedSelectControlValueAccessor<any> {
   @ContentChild('item', { read: TemplateRef }) externalItemTemplate?: TemplateRef<any>;
   @ContentChild('selectedItem', { read: TemplateRef }) externalSelectedItemTemplate?: TemplateRef<any>;
 
-  loading = signal<boolean>(true);
-
   @ViewChild('select') select: Select | undefined;
-
-  currentPage = 0;
-  lastItemRequested = -1;
-  currentPageBeforeFilter = 0;
-  lastItemRequestedBeforeFilter = -1;
-  options: any[] = [];
-  optionsBeforeFilter: any[] = [];
-
-  scrollerOptions = computed<ScrollerOptions>(() => ({
-    showLoader: true,
-    step: this.currentPage * this.pageSize() - 1,
-    onLazyLoad: this.onLazyLoad.bind(this),
-    loading: this.loading(),
-    lazy: true,
-  }));
-
-  searchControl = new FormControl('');
-
-  constructor() {
-    super();
-    this.searchControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(value => {
-      this.onFilterChange(value ?? '');
-    });
-  }
-
-  resetComponent() {
-    this.loading.set(true);
-    this.selectLoaded = false;
-    this.currentPage = 0;
-    this.lastItemRequested = -1;
-    this.currentPageBeforeFilter = 0;
-    this.lastItemRequestedBeforeFilter = -1;
-    this.options = [];
-    this.optionsBeforeFilter = [];
-  }
-
-  override writeValue(obj: any): void {
-    this.putValueOnListIfListNotContainsValue(obj);
-
-    this.value = obj;
-    this.onChange(obj);
-  }
 
   clearSelection() {
     this.writeValue(null);
@@ -94,46 +38,8 @@ export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
     this.writeValue(event.value);
   }
 
-  selectLoaded = false;
-
-  private async loadItems(page: number, query?: string | undefined): Promise<void> {
-    const oldLastItemRequested = this.lastItemRequested;
-
-    try {
-      this.lastItemRequested = this.pageSize() * ++this.currentPage;
-
-      const fn = this.optionsGetter();
-
-      if (fn) {
-        this.loading.set(true);
-        const items = await fn(page, query);
-
-        if (page <= 0) {
-          this.options = [...items];
-          this.putValueOnListIfListNotContainsValue(this.value);
-        } else {
-          this.options = [...this.options, ...items];
-        }
-        this.loading.set(false);
-      }
-    } catch (error) {
-      this.lastItemRequested = oldLastItemRequested;
-      this.selectLoaded = false;
-      throw error;
-    }
-  }
-
   async onShow() {
-    if (!this.selectLoaded) {
-      // We need to manual dispare on lazy load for the first time
-      this.selectLoaded = false;
-
-      await this.onLazyLoad({ first: 0, last: 0 });
-    } else {
-      if (this.select?.scroller) {
-        this.select.scroller.autoSize = false;
-      }
-    }
+    await this.onOverlayShow();
 
     // This is bad, I know, but this was the only method that I discover to force items to be reloaded
     this.select?._filterValue.set('loading');
@@ -145,46 +51,34 @@ export class PagedSelectComponent extends SimpleControlValueAccessor<any> {
     }, 0);
   }
 
-  async onLazyLoad(event: SelectLazyLoadEvent) {
-    if (event.last >= this.lastItemRequested) {
-      const page = event.last == -1 ? 0 : Math.floor(event.last / this.pageSize());
-
-      await this.loadItems(page);
+  protected override disableScrollerAutoSize() {
+    if (this.select?.scroller) {
+      this.select.scroller.autoSize = false;
     }
   }
 
-  async onFilterChange(query: string) {
-    if (query.trim().length > 0) {
-      if (this.lastItemRequestedBeforeFilter === -1) {
-        this.lastItemRequestedBeforeFilter = this.lastItemRequested;
-        this.currentPageBeforeFilter = this.currentPage;
-        this.optionsBeforeFilter = this.options;
-      }
-
-      this.currentPage = 0;
-      this.lastItemRequested = -1;
-
-      await this.loadItems(0, query);
-    } else {
-      this.lastItemRequested = this.lastItemRequestedBeforeFilter;
-      this.currentPage = this.currentPageBeforeFilter;
-      this.options = this.optionsBeforeFilter;
-
-      this.lastItemRequestedBeforeFilter = -1;
-      this.currentPageBeforeFilter = -1;
-      this.optionsBeforeFilter = [];
-    }
-
+  protected override scrollScrollerToTop() {
     this.select?.scroller?.scrollTo({ top: 0 });
   }
 
-  private putValueOnListIfListNotContainsValue(value: any) {
+  protected override putValueOnListIfListNotContainsValue(value: any) {
     if (value == null) return;
 
-    const s = new Set(this.options);
+    const optionValueField = this.optionValue();
 
-    if (!s.has(value)) {
-      this.options = [value, ...this.options];
+    if (optionValueField == null) {
+      const optionsSet = new Set(this.options);
+
+      if (!optionsSet.has(value)) {
+        this.options = [value, ...this.options];
+      }
+      return;
+    }
+
+    const optionsSet = new Set(this.options.map(option => this.getOptionComparisonValue(option)));
+
+    if (!optionsSet.has(value)) {
+      this.options = [this.createFallbackOptionFromValue(value), ...this.options];
     }
   }
 }

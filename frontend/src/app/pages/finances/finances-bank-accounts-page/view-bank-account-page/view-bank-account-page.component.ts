@@ -79,7 +79,7 @@ export class ViewBankAccountPageComponent {
     });
 
     const initialDateRange =
-      readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'range') ?? createMonthDateRange(dayjs(), 'range');
+      readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'normal') ?? createMonthDateRange(dayjs(), 'normal');
     this.dateControl.setValue(initialDateRange, { emitEvent: false });
     this.applyDateRange(initialDateRange, false);
 
@@ -95,7 +95,7 @@ export class ViewBankAccountPageComponent {
     this.dateRangeOnlyOnPast = this.dateRange?.endDate?.isBefore(dayjs()) ?? false;
 
     if (syncUrl) {
-      void syncDateQueryParams(this.route, this.router, dateRange, 'range');
+      void syncDateQueryParams(this.route, this.router, dateRange, 'normal');
     }
 
     void this.getSummary();

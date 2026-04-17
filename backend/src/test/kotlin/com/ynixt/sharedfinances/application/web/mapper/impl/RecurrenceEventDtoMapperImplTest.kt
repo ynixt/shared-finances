@@ -18,7 +18,7 @@ class RecurrenceEventDtoMapperImplTest {
             RecurrenceEventEntity(
                 name = "Installment",
                 categoryId = null,
-                userId = UUID.randomUUID(),
+                createdByUserId = UUID.randomUUID(),
                 groupId = null,
                 tags = null,
                 observations = null,
@@ -48,7 +48,7 @@ class RecurrenceEventDtoMapperImplTest {
             RecurrenceEventEntity(
                 name = "Recurring",
                 categoryId = null,
-                userId = UUID.randomUUID(),
+                createdByUserId = UUID.randomUUID(),
                 groupId = null,
                 tags = null,
                 observations = null,
@@ -78,7 +78,7 @@ class RecurrenceEventDtoMapperImplTest {
             RecurrenceEventEntity(
                 name = "Recurring",
                 categoryId = null,
-                userId = UUID.randomUUID(),
+                createdByUserId = UUID.randomUUID(),
                 groupId = null,
                 tags = null,
                 observations = null,

@@ -40,7 +40,7 @@ interface RecurrenceEventSpringDataRepository :
     @Query(
         """
         DELETE FROM recurrence_event
-        WHERE group_id = :groupId AND user_id = :userId
+        WHERE group_id = :groupId AND created_by_user_id = :userId
         """,
     )
     fun deleteAllByGroupIdAndUserId(
@@ -52,7 +52,7 @@ interface RecurrenceEventSpringDataRepository :
     @Query(
         """
         DELETE FROM recurrence_event re
-        WHERE re.user_id = :userId
+        WHERE re.created_by_user_id = :userId
            OR EXISTS (
                 SELECT 1
                 FROM recurrence_entry ren

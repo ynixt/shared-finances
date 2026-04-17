@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.ScheduledExecutionManagerRequest
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.walletentry.ScheduledExecutionManagerService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
@@ -65,8 +66,12 @@ class ScheduledExecutionManagerServiceImpl(
         val events =
             walletEventRepository
                 .findAll(
-                    userId = if (groupId == null) userId else null,
-                    groupId = groupId,
+                    scope =
+                        if (groupId == null) {
+                            WalletTransactionQueryScope.ownership(ownerUserIds = setOf(userId))
+                        } else {
+                            WalletTransactionQueryScope.group(groupIds = setOf(groupId))
+                        },
                     limit = maxGeneratedItems,
                     walletItemId = null,
                     minimumDate = null,
@@ -88,7 +93,7 @@ class ScheduledExecutionManagerServiceImpl(
             minimumEndExecution = LocalDate.now(clock).plusDays(1),
             maximumNextExecution = null,
             userId = if (groupId == null) userId else null,
-            groupId = groupId,
+            groupIds = if (groupId == null) emptySet() else setOfNotNull(groupId),
             walletItemId = null,
             billDate = null,
         )

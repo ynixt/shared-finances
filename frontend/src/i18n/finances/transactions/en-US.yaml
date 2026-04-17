@@ -42,8 +42,10 @@ financesPage:
       future: Scheduled
     newTransactionPage:
       title: New transaction
+      success: Transaction created successfully.
     editTransactionPage:
       title: Edit transaction
+      success: Transaction updated successfully.
     editScope:
       title: Choose edit scope
       description: This transaction is recurring. Do you want to edit only this occurrence or this and future ones?

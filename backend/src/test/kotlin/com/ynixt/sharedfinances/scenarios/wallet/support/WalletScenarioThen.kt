@@ -328,7 +328,7 @@ class WalletScenarioThen internal constructor(
             .doesNotContainAnyElementsOf(unexpectedLabels)
     }
 
-    fun overviewBalanceForMonthShouldBe(
+    fun overviewChartBalanceForMonthShouldBe(
         month: YearMonth,
         expected: Number,
     ) {

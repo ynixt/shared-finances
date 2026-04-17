@@ -46,7 +46,8 @@
       class="w-full text-left"
       type="button"
       (click)="showDetails(card)"
-      [class.2xl:col-span-2]="card.key === 'BALANCE' || card.key === 'END_OF_PERIOD_BALANCE'"
+      [class.2xl:col-span-3]="card.key === 'END_OF_PERIOD_BALANCE'"
+      [class.xl:col-span-2]="card.key === 'END_OF_PERIOD_BALANCE'"
     >
       <app-dashboard-card
         [titleKey]="cardTitleKey(card.key) | translate"

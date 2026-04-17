@@ -1,7 +1,10 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryPath
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.WalletEntryR2DBCMapping
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.WalletEventR2DBCMapping
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.WalletItemR2DBCMapping
@@ -16,52 +19,55 @@ class WalletEventDatabaseClientRepository(
     private val dbClient: DatabaseClient,
 ) : DatabaseClientRepository() {
     fun findAll(
-        userId: UUID?,
-        groupId: UUID?,
+        scope: WalletTransactionQueryScope,
         limit: Int,
         walletItemId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
         cursor: WalletEventCursorFindAll?,
     ): Flux<WalletEventEntity> {
-        require(userId != null || groupId != null) { "Either userId or groupId must be provided" }
+        var eventIdsSql =
+            when (scope.path) {
+                WalletTransactionQueryPath.OWNERSHIP ->
+                    buildOwnershipEventIdsSql(
+                        scope = scope,
+                        walletItemId = walletItemId,
+                        walletItemIds = walletItemIds,
+                        entryTypes = entryTypes,
+                        minimumDate = minimumDate,
+                        maximumDate = maximumDate,
+                        billId = billId,
+                        cursor = cursor,
+                    )
+                WalletTransactionQueryPath.GROUP_SCOPE ->
+                    buildGroupScopeEventIdsSql(
+                        scope = scope,
+                        walletItemId = walletItemId,
+                        walletItemIds = walletItemIds,
+                        entryTypes = entryTypes,
+                        minimumDate = minimumDate,
+                        maximumDate = maximumDate,
+                        billId = billId,
+                        cursor = cursor,
+                    )
+            }
 
-        // Query 1: find event ids, paginated
-        var eventIdsSql = """
-        SELECT we.id
-        FROM wallet_event we
-        WHERE
-    """
-
-        if (userId != null) eventIdsSql += " we.user_id = :userId"
-        if (groupId != null) eventIdsSql += " we.group_id = :groupId"
-
-        if (walletItemId !=
-            null
-        ) {
-            eventIdsSql +=
-                " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.wallet_item_id = :walletItemId)"
-        }
-        if (billId !=
-            null
-        ) {
-            eventIdsSql += " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.bill_id = :billId)"
-        }
-        if (minimumDate != null) eventIdsSql += " AND we.date >= :minimumDate"
-        if (maximumDate != null) eventIdsSql += " AND we.date <= :maximumDate"
-        if (cursor != null) eventIdsSql += " AND (we.date, we.id) < (:cursorDate, :cursorId)"
-
-        eventIdsSql += """
-        ORDER BY we.date DESC, we.id DESC
-        LIMIT :limit
-    """
+        eventIdsSql +=
+            """
+             ORDER BY we.date DESC, we.id DESC
+             LIMIT :limit
+            """
 
         var spec = dbClient.sql(eventIdsSql)
 
-        if (userId != null) spec = spec.bind("userId", userId)
-        if (groupId != null) spec = spec.bind("groupId", groupId)
+        if (scope.ownerUserIds.isNotEmpty()) spec = spec.bind("ownerUserIds", scope.ownerUserIds.toTypedArray())
+        if (scope.groupIds.isNotEmpty()) spec = spec.bind("groupIds", scope.groupIds.toTypedArray())
         if (walletItemId != null) spec = spec.bind("walletItemId", walletItemId)
+        if (walletItemIds.isNotEmpty()) spec = spec.bind("walletItemIds", walletItemIds.toTypedArray())
+        if (entryTypes.isNotEmpty()) spec = spec.bind("entryTypes", entryTypes.map { it.name }.toTypedArray())
         if (billId != null) spec = spec.bind("billId", billId)
         if (minimumDate != null) spec = spec.bind("minimumDate", minimumDate)
         if (maximumDate != null) spec = spec.bind("maximumDate", maximumDate)
@@ -111,5 +117,99 @@ class WalletEventDatabaseClientRepository(
                         event
                     }
             }
+    }
+
+    private fun buildOwnershipEventIdsSql(
+        scope: WalletTransactionQueryScope,
+        walletItemId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
+        minimumDate: LocalDate?,
+        maximumDate: LocalDate?,
+        billId: UUID?,
+        cursor: WalletEventCursorFindAll?,
+    ): String {
+        var sql =
+            """
+            SELECT we.id
+            FROM wallet_entry wen
+            INNER JOIN wallet_item wi ON wi.id = wen.wallet_item_id
+            INNER JOIN wallet_event we ON we.id = wen.wallet_event_id
+            WHERE wi.user_id = ANY(:ownerUserIds)
+            """.trimIndent()
+
+        if (scope.groupIds.isNotEmpty()) {
+            sql += " AND we.group_id = ANY(:groupIds)"
+        }
+
+        if (walletItemId != null) {
+            sql += " AND wen.wallet_item_id = :walletItemId"
+        }
+        if (walletItemIds.isNotEmpty()) {
+            sql += " AND wen.wallet_item_id = ANY(:walletItemIds)"
+        }
+        if (billId != null) {
+            sql += " AND wen.bill_id = :billId"
+        }
+        if (entryTypes.isNotEmpty()) {
+            sql += " AND CAST(we.type AS TEXT) = ANY(:entryTypes)"
+        }
+        if (minimumDate != null) {
+            sql += " AND we.date >= :minimumDate"
+        }
+        if (maximumDate != null) {
+            sql += " AND we.date <= :maximumDate"
+        }
+        if (cursor != null) {
+            sql += " AND (we.date, we.id) < (:cursorDate, :cursorId)"
+        }
+
+        sql += " GROUP BY we.id, we.date"
+        return sql
+    }
+
+    private fun buildGroupScopeEventIdsSql(
+        scope: WalletTransactionQueryScope,
+        walletItemId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
+        minimumDate: LocalDate?,
+        maximumDate: LocalDate?,
+        billId: UUID?,
+        cursor: WalletEventCursorFindAll?,
+    ): String {
+        var sql =
+            """
+            SELECT we.id
+            FROM wallet_event we
+            WHERE we.group_id = ANY(:groupIds)
+            """.trimIndent()
+
+        if (walletItemId != null) {
+            sql +=
+                " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.wallet_item_id = :walletItemId)"
+        }
+        if (walletItemIds.isNotEmpty()) {
+            sql +=
+                " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.wallet_item_id = ANY(:walletItemIds))"
+        }
+        if (billId != null) {
+            sql +=
+                " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.bill_id = :billId)"
+        }
+        if (entryTypes.isNotEmpty()) {
+            sql += " AND CAST(we.type AS TEXT) = ANY(:entryTypes)"
+        }
+        if (minimumDate != null) {
+            sql += " AND we.date >= :minimumDate"
+        }
+        if (maximumDate != null) {
+            sql += " AND we.date <= :maximumDate"
+        }
+        if (cursor != null) {
+            sql += " AND (we.date, we.id) < (:cursorDate, :cursorId)"
+        }
+
+        return sql
     }
 }

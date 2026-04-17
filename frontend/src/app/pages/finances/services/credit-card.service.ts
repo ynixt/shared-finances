@@ -31,11 +31,13 @@ export class CreditCardService {
     throw new UserMissingError();
   }
 
-  async getAllCreditCards(request?: PageRequest): Promise<Page<CreditCardDto>> {
+  async getAllCreditCards(request?: PageRequest, query?: string): Promise<Page<CreditCardDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.paginationService.get<CreditCardDto>('/api/credit-cards', request).pipe(take(1)));
+      return lastValueFrom(
+        this.paginationService.get<CreditCardDto>('/api/credit-cards', request, { query: query?.trim() || undefined }).pipe(take(1)),
+      );
     }
 
     throw new UserMissingError();

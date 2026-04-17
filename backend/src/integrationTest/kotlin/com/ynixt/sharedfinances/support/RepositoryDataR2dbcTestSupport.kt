@@ -96,7 +96,7 @@ abstract class RepositoryDataR2dbcTestSupport : IntegrationTestContainers() {
             type = type,
             name = name,
             categoryId = null,
-            userId = userId,
+            createdByUserId = userId,
             groupId = null,
             tags = listOf("repository-test"),
             observations = null,
@@ -132,7 +132,7 @@ abstract class RepositoryDataR2dbcTestSupport : IntegrationTestContainers() {
         RecurrenceEventEntity(
             name = name,
             categoryId = null,
-            userId = userId,
+            createdByUserId = userId,
             groupId = null,
             tags = listOf("repository-test"),
             observations = null,

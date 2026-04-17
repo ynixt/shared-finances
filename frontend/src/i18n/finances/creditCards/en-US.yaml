@@ -19,6 +19,7 @@ financesPage:
       successDeleteMessage: Credit card deleted successfully
     viewCreditCardPage:
       title: 'Credit card: {{name}}'
+      tableTitle: Bill transactions
       status: Status
       billValue: Bill value
       payBill: Pay bill

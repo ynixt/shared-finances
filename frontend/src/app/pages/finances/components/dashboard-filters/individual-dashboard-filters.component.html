@@ -1,0 +1,9 @@
+<app-dashboard-filters-base
+  [showContext]="true"
+  contextControl="groupIds"
+  contextLabel="financesPage.overviewPage.filters.groups"
+  [contextOptionsGetterInput]="groupOptionsGetter"
+  [bankAccountOptionsGetterInput]="bankAccountOptionsGetter"
+  [creditCardOptionsGetterInput]="creditCardOptionsGetter"
+  (filtersChange)="onFiltersChange($event)"
+></app-dashboard-filters-base>

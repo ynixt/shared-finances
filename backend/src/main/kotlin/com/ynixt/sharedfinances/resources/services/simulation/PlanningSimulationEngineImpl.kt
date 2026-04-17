@@ -258,7 +258,7 @@ class PlanningSimulationEngineImpl(
                     minimumEndExecution = fromDate,
                     maximumNextExecution = toDate,
                     userId = null,
-                    groupId = groupId,
+                    groupIds = setOf(groupId),
                     walletItemId = null,
                     billDate = null,
                 )

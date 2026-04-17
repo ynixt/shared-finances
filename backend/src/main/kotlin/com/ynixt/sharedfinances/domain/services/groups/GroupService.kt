@@ -7,10 +7,18 @@ import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import kotlinx.coroutines.flow.Flow
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import java.util.UUID
 
 interface GroupService {
     suspend fun findAllGroups(userId: UUID): List<GroupWithRole>
+
+    suspend fun searchGroups(
+        userId: UUID,
+        pageable: Pageable,
+        query: String?,
+    ): Page<GroupWithRole>
 
     suspend fun findGroup(
         userId: UUID,

@@ -1,0 +1,9 @@
+<app-dashboard-filters-base
+  [showContext]="true"
+  contextControl="memberIds"
+  contextLabel="financesPage.overviewPage.filters.members"
+  [contextOptions]="memberOptions()"
+  [bankAccountOptions]="bankAccountOptions()"
+  [creditCardOptions]="creditCardOptions()"
+  (filtersChange)="onFiltersChange($event)"
+></app-dashboard-filters-base>

@@ -29,11 +29,13 @@ export class BankAccountService {
     throw new UserMissingError();
   }
 
-  async getAllBankAccount(request?: PageRequest): Promise<Page<BankAccountDto>> {
+  async getAllBankAccount(request?: PageRequest, query?: string): Promise<Page<BankAccountDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.paginationService.get<BankAccountDto>('/api/bank-accounts', request).pipe(take(1)));
+      return lastValueFrom(
+        this.paginationService.get<BankAccountDto>('/api/bank-accounts', request, { query: query?.trim() || undefined }).pipe(take(1)),
+      );
     }
 
     throw new UserMissingError();

@@ -55,9 +55,13 @@ import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepos
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
+import org.springframework.context.MessageSource
+import org.springframework.context.MessageSourceResolvable
+import org.springframework.context.NoSuchMessageException
 import reactor.core.publisher.Flux
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.Locale
 
 internal fun identityExchangeRateService(): ExchangeRateService =
     object : ExchangeRateService {
@@ -107,9 +111,9 @@ internal class ScenarioRuntime(
     val clock = MutableScenarioClock(initialDate)
 
     private val walletItemRepository = InMemoryWalletItemRepository()
-    private val walletEventRepository = InMemoryWalletEventRepository()
+    private val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
     private val walletEntryRepository = InMemoryWalletEntryRepository(walletEventRepository, walletItemRepository)
-    private val recurrenceEventRepositoryRaw = InMemoryRecurrenceEventRepository()
+    private val recurrenceEventRepositoryRaw = InMemoryRecurrenceEventRepository(walletItemRepository)
     private val recurrenceEntryRepository = InMemoryRecurrenceEntryRepository()
     private val recurrenceSeriesRepositoryRaw =
         InMemoryRecurrenceSeriesRepository { seriesId ->
@@ -226,6 +230,30 @@ internal class ScenarioRuntime(
             clock = clock,
         )
 
+    val messageSource: MessageSource =
+        object : MessageSource {
+            override fun getMessage(
+                code: String,
+                args: Array<out Any>?,
+                defaultMessage: String?,
+                locale: Locale?,
+            ): String = code
+
+            override fun getMessage(
+                code: String,
+                args: Array<out Any>?,
+                locale: Locale?,
+            ): String = code
+
+            override fun getMessage(
+                resolvable: MessageSourceResolvable,
+                locale: Locale?,
+            ): String =
+                resolvable.codes?.firstOrNull()
+                    ?: resolvable.defaultMessage
+                    ?: throw NoSuchMessageException("")
+        }
+
     val walletEntryEditService: WalletEntryEditService =
         WalletEntryEditServiceImpl(
             walletEventRepository = walletEventRepository,
@@ -283,19 +311,45 @@ internal class ScenarioRuntime(
             creditCardBillService = creditCardBillService,
             bankAccountService = bankAccountService,
             walletEntryCreateService = walletEntryCreateService,
+            messageSource = messageSource,
         )
 
     val overviewDashboardService: OverviewDashboardService =
-        OverviewDashboardServiceImpl(
-            walletItemRepository = walletItemRepository,
-            walletItemMapper = walletItemMapper,
-            walletEntryRepository = walletEntryRepository,
-            recurrenceSimulationService = recurrenceSimulationService,
-            creditCardBillService = creditCardBillService,
-            exchangeRateService = exchangeRateService,
-            goalLedgerSummaryRepository = NoOpGoalLedgerCommittedSummaryRepository,
-            clock = clock,
-        )
+        run {
+            val balanceService =
+                com.ynixt.sharedfinances.resources.services.dashboard
+                    .OverviewDashboardBalanceServiceImpl()
+
+            OverviewDashboardServiceImpl(
+                dataService =
+                    com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardDataServiceImpl(
+                        walletItemRepository = walletItemRepository,
+                        walletItemMapper = walletItemMapper,
+                        walletEntryRepository = walletEntryRepository,
+                        recurrenceSimulationService = recurrenceSimulationService,
+                        creditCardBillService = creditCardBillService,
+                        clock = clock,
+                    ),
+                balanceService = balanceService,
+                contributionService =
+                    com.ynixt.sharedfinances.resources.services.dashboard
+                        .OverviewDashboardContributionServiceImpl(balanceService),
+                goalService =
+                    com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardGoalServiceImpl(
+                        NoOpGoalLedgerCommittedSummaryRepository,
+                    ),
+                assemblyService =
+                    com.ynixt.sharedfinances.resources.services.dashboard
+                        .OverviewDashboardAssemblyServiceImpl(exchangeRateService),
+                cardService =
+                    com.ynixt.sharedfinances.resources.services.dashboard
+                        .OverviewDashboardCardServiceImpl(),
+                chartService =
+                    com.ynixt.sharedfinances.resources.services.dashboard
+                        .OverviewDashboardChartServiceImpl(),
+                clock = clock,
+            )
+        }
 }
 
 internal object NoOpGoalLedgerCommittedSummaryRepository : GoalLedgerCommittedSummaryRepository {

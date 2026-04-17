@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.domain.services.walletentry.recurrence
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.domain.Sort
 import java.time.LocalDate
@@ -38,6 +39,18 @@ interface RecurrenceService {
         minimumEndExecution: LocalDate? = null,
         maximumNextExecution: LocalDate? = null,
         groupId: UUID,
+        sort: Sort = Sort.unsorted(),
+    ): Flow<RecurrenceEventEntity>
+
+    fun findAllEntries(
+        minimumEndExecution: LocalDate? = null,
+        maximumNextExecution: LocalDate? = null,
+        billDate: LocalDate? = null,
+        walletItemId: UUID? = null,
+        walletItemIds: Set<UUID> = emptySet(),
+        userIds: Set<UUID> = emptySet(),
+        groupIds: Set<UUID> = emptySet(),
+        entryTypes: Set<WalletEntryType> = emptySet(),
         sort: Sort = Sort.unsorted(),
     ): Flow<RecurrenceEventEntity>
 

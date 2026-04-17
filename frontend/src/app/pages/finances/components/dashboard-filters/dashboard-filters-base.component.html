@@ -1,0 +1,66 @@
+<div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
+  <div class="mb-3 flex items-center justify-between gap-2">
+    <h3 class="text-sm font-semibold text-surface-700">{{ 'financesPage.overviewPage.filters.title' | translate }}</h3>
+    <button type="button" class="text-xs font-medium text-primary hover:underline" (click)="clearFilters()">
+      {{ 'financesPage.overviewPage.filters.clear' | translate }}
+    </button>
+  </div>
+
+  <form [formGroup]="form" class="grid grid-cols-1 gap-3 lg:grid-cols-4">
+    @if (showContext()) {
+      <label class="flex flex-col gap-1 text-sm text-surface-700">
+        <span class="font-medium">{{ contextLabel() | translate }}</span>
+        <app-paged-multi-select
+          [optionsGetter]="contextOptionsGetter"
+          [placeholder]="'general.all' | translate"
+          [formControlName]="contextControl()"
+          [pageSize]="multiSelectPageSize"
+          optionLabel="label"
+          optionValue="id"
+          dataKey="id"
+        ></app-paged-multi-select>
+      </label>
+    }
+
+    <label class="flex flex-col gap-1 text-sm text-surface-700">
+      <span class="font-medium">{{ 'financesPage.overviewPage.filters.bankAccounts' | translate }}</span>
+      <app-paged-multi-select
+        [optionsGetter]="bankAccountOptionsGetter"
+        [placeholder]="'general.all' | translate"
+        formControlName="bankAccountIds"
+        [pageSize]="multiSelectPageSize"
+        optionLabel="label"
+        optionValue="id"
+        dataKey="id"
+      ></app-paged-multi-select>
+    </label>
+
+    <label class="flex flex-col gap-1 text-sm text-surface-700">
+      <span class="font-medium">{{ 'financesPage.overviewPage.filters.creditCards' | translate }}</span>
+      <app-paged-multi-select
+        [optionsGetter]="creditCardOptionsGetter"
+        [placeholder]="'general.all' | translate"
+        formControlName="creditCardIds"
+        [pageSize]="multiSelectPageSize"
+        optionLabel="label"
+        optionValue="id"
+        dataKey="id"
+      ></app-paged-multi-select>
+    </label>
+
+    <label class="flex flex-col gap-1 text-sm text-surface-700">
+      <span class="font-medium">{{ 'financesPage.overviewPage.filters.entryTypes' | translate }}</span>
+      <app-paged-multi-select
+        [optionsGetter]="entryTypeOptionsGetter"
+        [placeholder]="'general.all' | translate"
+        formControlName="entryTypes"
+        [pageSize]="multiSelectPageSize"
+        optionLabel="label"
+        optionValue="id"
+        dataKey="id"
+        [filterInMemory]="true"
+        [showToggleAll]="false"
+      ></app-paged-multi-select>
+    </label>
+  </form>
+</div>

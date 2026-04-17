@@ -30,8 +30,31 @@ class CreditCardServiceImpl(
     override suspend fun findAll(
         userId: UUID,
         pageable: Pageable,
+        query: String?,
     ): Page<CreditCard> =
-        createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.CREDIT_CARD) }) {
+        query
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { normalizedQuery ->
+                createPage(
+                    pageable,
+                    countFn = {
+                        walletItemRepository.countByUserIdAndTypeAndNameContainingIgnoreCase(
+                            userId = userId,
+                            type = WalletItemType.CREDIT_CARD,
+                            name = normalizedQuery,
+                        )
+                    },
+                ) {
+                    walletItemRepository
+                        .findAllByUserIdAndTypeAndNameContainingIgnoreCase(
+                            userId = userId,
+                            type = WalletItemType.CREDIT_CARD,
+                            name = normalizedQuery,
+                            pageable = pageable,
+                        ).map(creditCardMapper::toModel)
+                }
+            } ?: createPage(pageable, countFn = { walletItemRepository.countByUserIdAndType(userId, WalletItemType.CREDIT_CARD) }) {
             walletItemRepository.findAllByUserIdAndType(userId, WalletItemType.CREDIT_CARD, pageable).map(creditCardMapper::toModel)
         }
 

@@ -17,9 +17,12 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationServi
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import com.ynixt.sharedfinances.resources.services.EntityServiceImpl
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -44,6 +47,47 @@ class GroupServiceImpl(
                 }
             }
         }
+
+    override suspend fun searchGroups(
+        userId: UUID,
+        pageable: Pageable,
+        query: String?,
+    ): Page<GroupWithRole> {
+        val normalizedQuery = query?.trim()?.takeIf { it.isNotEmpty() }
+
+        return if (normalizedQuery == null) {
+            createPage(
+                pageable,
+                countFn = { repository.findAllByUserIdOrderByName(userId).count() },
+            ) {
+                repository
+                    .findAllByUserIdOrderByName(userId)
+                    .skip(pageable.offset)
+                    .take(pageable.pageSize.toLong())
+            }
+        } else {
+            createPage(
+                pageable,
+                countFn = {
+                    repository.countByUserIdAndNameContainingIgnoreCase(
+                        userId = userId,
+                        name = normalizedQuery,
+                    )
+                },
+            ) {
+                repository
+                    .searchByUserIdAndNameContainingIgnoreCase(
+                        userId = userId,
+                        name = normalizedQuery,
+                    ).skip(pageable.offset)
+                    .take(pageable.pageSize.toLong())
+            }
+        }.map { groupWithRole ->
+            groupWithRole.apply {
+                permissions = groupPermissionService.getAllPermissionsForRole(groupWithRole.role)
+            }
+        }
+    }
 
     @Transactional
     override suspend fun editGroup(

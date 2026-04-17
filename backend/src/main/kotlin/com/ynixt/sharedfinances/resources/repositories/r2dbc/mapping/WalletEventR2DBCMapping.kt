@@ -17,7 +17,7 @@ class WalletEventR2DBCMapping {
                 name = row.get("${columnPrefix}name", String::class.java),
                 type = WalletEntryType.valueOf(row.get("${columnPrefix}type", String::class.java)!!),
                 categoryId = row.get("${columnPrefix}category_id", UUID::class.java),
-                userId = row.get("${columnPrefix}user_id", UUID::class.java),
+                createdByUserId = row.get("${columnPrefix}created_by_user_id", UUID::class.java)!!,
                 groupId = row.get("${columnPrefix}group_id", UUID::class.java),
                 tags = row.get("${columnPrefix}tags", Array::class.java)?.map { it as String },
                 observations = row.get("${columnPrefix}observations", String::class.java),

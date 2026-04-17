@@ -10,10 +10,13 @@ import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.services.CreditCardBillPaymentService
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.util.Locale
 import java.util.UUID
 
 @Service
@@ -21,6 +24,7 @@ class CreditCardBillPaymentServiceImpl(
     private val creditCardBillService: CreditCardBillService,
     private val bankAccountService: BankAccountService,
     private val walletEntryCreateService: WalletEntryCreateService,
+    @param:Qualifier("mailMessageSource") private val messageSource: MessageSource,
 ) : CreditCardBillPaymentService {
     @Transactional
     override suspend fun payBill(
@@ -30,6 +34,7 @@ class CreditCardBillPaymentServiceImpl(
         date: LocalDate,
         amount: BigDecimal,
         observations: String?,
+        locale: Locale,
     ) {
         val bill = creditCardBillService.findAuthorizedById(userId = userId, id = billId) ?: throw UnauthorizedException()
         val bankAccount =
@@ -48,7 +53,7 @@ class CreditCardBillPaymentServiceImpl(
                     type = WalletEntryType.TRANSFER,
                     originId = bankAccount.id!!,
                     targetId = bill.creditCardId,
-                    name = "Pagamento de fatura",
+                    name = messageSource.getMessage("transaction.payBill.name", null, locale),
                     date = date,
                     originValue = amount,
                     targetValue = amount,

@@ -1,15 +1,21 @@
 package com.ynixt.sharedfinances.scenarios.support.repositories
 
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
 import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryPath
+import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.scenarios.support.nowOffset
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.LocalDate
 import java.util.UUID
 
-internal class InMemoryWalletEventRepository : WalletEventRepository {
+internal class InMemoryWalletEventRepository(
+    private val walletItemRepository: InMemoryWalletItemRepository,
+) : WalletEventRepository {
     private val data = linkedMapOf<UUID, WalletEventEntity>()
 
     fun snapshot(): List<WalletEventEntity> = data.values.toList()
@@ -60,7 +66,14 @@ internal class InMemoryWalletEventRepository : WalletEventRepository {
         userId: UUID,
     ): Mono<Long> {
         val initial = data.size
-        data.entries.removeIf { (_, value) -> value.userId == userId }
+        data.entries.removeIf { (_, value) ->
+            value.entries
+                .orEmpty()
+                .any { entry ->
+                    entry.walletItemId == walletItemId &&
+                        walletItemRepository.getOrNull(entry.walletItemId)?.userId == userId
+                }
+        }
         return Mono.just((initial - data.size).toLong())
     }
 
@@ -69,21 +82,27 @@ internal class InMemoryWalletEventRepository : WalletEventRepository {
         userId: UUID,
     ): Mono<Long> {
         val initial = data.size
-        data.entries.removeIf { (_, value) -> value.groupId == groupId && value.userId == userId }
+        data.entries.removeIf { (_, value) -> value.groupId == groupId && value.createdByUserId == userId }
         return Mono.just((initial - data.size).toLong())
     }
 
     override fun deleteAllForAccountDeletion(userId: UUID): Mono<Long> {
         val initial = data.size
-        data.entries.removeIf { (_, value) -> value.userId == userId }
+        data.entries.removeIf { (_, value) ->
+            value.createdByUserId == userId ||
+                value.entries
+                    .orEmpty()
+                    .any { entry -> walletItemRepository.getOrNull(entry.walletItemId)?.userId == userId }
+        }
         return Mono.just((initial - data.size).toLong())
     }
 
     override fun findAll(
-        userId: UUID?,
-        groupId: UUID?,
+        scope: WalletTransactionQueryScope,
         limit: Int,
         walletItemId: UUID?,
+        walletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType>,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
@@ -92,11 +111,47 @@ internal class InMemoryWalletEventRepository : WalletEventRepository {
         val filtered =
             data.values
                 .asSequence()
-                .filter { userId == null || it.userId == userId }
-                .filter { groupId == null || it.groupId == groupId }
+                .filter { event ->
+                    when (scope.path) {
+                        WalletTransactionQueryPath.OWNERSHIP -> {
+                            val hasOwnedItem =
+                                event.entries
+                                    .orEmpty()
+                                    .any { entry ->
+                                        walletItemRepository.getOrNull(entry.walletItemId)?.userId?.let(scope.ownerUserIds::contains) ==
+                                            true
+                                    }
+                            val groupMatches = scope.groupIds.isEmpty() || (event.groupId != null && scope.groupIds.contains(event.groupId))
+                            hasOwnedItem && groupMatches
+                        }
+                        WalletTransactionQueryPath.GROUP_SCOPE -> event.groupId != null && scope.groupIds.contains(event.groupId)
+                    }
+                }.filter { entryTypes.isEmpty() || entryTypes.contains(it.type) }
                 .filter { minimumDate == null || !it.date.isBefore(minimumDate) }
                 .filter { maximumDate == null || !it.date.isAfter(maximumDate) }
-                .take(limit)
+                .filter {
+                    billId == null ||
+                        it.entries
+                            .orEmpty()
+                            .filterIsInstance<WalletEntryEntity>()
+                            .any { entry -> entry.billId == billId }
+                }.filter { walletItemId == null || it.entries.orEmpty().any { entry -> entry.walletItemId == walletItemId } }
+                .filter { walletItemIds.isEmpty() || it.entries.orEmpty().any { entry -> walletItemIds.contains(entry.walletItemId) } }
+                .sortedWith(
+                    compareByDescending<WalletEventEntity> { it.date }
+                        .thenByDescending { it.id },
+                ).filter { event ->
+                    if (cursor == null) {
+                        true
+                    } else if (event.date.isBefore(cursor.maximumDate)) {
+                        true
+                    } else if (event.date != cursor.maximumDate) {
+                        false
+                    } else {
+                        val eventId = event.id ?: return@filter false
+                        eventId < cursor.maximumId
+                    }
+                }.take(limit)
                 .toList()
 
         return Flux.fromIterable(filtered)

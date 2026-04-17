@@ -46,17 +46,6 @@
         [value]="value != null ? (value | localCurrency: creditCard.currency) : undefined"
         [faIcon]="balanceIcon"
       >
-        @if (currentCreditCardBill?.id != null && remainingBillAmount() > 0) {
-          <ng-template #headerRight>
-            <p-button
-              severity="success"
-              variant="text"
-              size="small"
-              [label]="'financesPage.creditCardsPage.viewCreditCardPage.payBill' | translate"
-              (click)="openPayBillDialog()"
-            />
-          </ng-template>
-        }
       </app-dashboard-card>
       <app-dashboard-card
         [titleKey]="'financesPage.creditCardsPage.viewCreditCardPage.closingDate' | translate"
@@ -86,7 +75,17 @@
       </app-dashboard-card>
     </div>
 
+    @if (currentCreditCardBill?.id != null && remainingBillAmount() > 0) {
+      <p-button
+        fluid
+        [label]="'financesPage.creditCardsPage.viewCreditCardPage.payBill' | translate"
+        (click)="openPayBillDialog()"
+        class="mb-8"
+      />
+    }
+
     <app-wallet-entry-table
+      title="financesPage.creditCardsPage.viewCreditCardPage.tableTitle"
       class="flex-1"
       [creditCardBillId]="currentCreditCardBill?.id"
       [creditCardBillDate]="dateControl.value?.startDate"
@@ -156,14 +155,16 @@
 
     <label class="flex flex-col gap-2">
       <span>{{ 'financesPage.creditCardsPage.viewCreditCardPage.payBillDialog.amount' | translate }}</span>
-      <p-input-number
-        mode="currency"
-        [currency]="creditCard?.currency"
-        formControlName="amount"
-        [min]="0.01"
-        [max]="remainingBillAmount()"
-        fluid
-      ></p-input-number>
+      @if (creditCard) {
+        <p-input-number
+          mode="currency"
+          [currency]="creditCard.currency"
+          formControlName="amount"
+          [min]="0.01"
+          [max]="remainingBillAmount()"
+          fluid
+        ></p-input-number>
+      }
     </label>
 
     <label class="flex flex-col gap-2">
