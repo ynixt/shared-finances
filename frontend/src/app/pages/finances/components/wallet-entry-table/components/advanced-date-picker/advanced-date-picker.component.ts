@@ -42,11 +42,17 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
   });
   readonly rangeDatesFormControl = this.form.get('rangeDates') as FormControl<Date[] | null>;
   readonly dateFormControl = this.form.get('date') as FormControl<Date | null>;
-  readonly selectionMode = input<'single' | 'range'>('range');
+  readonly selectionMode = input<'single' | 'singleSameDate' | 'range'>('range');
   readonly viewMode = input<'month' | 'date'>('date');
   readonly forceShowInput = input<boolean>(false);
   readonly inputInline = input<boolean>(false);
   readonly inputClass = input<string | undefined>('w-56');
+  readonly datePickerSelectionMode = computed(() => {
+    const selectionMode = this.selectionMode();
+
+    if (selectionMode === 'single' || selectionMode === 'singleSameDate') return 'single';
+    else return 'range';
+  });
 
   private internalIsToShowInput = signal(false);
 
@@ -58,7 +64,14 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
     super();
 
     this.rangeDatesFormControl.valueChanges.pipe(untilDestroyed(this), startWith(this.rangeDatesFormControl.value)).subscribe(value => {
-      if (value == null || value.length != 2 || value.findIndex(v => v == null) != -1 || this.selectionMode() == 'single') return;
+      if (
+        value == null ||
+        value.length != 2 ||
+        value.findIndex(v => v == null) != -1 ||
+        this.selectionMode() == 'single' ||
+        this.selectionMode() == 'singleSameDate'
+      )
+        return;
 
       const startDate = dayjs(value[0]);
       const endDate = dayjs(value[1]);
@@ -79,11 +92,21 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
 
       const startDate = dayjs(value);
 
-      this.onValueChange({
-        startDate,
-        endDate: startDate,
-        sameMonth: true,
-      });
+      if (this.selectionMode() == 'singleSameDate') {
+        this.onValueChange({
+          startDate,
+          endDate: startDate,
+          sameMonth: true,
+        });
+      } else {
+        const endDate = dayjs(value).endOf('month');
+
+        this.onValueChange({
+          startDate,
+          endDate,
+          sameMonth: true,
+        });
+      }
 
       this.internalIsToShowInput.set(false);
     });
@@ -166,7 +189,7 @@ export class AdvancedDatePickerComponent extends SimpleControlValueAccessor<Date
         }
       | undefined = this.value,
   ): boolean {
-    if (this.selectionMode() == 'single') return true;
+    if (this.selectionMode() == 'single' || this.selectionMode() == 'singleSameDate') return true;
 
     if (value != null) {
       return (

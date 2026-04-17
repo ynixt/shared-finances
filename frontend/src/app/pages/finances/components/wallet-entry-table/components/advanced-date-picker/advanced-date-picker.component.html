@@ -18,7 +18,7 @@
   <p-date-picker
     #datePicker
     [formControlName]="selectionMode() == 'single' ? 'date' : 'rangeDates'"
-    [selectionMode]="selectionMode()"
+    [selectionMode]="datePickerSelectionMode()"
     [readonlyInput]="true"
     [class]="inputClass()"
     [hidden]="!isToShowInput()"
