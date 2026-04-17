@@ -4,6 +4,8 @@ import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEn
 import com.ynixt.sharedfinances.domain.exceptions.http.ExchangeRateUnavailableException
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuotePair
+import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteBatchRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteKeysetRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteRepository
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
@@ -38,6 +40,7 @@ import kotlin.math.absoluteValue
 class ExchangeRateServiceImpl(
     private val exchangeRateProvider: ExchangeRateProvider,
     private val exchangeRateQuoteRepository: ExchangeRateQuoteRepository,
+    private val exchangeRateQuoteBatchRepository: ExchangeRateQuoteBatchRepository,
     private val exchangeRateQuoteKeysetRepository: ExchangeRateQuoteKeysetRepository,
     private val walletItemRepository: WalletItemRepository,
     private val userRepository: UserRepository,
@@ -282,6 +285,80 @@ class ExchangeRateServiceImpl(
                 valueTransform = { (normalized, _) -> normalized.third },
             )
 
+        val effectivePairs =
+            requestsByPair.keys
+                .filter { (fromCurrency, toCurrency) -> fromCurrency != toCurrency }
+                .map { (fromCurrency, toCurrency) ->
+                    ExchangeRateQuotePair(
+                        baseCurrency = fromCurrency,
+                        quoteCurrency = toCurrency,
+                    )
+                }.toSet()
+
+        if (effectivePairs.isNotEmpty()) {
+            val globalMinDate = requestsByPair.values.flatten().minOrNull()!!
+            val globalMaxDate = requestsByPair.values.flatten().maxOrNull()!!
+            val candidatesByPair =
+                (
+                    exchangeRateQuoteBatchRepository
+                        .findClosestOnOrBeforeDateForPairs(
+                            pairs = effectivePairs,
+                            referenceDate = globalMinDate,
+                        ).asFlow()
+                        .toList() +
+                        exchangeRateQuoteBatchRepository
+                            .findAllByPairsAndQuoteDateBetween(
+                                pairs = effectivePairs,
+                                quoteDateFrom = globalMinDate,
+                                quoteDateTo = globalMaxDate,
+                            ).asFlow()
+                            .toList() +
+                        exchangeRateQuoteBatchRepository
+                            .findClosestOnOrAfterDateForPairs(
+                                pairs = effectivePairs,
+                                referenceDate = globalMaxDate,
+                            ).asFlow()
+                            .toList()
+                ).groupBy {
+                    ExchangeRateQuotePair(
+                        baseCurrency = it.baseCurrency,
+                        quoteCurrency = it.quoteCurrency,
+                    )
+                }.mapValues { (_, rows) ->
+                    rows
+                        .associateBy { it.quoteDate }
+                        .values
+                        .sortedBy { it.quoteDate }
+                }
+
+            requestsByPair.forEach { (pair, referenceDates) ->
+                val fromCurrency = pair.first
+                val toCurrency = pair.second
+
+                if (fromCurrency == toCurrency) {
+                    referenceDates.forEach { referenceDate ->
+                        ratesByKey[Triple(fromCurrency, toCurrency, referenceDate)] = BigDecimal.ONE
+                    }
+                    return@forEach
+                }
+
+                val candidates =
+                    candidatesByPair[
+                        ExchangeRateQuotePair(
+                            baseCurrency = fromCurrency,
+                            quoteCurrency = toCurrency,
+                        ),
+                    ].orEmpty()
+
+                referenceDates.forEach { referenceDate ->
+                    val selected =
+                        chooseClosestFromSortedCandidates(referenceDate, candidates)
+                            ?: throw ExchangeRateUnavailableException(fromCurrency, toCurrency, referenceDate)
+                    ratesByKey[Triple(fromCurrency, toCurrency, referenceDate)] = selected.rate
+                }
+            }
+        }
+
         requestsByPair.forEach { (pair, referenceDates) ->
             val fromCurrency = pair.first
             val toCurrency = pair.second
@@ -291,46 +368,6 @@ class ExchangeRateServiceImpl(
                     ratesByKey[Triple(fromCurrency, toCurrency, referenceDate)] = BigDecimal.ONE
                 }
                 return@forEach
-            }
-
-            val minDate = referenceDates.minOrNull()!!
-            val maxDate = referenceDates.maxOrNull()!!
-
-            val before =
-                exchangeRateQuoteRepository
-                    .findClosestOnOrBeforeDate(
-                        baseCurrency = fromCurrency,
-                        quoteCurrency = toCurrency,
-                        referenceDate = minDate,
-                    ).awaitSingleOrNull()
-            val inWindow =
-                exchangeRateQuoteRepository
-                    .findAllByPairAndQuoteDateBetween(
-                        baseCurrency = fromCurrency,
-                        quoteCurrency = toCurrency,
-                        quoteDateFrom = minDate,
-                        quoteDateTo = maxDate,
-                    ).asFlow()
-                    .toList()
-            val after =
-                exchangeRateQuoteRepository
-                    .findClosestOnOrAfterDate(
-                        baseCurrency = fromCurrency,
-                        quoteCurrency = toCurrency,
-                        referenceDate = maxDate,
-                    ).awaitSingleOrNull()
-
-            val candidates =
-                (inWindow + listOfNotNull(before, after))
-                    .associateBy { it.quoteDate }
-                    .values
-                    .sortedBy { it.quoteDate }
-
-            referenceDates.forEach { referenceDate ->
-                val selected =
-                    chooseClosestFromSortedCandidates(referenceDate, candidates)
-                        ?: throw ExchangeRateUnavailableException(fromCurrency, toCurrency, referenceDate)
-                ratesByKey[Triple(fromCurrency, toCurrency, referenceDate)] = selected.rate
             }
         }
 

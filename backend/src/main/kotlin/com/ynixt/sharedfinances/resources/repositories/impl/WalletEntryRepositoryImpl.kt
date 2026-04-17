@@ -3,6 +3,8 @@ package com.ynixt.sharedfinances.resources.repositories.impl
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedBankFactSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedExpenseFactSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
@@ -55,12 +57,34 @@ class WalletEntryRepositoryImpl(
             maximumDate = maximumDate,
         )
 
+    override fun summarizeOverviewBankFacts(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExecutedBankFactSummary> =
+        dcRepository.summarizeOverviewBankFacts(
+            userId = userId,
+            minimumDate = minimumDate,
+            maximumDate = maximumDate,
+        )
+
     override fun summarizeOverviewExpenseByMonth(
         userId: UUID,
         minimumDate: LocalDate,
         maximumDate: LocalDate,
     ): Flux<OverviewExpenseMonthlySummary> =
         dcRepository.summarizeOverviewExpenseByMonth(
+            userId = userId,
+            minimumDate = minimumDate,
+            maximumDate = maximumDate,
+        )
+
+    override fun summarizeOverviewExpenseFacts(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExecutedExpenseFactSummary> =
+        dcRepository.summarizeOverviewExpenseFacts(
             userId = userId,
             minimumDate = minimumDate,
             maximumDate = maximumDate,

@@ -14,6 +14,8 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSum
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedBankFactSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedExpenseFactSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
@@ -25,6 +27,7 @@ import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByWalletRow
 import com.ynixt.sharedfinances.domain.repositories.GoalCurrencyCommittedRow
 import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
+import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
@@ -966,9 +969,486 @@ class OverviewDashboardServiceImplTest {
             assertThat(result.charts.expenseByGroup.map { it.label }).doesNotContain("PREDEFINED_OTHERS")
         }
 
+    @Test
+    fun `should use shared current-month overview retrieval phases`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 4)
+            val visibleBankId = UUID.randomUUID()
+            val visibleCardId = UUID.randomUUID()
+            val hiddenBankId = UUID.randomUUID()
+
+            val walletItemsDelegate = InMemoryWalletItemRepository()
+            val visibleBankEntity =
+                bankAccountEntity(
+                    id = visibleBankId,
+                    userId = userId,
+                    name = "Main",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                )
+            val visibleCardEntity =
+                creditCardEntity(
+                    id = visibleCardId,
+                    userId = userId,
+                    name = "Visa",
+                    currency = "BRL",
+                    totalLimit = "2000.00",
+                    availableLimit = "1500.00",
+                    showOnDashboard = true,
+                )
+            walletItemsDelegate.save(visibleBankEntity)
+            walletItemsDelegate.save(visibleCardEntity)
+            walletItemsDelegate.save(
+                bankAccountEntity(
+                    id = hiddenBankId,
+                    userId = userId,
+                    name = "Hidden",
+                    currency = "BRL",
+                    balance = "300.00",
+                    showOnDashboard = false,
+                ),
+            )
+
+            val walletItemRepository = CountingWalletItemRepository(walletItemsDelegate)
+            val walletEntryRepository =
+                CountingWalletEntryRepository(
+                    stubWalletEntryRepository(
+                        monthlySummaries = listOf(monthly(visibleBankId, "2026-04", net = "0.00", cashIn = "0.00", cashOut = "0.00")),
+                        expenseMonthlySummaries = listOf(expenseByMonth(month = "2026-04", expense = "0.00")),
+                    ),
+                )
+            val recurrenceSimulationService =
+                CountingRecurrenceSimulationService(
+                    listOf(
+                        simulatedEventWithCategory(
+                            date = LocalDate.of(2026, 4, 20),
+                            walletItemId = visibleBankId,
+                            walletItem = walletFromEntity(visibleBankEntity),
+                            value = "-15.00",
+                            categoryName = "Food",
+                        ),
+                        simulatedCreditCardEvent(
+                            date = LocalDate.of(2026, 4, 21),
+                            walletItemId = visibleCardId,
+                            walletItem = walletFromEntity(visibleCardEntity),
+                            value = "-25.00",
+                            billDate = LocalDate.of(2026, 4, 1),
+                        ),
+                    ),
+                )
+            val creditCardBillService =
+                CountingCreditCardBillService(
+                    fakeCreditCardBillService(
+                        mapOf(
+                            visibleCardId to bill(creditCardId = visibleCardId, value = "-30.00", paid = false),
+                        ),
+                    ),
+                )
+            val goalLedgerSummaryRepository =
+                CountingGoalLedgerSummaryRepository(
+                    detailedRows =
+                        listOf(
+                            GoalCommittedByGoalRow(
+                                goalId = UUID.randomUUID(),
+                                goalName = "Reserve",
+                                walletItemId = visibleBankId,
+                                currency = "BRL",
+                                committed = BigDecimal("10.00"),
+                            ),
+                        ),
+                )
+            val exchangeRateService = CountingExchangeRateService(identityExchangeRateService())
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    recurrenceSimulationService = recurrenceSimulationService,
+                    creditCardBillService = creditCardBillService,
+                    exchangeRateService = exchangeRateService,
+                    goalLedgerSummaryRepository = goalLedgerSummaryRepository,
+                )
+
+            val result =
+                service.getOverview(
+                    userId = userId,
+                    defaultCurrency = "USD",
+                    selectedMonth = selectedMonth,
+                )
+
+            assertMoney(result.cardValue(OverviewDashboardCardKey.PROJECTED_CASH_OUT), "70.00")
+            assertMoney(result.goalCommittedTotal, "10.00")
+            assertThat(walletItemRepository.visibleLookupCalls).isEqualTo(1)
+            assertThat(walletItemRepository.enabledLookupCalls).isZero()
+            assertThat(walletEntryRepository.bankFactCalls).isEqualTo(1)
+            assertThat(walletEntryRepository.expenseFactCalls).isEqualTo(1)
+            assertThat(walletEntryRepository.bankByMonthCalls).isZero()
+            assertThat(walletEntryRepository.expenseByMonthCalls).isZero()
+            assertThat(walletEntryRepository.expenseBySourceCalls).isZero()
+            assertThat(walletEntryRepository.cashBreakdownCalls).isZero()
+            assertThat(walletEntryRepository.expenseBreakdownCalls).isZero()
+            assertThat(recurrenceSimulationService.filteredSimulationCalls).isEqualTo(1)
+            assertThat(recurrenceSimulationService.unfilteredSimulationCalls).isZero()
+            assertThat(creditCardBillService.openByDueDateBetweenCalls).isEqualTo(1)
+            assertThat(goalLedgerSummaryRepository.detailedCalls).isEqualTo(1)
+            assertThat(goalLedgerSummaryRepository.walletCalls).isZero()
+            assertThat(exchangeRateService.convertBatchCalls).isEqualTo(1)
+        }
+
+    @Test
+    fun `should skip projected retrieval phases for past-month overview`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 3)
+            val visibleBankId = UUID.randomUUID()
+            val visibleCardId = UUID.randomUUID()
+
+            val walletItemsDelegate = InMemoryWalletItemRepository()
+            walletItemsDelegate.save(
+                bankAccountEntity(
+                    id = visibleBankId,
+                    userId = userId,
+                    name = "Main",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                ),
+            )
+            walletItemsDelegate.save(
+                creditCardEntity(
+                    id = visibleCardId,
+                    userId = userId,
+                    name = "Visa",
+                    currency = "BRL",
+                    totalLimit = "2000.00",
+                    availableLimit = "1500.00",
+                    showOnDashboard = true,
+                ),
+            )
+
+            val walletItemRepository = CountingWalletItemRepository(walletItemsDelegate)
+            val walletEntryRepository =
+                CountingWalletEntryRepository(
+                    stubWalletEntryRepository(
+                        monthlySummaries = listOf(monthly(visibleBankId, "2026-03", net = "0.00", cashIn = "0.00", cashOut = "0.00")),
+                        expenseMonthlySummaries = listOf(expenseByMonth(month = "2026-03", expense = "0.00")),
+                    ),
+                )
+            val recurrenceSimulationService =
+                CountingRecurrenceSimulationService(
+                    emptyList(),
+                )
+            val creditCardBillService =
+                CountingCreditCardBillService(
+                    fakeCreditCardBillService(
+                        mapOf(
+                            visibleCardId to bill(creditCardId = visibleCardId, value = "-30.00", paid = false),
+                        ),
+                    ),
+                )
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    recurrenceSimulationService = recurrenceSimulationService,
+                    creditCardBillService = creditCardBillService,
+                    exchangeRateService = identityExchangeRateService(),
+                )
+
+            service.getOverview(
+                userId = userId,
+                defaultCurrency = "BRL",
+                selectedMonth = selectedMonth,
+            )
+
+            assertThat(walletItemRepository.visibleLookupCalls).isEqualTo(1)
+            assertThat(recurrenceSimulationService.filteredSimulationCalls).isZero()
+            assertThat(recurrenceSimulationService.unfilteredSimulationCalls).isZero()
+            assertThat(creditCardBillService.openByDueDateBetweenCalls).isZero()
+        }
+
+    @Test
+    fun `should use shared future-month overview retrieval phases`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 6)
+            val visibleBankId = UUID.randomUUID()
+            val visibleCardId = UUID.randomUUID()
+
+            val walletItemsDelegate = InMemoryWalletItemRepository()
+            val visibleBankEntity =
+                bankAccountEntity(
+                    id = visibleBankId,
+                    userId = userId,
+                    name = "Main",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                )
+            val visibleCardEntity =
+                creditCardEntity(
+                    id = visibleCardId,
+                    userId = userId,
+                    name = "Visa",
+                    currency = "BRL",
+                    totalLimit = "2000.00",
+                    availableLimit = "1500.00",
+                    showOnDashboard = true,
+                )
+            walletItemsDelegate.save(visibleBankEntity)
+            walletItemsDelegate.save(visibleCardEntity)
+
+            val walletItemRepository = CountingWalletItemRepository(walletItemsDelegate)
+            val walletEntryRepository =
+                CountingWalletEntryRepository(
+                    stubWalletEntryRepository(
+                        monthlySummaries = listOf(monthly(visibleBankId, "2026-04", net = "0.00", cashIn = "0.00", cashOut = "0.00")),
+                        expenseMonthlySummaries = listOf(expenseByMonth(month = "2026-04", expense = "0.00")),
+                    ),
+                )
+            val recurrenceSimulationService =
+                CountingRecurrenceSimulationService(
+                    listOf(
+                        simulatedEventWithCategory(
+                            date = LocalDate.of(2026, 5, 20),
+                            walletItemId = visibleBankId,
+                            walletItem = walletFromEntity(visibleBankEntity),
+                            value = "-15.00",
+                            categoryName = "Food",
+                        ),
+                        simulatedCreditCardEvent(
+                            date = LocalDate.of(2026, 6, 21),
+                            walletItemId = visibleCardId,
+                            walletItem = walletFromEntity(visibleCardEntity),
+                            value = "-25.00",
+                            billDate = LocalDate.of(2026, 6, 1),
+                        ),
+                    ),
+                )
+            val creditCardBillService =
+                CountingCreditCardBillService(
+                    fakeCreditCardBillService(
+                        mapOf(
+                            visibleCardId to
+                                bill(
+                                    creditCardId = visibleCardId,
+                                    value = "-30.00",
+                                    paid = false,
+                                    billDate = LocalDate.of(2026, 6, 1),
+                                    dueDate = LocalDate.of(2026, 6, 10),
+                                ),
+                        ),
+                    ),
+                )
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    recurrenceSimulationService = recurrenceSimulationService,
+                    creditCardBillService = creditCardBillService,
+                    exchangeRateService = identityExchangeRateService(),
+                )
+
+            service.getOverview(
+                userId = userId,
+                defaultCurrency = "BRL",
+                selectedMonth = selectedMonth,
+            )
+
+            assertThat(walletItemRepository.visibleLookupCalls).isEqualTo(1)
+            assertThat(recurrenceSimulationService.filteredSimulationCalls).isEqualTo(1)
+            assertThat(recurrenceSimulationService.unfilteredSimulationCalls).isZero()
+            assertThat(creditCardBillService.openByDueDateBetweenCalls).isEqualTo(1)
+        }
+
+    @Test
+    fun `should preserve visibility and projected overview semantics under shared pipeline`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 4)
+            val visibleBankId = UUID.randomUUID()
+            val hiddenBankId = UUID.randomUUID()
+            val visibleCardId = UUID.randomUUID()
+            val hiddenCardId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            val visibleBankEntity =
+                bankAccountEntity(
+                    id = visibleBankId,
+                    userId = userId,
+                    name = "Main",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                )
+            val hiddenBankEntity =
+                bankAccountEntity(
+                    id = hiddenBankId,
+                    userId = userId,
+                    name = "Hidden reserve",
+                    currency = "BRL",
+                    balance = "400.00",
+                    showOnDashboard = false,
+                )
+            val visibleCardEntity =
+                creditCardEntity(
+                    id = visibleCardId,
+                    userId = userId,
+                    name = "Visa",
+                    currency = "BRL",
+                    totalLimit = "2000.00",
+                    availableLimit = "1600.00",
+                    showOnDashboard = true,
+                )
+            val hiddenCardEntity =
+                creditCardEntity(
+                    id = hiddenCardId,
+                    userId = userId,
+                    name = "Hidden card",
+                    currency = "BRL",
+                    totalLimit = "2000.00",
+                    availableLimit = "1900.00",
+                    showOnDashboard = false,
+                )
+            walletItemRepository.save(visibleBankEntity)
+            walletItemRepository.save(hiddenBankEntity)
+            walletItemRepository.save(visibleCardEntity)
+            walletItemRepository.save(hiddenCardEntity)
+
+            val walletEntryRepository =
+                stubWalletEntryRepository(
+                    monthlySummaries =
+                        listOf(
+                            monthly(visibleBankId, "2026-04", net = "0.00", cashIn = "0.00", cashOut = "0.00"),
+                            monthly(hiddenBankId, "2026-04", net = "0.00", cashIn = "0.00", cashOut = "0.00"),
+                        ),
+                )
+            val recurrenceSimulationService =
+                fakeRecurrenceSimulationService(
+                    listOf(
+                        simulatedEventWithCategory(
+                            date = LocalDate.of(2026, 4, 20),
+                            walletItemId = visibleBankId,
+                            walletItem = walletFromEntity(visibleBankEntity),
+                            value = "-20.00",
+                            categoryName = "Food",
+                        ),
+                        simulatedEventWithCategory(
+                            date = LocalDate.of(2026, 4, 20),
+                            walletItemId = hiddenBankId,
+                            walletItem = walletFromEntity(hiddenBankEntity),
+                            value = "-999.00",
+                            categoryName = "Food",
+                        ),
+                        simulatedCreditCardEvent(
+                            date = LocalDate.of(2026, 4, 21),
+                            walletItemId = visibleCardId,
+                            walletItem = walletFromEntity(visibleCardEntity),
+                            value = "-40.00",
+                            billDate = LocalDate.of(2026, 4, 1),
+                        ),
+                        simulatedCreditCardEvent(
+                            date = LocalDate.of(2026, 4, 21),
+                            walletItemId = hiddenCardId,
+                            walletItem = walletFromEntity(hiddenCardEntity),
+                            value = "-70.00",
+                            billDate = LocalDate.of(2026, 4, 1),
+                        ),
+                        simulatedTransferEvent(
+                            date = LocalDate.of(2026, 4, 22),
+                            entries =
+                                listOf(
+                                    simulatedEntry(
+                                        walletItemId = visibleBankId,
+                                        walletItem = walletFromEntity(visibleBankEntity),
+                                        value = "-30.00",
+                                    ),
+                                    simulatedEntry(
+                                        walletItemId = hiddenBankId,
+                                        walletItem = walletFromEntity(hiddenBankEntity),
+                                        value = "30.00",
+                                    ),
+                                ),
+                        ),
+                    ),
+                )
+            val creditCardBillService =
+                fakeCreditCardBillService(
+                    mapOf(
+                        visibleCardId to bill(creditCardId = visibleCardId, value = "-50.00", paid = false),
+                        hiddenCardId to bill(creditCardId = hiddenCardId, value = "-30.00", paid = false),
+                    ),
+                )
+            val goalLedgerSummaryRepository =
+                object : GoalLedgerCommittedSummaryRepository {
+                    override fun summarizeCommittedByUserGoals(userId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+                    override fun summarizeCommittedByUserGoalsDetailed(userId: UUID): Flux<GoalCommittedByGoalRow> =
+                        Flux.just(
+                            GoalCommittedByGoalRow(
+                                goalId = UUID.randomUUID(),
+                                goalName = "Reserve",
+                                walletItemId = visibleBankId,
+                                currency = "BRL",
+                                committed = BigDecimal("250.00"),
+                            ),
+                            GoalCommittedByGoalRow(
+                                goalId = UUID.randomUUID(),
+                                goalName = "Hidden reserve",
+                                walletItemId = hiddenBankId,
+                                currency = "BRL",
+                                committed = BigDecimal("100.00"),
+                            ),
+                        )
+
+                    override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
+                }
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    recurrenceSimulationService = recurrenceSimulationService,
+                    creditCardBillService = creditCardBillService,
+                    exchangeRateService = identityExchangeRateService(),
+                    goalLedgerSummaryRepository = goalLedgerSummaryRepository,
+                )
+
+            val result =
+                service.getOverview(
+                    userId = userId,
+                    defaultCurrency = "BRL",
+                    selectedMonth = selectedMonth,
+                )
+
+            assertMoney(result.cardValue(OverviewDashboardCardKey.PROJECTED_CASH_OUT), "110.00")
+            assertMoney(result.cardValue(OverviewDashboardCardKey.PROJECTED_EXPENSES), "60.00")
+            assertMoney(result.goalCommittedTotal, "250.00")
+            assertMoney(result.freeBalanceTotal, "750.00")
+            assertThat(result.goalOverCommittedWarning).isFalse()
+            assertThat(
+                result.cards
+                    .first { it.key == OverviewDashboardCardKey.PROJECTED_CASH_OUT }
+                    .details
+                    .map { it.label },
+            ).contains("Main", "Visa")
+                .doesNotContain("Hidden reserve", "Hidden card")
+            assertMoney(result.categorySliceValue("Food"), "20.00")
+            assertMoney(result.categorySliceValue(PREDEFINED_UNCATEGORIZED_LABEL), "40.00")
+            assertMoney(result.groupSliceValue(PREDEFINED_INDIVIDUAL_LABEL), "60.00")
+        }
+
     private fun createService(
         clock: Clock,
-        walletItemRepository: InMemoryWalletItemRepository,
+        walletItemRepository: WalletItemRepository,
         walletEntryRepository: WalletEntryRepository,
         recurrenceSimulationService: RecurrenceSimulationService,
         creditCardBillService: CreditCardBillService,
@@ -1002,8 +1482,90 @@ class OverviewDashboardServiceImplTest {
         expenseMonthlySummaries: List<OverviewExpenseMonthlySummary> = emptyList(),
         cashBreakdowns: List<OverviewCashBreakdownSummary> = emptyList(),
         expenseBreakdowns: List<OverviewExpenseBreakdownSummary> = emptyList(),
+        bankFacts: List<OverviewExecutedBankFactSummary> = emptyList(),
+        expenseFacts: List<OverviewExecutedExpenseFactSummary> = emptyList(),
     ): WalletEntryRepository {
         val delegate = InMemoryWalletEntryRepository()
+        val fallbackBreakdownMonth =
+            monthlySummaries.maxOfOrNull { it.month }
+                ?: expenseMonthlySummaries.maxOfOrNull { it.month }
+                ?: YearMonth.of(2026, 4)
+
+        val synthesizedBankFacts =
+            if (bankFacts.isNotEmpty()) {
+                bankFacts
+            } else {
+                monthlySummaries.map { summary ->
+                    OverviewExecutedBankFactSummary(
+                        walletItemId = summary.walletItemId,
+                        month = summary.month,
+                        categoryId = null,
+                        categoryName = null,
+                        currency = "BRL",
+                        net = summary.net,
+                        cashIn = summary.cashIn,
+                        cashOut = summary.cashOut,
+                    )
+                } +
+                    cashBreakdowns.map { breakdown ->
+                        OverviewExecutedBankFactSummary(
+                            walletItemId = UUID.nameUUIDFromBytes("cash-breakdown-wallet".toByteArray()),
+                            month = fallbackBreakdownMonth,
+                            categoryId = breakdown.categoryId,
+                            categoryName = breakdown.categoryName,
+                            currency = breakdown.currency,
+                            net = BigDecimal.ZERO,
+                            cashIn = if (breakdown.direction == OverviewCashDirection.IN) breakdown.amount else BigDecimal.ZERO,
+                            cashOut = if (breakdown.direction == OverviewCashDirection.OUT) breakdown.amount else BigDecimal.ZERO,
+                        )
+                    }
+            }
+
+        val synthesizedExpenseFacts =
+            if (expenseFacts.isNotEmpty()) {
+                expenseFacts
+            } else {
+                val breakdownMonth = expenseMonthlySummaries.maxOfOrNull { it.month }
+                val monthsCoveredByBreakdowns =
+                    if (expenseBreakdowns.isEmpty() ||
+                        breakdownMonth == null
+                    ) {
+                        emptySet()
+                    } else {
+                        setOf(breakdownMonth)
+                    }
+
+                expenseBreakdowns.map { breakdown ->
+                    OverviewExecutedExpenseFactSummary(
+                        month = breakdownMonth ?: fallbackBreakdownMonth,
+                        walletItemId = UUID.nameUUIDFromBytes("expense-breakdown-wallet".toByteArray()),
+                        walletItemName = "Expense source",
+                        walletItemType = WalletItemType.BANK_ACCOUNT,
+                        groupId = breakdown.groupId,
+                        groupName = breakdown.groupName,
+                        categoryId = breakdown.categoryId,
+                        categoryName = breakdown.categoryName,
+                        currency = breakdown.currency,
+                        expense = breakdown.expense,
+                    )
+                } +
+                    expenseMonthlySummaries
+                        .filterNot { monthsCoveredByBreakdowns.contains(it.month) }
+                        .map { summary ->
+                            OverviewExecutedExpenseFactSummary(
+                                month = summary.month,
+                                walletItemId = UUID.nameUUIDFromBytes("expense-month-${summary.month}-${summary.currency}".toByteArray()),
+                                walletItemName = "Expense source ${summary.month}",
+                                walletItemType = WalletItemType.BANK_ACCOUNT,
+                                groupId = null,
+                                groupName = null,
+                                categoryId = null,
+                                categoryName = null,
+                                currency = summary.currency,
+                                expense = summary.expense,
+                            )
+                        }
+            }
 
         return object : WalletEntryRepository by delegate {
             override fun summarizeBankAccountsByMonth(
@@ -1039,6 +1601,30 @@ class OverviewDashboardServiceImplTest {
                     },
                 )
 
+            override fun summarizeOverviewBankFacts(
+                userId: UUID,
+                minimumDate: LocalDate,
+                maximumDate: LocalDate,
+            ): Flux<OverviewExecutedBankFactSummary> =
+                Flux.fromIterable(
+                    synthesizedBankFacts.filter {
+                        val date = it.month.atDay(1)
+                        !date.isBefore(minimumDate) && !date.isAfter(maximumDate)
+                    },
+                )
+
+            override fun summarizeOverviewExpenseFacts(
+                userId: UUID,
+                minimumDate: LocalDate,
+                maximumDate: LocalDate,
+            ): Flux<OverviewExecutedExpenseFactSummary> =
+                Flux.fromIterable(
+                    synthesizedExpenseFacts.filter {
+                        val date = it.month.atDay(1)
+                        !date.isBefore(minimumDate) && !date.isAfter(maximumDate)
+                    },
+                )
+
             override fun summarizeOverviewExpenseBySource(
                 userId: UUID,
                 minimumDate: LocalDate,
@@ -1057,6 +1643,89 @@ class OverviewDashboardServiceImplTest {
                 maximumDate: LocalDate,
             ): Flux<OverviewExpenseBreakdownSummary> = Flux.fromIterable(expenseBreakdowns)
         }
+    }
+
+    private class CountingWalletItemRepository(
+        private val delegate: WalletItemRepository,
+    ) : WalletItemRepository by delegate {
+        var enabledLookupCalls: Int = 0
+        var visibleLookupCalls: Int = 0
+
+        override fun findAllByUserIdAndEnabled(
+            userId: UUID,
+            enabled: Boolean,
+            pageable: org.springframework.data.domain.Pageable,
+        ) = delegate.findAllByUserIdAndEnabled(userId, enabled, pageable).also { enabledLookupCalls += 1 }
+
+        override fun findAllByUserIdAndEnabledAndShowOnDashboard(
+            userId: UUID,
+            enabled: Boolean,
+            showOnDashboard: Boolean,
+            pageable: org.springframework.data.domain.Pageable,
+        ) = delegate
+            .findAllByUserIdAndEnabledAndShowOnDashboard(userId, enabled, showOnDashboard, pageable)
+            .also { visibleLookupCalls += 1 }
+    }
+
+    private class CountingWalletEntryRepository(
+        private val delegate: WalletEntryRepository,
+    ) : WalletEntryRepository by delegate {
+        var bankByMonthCalls: Int = 0
+        var bankFactCalls: Int = 0
+        var expenseByMonthCalls: Int = 0
+        var expenseFactCalls: Int = 0
+        var expenseBySourceCalls: Int = 0
+        var cashBreakdownCalls: Int = 0
+        var expenseBreakdownCalls: Int = 0
+
+        override fun summarizeBankAccountsByMonth(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<BankAccountMonthlySummary> =
+            delegate.summarizeBankAccountsByMonth(userId, minimumDate, maximumDate).also { bankByMonthCalls += 1 }
+
+        override fun summarizeOverviewBankFacts(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<OverviewExecutedBankFactSummary> =
+            delegate.summarizeOverviewBankFacts(userId, minimumDate, maximumDate).also { bankFactCalls += 1 }
+
+        override fun summarizeOverviewExpenseByMonth(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<OverviewExpenseMonthlySummary> =
+            delegate.summarizeOverviewExpenseByMonth(userId, minimumDate, maximumDate).also { expenseByMonthCalls += 1 }
+
+        override fun summarizeOverviewExpenseFacts(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<OverviewExecutedExpenseFactSummary> =
+            delegate.summarizeOverviewExpenseFacts(userId, minimumDate, maximumDate).also { expenseFactCalls += 1 }
+
+        override fun summarizeOverviewExpenseBySource(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<OverviewExpenseSourceSummary> =
+            delegate.summarizeOverviewExpenseBySource(userId, minimumDate, maximumDate).also { expenseBySourceCalls += 1 }
+
+        override fun summarizeOverviewCashBreakdown(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<OverviewCashBreakdownSummary> =
+            delegate.summarizeOverviewCashBreakdown(userId, minimumDate, maximumDate).also { cashBreakdownCalls += 1 }
+
+        override fun summarizeOverviewExpenseBreakdown(
+            userId: UUID,
+            minimumDate: LocalDate,
+            maximumDate: LocalDate,
+        ): Flux<OverviewExpenseBreakdownSummary> =
+            delegate.summarizeOverviewExpenseBreakdown(userId, minimumDate, maximumDate).also { expenseBreakdownCalls += 1 }
     }
 
     private fun fakeRecurrenceSimulationService(events: List<EventListResponse>): RecurrenceSimulationService =
@@ -1101,6 +1770,24 @@ class OverviewDashboardServiceImplTest {
                         (maximumNextExecution == null || !it.date.isAfter(maximumNextExecution))
                 }
 
+            override suspend fun simulateGenerationWithFilters(
+                minimumEndExecution: LocalDate?,
+                maximumNextExecution: LocalDate?,
+                userId: UUID?,
+                walletItemId: UUID?,
+                billDate: LocalDate?,
+                groupIds: Set<UUID>,
+                userIds: Set<UUID>,
+                walletItemIds: Set<UUID>,
+                entryTypes: Set<WalletEntryType>,
+            ): List<EventListResponse> =
+                events.filter { event ->
+                    (minimumEndExecution == null || !event.date.isBefore(minimumEndExecution)) &&
+                        (maximumNextExecution == null || !event.date.isAfter(maximumNextExecution)) &&
+                        (walletItemIds.isEmpty() || event.entries.any { entry -> walletItemIds.contains(entry.walletItemId) }) &&
+                        (entryTypes.isEmpty() || entryTypes.contains(event.type))
+                }
+
             override suspend fun simulateGenerationAsEntrySumResult(
                 minimumEndExecution: LocalDate?,
                 maximumNextExecution: LocalDate?,
@@ -1135,6 +1822,106 @@ class OverviewDashboardServiceImplTest {
                 simulateBillForRecurrence: Boolean,
             ): EventListResponse = events.first()
         }
+
+    private class CountingRecurrenceSimulationService(
+        private val events: List<EventListResponse>,
+    ) : RecurrenceSimulationService {
+        var unfilteredSimulationCalls: Int = 0
+        var filteredSimulationCalls: Int = 0
+
+        override suspend fun getFutureValuesOfWalletItem(
+            walletItemId: UUID,
+            minimumEndExecution: LocalDate,
+            maximumNextExecution: LocalDate,
+            userId: UUID,
+            groupId: UUID?,
+        ): BigDecimal = BigDecimal.ZERO
+
+        override suspend fun getFutureValuesOCreditCard(
+            bill: CreditCardBill,
+            userId: UUID,
+            groupId: UUID?,
+            walletItemId: UUID,
+        ): BigDecimal = BigDecimal.ZERO
+
+        override suspend fun simulateGeneration(
+            minimumEndExecution: LocalDate?,
+            maximumNextExecution: LocalDate?,
+            userId: UUID?,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
+            walletItemId: UUID?,
+            billDate: LocalDate?,
+        ): List<EventListResponse> {
+            unfilteredSimulationCalls += 1
+            return events.filter {
+                (minimumEndExecution == null || !it.date.isBefore(minimumEndExecution)) &&
+                    (maximumNextExecution == null || !it.date.isAfter(maximumNextExecution))
+            }
+        }
+
+        override suspend fun simulateGenerationWithFilters(
+            minimumEndExecution: LocalDate?,
+            maximumNextExecution: LocalDate?,
+            userId: UUID?,
+            walletItemId: UUID?,
+            billDate: LocalDate?,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
+            walletItemIds: Set<UUID>,
+            entryTypes: Set<WalletEntryType>,
+        ): List<EventListResponse> {
+            filteredSimulationCalls += 1
+            return events.filter { event ->
+                (minimumEndExecution == null || !event.date.isBefore(minimumEndExecution)) &&
+                    (maximumNextExecution == null || !event.date.isAfter(maximumNextExecution)) &&
+                    (walletItemIds.isEmpty() || event.entries.any { entry -> walletItemIds.contains(entry.walletItemId) }) &&
+                    (entryTypes.isEmpty() || entryTypes.contains(event.type))
+            }
+        }
+
+        override suspend fun simulateGenerationForUsers(
+            minimumEndExecution: LocalDate?,
+            maximumNextExecution: LocalDate?,
+            userIds: Set<UUID>,
+            billDate: LocalDate?,
+        ): List<EventListResponse> =
+            simulateGeneration(minimumEndExecution, maximumNextExecution, null, emptySet(), userIds, null, billDate)
+
+        override suspend fun simulateGenerationAsEntrySumResult(
+            minimumEndExecution: LocalDate?,
+            maximumNextExecution: LocalDate?,
+            userId: UUID?,
+            groupId: UUID?,
+            walletItemId: UUID?,
+            summaryMinimumDate: LocalDate,
+        ): List<EntrySumResult> = emptyList()
+
+        override suspend fun simulateGenerationForCreditCard(
+            billDate: LocalDate,
+            userId: UUID,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
+            walletItemId: UUID,
+        ): List<EventListResponse> = emptyList()
+
+        override suspend fun simulateGenerationForCreditCard(
+            bill: CreditCardBill,
+            userId: UUID,
+            groupIds: Set<UUID>,
+            userIds: Set<UUID>,
+            walletItemId: UUID?,
+        ): List<EventListResponse> = emptyList()
+
+        override suspend fun simulateGeneration(
+            config: com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity,
+            walletItems: List<WalletItem>,
+            user: com.ynixt.sharedfinances.domain.entities.UserEntity?,
+            group: com.ynixt.sharedfinances.domain.entities.groups.GroupEntity?,
+            category: com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity?,
+            simulateBillForRecurrence: Boolean,
+        ): EventListResponse = events.first()
+    }
 
     private fun fakeCreditCardBillService(billsByCreditCardId: Map<UUID, CreditCardBill>): CreditCardBillService =
         object : CreditCardBillService {
@@ -1190,6 +1977,41 @@ class OverviewDashboardServiceImplTest {
                 }
         }
 
+    private class CountingCreditCardBillService(
+        private val delegate: CreditCardBillService,
+    ) : CreditCardBillService by delegate {
+        var openByDueDateBetweenCalls: Int = 0
+
+        override suspend fun findAllOpenByDueDateBetween(
+            userId: UUID,
+            minimumDueDate: LocalDate,
+            maximumDueDate: LocalDate,
+        ): List<CreditCardBill> {
+            openByDueDateBetweenCalls += 1
+            return delegate.findAllOpenByDueDateBetween(userId, minimumDueDate, maximumDueDate)
+        }
+    }
+
+    private class CountingGoalLedgerSummaryRepository(
+        private val detailedRows: List<GoalCommittedByGoalRow>,
+        private val walletRows: List<GoalCommittedByWalletRow> = emptyList(),
+    ) : GoalLedgerCommittedSummaryRepository {
+        var detailedCalls: Int = 0
+        var walletCalls: Int = 0
+
+        override fun summarizeCommittedByUserGoals(userId: UUID): Flux<GoalCommittedByWalletRow> {
+            walletCalls += 1
+            return Flux.fromIterable(walletRows)
+        }
+
+        override fun summarizeCommittedByUserGoalsDetailed(userId: UUID): Flux<GoalCommittedByGoalRow> {
+            detailedCalls += 1
+            return Flux.fromIterable(detailedRows)
+        }
+
+        override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
+    }
+
     private fun identityExchangeRateService(): ExchangeRateService =
         object : ExchangeRateService {
             override suspend fun syncLatestQuotes(): Int = 0
@@ -1230,6 +2052,17 @@ class OverviewDashboardServiceImplTest {
             override suspend fun convertBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, BigDecimal> =
                 requests.associateWith { it.value }
         }
+
+    private class CountingExchangeRateService(
+        private val delegate: ExchangeRateService,
+    ) : ExchangeRateService by delegate {
+        var convertBatchCalls: Int = 0
+
+        override suspend fun convertBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, BigDecimal> {
+            convertBatchCalls += 1
+            return delegate.convertBatch(requests)
+        }
+    }
 
     private fun fixedClock(instant: String): Clock = Clock.fixed(Instant.parse(instant), ZoneOffset.UTC)
 

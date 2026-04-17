@@ -1,6 +1,8 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuotePair
+import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteBatchRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteKeysetRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteListCursor
 import io.r2dbc.spi.Row
@@ -16,7 +18,8 @@ import java.util.UUID
 class ExchangeRateQuoteDatabaseClientRepository(
     private val dbClient: DatabaseClient,
 ) : DatabaseClientRepository(),
-    ExchangeRateQuoteKeysetRepository {
+    ExchangeRateQuoteKeysetRepository,
+    ExchangeRateQuoteBatchRepository {
     override fun findQuotesKeyset(
         limit: Int,
         baseCurrency: String?,
@@ -81,6 +84,84 @@ class ExchangeRateQuoteDatabaseClientRepository(
         return spec.map { row, _ -> exchangeRateQuoteFromRow(row) }.all()
     }
 
+    override fun findClosestOnOrBeforeDateForPairs(
+        pairs: Set<ExchangeRateQuotePair>,
+        referenceDate: LocalDate,
+    ): Flux<ExchangeRateQuoteEntity> {
+        if (pairs.isEmpty()) {
+            return Flux.empty()
+        }
+
+        val (pairPredicate, bindings) = buildPairPredicate(pairs)
+        val sql =
+            """
+            SELECT DISTINCT ON (base_currency, quote_currency) *
+            FROM exchange_rate_quote
+            WHERE
+                ($pairPredicate)
+                AND quote_date <= :referenceDate
+            ORDER BY base_currency ASC, quote_currency ASC, quote_date DESC, quoted_at DESC
+            """.trimIndent()
+
+        var spec = dbClient.sql(sql).bind("referenceDate", referenceDate)
+        bindings.forEach { (name, value) -> spec = spec.bind(name, value) }
+        return spec.map { row, _ -> exchangeRateQuoteFromRow(row) }.all()
+    }
+
+    override fun findClosestOnOrAfterDateForPairs(
+        pairs: Set<ExchangeRateQuotePair>,
+        referenceDate: LocalDate,
+    ): Flux<ExchangeRateQuoteEntity> {
+        if (pairs.isEmpty()) {
+            return Flux.empty()
+        }
+
+        val (pairPredicate, bindings) = buildPairPredicate(pairs)
+        val sql =
+            """
+            SELECT DISTINCT ON (base_currency, quote_currency) *
+            FROM exchange_rate_quote
+            WHERE
+                ($pairPredicate)
+                AND quote_date >= :referenceDate
+            ORDER BY base_currency ASC, quote_currency ASC, quote_date ASC, quoted_at DESC
+            """.trimIndent()
+
+        var spec = dbClient.sql(sql).bind("referenceDate", referenceDate)
+        bindings.forEach { (name, value) -> spec = spec.bind(name, value) }
+        return spec.map { row, _ -> exchangeRateQuoteFromRow(row) }.all()
+    }
+
+    override fun findAllByPairsAndQuoteDateBetween(
+        pairs: Set<ExchangeRateQuotePair>,
+        quoteDateFrom: LocalDate,
+        quoteDateTo: LocalDate,
+    ): Flux<ExchangeRateQuoteEntity> {
+        if (pairs.isEmpty()) {
+            return Flux.empty()
+        }
+
+        val (pairPredicate, bindings) = buildPairPredicate(pairs)
+        val sql =
+            """
+            SELECT *
+            FROM exchange_rate_quote
+            WHERE
+                ($pairPredicate)
+                AND quote_date >= :quoteDateFrom
+                AND quote_date <= :quoteDateTo
+            ORDER BY base_currency ASC, quote_currency ASC, quote_date ASC, quoted_at DESC
+            """.trimIndent()
+
+        var spec =
+            dbClient
+                .sql(sql)
+                .bind("quoteDateFrom", quoteDateFrom)
+                .bind("quoteDateTo", quoteDateTo)
+        bindings.forEach { (name, value) -> spec = spec.bind(name, value) }
+        return spec.map { row, _ -> exchangeRateQuoteFromRow(row) }.all()
+    }
+
     private fun exchangeRateQuoteFromRow(row: Row): ExchangeRateQuoteEntity {
         val entity =
             ExchangeRateQuoteEntity(
@@ -96,5 +177,21 @@ class ExchangeRateQuoteDatabaseClientRepository(
         entity.createdAt = row.get("created_at", OffsetDateTime::class.java)
         entity.updatedAt = row.get("updated_at", OffsetDateTime::class.java)
         return entity
+    }
+
+    private fun buildPairPredicate(pairs: Set<ExchangeRateQuotePair>): Pair<String, Map<String, String>> {
+        val bindings = linkedMapOf<String, String>()
+        val predicate =
+            pairs
+                .sortedWith(compareBy({ it.baseCurrency }, { it.quoteCurrency }))
+                .mapIndexed { index, pair ->
+                    val baseKey = "baseCurrency$index"
+                    val quoteKey = "quoteCurrency$index"
+                    bindings[baseKey] = pair.baseCurrency
+                    bindings[quoteKey] = pair.quoteCurrency
+                    "(base_currency = :$baseKey AND quote_currency = :$quoteKey)"
+                }.joinToString(" OR ")
+
+        return predicate to bindings
     }
 }

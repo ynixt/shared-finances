@@ -14,17 +14,22 @@ import java.util.UUID
 internal class OverviewDashboardGoalServiceImpl(
     private val goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository,
 ) {
-    internal suspend fun loadCommittedRawDetails(
+    internal suspend fun loadGoalCommitmentContext(
         userId: UUID,
         bankAccountIds: Set<UUID>,
+        bankAccountById: Map<UUID, BankAccount>,
+        rawBalanceByBankId: Map<UUID, BigDecimal>,
         referenceDate: LocalDate,
-    ): List<RawDetail> =
-        goalLedgerSummaryRepository
-            .summarizeCommittedByUserGoalsDetailed(userId)
-            .collectList()
-            .awaitSingle()
-            .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
-            .map { committed ->
+    ): GoalCommitmentContext {
+        val detailedRows =
+            goalLedgerSummaryRepository
+                .summarizeCommittedByUserGoalsDetailed(userId)
+                .collectList()
+                .awaitSingle()
+                .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
+
+        val rawDetails =
+            detailedRows.map { committed ->
                 RawDetail(
                     sourceId = committed.goalId,
                     sourceType = OverviewDashboardDetailSourceType.GOAL,
@@ -36,25 +41,29 @@ internal class OverviewDashboardGoalServiceImpl(
                 )
             }
 
-    internal suspend fun hasAccountOverCommittedBalance(
-        userId: UUID,
-        bankAccountIds: Set<UUID>,
-        bankAccountById: Map<UUID, BankAccount>,
-        rawBalanceByBankId: Map<UUID, BigDecimal>,
-    ): Boolean =
-        goalLedgerSummaryRepository
-            .summarizeCommittedByUserGoals(userId)
-            .collectList()
-            .awaitSingle()
-            .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
-            .any { committed ->
-                val bankAccount = bankAccountById[committed.walletItemId] ?: return@any false
-                if (!committed.currency.equals(bankAccount.currency, ignoreCase = true)) {
-                    return@any false
+        val hasAccountOverCommittedBalance =
+            detailedRows
+                .groupBy { it.walletItemId to it.currency.uppercase() }
+                .any { (key, rows) ->
+                    val (walletItemId, currency) = key
+                    val bankAccount = bankAccountById[walletItemId] ?: return@any false
+                    if (!currency.equals(bankAccount.currency, ignoreCase = true)) {
+                        return@any false
+                    }
+
+                    val committed =
+                        rows
+                            .fold(BigDecimal.ZERO) { acc, row -> acc.add(row.committed) }
+                            .asMoney()
+                    val balance = rawBalanceByBankId[walletItemId] ?: BigDecimal.ZERO
+                    committed.compareTo(balance) > 0
                 }
-                val balance = rawBalanceByBankId[committed.walletItemId] ?: BigDecimal.ZERO
-                committed.committed.asMoney().compareTo(balance) > 0
-            }
+
+        return GoalCommitmentContext(
+            rawDetails = rawDetails,
+            hasAccountOverCommittedBalance = hasAccountOverCommittedBalance,
+        )
+    }
 
     internal fun buildGoalCommittedDetailsByWallet(
         rawGoalCommittedDetails: List<RawDetail>,

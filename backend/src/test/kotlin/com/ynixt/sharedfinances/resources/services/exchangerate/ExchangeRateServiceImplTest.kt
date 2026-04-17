@@ -7,6 +7,8 @@ import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.ExchangeRateUnavailableException
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuotePair
+import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteBatchRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteKeysetRepository
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteListCursor
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteRepository
@@ -125,9 +127,12 @@ class ExchangeRateServiceImplTest {
             val result = service.convertBatch(requests)
 
             assertThat(result).hasSize(20)
-            assertThat(repository.closestBeforeCalls).isEqualTo(1)
-            assertThat(repository.closestAfterCalls).isEqualTo(1)
-            assertThat(repository.windowCalls).isEqualTo(1)
+            assertThat(repository.batchClosestBeforeCalls).isEqualTo(1)
+            assertThat(repository.batchClosestAfterCalls).isEqualTo(1)
+            assertThat(repository.batchWindowCalls).isEqualTo(1)
+            assertThat(repository.closestBeforeCalls).isZero()
+            assertThat(repository.closestAfterCalls).isZero()
+            assertThat(repository.windowCalls).isZero()
         }
 
     @Test
@@ -191,6 +196,7 @@ class ExchangeRateServiceImplTest {
                 ExchangeRateServiceImpl(
                     exchangeRateProvider = provider,
                     exchangeRateQuoteRepository = quoteRepository,
+                    exchangeRateQuoteBatchRepository = quoteRepository,
                     exchangeRateQuoteKeysetRepository = quoteRepository,
                     walletItemRepository = walletItemRepository,
                     userRepository = userRepository,
@@ -291,6 +297,7 @@ class ExchangeRateServiceImplTest {
         ExchangeRateServiceImpl(
             exchangeRateProvider = exchangeRateProvider,
             exchangeRateQuoteRepository = exchangeRateQuoteRepository,
+            exchangeRateQuoteBatchRepository = exchangeRateQuoteRepository,
             exchangeRateQuoteKeysetRepository = exchangeRateQuoteRepository,
             walletItemRepository = InMemoryWalletItemRepository(),
             userRepository = InMemoryUserRepository(),
@@ -365,12 +372,16 @@ class ExchangeRateServiceImplTest {
 
     private class FakeExchangeRateQuoteRepository :
         ExchangeRateQuoteRepository,
-        ExchangeRateQuoteKeysetRepository {
+        ExchangeRateQuoteKeysetRepository,
+        ExchangeRateQuoteBatchRepository {
         private val byPairAndDate = linkedMapOf<Triple<String, String, LocalDate>, ExchangeRateQuoteEntity>()
         private val byId = linkedMapOf<UUID, ExchangeRateQuoteEntity>()
         var closestBeforeCalls: Int = 0
         var closestAfterCalls: Int = 0
         var windowCalls: Int = 0
+        var batchClosestBeforeCalls: Int = 0
+        var batchClosestAfterCalls: Int = 0
+        var batchWindowCalls: Int = 0
 
         fun saveQuote(
             base: String,
@@ -472,6 +483,63 @@ class ExchangeRateServiceImplTest {
                             !it.quoteDate.isBefore(quoteDateFrom) &&
                             !it.quoteDate.isAfter(quoteDateTo)
                     }.sortedBy { it.quoteDate },
+            )
+        }
+
+        override fun findClosestOnOrBeforeDateForPairs(
+            pairs: Set<ExchangeRateQuotePair>,
+            referenceDate: LocalDate,
+        ): Flux<ExchangeRateQuoteEntity> {
+            batchClosestBeforeCalls += 1
+            return Flux.fromIterable(
+                pairs.mapNotNull { pair ->
+                    byPairAndDate.values
+                        .filter {
+                            it.baseCurrency == pair.baseCurrency.uppercase() &&
+                                it.quoteCurrency == pair.quoteCurrency.uppercase() &&
+                                !it.quoteDate.isAfter(referenceDate)
+                        }.maxByOrNull { it.quoteDate }
+                },
+            )
+        }
+
+        override fun findClosestOnOrAfterDateForPairs(
+            pairs: Set<ExchangeRateQuotePair>,
+            referenceDate: LocalDate,
+        ): Flux<ExchangeRateQuoteEntity> {
+            batchClosestAfterCalls += 1
+            return Flux.fromIterable(
+                pairs.mapNotNull { pair ->
+                    byPairAndDate.values
+                        .filter {
+                            it.baseCurrency == pair.baseCurrency.uppercase() &&
+                                it.quoteCurrency == pair.quoteCurrency.uppercase() &&
+                                !it.quoteDate.isBefore(referenceDate)
+                        }.minByOrNull { it.quoteDate }
+                },
+            )
+        }
+
+        override fun findAllByPairsAndQuoteDateBetween(
+            pairs: Set<ExchangeRateQuotePair>,
+            quoteDateFrom: LocalDate,
+            quoteDateTo: LocalDate,
+        ): Flux<ExchangeRateQuoteEntity> {
+            batchWindowCalls += 1
+            return Flux.fromIterable(
+                byPairAndDate.values
+                    .filter { entity ->
+                        pairs.any { pair ->
+                            entity.baseCurrency == pair.baseCurrency.uppercase() &&
+                                entity.quoteCurrency == pair.quoteCurrency.uppercase()
+                        } &&
+                            !entity.quoteDate.isBefore(quoteDateFrom) &&
+                            !entity.quoteDate.isAfter(quoteDateTo)
+                    }.sortedWith(
+                        compareBy<ExchangeRateQuoteEntity> { it.baseCurrency }
+                            .thenBy { it.quoteCurrency }
+                            .thenBy { it.quoteDate },
+                    ),
             )
         }
 

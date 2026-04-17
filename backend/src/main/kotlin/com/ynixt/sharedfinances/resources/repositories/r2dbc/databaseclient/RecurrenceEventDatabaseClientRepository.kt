@@ -1,17 +1,20 @@
 package com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryPath
 import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.RecurrenceEntryR2DBCMapping
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.RecurrenceEventR2DBCMapping
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.UserR2DBCMapping
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping.WalletItemR2DBCMapping
 import org.springframework.data.domain.Sort
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.util.UUID
 
 @Repository
@@ -101,10 +104,28 @@ class RecurrenceEventDatabaseClientRepository(
                     """
                     SELECT
                         re.*,
+                        rs.qty_total AS series_qty_total,
+                        cat.id AS event_category_id,
+                        cat.created_at AS event_category_created_at,
+                        cat.updated_at AS event_category_updated_at,
+                        cat.name AS event_category_name,
+                        cat.color AS event_category_color,
+                        cat.user_id AS event_category_user_id,
+                        cat.group_id AS event_category_group_id,
+                        cat.parent_id AS event_category_parent_id,
+                        grp.id AS event_group_id,
+                        grp.created_at AS event_group_created_at,
+                        grp.updated_at AS event_group_updated_at,
+                        grp.name AS event_group_name,
+                        ${UserR2DBCMapping.createSelectForUser("usr", "event_user_")},
                         ren.id AS entry_id,
                         ${RecurrenceEntryR2DBCMapping.createSelectForRecurrenceEntry("ren", "entry_")},
                         ${WalletItemR2DBCMapping.createSelectForWalletItem("wi", "entry_wi_")}
                     FROM recurrence_event re
+                    LEFT JOIN recurrence_series rs ON rs.id = re.series_id
+                    LEFT JOIN wallet_entry_category cat ON cat.id = re.category_id
+                    LEFT JOIN "group" grp ON grp.id = re.group_id
+                    LEFT JOIN users usr ON usr.id = re.created_by_user_id
                     JOIN recurrence_entry ren ON ren.wallet_event_id = re.id
                     JOIN wallet_item wi ON wi.id = ren.wallet_item_id
                     WHERE re.id = ANY(:eventIds)
@@ -116,6 +137,10 @@ class RecurrenceEventDatabaseClientRepository(
                     .bind("eventIds", eventIds.toTypedArray())
                     .map { row, _ ->
                         val event = RecurrenceEventR2DBCMapping.recurrenceEventFromRow(row, "")
+                        event.seriesQtyTotal = row.get("series_qty_total", Int::class.javaObjectType)
+                        event.hydratedCategory = categoryFromRowOrNull(row)
+                        event.hydratedGroup = groupFromRowOrNull(row)
+                        event.hydratedUser = userFromRowOrNull(row)
                         val entry = RecurrenceEntryR2DBCMapping.recurrenceEntryFromRow(row, "entry_")
                         entry.walletItem = WalletItemR2DBCMapping.walletItemFromRow(row, "entry_wi_")
                         Pair(event, entry)
@@ -245,4 +270,38 @@ class RecurrenceEventDatabaseClientRepository(
             clauses.joinToString(", ")
         }
     }
+
+    private fun categoryFromRowOrNull(row: io.r2dbc.spi.Row): WalletEntryCategoryEntity? {
+        val categoryId = row.get("event_category_id", UUID::class.java) ?: return null
+
+        return WalletEntryCategoryEntity(
+            name = row.get("event_category_name", String::class.java)!!,
+            color = row.get("event_category_color", String::class.java)!!,
+            userId = row.get("event_category_user_id", UUID::class.java),
+            groupId = row.get("event_category_group_id", UUID::class.java),
+            parentId = row.get("event_category_parent_id", UUID::class.java),
+        ).also { category ->
+            category.id = categoryId
+            category.createdAt = row.get("event_category_created_at", OffsetDateTime::class.java)
+            category.updatedAt = row.get("event_category_updated_at", OffsetDateTime::class.java)
+        }
+    }
+
+    private fun groupFromRowOrNull(row: io.r2dbc.spi.Row): com.ynixt.sharedfinances.domain.entities.groups.GroupEntity? {
+        val groupId = row.get("event_group_id", UUID::class.java) ?: return null
+
+        return com.ynixt.sharedfinances.domain.entities.groups
+            .GroupEntity(
+                name = row.get("event_group_name", String::class.java)!!,
+            ).also { group ->
+                group.id = groupId
+                group.createdAt = row.get("event_group_created_at", OffsetDateTime::class.java)
+                group.updatedAt = row.get("event_group_updated_at", OffsetDateTime::class.java)
+            }
+    }
+
+    private fun userFromRowOrNull(row: io.r2dbc.spi.Row): com.ynixt.sharedfinances.domain.entities.UserEntity? =
+        row.get("event_user_id", UUID::class.java)?.let {
+            UserR2DBCMapping.userFromRow(row, "event_user_")
+        }
 }

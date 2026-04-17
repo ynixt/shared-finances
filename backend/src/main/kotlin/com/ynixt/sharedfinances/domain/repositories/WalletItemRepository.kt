@@ -17,6 +17,13 @@ interface WalletItemRepository : EntityRepository<WalletItemEntity> {
         pageable: Pageable,
     ): Flux<WalletItemEntity>
 
+    fun findAllByUserIdAndEnabledAndShowOnDashboard(
+        userId: UUID,
+        enabled: Boolean,
+        showOnDashboard: Boolean,
+        pageable: Pageable,
+    ): Flux<WalletItemEntity>
+
     fun countByUserIdAndEnabled(
         userId: UUID,
         enabled: Boolean,

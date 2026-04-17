@@ -1,5 +1,7 @@
 package com.ynixt.sharedfinances.domain.entities.wallet.entries
 
+import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
@@ -41,6 +43,15 @@ class RecurrenceEventEntity(
     ) {
     @Transient
     var seriesQtyTotal: Int? = null
+
+    @Transient
+    var hydratedCategory: WalletEntryCategoryEntity? = null
+
+    @Transient
+    var hydratedGroup: GroupEntity? = null
+
+    @Transient
+    var hydratedUser: UserEntity? = null
 }
 
 @Table("recurrence_entry")

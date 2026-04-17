@@ -1,11 +1,16 @@
 package com.ynixt.sharedfinances.resources.services.walletentry.recurrence
 
+import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceSeriesEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.walletentry.SimulatedOccurrence
@@ -242,6 +247,288 @@ class RecurrenceSimulationServiceImplTest {
             assertThat(responses).hasSize(3)
             verify(recurrenceSeriesRepository, times(1)).findAllByIdIn(expectedSeriesIds)
             verify(recurrenceSeriesRepository, never()).findById(org.mockito.ArgumentMatchers.any())
+        }
+
+    @Test
+    fun `simulateGeneration should reuse wallet items hydrated from recurrence query`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val walletId = UUID.randomUUID()
+            val nowClock = Clock.fixed(Instant.parse("2026-04-01T12:00:00Z"), ZoneOffset.UTC)
+            val minimum = LocalDate.of(2026, 4, 1)
+            val maximum = LocalDate.of(2026, 6, 1)
+            val fixedStart = LocalDate.of(2026, 4, 2)
+            val expectedSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
+
+            val config =
+                recurrenceConfig(
+                    seriesId = UUID.randomUUID(),
+                    walletItemId = walletId,
+                    nextExecution = LocalDate.of(2026, 4, 10),
+                )
+            val hydratedWalletItemEntity =
+                WalletItemEntity(
+                    type = WalletItemType.BANK_ACCOUNT,
+                    name = "Main",
+                    enabled = true,
+                    userId = userId,
+                    currency = "BRL",
+                    balance = BigDecimal.ZERO,
+                    totalLimit = null,
+                    dueDay = null,
+                    daysBetweenDueAndClosing = null,
+                    dueOnNextBusinessDay = null,
+                    showOnDashboard = true,
+                ).also { it.id = walletId }
+            config.entries!!.first().walletItem = hydratedWalletItemEntity
+
+            val recurrenceService = mock(RecurrenceService::class.java)
+            `when`(
+                recurrenceService.findAllEntries(
+                    fixedStart,
+                    maximum,
+                    null,
+                    null,
+                    emptySet(),
+                    setOf(userId),
+                    emptySet(),
+                    emptySet(),
+                    expectedSort,
+                ),
+            ).thenReturn(flowOf(config))
+
+            val recurrenceSeriesRepository = mock(RecurrenceSeriesRepository::class.java)
+            `when`(recurrenceSeriesRepository.findAllByIdIn(setOf(config.seriesId))).thenReturn(
+                Flux.just(
+                    RecurrenceSeriesEntity(qtyTotal = 12).also { it.id = config.seriesId },
+                ),
+            )
+
+            val walletItemService = mock(WalletItemService::class.java)
+            val walletItemMapper = mock(WalletItemMapper::class.java)
+            `when`(walletItemMapper.toModel(hydratedWalletItemEntity)).thenReturn(
+                BankAccount(
+                    name = "Main",
+                    enabled = true,
+                    userId = userId,
+                    currency = "BRL",
+                    balance = BigDecimal.ZERO,
+                ).also { it.id = walletId },
+            )
+
+            val recurrenceOccurrenceSimulationService = mock(RecurrenceOccurrenceSimulationService::class.java)
+            `when`(
+                recurrenceOccurrenceSimulationService.buildOccurrences(
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.anyList(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                ),
+            ).thenReturn(
+                listOf(
+                    SimulatedOccurrence(
+                        executionDate = config.nextExecution!!,
+                        installment = null,
+                        billDateByWalletItemId = mapOf(walletId to null),
+                    ),
+                ),
+            )
+
+            val service =
+                RecurrenceSimulationServiceImpl(
+                    genericCategoryService =
+                        mock(GenericCategoryService::class.java).also {
+                            `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                        },
+                    groupService =
+                        mock(GroupService::class.java).also {
+                            `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                        },
+                    userService =
+                        mock(UserService::class.java).also {
+                            `when`(it.findAllByIdIn(emptySet())).thenReturn(emptyFlow())
+                        },
+                    walletItemService = walletItemService,
+                    creditCardBillService = mock(CreditCardBillService::class.java),
+                    walletItemMapper = walletItemMapper,
+                    recurrenceService = recurrenceService,
+                    recurrenceOccurrenceSimulationService = recurrenceOccurrenceSimulationService,
+                    recurrenceSeriesRepository = recurrenceSeriesRepository,
+                    clock = nowClock,
+                )
+
+            val responses =
+                service.simulateGeneration(
+                    minimumEndExecution = minimum,
+                    maximumNextExecution = maximum,
+                    userId = userId,
+                    groupIds = emptySet(),
+                    userIds = emptySet(),
+                    walletItemId = null,
+                    billDate = null,
+                )
+
+            assertThat(responses).hasSize(1)
+            verify(walletItemMapper, times(1)).toModel(hydratedWalletItemEntity)
+            verify(walletItemService, never()).findAllByIdIn(org.mockito.ArgumentMatchers.anyCollection())
+        }
+
+    @Test
+    fun `simulateGeneration should reuse hydrated series and metadata from recurrence query`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val walletId = UUID.randomUUID()
+            val nowClock = Clock.fixed(Instant.parse("2026-04-01T12:00:00Z"), ZoneOffset.UTC)
+            val minimum = LocalDate.of(2026, 4, 1)
+            val maximum = LocalDate.of(2026, 6, 1)
+            val fixedStart = LocalDate.of(2026, 4, 2)
+            val expectedSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
+
+            val config =
+                recurrenceConfig(
+                    seriesId = UUID.randomUUID(),
+                    walletItemId = walletId,
+                    nextExecution = LocalDate.of(2026, 4, 10),
+                )
+            config.seriesQtyTotal = 12
+
+            val hydratedWalletItemEntity =
+                WalletItemEntity(
+                    type = WalletItemType.BANK_ACCOUNT,
+                    name = "Main",
+                    enabled = true,
+                    userId = userId,
+                    currency = "BRL",
+                    balance = BigDecimal.ZERO,
+                    totalLimit = null,
+                    dueDay = null,
+                    daysBetweenDueAndClosing = null,
+                    dueOnNextBusinessDay = null,
+                    showOnDashboard = true,
+                ).also { it.id = walletId }
+            config.entries!!.first().walletItem = hydratedWalletItemEntity
+
+            val hydratedCategory =
+                WalletEntryCategoryEntity(
+                    name = "Food",
+                    color = "#334155",
+                    userId = userId,
+                    groupId = null,
+                    parentId = null,
+                ).also { it.id = UUID.randomUUID() }
+            val hydratedGroup =
+                GroupEntity(
+                    name = "Home",
+                ).also { it.id = UUID.randomUUID() }
+            val hydratedUser =
+                UserEntity(
+                    email = "hydrated@test.local",
+                    passwordHash = "hash",
+                    firstName = "Hydrated",
+                    lastName = "User",
+                    lang = "en",
+                    defaultCurrency = "BRL",
+                    tmz = "UTC",
+                    photoUrl = null,
+                    emailVerified = true,
+                    mfaEnabled = false,
+                    totpSecret = null,
+                    onboardingDone = true,
+                ).also { it.id = config.createdByUserId }
+
+            config.hydratedCategory = hydratedCategory
+            config.hydratedGroup = hydratedGroup
+            config.hydratedUser = hydratedUser
+
+            val recurrenceService = mock(RecurrenceService::class.java)
+            `when`(
+                recurrenceService.findAllEntries(
+                    fixedStart,
+                    maximum,
+                    null,
+                    null,
+                    emptySet(),
+                    setOf(userId),
+                    emptySet(),
+                    emptySet(),
+                    expectedSort,
+                ),
+            ).thenReturn(flowOf(config))
+
+            val recurrenceSeriesRepository = mock(RecurrenceSeriesRepository::class.java)
+            val genericCategoryService = mock(GenericCategoryService::class.java)
+            val groupService = mock(GroupService::class.java)
+            val userService = mock(UserService::class.java)
+            val walletItemService = mock(WalletItemService::class.java)
+            val walletItemMapper = mock(WalletItemMapper::class.java)
+            `when`(walletItemMapper.toModel(hydratedWalletItemEntity)).thenReturn(
+                BankAccount(
+                    name = "Main",
+                    enabled = true,
+                    userId = userId,
+                    currency = "BRL",
+                    balance = BigDecimal.ZERO,
+                ).also { it.id = walletId },
+            )
+
+            val recurrenceOccurrenceSimulationService = mock(RecurrenceOccurrenceSimulationService::class.java)
+            `when`(
+                recurrenceOccurrenceSimulationService.buildOccurrences(
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.anyList(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                    org.mockito.ArgumentMatchers.any(),
+                ),
+            ).thenReturn(
+                listOf(
+                    SimulatedOccurrence(
+                        executionDate = config.nextExecution!!,
+                        installment = null,
+                        billDateByWalletItemId = mapOf(walletId to null),
+                    ),
+                ),
+            )
+
+            val service =
+                RecurrenceSimulationServiceImpl(
+                    genericCategoryService = genericCategoryService,
+                    groupService = groupService,
+                    userService = userService,
+                    walletItemService = walletItemService,
+                    creditCardBillService = mock(CreditCardBillService::class.java),
+                    walletItemMapper = walletItemMapper,
+                    recurrenceService = recurrenceService,
+                    recurrenceOccurrenceSimulationService = recurrenceOccurrenceSimulationService,
+                    recurrenceSeriesRepository = recurrenceSeriesRepository,
+                    clock = nowClock,
+                )
+
+            val responses =
+                service.simulateGeneration(
+                    minimumEndExecution = minimum,
+                    maximumNextExecution = maximum,
+                    userId = userId,
+                    groupIds = emptySet(),
+                    userIds = emptySet(),
+                    walletItemId = null,
+                    billDate = null,
+                )
+
+            assertThat(responses).hasSize(1)
+            assertThat(responses.single().category).isSameAs(hydratedCategory)
+            assertThat(responses.single().group).isSameAs(hydratedGroup)
+            assertThat(responses.single().user).isSameAs(hydratedUser)
+            verify(recurrenceSeriesRepository, never()).findAllByIdIn(org.mockito.ArgumentMatchers.anySet())
+            verify(genericCategoryService, never()).findAllByIdIn(org.mockito.ArgumentMatchers.anySet())
+            verify(groupService, never()).findAllByIdIn(org.mockito.ArgumentMatchers.anySet())
+            verify(userService, never()).findAllByIdIn(org.mockito.ArgumentMatchers.anySet())
+            verify(walletItemService, never()).findAllByIdIn(org.mockito.ArgumentMatchers.anyCollection())
         }
 
     private fun recurrenceConfig(

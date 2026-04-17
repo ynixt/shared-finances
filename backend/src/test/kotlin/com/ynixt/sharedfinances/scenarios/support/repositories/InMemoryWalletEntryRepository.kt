@@ -6,6 +6,8 @@ import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedBankFactSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedExpenseFactSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
@@ -108,6 +110,66 @@ internal class InMemoryWalletEntryRepository(
         )
     }
 
+    override fun summarizeOverviewBankFacts(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExecutedBankFactSummary> {
+        val support = buildSupport() ?: return Flux.empty()
+        val summaries =
+            mutableMapOf<Quadruple<UUID, YearMonth, UUID?, String>, Triple<BigDecimal, BigDecimal, BigDecimal>>()
+
+        data.values.forEach { entry ->
+            val walletItem = support.itemById[entry.walletItemId] ?: return@forEach
+            val event = support.eventById[entry.walletEventId] ?: return@forEach
+            if (walletItem.userId != userId ||
+                walletItem.type != WalletItemType.BANK_ACCOUNT ||
+                !walletItem.enabled ||
+                !walletItem.showOnDashboard ||
+                event.date.isBefore(minimumDate) ||
+                event.date.isAfter(maximumDate)
+            ) {
+                return@forEach
+            }
+
+            val key = Quadruple(entry.walletItemId, YearMonth.from(event.date), event.categoryId, walletItem.currency)
+            val current = summaries[key] ?: Triple(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
+            val internalTransfer = support.isInternalBankTransfer(entry = entry, event = event, userId = userId)
+            val cashIn = if (entry.value > BigDecimal.ZERO && !event.initialBalance && !internalTransfer) entry.value else BigDecimal.ZERO
+            val cashOut =
+                if (entry.value < BigDecimal.ZERO &&
+                    !event.initialBalance &&
+                    !internalTransfer
+                ) {
+                    entry.value.abs()
+                } else {
+                    BigDecimal.ZERO
+                }
+
+            summaries[key] =
+                Triple(
+                    current.first.add(entry.value),
+                    current.second.add(cashIn),
+                    current.third.add(cashOut),
+                )
+        }
+
+        return Flux.fromIterable(
+            summaries.entries.map { (key, value) ->
+                OverviewExecutedBankFactSummary(
+                    walletItemId = key.first,
+                    month = key.second,
+                    categoryId = key.third,
+                    categoryName = null,
+                    currency = key.fourth,
+                    net = value.first,
+                    cashIn = value.second,
+                    cashOut = value.third,
+                )
+            },
+        )
+    }
+
     override fun summarizeOverviewExpenseByMonth(
         userId: UUID,
         minimumDate: LocalDate,
@@ -146,6 +208,65 @@ internal class InMemoryWalletEntryRepository(
                         expense = expense,
                     )
                 },
+        )
+    }
+
+    override fun summarizeOverviewExpenseFacts(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExecutedExpenseFactSummary> {
+        val support = buildSupport() ?: return Flux.empty()
+        val summaries =
+            mutableMapOf<
+                Sextuple<YearMonth, UUID, String, WalletItemType, UUID?, UUID?, String>,
+                BigDecimal,
+            >()
+
+        data.values.forEach { entry ->
+            val walletItem = support.itemById[entry.walletItemId] ?: return@forEach
+            val event = support.eventById[entry.walletEventId] ?: return@forEach
+            if (walletItem.userId != userId ||
+                walletItem.type !in setOf(WalletItemType.BANK_ACCOUNT, WalletItemType.CREDIT_CARD) ||
+                !walletItem.enabled ||
+                !walletItem.showOnDashboard ||
+                event.initialBalance ||
+                event.type != WalletEntryType.EXPENSE ||
+                entry.value >= BigDecimal.ZERO ||
+                event.date.isBefore(minimumDate) ||
+                event.date.isAfter(maximumDate)
+            ) {
+                return@forEach
+            }
+
+            val key =
+                Sextuple(
+                    YearMonth.from(event.date),
+                    entry.walletItemId,
+                    walletItem.name,
+                    walletItem.type,
+                    event.groupId,
+                    event.categoryId,
+                    walletItem.currency,
+                )
+            summaries[key] = summaries.getOrDefault(key, BigDecimal.ZERO).add(entry.value.abs())
+        }
+
+        return Flux.fromIterable(
+            summaries.entries.map { (key, expense) ->
+                OverviewExecutedExpenseFactSummary(
+                    month = key.first,
+                    walletItemId = key.second,
+                    walletItemName = key.third,
+                    walletItemType = key.fourth,
+                    groupId = key.fifth,
+                    groupName = null,
+                    categoryId = key.sixth,
+                    categoryName = null,
+                    currency = key.seventh,
+                    expense = expense,
+                )
+            },
         )
     }
 
@@ -330,4 +451,21 @@ internal class InMemoryWalletEntryRepository(
             return counterpartItems.any { it.type == WalletItemType.BANK_ACCOUNT && it.userId == userId }
         }
     }
+
+    private data class Quadruple<A, B, C, D>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D,
+    )
+
+    private data class Sextuple<A, B, C, D, E, F, G>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D,
+        val fifth: E,
+        val sixth: F,
+        val seventh: G,
+    )
 }

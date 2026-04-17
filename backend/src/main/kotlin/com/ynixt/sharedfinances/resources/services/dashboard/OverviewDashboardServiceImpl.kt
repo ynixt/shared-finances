@@ -29,75 +29,37 @@ internal class OverviewDashboardServiceImpl(
         val targetCurrency = defaultCurrency.uppercase()
         val today = LocalDate.now(clock)
         val currentMonth = YearMonth.from(today)
-        val selectedMonthStart = selectedMonth.atDay(1)
         val selectedMonthEnd = selectedMonth.atEndOfMonth()
         val chartMonths = buildMonthRange(selectedMonth.minusMonths(11), selectedMonth)
         val maximumExecutedDate = minOf(today, selectedMonthEnd)
 
         val visibleItems = dataService.loadVisibleItems(userId)
-        val executedByMonthByBankId =
-            dataService.fetchExecutedByMonthByBank(
+
+        val executedContext =
+            dataService.loadExecutedOverviewContext(
                 userId = userId,
-                minimumDate = chartMonths.first().atDay(1),
-                maximumDate = maximumExecutedDate,
-            )
-        val projectedByMonthByBankId =
-            dataService.fetchProjectedByMonthByBank(
-                userId = userId,
-                minimumDate = today.plusDays(1),
-                maximumDate = selectedMonthEnd,
-                visibleBankAccountIds = visibleItems.bankAccountIds,
-            )
-        val projectedCreditCardDetailsByMonth =
-            dataService.fetchProjectedCreditCardCashOutByMonth(
-                userId = userId,
-                minimumMonth = currentMonth,
-                maximumMonth = selectedMonth,
-                creditCards = visibleItems.creditCards,
-            )
-        val projectedExpenseContributions =
-            dataService.fetchProjectedExpenseContributions(
-                userId = userId,
-                minimumDate = maxOf(today.plusDays(1), chartMonths.first().atDay(1)),
-                maximumDate = selectedMonthEnd,
+                chartStartMonth = chartMonths.first(),
                 selectedMonth = selectedMonth,
-                visibleWalletItemIds = visibleItems.walletItemIds,
+                maximumExecutedDate = maximumExecutedDate,
             )
-        val projectedCashBreakdownContributions =
-            dataService.fetchProjectedCashBreakdownContributions(
+
+        val projectedContext =
+            dataService.loadProjectedOverviewContext(
                 userId = userId,
-                minimumDate = maxOf(today.plusDays(1), selectedMonthStart),
-                maximumDate = selectedMonthEnd,
+                today = today,
+                currentMonth = currentMonth,
                 selectedMonth = selectedMonth,
-                visibleBankAccountIds = visibleItems.bankAccountIds,
+                visibleItems = visibleItems,
             )
-        val executedExpenseSourceSummaries =
-            dataService.fetchExecutedExpenseBySource(
-                userId = userId,
-                minimumDate = selectedMonthStart,
-                maximumDate = maximumExecutedDate,
-            )
+
         val rawExpenseChartContributions =
-            dataService.fetchExecutedExpenseChartContributions(
-                userId = userId,
-                minimumDate = chartMonths.first().atDay(1),
-                maximumDate = maximumExecutedDate,
-            ) + projectedExpenseContributions.chartContributions
+            executedContext.expenseChartContributions + projectedContext.projectedExpenseContributions.chartContributions
+
         val rawBreakdownContributions =
-            dataService.fetchExecutedCashBreakdownContributions(
-                userId = userId,
-                minimumDate = selectedMonthStart,
-                maximumDate = selectedMonthEnd,
-                referenceDate = selectedMonthEnd,
-            ) +
-                projectedCashBreakdownContributions +
-                dataService.fetchExecutedExpenseBreakdownContributions(
-                    userId = userId,
-                    minimumDate = selectedMonthStart,
-                    maximumDate = selectedMonthEnd,
-                    referenceDate = selectedMonthEnd,
-                ) +
-                projectedExpenseContributions.breakdownContributions
+            executedContext.cashBreakdownContributions +
+                projectedContext.projectedCashBreakdownContributions +
+                executedContext.expenseBreakdownContributions +
+                projectedContext.projectedExpenseContributions.breakdownContributions
 
         val rawDetailByCardKey =
             contributionService.buildRawDetailByCardKey(
@@ -106,42 +68,40 @@ internal class OverviewDashboardServiceImpl(
                 currentMonth = currentMonth,
                 today = today,
                 visibleBankAccounts = visibleItems.bankAccounts,
-                executedByMonthByBankId = executedByMonthByBankId,
-                projectedByMonthByBankId = projectedByMonthByBankId,
-                projectedCreditCardDetails = projectedCreditCardDetailsByMonth[selectedMonth].orEmpty(),
-                executedExpenseSourceSummaries = executedExpenseSourceSummaries,
-                projectedExpenseDetails = projectedExpenseContributions.selectedMonthDetails,
+                executedByMonthByBankId = executedContext.executedByMonthByBankId,
+                projectedByMonthByBankId = projectedContext.projectedByMonthByBankId,
+                projectedCreditCardDetails = projectedContext.projectedCreditCardDetailsByMonth[selectedMonth].orEmpty(),
+                executedExpenseSourceSummaries = executedContext.expenseSourceSummaries,
+                projectedExpenseDetails = projectedContext.projectedExpenseContributions.selectedMonthDetails,
             )
+
         val rawChartContributions =
             contributionService.buildRawChartContributions(
                 chartMonths = chartMonths,
                 currentMonth = currentMonth,
                 today = today,
                 visibleBankAccounts = visibleItems.bankAccounts,
-                executedByMonthByBankId = executedByMonthByBankId,
-                projectedByMonthByBankId = projectedByMonthByBankId,
-                projectedCreditCardDetailsByMonth = projectedCreditCardDetailsByMonth,
+                executedByMonthByBankId = executedContext.executedByMonthByBankId,
+                projectedByMonthByBankId = projectedContext.projectedByMonthByBankId,
+                projectedCreditCardDetailsByMonth = projectedContext.projectedCreditCardDetailsByMonth,
                 rawExpenseChartContributions = rawExpenseChartContributions,
             )
 
-        val goalCommitmentReferenceDate = balanceService.balanceReferenceDateForMonth(selectedMonth, currentMonth, today)
-        val rawGoalCommittedDetails =
-            goalService.loadCommittedRawDetails(
-                userId = userId,
-                bankAccountIds = visibleItems.bankAccountIds,
-                referenceDate = goalCommitmentReferenceDate,
-            )
         val rawBalanceByBankId =
             contributionService.buildRawBalanceByBankId(
                 rawDetailByCardKey[OverviewDashboardCardKey.BALANCE].orEmpty(),
             )
-        val hasAccountOverCommittedBalance =
-            goalService.hasAccountOverCommittedBalance(
+
+        val goalCommitmentContext =
+            goalService.loadGoalCommitmentContext(
                 userId = userId,
                 bankAccountIds = visibleItems.bankAccountIds,
                 bankAccountById = visibleItems.bankAccountById,
                 rawBalanceByBankId = rawBalanceByBankId,
+                referenceDate = balanceService.balanceReferenceDateForMonth(selectedMonth, currentMonth, today),
             )
+
+        val rawGoalCommittedDetails = goalCommitmentContext.rawDetails
 
         val convertedValueByKey =
             assemblyService.convertRawValues(
@@ -154,6 +114,7 @@ internal class OverviewDashboardServiceImpl(
                     ),
                 targetCurrency = targetCurrency,
             )
+
         val convertedDetailByCardKey = assemblyService.buildConvertedDetails(rawDetailByCardKey, convertedValueByKey)
 
         val balanceTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.BALANCE])
@@ -161,6 +122,7 @@ internal class OverviewDashboardServiceImpl(
             rawGoalCommittedDetails
                 .fold(BigDecimal.ZERO) { acc, raw -> acc.add(convertedValueByKey.getOrDefault(raw.key, BigDecimal.ZERO)) }
                 .asMoney()
+
         val goalCommittedDetails =
             goalService.buildGoalCommittedDetailsByWallet(
                 rawGoalCommittedDetails = rawGoalCommittedDetails,
@@ -168,6 +130,7 @@ internal class OverviewDashboardServiceImpl(
                 visibleBankAccounts = visibleItems.bankAccounts,
                 rawBalanceByBankId = rawBalanceByBankId,
             )
+
         val freeBalanceTotal = balanceTotal.subtract(goalCommittedTotal).asMoney()
         val freeBalanceDetails =
             goalService.buildFreeBalanceDetailsByWallet(
@@ -178,7 +141,9 @@ internal class OverviewDashboardServiceImpl(
                 visibleBankAccounts = visibleItems.bankAccounts,
                 rawBalanceByBankId = rawBalanceByBankId,
             )
-        val goalOverCommittedWarning = goalCommittedTotal.compareTo(balanceTotal) > 0 || hasAccountOverCommittedBalance
+
+        val goalOverCommittedWarning =
+            goalCommittedTotal.compareTo(balanceTotal) > 0 || goalCommitmentContext.hasAccountOverCommittedBalance
 
         val periodCashInTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN])
         val periodCashOutTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT])
@@ -202,12 +167,14 @@ internal class OverviewDashboardServiceImpl(
                 breakdownType = BreakdownType.EXPENSE_GROUP,
                 alwaysIncludeLabel = PREDEFINED_INDIVIDUAL_LABEL,
             )
+
         val expenseByCategory =
             chartService.buildPieSlices(
                 breakdownValueByKey = breakdownValueByKey,
                 breakdownType = BreakdownType.EXPENSE_CATEGORY,
                 alwaysIncludeLabel = PREDEFINED_UNCATEGORIZED_LABEL,
             )
+
         val cashInByCategory = chartService.buildPieSlices(breakdownValueByKey, BreakdownType.CASH_IN_CATEGORY)
         val cashOutByCategory = chartService.buildPieSlices(breakdownValueByKey, BreakdownType.CASH_OUT_CATEGORY)
 

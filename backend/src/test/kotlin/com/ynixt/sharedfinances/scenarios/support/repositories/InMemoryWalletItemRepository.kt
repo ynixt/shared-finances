@@ -25,6 +25,23 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
         pageable: Pageable,
     ): Flux<WalletItemEntity> = Flux.fromIterable(page(filterItems { it.userId == userId && it.enabled == enabled }, pageable))
 
+    override fun findAllByUserIdAndEnabledAndShowOnDashboard(
+        userId: UUID,
+        enabled: Boolean,
+        showOnDashboard: Boolean,
+        pageable: Pageable,
+    ): Flux<WalletItemEntity> =
+        Flux.fromIterable(
+            page(
+                filterItems {
+                    it.userId == userId &&
+                        it.enabled == enabled &&
+                        it.showOnDashboard == showOnDashboard
+                },
+                pageable,
+            ),
+        )
+
     override fun countByUserIdAndEnabled(
         userId: UUID,
         enabled: Boolean,

@@ -6,6 +6,8 @@ import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardPieSlice
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedBankFactSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedExpenseFactSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -150,6 +152,54 @@ internal data class ProjectedExpenseContributions(
     }
 }
 
+internal data class ProjectedOverviewContext(
+    val projectedByMonthByBankId: Map<YearMonth, Map<UUID, MonthlyAmount>>,
+    val projectedCreditCardDetailsByMonth: Map<YearMonth, List<ProjectedCreditCardExpense>>,
+    val projectedExpenseContributions: ProjectedExpenseContributions,
+    val projectedCashBreakdownContributions: List<RawBreakdownContribution>,
+) {
+    companion object {
+        val EMPTY =
+            ProjectedOverviewContext(
+                projectedByMonthByBankId = emptyMap(),
+                projectedCreditCardDetailsByMonth = emptyMap(),
+                projectedExpenseContributions = ProjectedExpenseContributions.EMPTY,
+                projectedCashBreakdownContributions = emptyList(),
+            )
+    }
+}
+
+internal data class ExecutedOverviewContext(
+    val executedByMonthByBankId: Map<YearMonth, Map<UUID, MonthlyAmount>>,
+    val expenseChartContributions: List<RawChartContribution>,
+    val expenseSourceSummaries: List<OverviewExpenseSourceSummary>,
+    val cashBreakdownContributions: List<RawBreakdownContribution>,
+    val expenseBreakdownContributions: List<RawBreakdownContribution>,
+) {
+    companion object {
+        val EMPTY =
+            ExecutedOverviewContext(
+                executedByMonthByBankId = emptyMap(),
+                expenseChartContributions = emptyList(),
+                expenseSourceSummaries = emptyList(),
+                cashBreakdownContributions = emptyList(),
+                expenseBreakdownContributions = emptyList(),
+            )
+    }
+}
+
+internal data class ExpenseSourceKey(
+    val walletItemId: UUID,
+    val walletItemName: String,
+    val walletItemType: WalletItemType,
+    val currency: String,
+)
+
+internal data class GoalCommitmentContext(
+    val rawDetails: List<RawDetail>,
+    val hasAccountOverCommittedBalance: Boolean,
+)
+
 internal enum class BreakdownType {
     CASH_IN_CATEGORY,
     CASH_OUT_CATEGORY,
@@ -161,6 +211,59 @@ internal fun Map<YearMonth, Map<UUID, MonthlyAmount>>.getMonthAmount(
     month: YearMonth,
     walletItemId: UUID,
 ): MonthlyAmount = this[month]?.get(walletItemId) ?: MonthlyAmount.ZERO
+
+internal fun Iterable<OverviewExecutedBankFactSummary>.toExecutedByMonthByBankId(): Map<YearMonth, Map<UUID, MonthlyAmount>> {
+    val byMonth = mutableMapOf<YearMonth, MutableMap<UUID, MonthlyAmount>>()
+
+    forEach { fact ->
+        val byWallet = byMonth.getOrPut(fact.month) { mutableMapOf() }
+        val current = byWallet.getOrDefault(fact.walletItemId, MonthlyAmount.ZERO)
+        byWallet[fact.walletItemId] =
+            current +
+            MonthlyAmount(
+                net = fact.net,
+                cashIn = fact.cashIn,
+                cashOut = fact.cashOut,
+            )
+    }
+
+    return byMonth
+}
+
+internal fun Iterable<OverviewExecutedExpenseFactSummary>.toExpenseChartContributions(): List<RawChartContribution> =
+    groupBy { it.month to it.currency.uppercase() }
+        .map { (key, rows) ->
+            val (month, currency) = key
+            RawChartContribution(
+                chartSeries = ChartSeries.EXPENSE,
+                component = ChartPointComponent.EXECUTED,
+                month = month,
+                value = rows.fold(BigDecimal.ZERO) { acc, row -> acc.add(row.expense) }.asMoney(),
+                currency = currency,
+                referenceDate = month.atEndOfMonth(),
+            )
+        }
+
+internal fun Iterable<OverviewExecutedExpenseFactSummary>.toExpenseSourceSummaries(
+    selectedMonth: YearMonth,
+): List<OverviewExpenseSourceSummary> =
+    filter { it.month == selectedMonth }
+        .groupBy {
+            ExpenseSourceKey(
+                walletItemId = it.walletItemId,
+                walletItemName = it.walletItemName,
+                walletItemType = it.walletItemType,
+                currency = it.currency.uppercase(),
+            )
+        }.map { (identity, rows) ->
+            OverviewExpenseSourceSummary(
+                walletItemId = identity.walletItemId,
+                walletItemName = identity.walletItemName,
+                walletItemType = identity.walletItemType,
+                currency = identity.currency,
+                expense = rows.fold(BigDecimal.ZERO) { acc, row -> acc.add(row.expense) }.asMoney(),
+            )
+        }.sortedBy { it.walletItemName.lowercase() }
 
 internal fun BigDecimal.asMoney(): BigDecimal = setScale(2, RoundingMode.HALF_UP)
 

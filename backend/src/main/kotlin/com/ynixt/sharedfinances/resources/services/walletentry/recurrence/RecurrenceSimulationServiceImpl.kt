@@ -341,9 +341,9 @@ class RecurrenceSimulationServiceImpl(
 
             val originWalletItem = walletItemsById[originEntry.walletItemId]!!
             val targetWalletItem = targetEntry?.walletItemId?.let { targetId -> walletItemsById[targetId]!! }
-            val user = userById[it.createdByUserId]
-            val group = it.groupId?.let { groupId -> groupById[groupId]!! }
-            val category = it.categoryId?.let { categoryId -> categoriesById[categoryId]!! }
+            val user = it.hydratedUser ?: userById[it.createdByUserId]
+            val group = it.hydratedGroup ?: it.groupId?.let { groupId -> groupById[groupId]!! }
+            val category = it.hydratedCategory ?: it.categoryId?.let { categoryId -> categoriesById[categoryId]!! }
             val walletItems = listOfNotNull(originWalletItem, targetWalletItem)
             val occurrences =
                 recurrenceOccurrenceSimulationService.buildOccurrences(
@@ -517,17 +517,17 @@ class RecurrenceSimulationServiceImpl(
 
         hydrateSeriesTotals(configs)
 
-        val categories = genericCategoryService.findAllByIdIn(configs.mapNotNull { config -> config.categoryId }.toSet()).toList()
-        val groups = groupService.findAllByIdIn(configs.mapNotNull { config -> config.groupId }.toSet()).toList()
-        val users = userService.findAllByIdIn(configs.map { config -> config.createdByUserId }.toSet()).toList()
-        val walletItems = walletItemService.findAllByIdIn(configs.flatMap { it.entries!! }.map { it.walletItemId }.toSet()).toList()
+        val categoriesById = resolveCategoriesById(configs)
+        val groupsById = resolveGroupsById(configs)
+        val usersById = resolveUsersById(configs)
+        val walletItemsById = resolveWalletItemsById(configs)
 
         return simulateGeneration(
             configs = configs,
-            walletItemsById = walletItems.associateBy { it.id!! },
-            userById = users.associateBy { it.id!! },
-            categoriesById = categories.associateBy { it.id!! },
-            groupById = groups.associateBy { it.id!! },
+            walletItemsById = walletItemsById,
+            userById = usersById,
+            categoriesById = categoriesById,
+            groupById = groupsById,
             minimumDate = minimumDate,
             maximumDate = maximumDate,
             askedBillDate = askedBillDate,
@@ -544,15 +544,134 @@ class RecurrenceSimulationServiceImpl(
             return
         }
 
+        val missingSeriesIds =
+            configs
+                .filter { it.seriesQtyTotal == null }
+                .map { it.seriesId }
+                .toSet()
+
+        if (missingSeriesIds.isEmpty()) {
+            return
+        }
+
         val seriesById =
             recurrenceSeriesRepository
-                .findAllByIdIn(configs.map { it.seriesId }.toSet())
+                .findAllByIdIn(missingSeriesIds)
                 .collectList()
                 .awaitSingle()
                 .associateBy { it.id!! }
 
         configs.forEach { config ->
-            config.seriesQtyTotal = seriesById[config.seriesId]?.qtyTotal
+            if (config.seriesQtyTotal == null) {
+                config.seriesQtyTotal = seriesById[config.seriesId]?.qtyTotal
+            }
         }
+    }
+
+    private suspend fun resolveCategoriesById(configs: List<RecurrenceEventEntity>): Map<UUID, WalletEntryCategoryEntity> {
+        val categoriesById =
+            configs
+                .mapNotNull { config -> config.hydratedCategory?.id?.let { it to config.hydratedCategory!! } }
+                .toMap()
+
+        val missingCategoryIds =
+            configs
+                .filter { it.hydratedCategory == null }
+                .mapNotNull { it.categoryId }
+                .toSet()
+
+        if (missingCategoryIds.isEmpty()) {
+            return categoriesById
+        }
+
+        val loaded =
+            genericCategoryService
+                .findAllByIdIn(missingCategoryIds)
+                .toList()
+                .associateBy { it.id!! }
+
+        return categoriesById + loaded
+    }
+
+    private suspend fun resolveGroupsById(configs: List<RecurrenceEventEntity>): Map<UUID, GroupEntity> {
+        val groupsById =
+            configs
+                .mapNotNull { config -> config.hydratedGroup?.id?.let { it to config.hydratedGroup!! } }
+                .toMap()
+
+        val missingGroupIds =
+            configs
+                .filter { it.hydratedGroup == null }
+                .mapNotNull { it.groupId }
+                .toSet()
+
+        if (missingGroupIds.isEmpty()) {
+            return groupsById
+        }
+
+        val loaded =
+            groupService
+                .findAllByIdIn(missingGroupIds)
+                .toList()
+                .associateBy { it.id!! }
+
+        return groupsById + loaded
+    }
+
+    private suspend fun resolveUsersById(configs: List<RecurrenceEventEntity>): Map<UUID, UserEntity> {
+        val usersById =
+            configs
+                .mapNotNull { config -> config.hydratedUser?.id?.let { it to config.hydratedUser!! } }
+                .toMap()
+
+        val missingUserIds =
+            configs
+                .filter { it.hydratedUser == null }
+                .map { it.createdByUserId }
+                .toSet()
+
+        if (missingUserIds.isEmpty()) {
+            return usersById
+        }
+
+        val loaded =
+            userService
+                .findAllByIdIn(missingUserIds)
+                .toList()
+                .associateBy { it.id!! }
+
+        return usersById + loaded
+    }
+
+    private suspend fun resolveWalletItemsById(configs: List<RecurrenceEventEntity>): Map<UUID, WalletItem> {
+        val walletItemsById = linkedMapOf<UUID, WalletItem>()
+
+        configs
+            .flatMap { it.entries.orEmpty() }
+            .forEach { entry ->
+                entry.walletItem?.let { walletItemEntity ->
+                    walletItemsById.putIfAbsent(entry.walletItemId, walletItemMapper.toModel(walletItemEntity))
+                }
+            }
+
+        val missingWalletItemIds =
+            configs
+                .flatMap { it.entries.orEmpty() }
+                .map { it.walletItemId }
+                .filterNot(walletItemsById::containsKey)
+                .toSet()
+
+        if (missingWalletItemIds.isEmpty()) {
+            return walletItemsById
+        }
+
+        walletItemService
+            .findAllByIdIn(missingWalletItemIds)
+            .toList()
+            .forEach { walletItem ->
+                walletItemsById[walletItem.id!!] = walletItem
+            }
+
+        return walletItemsById
     }
 }

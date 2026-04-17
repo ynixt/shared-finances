@@ -165,6 +165,40 @@ class WalletTransactionQueryScopePlanDataJpaTest : RepositoryDataR2dbcTestSuppor
         }
     }
 
+    @Test
+    fun `should use visible-wallet-item index for overview visibility lookup`() {
+        runBlocking {
+            val owner = userRepository.save(newUser("visible-owner-${UUID.randomUUID()}@example.com")).awaitSingle()
+            val other = userRepository.save(newUser("visible-other-${UUID.randomUUID()}@example.com")).awaitSingle()
+            val ownerUserId = requireNotNull(owner.id)
+            val otherUserId = requireNotNull(other.id)
+
+            seedVisibleWalletItems(
+                ownerUserId = ownerUserId,
+                otherUserId = otherUserId,
+            )
+
+            val plan =
+                explainQuery(
+                    sql =
+                        """
+                        SELECT *
+                        FROM wallet_item wi
+                        WHERE
+                            wi.user_id = :ownerUserId
+                            AND wi.enabled = true
+                            AND wi.show_on_dashboard = true
+                        ORDER BY wi.id
+                        """.trimIndent(),
+                    bindings = mapOf("ownerUserId" to ownerUserId),
+                )
+
+            assertThat(plan)
+                .contains("idx_wallet_item_visible_user_id")
+                .doesNotContain("Seq Scan on wallet_item")
+        }
+    }
+
     private suspend fun seedCommittedDataset(
         ownerUserId: UUID,
         otherUserId: UUID,
@@ -451,6 +485,67 @@ class WalletTransactionQueryScopePlanDataJpaTest : RepositoryDataR2dbcTestSuppor
             .awaitSingle()
         dbClient
             .sql("ANALYZE recurrence_entry")
+            .fetch()
+            .rowsUpdated()
+            .awaitSingle()
+    }
+
+    private suspend fun seedVisibleWalletItems(
+        ownerUserId: UUID,
+        otherUserId: UUID,
+    ) {
+        dbClient
+            .sql("DELETE FROM wallet_item")
+            .fetch()
+            .rowsUpdated()
+            .awaitSingle()
+
+        dbClient
+            .sql(
+                """
+                INSERT INTO wallet_item (
+                    id,
+                    user_id,
+                    type,
+                    name,
+                    currency,
+                    enabled,
+                    balance,
+                    total_limit,
+                    due_day,
+                    days_between_due_and_closing,
+                    due_on_next_business_day,
+                    show_on_dashboard
+                )
+                SELECT
+                    (
+                        substr(md5('wi' || i::text), 1, 8) || '-' ||
+                        substr(md5('wi' || i::text), 9, 4) || '-' ||
+                        substr(md5('wi' || i::text), 13, 4) || '-' ||
+                        substr(md5('wi' || i::text), 17, 4) || '-' ||
+                        substr(md5('wi' || i::text), 21, 12)
+                    )::uuid,
+                    CASE WHEN i % 5 = 0 THEN :ownerUserId ELSE :otherUserId END,
+                    CASE WHEN i % 7 = 0 THEN 'CREDIT_CARD' ELSE 'BANK_ACCOUNT' END,
+                    'Wallet item ' || i::text,
+                    'BRL',
+                    CASE WHEN i % 4 = 0 THEN FALSE ELSE TRUE END,
+                    1000.00,
+                    CASE WHEN i % 7 = 0 THEN 3000.00 ELSE NULL END,
+                    CASE WHEN i % 7 = 0 THEN 10 ELSE NULL END,
+                    CASE WHEN i % 7 = 0 THEN 7 ELSE NULL END,
+                    CASE WHEN i % 7 = 0 THEN TRUE ELSE NULL END,
+                    CASE WHEN i % 6 = 0 THEN FALSE ELSE TRUE END
+                FROM generate_series(1, 5000) AS s(i)
+                """.trimIndent(),
+            ).bind("ownerUserId", ownerUserId)
+            .bind("otherUserId", otherUserId)
+            .fetch()
+            .rowsUpdated()
+            .awaitSingle()
+
+        dbClient
+            .sql("ANALYZE wallet_item")
             .fetch()
             .rowsUpdated()
             .awaitSingle()

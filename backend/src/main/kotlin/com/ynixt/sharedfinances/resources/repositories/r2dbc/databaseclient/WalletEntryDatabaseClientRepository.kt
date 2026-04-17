@@ -4,6 +4,8 @@ import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedBankFactSummary
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExecutedExpenseFactSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdownSummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
@@ -161,6 +163,90 @@ class WalletEntryDatabaseClientRepository(
             }.all()
     }
 
+    fun summarizeOverviewBankFacts(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExecutedBankFactSummary> {
+        val internalTransferPredicate =
+            """
+            COALESCE(
+                wev.type = 'TRANSFER'
+                AND counterparty_wi.type = 'BANK_ACCOUNT'
+                AND counterparty_wi.user_id = :userId,
+                FALSE
+            )
+            """.trimIndent()
+
+        val sql =
+            """
+            SELECT
+                we.wallet_item_id AS wallet_item_id,
+                date_trunc('month', wev.date)::date AS month_date,
+                wev.category_id AS category_id,
+                cat.name AS category_name,
+                wi.currency AS currency,
+                COALESCE(SUM(we.value), 0) AS net,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN we.value > 0 AND NOT wev.initial_balance AND NOT ($internalTransferPredicate) THEN we.value
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS cash_in,
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN we.value < 0 AND NOT wev.initial_balance AND NOT ($internalTransferPredicate) THEN ABS(we.value)
+                            ELSE 0
+                        END
+                    ),
+                    0
+                ) AS cash_out
+            FROM wallet_entry we
+            JOIN wallet_event wev ON wev.id = we.wallet_event_id
+            JOIN wallet_item wi ON wi.id = we.wallet_item_id
+            LEFT JOIN wallet_entry counterparty_we
+                ON counterparty_we.wallet_event_id = we.wallet_event_id
+                AND counterparty_we.id <> we.id
+            LEFT JOIN wallet_item counterparty_wi ON counterparty_wi.id = counterparty_we.wallet_item_id
+            LEFT JOIN wallet_entry_category cat ON cat.id = wev.category_id
+            WHERE
+                wi.user_id = :userId
+                AND wi.type = 'BANK_ACCOUNT'
+                AND wi.enabled = true
+                AND wi.show_on_dashboard = true
+                AND wev.date >= :minimumDate
+                AND wev.date <= :maximumDate
+            GROUP BY
+                we.wallet_item_id,
+                date_trunc('month', wev.date),
+                wev.category_id,
+                cat.name,
+                wi.currency
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("userId", userId)
+            .bind("minimumDate", minimumDate)
+            .bind("maximumDate", maximumDate)
+            .map { row, _ ->
+                OverviewExecutedBankFactSummary(
+                    walletItemId = row.get("wallet_item_id", UUID::class.java)!!,
+                    month = java.time.YearMonth.from(row.get("month_date", LocalDate::class.java)!!),
+                    categoryId = row.get("category_id", UUID::class.java),
+                    categoryName = row.get("category_name", String::class.java),
+                    currency = row.get("currency", String::class.java)!!,
+                    net = row.get("net", BigDecimal::class.java)!!,
+                    cashIn = row.get("cash_in", BigDecimal::class.java)!!,
+                    cashOut = row.get("cash_out", BigDecimal::class.java)!!,
+                )
+            }.all()
+    }
+
     fun summarizeOverviewExpenseByMonth(
         userId: UUID,
         minimumDate: LocalDate,
@@ -200,6 +286,72 @@ class WalletEntryDatabaseClientRepository(
 
                 OverviewExpenseMonthlySummary(
                     month = java.time.YearMonth.from(monthDate),
+                    currency = row.get("currency", String::class.java)!!,
+                    expense = row.get("expense", BigDecimal::class.java)!!,
+                )
+            }.all()
+    }
+
+    fun summarizeOverviewExpenseFacts(
+        userId: UUID,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+    ): Flux<OverviewExecutedExpenseFactSummary> {
+        val sql =
+            """
+            SELECT
+                date_trunc('month', wev.date)::date AS month_date,
+                we.wallet_item_id AS wallet_item_id,
+                wi.name AS wallet_item_name,
+                wi.type::text AS wallet_item_type,
+                wev.group_id AS group_id,
+                grp.name AS group_name,
+                wev.category_id AS category_id,
+                cat.name AS category_name,
+                wi.currency AS currency,
+                COALESCE(SUM(ABS(LEAST(we.value, 0))), 0) AS expense
+            FROM wallet_entry we
+            JOIN wallet_event wev ON wev.id = we.wallet_event_id
+            JOIN wallet_item wi ON wi.id = we.wallet_item_id
+            LEFT JOIN "group" grp ON grp.id = wev.group_id
+            LEFT JOIN wallet_entry_category cat ON cat.id = wev.category_id
+            WHERE
+                wi.user_id = :userId
+                AND wi.type IN ('BANK_ACCOUNT', 'CREDIT_CARD')
+                AND wi.enabled = true
+                AND wi.show_on_dashboard = true
+                AND NOT wev.initial_balance
+                AND wev.type = 'EXPENSE'
+                AND we.value < 0
+                AND wev.date >= :minimumDate
+                AND wev.date <= :maximumDate
+            GROUP BY
+                date_trunc('month', wev.date),
+                we.wallet_item_id,
+                wi.name,
+                wi.type,
+                wev.group_id,
+                grp.name,
+                wev.category_id,
+                cat.name,
+                wi.currency
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("userId", userId)
+            .bind("minimumDate", minimumDate)
+            .bind("maximumDate", maximumDate)
+            .map { row, _ ->
+                OverviewExecutedExpenseFactSummary(
+                    month = java.time.YearMonth.from(row.get("month_date", LocalDate::class.java)!!),
+                    walletItemId = row.get("wallet_item_id", UUID::class.java)!!,
+                    walletItemName = row.get("wallet_item_name", String::class.java)!!,
+                    walletItemType = WalletItemType.valueOf(row.get("wallet_item_type", String::class.java)!!),
+                    groupId = row.get("group_id", UUID::class.java),
+                    groupName = row.get("group_name", String::class.java),
+                    categoryId = row.get("category_id", UUID::class.java),
+                    categoryName = row.get("category_name", String::class.java),
                     currency = row.get("currency", String::class.java)!!,
                     expense = row.get("expense", BigDecimal::class.java)!!,
                 )
