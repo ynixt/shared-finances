@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletBeneficiaryLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
@@ -19,8 +20,11 @@ import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -33,6 +37,7 @@ import java.util.UUID
 abstract class WalletEntryMutationSupportServiceImpl(
     protected val walletEntryRepository: WalletEntryRepository,
     protected val walletItemMapper: WalletItemMapper,
+    protected val groupDebtService: GroupDebtService,
     groupService: GroupService,
     walletItemService: WalletItemService,
     creditCardBillService: CreditCardBillService,
@@ -40,6 +45,8 @@ abstract class WalletEntryMutationSupportServiceImpl(
     recurrenceEventRepository: RecurrenceEventRepository,
     recurrenceSeriesRepository: RecurrenceSeriesRepository,
     recurrenceEntryRepository: RecurrenceEntryRepository,
+    walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     clock: Clock,
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
@@ -49,6 +56,8 @@ abstract class WalletEntryMutationSupportServiceImpl(
         recurrenceEventRepository = recurrenceEventRepository,
         recurrenceSeriesRepository = recurrenceSeriesRepository,
         recurrenceEntryRepository = recurrenceEntryRepository,
+        walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+        recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
         clock = clock,
     ) {
     protected data class ScheduledPosition(
@@ -68,11 +77,22 @@ abstract class WalletEntryMutationSupportServiceImpl(
                 .toList()
 
         event.entries = attachEntriesWithWalletItems(event, entries)
+        event.beneficiaries =
+            walletEventBeneficiaryRepository
+                .findAllByWalletEventId(event.id!!)
+                .asFlow()
+                .toList()
+                .also { loaded ->
+                    loaded.forEach { beneficiary ->
+                        beneficiary.event = event
+                    }
+                }
 
         return event
     }
 
     protected suspend fun rollbackPostedImpact(
+        actorUserId: UUID,
         event: WalletEventEntity,
         entries: List<WalletEntryEntity>,
         recurrenceConfig: RecurrenceEventEntity?,
@@ -93,9 +113,12 @@ abstract class WalletEntryMutationSupportServiceImpl(
                 creditCardBillService.addValueById(entry.billId, entry.value.negate())
             }
         }
+
+        groupDebtService.rollbackWalletEvent(actorUserId = actorUserId, event = event)
     }
 
     protected suspend fun applyPostedImpact(
+        actorUserId: UUID,
         event: WalletEventEntity,
         entries: List<WalletEntryEntity>,
         recurrenceConfig: RecurrenceEventEntity?,
@@ -116,6 +139,12 @@ abstract class WalletEntryMutationSupportServiceImpl(
                 creditCardBillService.addValueById(entry.billId, entry.value)
             }
         }
+
+        groupDebtService.applyWalletEvent(
+            actorUserId = actorUserId,
+            event = event,
+            entries = entries,
+        )
     }
 
     protected fun getWalletImpactForEntry(
@@ -153,6 +182,16 @@ abstract class WalletEntryMutationSupportServiceImpl(
         val entries = recurrenceEntryRepository.findAllByWalletEventId(id).asFlow().toList()
 
         config.entries = attachEntriesWithWalletItems(config, entries)
+        config.beneficiaries =
+            recurrenceEventBeneficiaryRepository
+                .findAllByWalletEventId(id)
+                .asFlow()
+                .toList()
+                .also { loaded ->
+                    loaded.forEach { beneficiary ->
+                        beneficiary.event = config
+                    }
+                }
         return config
     }
 
@@ -207,6 +246,14 @@ abstract class WalletEntryMutationSupportServiceImpl(
                 originBillDate = origin.nextBillDate,
                 targetBillDate = target.nextBillDate,
                 tags = config.tags,
+                transferPurpose = config.transferPurpose,
+                beneficiaries =
+                    config.beneficiaries?.map { beneficiary ->
+                        NewWalletBeneficiaryLeg(
+                            userId = beneficiary.beneficiaryUserId,
+                            benefitPercent = beneficiary.benefitPercent,
+                        )
+                    },
             )
         }
 
@@ -245,7 +292,15 @@ abstract class WalletEntryMutationSupportServiceImpl(
             originBillDate = entries.first().nextBillDate,
             targetBillDate = null,
             tags = config.tags,
+            transferPurpose = config.transferPurpose,
             sources = sources,
+            beneficiaries =
+                config.beneficiaries?.map { beneficiary ->
+                    NewWalletBeneficiaryLeg(
+                        userId = beneficiary.beneficiaryUserId,
+                        benefitPercent = beneficiary.benefitPercent,
+                    )
+                },
         )
     }
 
@@ -337,10 +392,12 @@ abstract class WalletEntryMutationSupportServiceImpl(
                     endExecution = endExecution,
                     seriesId = current.seriesId,
                     seriesOffset = current.seriesOffset,
+                    transferPurpose = current.transferPurpose,
                 ).also {
                     it.id = current.id
                     it.createdAt = current.createdAt
                     it.entries = current.entries
+                    it.beneficiaries = current.beneficiaries
                     it.seriesQtyTotal = current.seriesQtyTotal
                 },
             ).awaitSingle()
@@ -415,6 +472,21 @@ abstract class WalletEntryMutationSupportServiceImpl(
 
                 entry.walletItem = walletItemMapper.fromModel(model)
             }
+
+            recurrence.beneficiaries =
+                recurrenceEventBeneficiaryRepository
+                    .saveAll(
+                        requestToRecurrenceBeneficiaryEntities(
+                            eventId = requireNotNull(recurrence.id),
+                            newEntryRequest = preparedRequest,
+                        ),
+                    ).asFlow()
+                    .toList()
+                    .also { persisted ->
+                        persisted.forEach { beneficiary ->
+                            beneficiary.event = recurrence
+                        }
+                    }
         }
 
     protected suspend fun persistRecurrenceTruncatedBeforePosition(

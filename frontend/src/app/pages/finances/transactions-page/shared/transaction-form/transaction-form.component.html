@@ -61,49 +61,29 @@
     <app-paged-select [optionsGetter]="loadGroups.bind(this)" formControlName="group" [filterInMemory]="true"></app-paged-select>
   </label>
 
-  <div class="grid md:grid-cols-{{ isTransfer ? 2 : 1 }} gap-2">
-    <label class="flex flex-col gap-2">
-      <span>{{ 'financesPage.transactionsPage.origin' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
-      <app-wallet-item-picker [group]="selectedGroup" formControlName="origin"></app-wallet-item-picker>
-    </label>
-
-    @if (isTransfer) {
-      <label class="flex flex-col gap-2">
-        <span>{{ 'financesPage.transactionsPage.target' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
-        <app-wallet-item-picker [group]="selectedGroup" formControlName="target"></app-wallet-item-picker>
-      </label>
-    }
-  </div>
-
   @if (!isTransfer) {
-    @if (extraSourceLegs.length > 0) {
-      <label class="flex max-w-xs flex-col gap-2">
-        <span>{{ 'financesPage.transactionsPage.primarySourcePercent' | translate }}</span>
-        <p-input-number
-          formControlName="primaryOriginContributionPercent"
-          [min]="0.01"
-          [max]="100"
-          suffix="%"
-          [showButtons]="true"
-          fluid
-        ></p-input-number>
-      </label>
-    }
+    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-800">{{ 'financesPage.transactionsPage.originsTitle' | translate }}</h3>
+          <p class="text-xs text-slate-600">{{ 'financesPage.transactionsPage.originsHint' | translate }}</p>
+        </div>
+        <button type="button" pButton outlined class="p-button-sm" (click)="addExtraSourceLeg()">
+          {{ 'financesPage.transactionsPage.addFundingSource' | translate }}
+        </button>
+      </div>
 
-    <div formArrayName="extraSourceLegs" class="flex flex-col gap-3">
-      @for (ctrl of extraSourceLegs.controls; track $index; let i = $index) {
-        <div [formGroupName]="i" class="flex flex-col gap-2 rounded-xl border border-slate-200 p-3">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-sm font-medium text-slate-800">{{ 'financesPage.transactionsPage.extraFundingSource' | translate }}</span>
-            <button type="button" pButton class="p-button-text p-button-sm" (click)="removeExtraSourceLeg(i)">
-              {{ 'financesPage.transactionsPage.removeFundingSource' | translate }}
-            </button>
-          </div>
-          <app-wallet-item-picker [group]="selectedGroup" formControlName="walletItem"></app-wallet-item-picker>
-          <label class="flex max-w-xs flex-col gap-2">
-            <span>{{ 'financesPage.transactionsPage.sourcePercent' | translate }}</span>
+      <div class="grid md:grid-cols-{{ extraSourceLegs.length > 0 ? 2 : 1 }} gap-2">
+        <label class="flex flex-col gap-2">
+          <span>{{ 'financesPage.transactionsPage.origin' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+          <app-wallet-item-picker [group]="selectedGroup" formControlName="origin"></app-wallet-item-picker>
+        </label>
+
+        @if (extraSourceLegs.length > 0) {
+          <label class="flex flex-col gap-2">
+            <span>{{ 'financesPage.transactionsPage.primarySourcePercent' | translate }}</span>
             <p-input-number
-              formControlName="contributionPercent"
+              formControlName="primaryOriginContributionPercent"
               [min]="0.01"
               [max]="100"
               suffix="%"
@@ -111,27 +91,159 @@
               fluid
             ></p-input-number>
           </label>
-          @if (ctrl.get('walletItem')?.value?.type === 'CREDIT_CARD') {
-            <label class="flex flex-col gap-2">
-              <span
-                >{{ 'financesPage.transactionsPage.bill' | translate }} <app-required-field-asterisk></app-required-field-asterisk
-              ></span>
-              <app-date-picker formControlName="bill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
-            </label>
+        }
+      </div>
+
+      @if (extraSourceLegs.length > 0) {
+        <div formArrayName="extraSourceLegs" class="flex flex-col gap-3">
+          @for (ctrl of extraSourceLegs.controls; track $index; let i = $index) {
+            <div [formGroupName]="i" class="gap-2 flex flex-col">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <label class="flex flex-col gap-2">
+                  <div class="flex gap-2 items-center">
+                    <span>{{ 'financesPage.transactionsPage.origin' | translate }}</span>
+
+                    <button type="button" pButton class="p-button-text p-button-sm ml-auto" (click)="removeExtraSourceLeg(i)">
+                      {{ 'financesPage.transactionsPage.removeFundingSource' | translate }}
+                    </button>
+                  </div>
+
+                  <app-wallet-item-picker [group]="selectedGroup" formControlName="walletItem"></app-wallet-item-picker>
+                </label>
+
+                <label class="flex flex-col gap-2">
+                  <span class="py-2">{{ 'financesPage.transactionsPage.sourcePercent' | translate }}</span>
+                  <p-input-number
+                    formControlName="contributionPercent"
+                    [min]="0.01"
+                    [max]="100"
+                    suffix="%"
+                    [showButtons]="true"
+                    fluid
+                  ></p-input-number>
+                </label>
+              </div>
+
+              @if (ctrl.get('walletItem')?.value?.type === 'CREDIT_CARD') {
+                <label class="flex flex-col gap-2">
+                  <span
+                    >{{ 'financesPage.transactionsPage.bill' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+                  ></span>
+                  <app-date-picker formControlName="bill" [readonlyInput]="true" view="month" dateFormat="MM, yy"></app-date-picker>
+                </label>
+              }
+            </div>
           }
         </div>
+
+        @if (form.errors?.['sourcePercentsSum']; as err) {
+          <p class="text-sm text-red-700">
+            {{ 'financesPage.transactionsPage.sourcePercentsMustEqual100' | translate: { sum: err.sum } }}
+          </p>
+        }
       }
+    </section>
+  } @else {
+    <div class="grid md:grid-cols-{{ isTransfer ? 2 : 1 }} gap-2">
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.origin' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <app-wallet-item-picker [group]="selectedGroup" formControlName="origin"></app-wallet-item-picker>
+      </label>
+
+      <label class="flex flex-col gap-2">
+        <span>{{ 'financesPage.transactionsPage.target' | translate }} <app-required-field-asterisk></app-required-field-asterisk></span>
+        <app-wallet-item-picker [group]="selectedGroup" formControlName="target"></app-wallet-item-picker>
+      </label>
     </div>
+  }
 
-    <button type="button" pButton outlined class="w-full md:w-auto" (click)="addExtraSourceLeg()">
-      {{ 'financesPage.transactionsPage.addFundingSource' | translate }}
-    </button>
+  @if (!isTransfer && selectedGroup != null) {
+    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-800">{{ 'financesPage.transactionsPage.beneficiariesTitle' | translate }}</h3>
+          <p class="text-xs text-slate-600">{{ 'financesPage.transactionsPage.beneficiariesHint' | translate }}</p>
+        </div>
+        <button type="button" pButton outlined class="p-button-sm" (click)="addExtraBeneficiaryLeg()">
+          {{ 'financesPage.transactionsPage.addBeneficiary' | translate }}
+        </button>
+      </div>
 
-    @if (form.errors?.['sourcePercentsSum']; as err) {
-      <p class="text-sm text-red-700">
-        {{ 'financesPage.transactionsPage.sourcePercentsMustEqual100' | translate: { sum: err.sum } }}
-      </p>
-    }
+      <div class="grid gap-2 md:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)]">
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.beneficiary' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <app-paged-select
+            [optionsGetter]="loadGroupMembers.bind(this)"
+            optionLabel="label"
+            formControlName="primaryBeneficiaryUser"
+          ></app-paged-select>
+        </label>
+
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.transactionsPage.beneficiaryPercent' | translate }} <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <p-input-number
+            formControlName="primaryBeneficiaryPercent"
+            [min]="0.01"
+            [max]="100"
+            suffix="%"
+            [showButtons]="true"
+            fluid
+          ></p-input-number>
+        </label>
+      </div>
+
+      <div formArrayName="extraBeneficiaryLegs" class="flex flex-col gap-3">
+        @for (ctrl of extraBeneficiaryLegs.controls; track $index; let i = $index) {
+          <div [formGroupName]="i" class="grid gap-2 md:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)_auto]">
+            <label class="flex flex-col gap-2">
+              <div class="flex gap-2 items-center">
+                <span>{{ 'financesPage.transactionsPage.beneficiary' | translate }}</span>
+
+                <button type="button" pButton class="ml-auto p-button-text p-button-sm" (click)="removeExtraBeneficiaryLeg(i)">
+                  {{ 'financesPage.transactionsPage.removeBeneficiary' | translate }}
+                </button>
+              </div>
+              <app-paged-select
+                [optionsGetter]="loadGroupMembers.bind(this)"
+                [filterInMemory]="true"
+                optionLabel="label"
+                optionValue="userId"
+                dataKey="userId"
+                formControlName="userId"
+              ></app-paged-select>
+            </label>
+
+            <label class="flex flex-col gap-2">
+              <span class="py-2">{{ 'financesPage.transactionsPage.beneficiaryPercent' | translate }}</span>
+              <p-input-number
+                formControlName="benefitPercent"
+                [min]="0.01"
+                [max]="100"
+                suffix="%"
+                [showButtons]="true"
+                fluid
+              ></p-input-number>
+            </label>
+          </div>
+        }
+      </div>
+
+      @if (form.errors?.['beneficiaryPercentsSum']; as err) {
+        <p class="text-sm text-red-700">
+          {{ 'financesPage.transactionsPage.beneficiaryPercentsMustEqual100' | translate: { sum: err.sum } }}
+        </p>
+      }
+
+      @if (form.errors?.['duplicateBeneficiaries']) {
+        <p class="text-sm text-red-700">
+          {{ 'financesPage.transactionsPage.beneficiariesMustBeUnique' | translate }}
+        </p>
+      }
+    </section>
   }
 
   <div class="grid md:grid-cols-2 gap-2">

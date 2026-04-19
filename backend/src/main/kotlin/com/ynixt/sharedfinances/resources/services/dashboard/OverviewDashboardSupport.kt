@@ -19,6 +19,10 @@ internal const val MAX_NAMED_BREAKDOWN_SLICES = 9
 internal const val PREDEFINED_INDIVIDUAL_LABEL = "PREDEFINED_INDIVIDUAL"
 internal const val PREDEFINED_UNCATEGORIZED_LABEL = "PREDEFINED_UNCATEGORIZED"
 internal const val PREDEFINED_OTHERS_LABEL = "PREDEFINED_OTHERS"
+internal const val PREDEFINED_SHARED_FINANCE_DEBT_LABEL = "PREDEFINED_SHARED_FINANCE_DEBT"
+internal const val PROJECTED_DEBT_INFLOW_DETAIL_LABEL = "financesPage.overviewPage.detail.formula.sharedFinanceDebtInflow"
+internal const val PROJECTED_DEBT_OUTFLOW_DETAIL_LABEL = "financesPage.overviewPage.detail.formula.sharedFinanceDebtOutflow"
+internal const val PROJECTED_DEBT_EXPENSE_DETAIL_LABEL = "financesPage.overviewPage.detail.formula.sharedFinanceDebtExpense"
 
 internal data class OverviewDashboardVisibleItems(
     val items: List<WalletItem>,
@@ -157,6 +161,10 @@ internal data class ProjectedOverviewContext(
     val projectedCreditCardDetailsByMonth: Map<YearMonth, List<ProjectedCreditCardExpense>>,
     val projectedExpenseContributions: ProjectedExpenseContributions,
     val projectedCashBreakdownContributions: List<RawBreakdownContribution>,
+    val projectedDebtChartContributions: List<RawChartContribution>,
+    val projectedDebtExpenseBreakdownContributions: List<RawBreakdownContribution>,
+    val selectedMonthProjectedDebtOutflowByCurrency: Map<String, BigDecimal>,
+    val selectedMonthProjectedDebtInflowByCurrency: Map<String, BigDecimal>,
 ) {
     companion object {
         val EMPTY =
@@ -165,6 +173,10 @@ internal data class ProjectedOverviewContext(
                 projectedCreditCardDetailsByMonth = emptyMap(),
                 projectedExpenseContributions = ProjectedExpenseContributions.EMPTY,
                 projectedCashBreakdownContributions = emptyList(),
+                projectedDebtChartContributions = emptyList(),
+                projectedDebtExpenseBreakdownContributions = emptyList(),
+                selectedMonthProjectedDebtOutflowByCurrency = emptyMap(),
+                selectedMonthProjectedDebtInflowByCurrency = emptyMap(),
             )
     }
 }

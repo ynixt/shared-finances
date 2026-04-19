@@ -97,6 +97,7 @@ class GroupWalletItemDatabaseClientRepository(
     }
 
     fun findAllAllowedForGroup(
+        userId: UUID,
         groupId: UUID,
         type: WalletItemType,
     ): Flux<WalletItemEntity> {
@@ -105,23 +106,22 @@ class GroupWalletItemDatabaseClientRepository(
             SELECT
               wa.*,
               ${UserR2DBCMapping.createSelectForUser("u")}
-            FROM group_user gu
+            FROM wallet_item wa
             JOIN users u
-              ON u.id = gu.user_id
-            JOIN wallet_item wa
-              ON wa.user_id = u.id
-              AND wa.type = :type
+              ON u.id = wa.user_id
             LEFT JOIN group_wallet_item gwa
-              ON gwa.group_id = gu.group_id
+              ON gwa.group_id = :groupId
               AND gwa.wallet_item_id = wa.id
             WHERE
-              gu.group_id = :groupId
+              wa.user_id = :userId
+              AND wa.type = :type
               AND gwa.wallet_item_id IS NULL
             ORDER BY wa.name
             """.trimIndent()
 
         return dbClient
             .sql(sql)
+            .bind("userId", userId)
             .bind("groupId", groupId)
             .bind("type", type.toString())
             .map { row, _ ->

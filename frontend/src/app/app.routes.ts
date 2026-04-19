@@ -475,6 +475,34 @@ export const routes: Routes = [
             data: { pageTitleKey: 'pageTitle.simulationJobs' },
           },
           {
+            path: ':id/debts/adjustments/:debtId',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/group-debt-adjustment-page/group-debt-adjustment-page.component').then(
+                m => m.GroupDebtAdjustmentPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.groupDebtAdjustment',
+            },
+          },
+          {
+            path: ':id/debts/settlements/new',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/group-debt-settlement-page/group-debt-settlement-page.component').then(
+                m => m.GroupDebtSettlementPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.groupDebtSettlement',
+            },
+          },
+          {
+            path: ':id/debts',
+            loadComponent: () =>
+              import('./pages/finances/groups-page/group-debts-page/group-debts-page.component').then(m => m.GroupDebtsPageComponent),
+            data: {
+              pageTitleKey: 'pageTitle.groupDebts',
+            },
+          },
+          {
             path: ':id',
             loadComponent: () =>
               import('./pages/finances/groups-page/overview-group-page/overview-group-page.component').then(

@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import java.math.BigDecimal
@@ -25,10 +26,17 @@ data class EventListResponse(
     val recurrenceConfigId: UUID?,
     val recurrenceConfig: RecurrenceEventEntity?,
     val currency: String,
+    val transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     val originValue: BigDecimal? = null,
     val targetValue: BigDecimal? = null,
+    val beneficiaries: List<BeneficiaryResponse> = emptyList(),
     val entries: List<EntryResponse>,
 ) {
+    data class BeneficiaryResponse(
+        val userId: UUID,
+        val benefitPercent: BigDecimal,
+    )
+
     data class EntryResponse(
         val value: BigDecimal,
         val walletItem: WalletItem,

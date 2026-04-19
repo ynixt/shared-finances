@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEnt
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
@@ -32,6 +33,7 @@ data class NewEntryRequest(
     val originBillDate: LocalDate? = null,
     val targetBillDate: LocalDate? = null,
     val tags: List<String>? = null,
+    val transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     val group: GroupWithRole? = null,
     val origin: WalletItem? = null,
     val originBill: CreditCardBillEntity? = null,
@@ -43,6 +45,10 @@ data class NewEntryRequest(
     val sources: List<NewWalletSourceLeg>? = null,
     /** Populated in [com.ynixt.sharedfinances.resources.services.walletentry.WalletEntrySaveServiceImpl.loadRelationships]. */
     val resolvedSources: List<ResolvedWalletSourceLeg>? = null,
+    /** Group non-transfer only: beneficiaries with percentages summing to 100. */
+    val beneficiaries: List<NewWalletBeneficiaryLeg>? = null,
+    /** Populated in [com.ynixt.sharedfinances.resources.services.walletentry.WalletEntrySaveServiceImpl.loadRelationships]. */
+    val resolvedBeneficiaries: List<ResolvedWalletBeneficiaryLeg>? = null,
 ) {
     val valueFixedForType: BigDecimal? = value?.let { type.fixValue(it) }
     val primaryValue: BigDecimal =

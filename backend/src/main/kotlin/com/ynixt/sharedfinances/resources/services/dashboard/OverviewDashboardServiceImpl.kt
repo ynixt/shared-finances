@@ -53,13 +53,16 @@ internal class OverviewDashboardServiceImpl(
             )
 
         val rawExpenseChartContributions =
-            executedContext.expenseChartContributions + projectedContext.projectedExpenseContributions.chartContributions
+            executedContext.expenseChartContributions +
+                projectedContext.projectedExpenseContributions.chartContributions +
+                projectedContext.projectedDebtChartContributions
 
         val rawBreakdownContributions =
             executedContext.cashBreakdownContributions +
                 projectedContext.projectedCashBreakdownContributions +
                 executedContext.expenseBreakdownContributions +
-                projectedContext.projectedExpenseContributions.breakdownContributions
+                projectedContext.projectedExpenseContributions.breakdownContributions +
+                projectedContext.projectedDebtExpenseBreakdownContributions
 
         val rawDetailByCardKey =
             contributionService.buildRawDetailByCardKey(
@@ -73,6 +76,8 @@ internal class OverviewDashboardServiceImpl(
                 projectedCreditCardDetails = projectedContext.projectedCreditCardDetailsByMonth[selectedMonth].orEmpty(),
                 executedExpenseSourceSummaries = executedContext.expenseSourceSummaries,
                 projectedExpenseDetails = projectedContext.projectedExpenseContributions.selectedMonthDetails,
+                selectedMonthProjectedDebtOutflowByCurrency = projectedContext.selectedMonthProjectedDebtOutflowByCurrency,
+                selectedMonthProjectedDebtInflowByCurrency = projectedContext.selectedMonthProjectedDebtInflowByCurrency,
             )
 
         val rawChartContributions =

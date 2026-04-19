@@ -17,6 +17,7 @@ import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
+import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -90,6 +91,7 @@ class PlanningSimulationEngineImplTest {
                     groupUsersRepository = mock(GroupUsersRepository::class.java),
                     recurrenceSimulationService = recurrenceService,
                     goalLedgerSummaryRepository = mock(GoalLedgerCommittedSummaryRepository::class.java),
+                    groupDebtService = NoOpGroupDebtService,
                     dbClient = mock(DatabaseClient::class.java),
                     clock = Clock.fixed(Instant.parse("2026-04-01T12:00:00Z"), ZoneOffset.UTC),
                 )

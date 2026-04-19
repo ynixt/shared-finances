@@ -25,9 +25,11 @@ function walletItem(id: string, currency: string) {
 
 describe('TransactionFormComponent', () => {
   const fetchTransferRate = vi.fn();
+  const findAllMembers = vi.fn();
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    findAllMembers.mockResolvedValue([]);
 
     await TestBed.configureTestingModule({
       imports: [TransactionFormComponent, TranslateModule.forRoot()],
@@ -42,6 +44,7 @@ describe('TransactionFormComponent', () => {
           provide: GroupService,
           useValue: {
             getAllGroups: vi.fn().mockResolvedValue([]),
+            findAllMembers,
           },
         },
         {
@@ -210,5 +213,98 @@ describe('TransactionFormComponent', () => {
 
     expect(component.shouldShowTargetValueField).toBe(false);
     expect(component.shouldShowDeferredTargetHint).toBe(true);
+  });
+
+  it('hydrates saved beneficiaries in edit mode after loading group members', async () => {
+    findAllMembers.mockResolvedValue([
+      {
+        user: {
+          id: 'user-a',
+          firstName: 'Ana',
+          lastName: 'Silva',
+          email: 'ana@example.com',
+        },
+      },
+      {
+        user: {
+          id: 'user-b',
+          firstName: 'Bruno',
+          lastName: 'Costa',
+          email: 'bruno@example.com',
+        },
+      },
+    ]);
+
+    const fixture = TestBed.createComponent(TransactionFormComponent);
+    const component = fixture.componentInstance;
+
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('initialEntry', {
+      id: 'event-1',
+      beneficiaries: [
+        { userId: 'user-a', benefitPercent: 70 },
+        { userId: 'user-b', benefitPercent: 30 },
+      ],
+      type: WalletEntryType__Obj.EXPENSE,
+      transferPurpose: null,
+      name: 'Dinner',
+      category: null,
+      user: null,
+      group: { id: 'group-1', name: 'Trip' },
+      tags: null,
+      observations: null,
+      date: '2026-04-10',
+      confirmed: true,
+      installment: null,
+      recurrenceConfigId: null,
+      recurrenceConfig: null,
+      currency: 'USD',
+      originValue: null,
+      targetValue: null,
+      entries: [
+        {
+          value: -100,
+          walletItemId: 'origin-wallet',
+          billDate: null,
+          billId: null,
+          contributionPercent: 100,
+          walletItem: walletItem('origin-wallet', 'USD'),
+        },
+      ],
+    } as any);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(findAllMembers).toHaveBeenCalledTimes(1);
+    expect(findAllMembers).toHaveBeenCalledWith('group-1');
+    expect(component.form.get('primaryBeneficiaryUser')?.value?.id).toBe('user-a');
+    expect(component.form.get('primaryBeneficiaryPercent')?.value).toBe(70);
+    expect(component.extraBeneficiaryLegs.length).toBe(1);
+    expect(component.extraBeneficiaryLegs.at(0).get('userId')?.value).toBe('user-b');
+    expect(component.extraBeneficiaryLegs.at(0).get('benefitPercent')?.value).toBe(30);
+  });
+
+  it('reuses cached group members between calls', async () => {
+    findAllMembers.mockResolvedValue([
+      {
+        user: {
+          id: 'user-a',
+          firstName: 'Ana',
+          lastName: 'Silva',
+          email: 'ana@example.com',
+        },
+      },
+    ]);
+
+    const fixture = TestBed.createComponent(TransactionFormComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.groupControl.setValue({ id: 'group-1', name: 'Trip' } as any);
+    await component.loadGroupMembers(0, undefined);
+    await component.loadGroupMembers(0, 'ana');
+
+    expect(findAllMembers).toHaveBeenCalledTimes(1);
+    expect(findAllMembers).toHaveBeenCalledWith('group-1');
   });
 });

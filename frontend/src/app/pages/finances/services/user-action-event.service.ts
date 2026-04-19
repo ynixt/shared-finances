@@ -98,7 +98,7 @@ export class UserActionEventService extends ActionEventService implements OnDest
     );
 
     // --- Transaction ---
-    const baseTransaction = this.streamOf<UserActionEventDto>('WALLET_EVENT').pipe(notGroupFilter);
+    const baseTransaction = this.streamOf<UserActionEventDto>('WALLET_EVENT');
 
     this.transactionInserted$ = baseTransaction.pipe(
       filter(e => e.type === 'INSERT'),

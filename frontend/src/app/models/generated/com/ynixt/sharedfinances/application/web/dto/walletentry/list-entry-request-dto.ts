@@ -12,5 +12,6 @@ export interface ListEntryRequestDto {
   maximumDate?: string | null;
   minimumDate?: string | null;
   pageRequest?: any | null;
+  userIds?: Array<string> | null;
   walletItemId?: string | null;
 }

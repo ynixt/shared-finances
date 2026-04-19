@@ -33,6 +33,7 @@ interface GroupWalletItemRepository {
     fun deleteAllForWalletItemsOwnedByUser(userId: UUID): Mono<Long>
 
     fun findAllAllowedForGroup(
+        userId: UUID,
         groupId: UUID,
         type: WalletItemType,
     ): Flux<WalletItemEntity>

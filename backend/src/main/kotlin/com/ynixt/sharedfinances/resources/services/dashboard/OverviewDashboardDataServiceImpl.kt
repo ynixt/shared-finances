@@ -8,9 +8,12 @@ import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.domain.Pageable
@@ -29,6 +32,8 @@ internal class OverviewDashboardDataServiceImpl(
     private val walletEntryRepository: WalletEntryRepository,
     private val recurrenceSimulationService: RecurrenceSimulationService,
     private val creditCardBillService: CreditCardBillService,
+    private val groupService: GroupService,
+    private val groupDebtService: GroupDebtService,
     private val clock: Clock,
 ) {
     internal suspend fun loadVisibleItems(userId: UUID): OverviewDashboardVisibleItems {
@@ -274,6 +279,13 @@ internal class OverviewDashboardDataServiceImpl(
                 )
             }
 
+        val projectedDebtCashFlowByMonthCurrency =
+            loadProjectedDebtCashFlowByMonthCurrency(
+                userId = userId,
+                currentMonth = currentMonth,
+                selectedMonth = selectedMonth,
+            )
+
         return ProjectedOverviewContext(
             projectedByMonthByBankId =
                 buildProjectedByMonthByBankId(
@@ -301,6 +313,27 @@ internal class OverviewDashboardDataServiceImpl(
                     selectedMonth = selectedMonth,
                     visibleBankAccountIds = visibleItems.bankAccountIds,
                     simulatedEvents = simulatedEvents,
+                ),
+            projectedDebtChartContributions =
+                buildProjectedDebtChartContributions(
+                    projectedDebtCashFlowByMonthCurrency = projectedDebtCashFlowByMonthCurrency,
+                ),
+            projectedDebtExpenseBreakdownContributions =
+                buildProjectedDebtExpenseBreakdownContributions(
+                    selectedMonth = selectedMonth,
+                    projectedDebtCashFlowByMonthCurrency = projectedDebtCashFlowByMonthCurrency,
+                ),
+            selectedMonthProjectedDebtOutflowByCurrency =
+                buildProjectedDebtFlowByCurrencyForMonth(
+                    selectedMonth = selectedMonth,
+                    projectedDebtCashFlowByMonthCurrency = projectedDebtCashFlowByMonthCurrency,
+                    selector = { flow -> flow.debtOutflow },
+                ),
+            selectedMonthProjectedDebtInflowByCurrency =
+                buildProjectedDebtFlowByCurrencyForMonth(
+                    selectedMonth = selectedMonth,
+                    projectedDebtCashFlowByMonthCurrency = projectedDebtCashFlowByMonthCurrency,
+                    selector = { flow -> flow.debtInflow },
                 ),
         )
     }
@@ -600,6 +633,149 @@ internal class OverviewDashboardDataServiceImpl(
                         )
                     }.sortedBy { it.creditCardName.lowercase() }
             }
+    }
+
+    private suspend fun loadProjectedDebtCashFlowByMonthCurrency(
+        userId: UUID,
+        currentMonth: YearMonth,
+        selectedMonth: YearMonth,
+    ): Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow> {
+        if (selectedMonth.isBefore(currentMonth)) {
+            return emptyMap()
+        }
+
+        val groups = groupService.findAllGroups(userId)
+        val groupIds = groups.mapNotNull { group -> group.id }.toSet()
+        if (groupIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        val aggregated = mutableMapOf<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow>()
+        val scopedUserIds = setOf(userId)
+
+        groupIds.forEach { groupId ->
+            groupDebtService
+                .loadMonthlyCashFlow(
+                    groupId = groupId,
+                    scopedUserIds = scopedUserIds,
+                    fromMonth = currentMonth,
+                    toMonth = selectedMonth,
+                ).forEach { (monthCurrency, flow) ->
+                    val key = monthCurrency.first to monthCurrency.second.uppercase()
+                    val current =
+                        aggregated.getOrDefault(
+                            key,
+                            GroupDebtMonthlyCashFlow(
+                                debtOutflow = BigDecimal.ZERO,
+                                debtInflow = BigDecimal.ZERO,
+                            ),
+                        )
+                    aggregated[key] =
+                        GroupDebtMonthlyCashFlow(
+                            debtOutflow = current.debtOutflow.add(flow.debtOutflow).asMoney(),
+                            debtInflow = current.debtInflow.add(flow.debtInflow).asMoney(),
+                        )
+                }
+        }
+
+        return aggregated
+    }
+
+    private fun buildProjectedDebtChartContributions(
+        projectedDebtCashFlowByMonthCurrency: Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow>,
+    ): List<RawChartContribution> {
+        if (projectedDebtCashFlowByMonthCurrency.isEmpty()) {
+            return emptyList()
+        }
+
+        return projectedDebtCashFlowByMonthCurrency.entries
+            .flatMap { (monthCurrency, flow) ->
+                val month = monthCurrency.first
+                val currency = monthCurrency.second.uppercase()
+                val referenceDate = month.atEndOfMonth()
+                buildList {
+                    if (flow.debtInflow.compareTo(BigDecimal.ZERO) > 0) {
+                        add(
+                            RawChartContribution(
+                                chartSeries = ChartSeries.CASH_IN,
+                                component = ChartPointComponent.PROJECTED,
+                                month = month,
+                                value = flow.debtInflow.asMoney(),
+                                currency = currency,
+                                referenceDate = referenceDate,
+                            ),
+                        )
+                    }
+                    if (flow.debtOutflow.compareTo(BigDecimal.ZERO) > 0) {
+                        add(
+                            RawChartContribution(
+                                chartSeries = ChartSeries.CASH_OUT,
+                                component = ChartPointComponent.PROJECTED,
+                                month = month,
+                                value = flow.debtOutflow.asMoney(),
+                                currency = currency,
+                                referenceDate = referenceDate,
+                            ),
+                        )
+                        add(
+                            RawChartContribution(
+                                chartSeries = ChartSeries.EXPENSE,
+                                component = ChartPointComponent.PROJECTED,
+                                month = month,
+                                value = flow.debtOutflow.asMoney(),
+                                currency = currency,
+                                referenceDate = referenceDate,
+                            ),
+                        )
+                    }
+                }
+            }
+    }
+
+    private fun buildProjectedDebtExpenseBreakdownContributions(
+        selectedMonth: YearMonth,
+        projectedDebtCashFlowByMonthCurrency: Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow>,
+    ): List<RawBreakdownContribution> {
+        if (projectedDebtCashFlowByMonthCurrency.isEmpty()) {
+            return emptyList()
+        }
+
+        val selectedMonthEnd = selectedMonth.atEndOfMonth()
+        return projectedDebtCashFlowByMonthCurrency.entries
+            .asSequence()
+            .filter { (monthCurrency, flow) ->
+                monthCurrency.first == selectedMonth && flow.debtOutflow.compareTo(BigDecimal.ZERO) > 0
+            }.map { (monthCurrency, flow) ->
+                RawBreakdownContribution(
+                    breakdownType = BreakdownType.EXPENSE_CATEGORY,
+                    component = ChartPointComponent.PROJECTED,
+                    sliceId = null,
+                    label = PREDEFINED_SHARED_FINANCE_DEBT_LABEL,
+                    value = flow.debtOutflow.asMoney(),
+                    currency = monthCurrency.second.uppercase(),
+                    referenceDate = selectedMonthEnd,
+                )
+            }.toList()
+    }
+
+    private fun buildProjectedDebtFlowByCurrencyForMonth(
+        selectedMonth: YearMonth,
+        projectedDebtCashFlowByMonthCurrency: Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow>,
+        selector: (GroupDebtMonthlyCashFlow) -> BigDecimal,
+    ): Map<String, BigDecimal> {
+        if (projectedDebtCashFlowByMonthCurrency.isEmpty()) {
+            return emptyMap()
+        }
+
+        return projectedDebtCashFlowByMonthCurrency.entries
+            .asSequence()
+            .filter { (monthCurrency, _) -> monthCurrency.first == selectedMonth }
+            .groupBy(
+                keySelector = { (monthCurrency, _) -> monthCurrency.second.uppercase() },
+                valueTransform = { (_, flow) -> selector(flow).asMoney() },
+            ).mapValues { (_, values) ->
+                values.fold(BigDecimal.ZERO) { acc, value -> acc.add(value).asMoney() }
+            }.filterValues { value -> value.compareTo(BigDecimal.ZERO) > 0 }
     }
 
     private fun isInternalBankTransfer(

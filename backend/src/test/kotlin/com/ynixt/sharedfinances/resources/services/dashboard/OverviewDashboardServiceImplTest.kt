@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.services.dashboard
 
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
+import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.impl.BankAccountMapperImpl
@@ -20,6 +21,8 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseBreakdown
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseMonthlySummary
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
+import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByGoalRow
@@ -32,8 +35,12 @@ import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
+import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGoalLedgerCommittedSummaryRepository
+import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
+import com.ynixt.sharedfinances.scenarios.support.NoOpGroupService
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import kotlinx.coroutines.runBlocking
@@ -1446,6 +1453,136 @@ class OverviewDashboardServiceImplTest {
             assertMoney(result.groupSliceValue(PREDEFINED_INDIVIDUAL_LABEL), "60.00")
         }
 
+    @Test
+    fun `should include projected member debt in projected cards charts and expense category breakdown`() =
+        runBlocking {
+            val joaoUserId = UUID.randomUUID()
+            val gabrielUserId = UUID.randomUUID()
+            val groupId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 4)
+            val joaoBankId = UUID.randomUUID()
+            val gabrielBankId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            walletItemRepository.save(
+                bankAccountEntity(
+                    id = joaoBankId,
+                    userId = joaoUserId,
+                    name = "Joao bank",
+                    currency = "BRL",
+                    balance = "0.00",
+                    showOnDashboard = true,
+                ),
+            )
+            walletItemRepository.save(
+                bankAccountEntity(
+                    id = gabrielBankId,
+                    userId = gabrielUserId,
+                    name = "Gabriel bank",
+                    currency = "BRL",
+                    balance = "0.00",
+                    showOnDashboard = true,
+                ),
+            )
+
+            val groupService =
+                fakeGroupService(
+                    groupsByUserId =
+                        mapOf(
+                            joaoUserId to listOf(groupWithRole(groupId, "Shared")),
+                            gabrielUserId to listOf(groupWithRole(groupId, "Shared")),
+                        ),
+                )
+            val groupDebtService =
+                fakeGroupDebtService { requestedGroupId, scopedUserIds, fromMonth, toMonth ->
+                    if (requestedGroupId != groupId || selectedMonth.isBefore(fromMonth) || selectedMonth.isAfter(toMonth)) {
+                        return@fakeGroupDebtService emptyMap()
+                    }
+
+                    when {
+                        scopedUserIds.contains(joaoUserId) ->
+                            mapOf(
+                                (selectedMonth to "BRL") to
+                                    GroupDebtMonthlyCashFlow(
+                                        debtOutflow = BigDecimal("49.00"),
+                                        debtInflow = BigDecimal.ZERO,
+                                    ),
+                            )
+
+                        scopedUserIds.contains(gabrielUserId) ->
+                            mapOf(
+                                (selectedMonth to "BRL") to
+                                    GroupDebtMonthlyCashFlow(
+                                        debtOutflow = BigDecimal.ZERO,
+                                        debtInflow = BigDecimal("49.00"),
+                                    ),
+                            )
+
+                        else -> emptyMap()
+                    }
+                }
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-15T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = stubWalletEntryRepository(emptyList()),
+                    recurrenceSimulationService = fakeRecurrenceSimulationService(emptyList()),
+                    creditCardBillService = fakeCreditCardBillService(emptyMap()),
+                    exchangeRateService = identityExchangeRateService(),
+                    groupService = groupService,
+                    groupDebtService = groupDebtService,
+                )
+
+            val joaoOverview =
+                service.getOverview(
+                    userId = joaoUserId,
+                    defaultCurrency = "BRL",
+                    selectedMonth = selectedMonth,
+                )
+            assertMoney(joaoOverview.cardValue(OverviewDashboardCardKey.PROJECTED_CASH_OUT), "49.00")
+            assertMoney(joaoOverview.cardValue(OverviewDashboardCardKey.PROJECTED_EXPENSES), "49.00")
+            assertMoney(joaoOverview.cashOutPoint("2026-04").projectedValue, "49.00")
+            assertMoney(joaoOverview.expensePoint("2026-04").projectedValue, "49.00")
+            assertMoney(joaoOverview.categorySliceValue(PREDEFINED_SHARED_FINANCE_DEBT_LABEL), "49.00")
+            assertThat(
+                joaoOverview.cards
+                    .first { it.key == OverviewDashboardCardKey.PROJECTED_CASH_OUT }
+                    .details
+                    .filter { it.sourceType == OverviewDashboardDetailSourceType.FORMULA },
+            ).anySatisfy { detail ->
+                assertThat(detail.label).isEqualTo(PROJECTED_DEBT_OUTFLOW_DETAIL_LABEL)
+                assertMoney(detail.value, "49.00")
+            }
+            assertThat(
+                joaoOverview.cards
+                    .first { it.key == OverviewDashboardCardKey.PROJECTED_EXPENSES }
+                    .details
+                    .filter { it.sourceType == OverviewDashboardDetailSourceType.FORMULA },
+            ).anySatisfy { detail ->
+                assertThat(detail.label).isEqualTo(PROJECTED_DEBT_EXPENSE_DETAIL_LABEL)
+                assertMoney(detail.value, "49.00")
+            }
+
+            val gabrielOverview =
+                service.getOverview(
+                    userId = gabrielUserId,
+                    defaultCurrency = "BRL",
+                    selectedMonth = selectedMonth,
+                )
+            assertMoney(gabrielOverview.cardValue(OverviewDashboardCardKey.PROJECTED_CASH_IN), "49.00")
+            assertMoney(gabrielOverview.cashInPoint("2026-04").projectedValue, "49.00")
+            assertThat(
+                gabrielOverview.cards
+                    .first { it.key == OverviewDashboardCardKey.PROJECTED_CASH_IN }
+                    .details
+                    .filter { it.sourceType == OverviewDashboardDetailSourceType.FORMULA },
+            ).anySatisfy { detail ->
+                assertThat(detail.label).isEqualTo(PROJECTED_DEBT_INFLOW_DETAIL_LABEL)
+                assertMoney(detail.value, "49.00")
+            }
+        }
+
     private fun createService(
         clock: Clock,
         walletItemRepository: WalletItemRepository,
@@ -1454,6 +1591,8 @@ class OverviewDashboardServiceImplTest {
         creditCardBillService: CreditCardBillService,
         exchangeRateService: ExchangeRateService,
         goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository = NoOpGoalLedgerCommittedSummaryRepository,
+        groupService: GroupService = NoOpGroupService(),
+        groupDebtService: GroupDebtService = NoOpGroupDebtService,
     ): OverviewDashboardServiceImpl {
         val balanceService = OverviewDashboardBalanceServiceImpl()
 
@@ -1465,6 +1604,8 @@ class OverviewDashboardServiceImplTest {
                     walletEntryRepository = walletEntryRepository,
                     recurrenceSimulationService = recurrenceSimulationService,
                     creditCardBillService = creditCardBillService,
+                    groupService = groupService,
+                    groupDebtService = groupDebtService,
                     clock = clock,
                 ),
             balanceService = balanceService,
@@ -1476,6 +1617,40 @@ class OverviewDashboardServiceImplTest {
             clock = clock,
         )
     }
+
+    private fun fakeGroupService(groupsByUserId: Map<UUID, List<GroupWithRole>>): GroupService {
+        val delegate = NoOpGroupService()
+        return object : GroupService by delegate {
+            override suspend fun findAllGroups(userId: UUID): List<GroupWithRole> = groupsByUserId[userId].orEmpty()
+        }
+    }
+
+    private fun groupWithRole(
+        id: UUID,
+        name: String,
+    ): GroupWithRole =
+        GroupWithRole(
+            id = id,
+            createdAt = null,
+            updatedAt = null,
+            name = name,
+            role = UserGroupRole.EDITOR,
+            itemsAssociated = null,
+        ).also { group ->
+            group.permissions = emptySet()
+        }
+
+    private fun fakeGroupDebtService(
+        resolver: (UUID, Set<UUID>, YearMonth, YearMonth) -> Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow>,
+    ): GroupDebtService =
+        object : GroupDebtService by NoOpGroupDebtService {
+            override suspend fun loadMonthlyCashFlow(
+                groupId: UUID,
+                scopedUserIds: Set<UUID>,
+                fromMonth: YearMonth,
+                toMonth: YearMonth,
+            ): Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow> = resolver(groupId, scopedUserIds, fromMonth, toMonth)
+        }
 
     private fun stubWalletEntryRepository(
         monthlySummaries: List<BankAccountMonthlySummary>,

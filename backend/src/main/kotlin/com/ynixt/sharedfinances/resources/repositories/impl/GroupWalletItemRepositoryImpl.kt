@@ -38,9 +38,10 @@ class GroupWalletItemRepositoryImpl(
     ): Mono<Long> = springDataRepository.deleteByGroupIdAndWalletItemId(groupId, walletItemId)
 
     override fun findAllAllowedForGroup(
+        userId: UUID,
         groupId: UUID,
         type: WalletItemType,
-    ): Flux<WalletItemEntity> = dcRepository.findAllAllowedForGroup(groupId, type)
+    ): Flux<WalletItemEntity> = dcRepository.findAllAllowedForGroup(userId, groupId, type)
 
     override fun findAllAssociatedToGroup(
         groupId: UUID,

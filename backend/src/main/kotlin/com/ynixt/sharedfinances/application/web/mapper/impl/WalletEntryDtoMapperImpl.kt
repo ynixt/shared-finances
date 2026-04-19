@@ -11,9 +11,11 @@ import com.ynixt.sharedfinances.application.web.dto.walletentry.ListEntryRequest
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ScheduledExecutionManagerRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.SummaryEntryRequestDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletBeneficiaryLegDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletSourceLegDto
 import com.ynixt.sharedfinances.application.web.mapper.WalletEntryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletItemDtoMapper
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.ListEntryRequest
@@ -26,6 +28,7 @@ import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGrouped
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySummaryGroupedResult
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletBeneficiaryLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.ScheduledExecutionManagerRequest
 import org.springframework.stereotype.Component
@@ -83,10 +86,18 @@ class WalletEntryDtoMapperImpl(
             }
     }
 
+    private object WalletBeneficiaryLegDtoToNewLegMapper : ObjectMappie<WalletBeneficiaryLegDto, NewWalletBeneficiaryLeg>() {
+        override fun map(from: WalletBeneficiaryLegDto) =
+            mapping {
+            }
+    }
+
     private object FromNewEntryDtoToRequestTransferMapper : ObjectMappie<NewEntryDto, NewEntryRequest>() {
         override fun map(from: NewEntryDto) =
             mapping {
                 to::sources fromValue null
+                to::beneficiaries fromValue null
+                to::transferPurpose fromProperty from::transferPurpose transform { it ?: TransferPurpose.GENERAL }
             }
     }
 
@@ -95,6 +106,8 @@ class WalletEntryDtoMapperImpl(
             mapping {
                 to::originId fromValue null
                 to::sources fromProperty from::sources via IterableToListMapper(WalletSourceLegDtoToNewLegMapper)
+                to::beneficiaries fromProperty from::beneficiaries via IterableToListMapper(WalletBeneficiaryLegDtoToNewLegMapper)
+                to::transferPurpose fromValue TransferPurpose.GENERAL
             }
     }
 

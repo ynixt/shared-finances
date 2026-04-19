@@ -11,6 +11,7 @@ import {
   faGrip,
   faMoneyBillTransfer,
   faPlus,
+  faScaleBalanced,
   faTag,
 } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -232,6 +233,12 @@ export class FinancesPageComponent {
           fa: faGrip,
           label: this.translateService.instant('financesPage.menu.overview'),
           routerLink: ['/app/groups', g.id],
+          routerLinkActiveOptions: { exact: true },
+        },
+        {
+          fa: faScaleBalanced,
+          label: this.translateService.instant('financesPage.menu.debts'),
+          routerLink: ['/app/groups', g.id, 'debts'],
           routerLinkActiveOptions: { exact: true },
         },
         {

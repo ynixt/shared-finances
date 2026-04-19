@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Table
@@ -29,6 +30,7 @@ class RecurrenceEventEntity(
     val endExecution: LocalDate?,
     val seriesId: UUID,
     val seriesOffset: Int,
+    transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     initialBalance: Boolean = false,
 ) : MinimumWalletEventEntity(
         type = type,
@@ -39,6 +41,7 @@ class RecurrenceEventEntity(
         tags = tags,
         observations = observations,
         paymentType = paymentType,
+        transferPurpose = transferPurpose,
         initialBalance = initialBalance,
     ) {
     @Transient

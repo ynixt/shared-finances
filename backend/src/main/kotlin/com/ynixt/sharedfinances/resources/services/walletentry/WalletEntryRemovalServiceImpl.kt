@@ -17,9 +17,12 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryRemovalService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -36,6 +39,7 @@ class WalletEntryRemovalServiceImpl(
     walletEntryRepository: WalletEntryRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
     walletItemMapper: WalletItemMapper,
+    groupDebtService: GroupDebtService,
     groupService: GroupService,
     walletItemService: WalletItemService,
     creditCardBillService: CreditCardBillService,
@@ -43,10 +47,13 @@ class WalletEntryRemovalServiceImpl(
     recurrenceEventRepository: RecurrenceEventRepository,
     recurrenceSeriesRepository: RecurrenceSeriesRepository,
     recurrenceEntryRepository: RecurrenceEntryRepository,
+    walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     clock: Clock,
 ) : WalletEntryMutationSupportServiceImpl(
         walletEntryRepository = walletEntryRepository,
         walletItemMapper = walletItemMapper,
+        groupDebtService = groupDebtService,
         groupService = groupService,
         walletItemService = walletItemService,
         creditCardBillService = creditCardBillService,
@@ -54,6 +61,8 @@ class WalletEntryRemovalServiceImpl(
         recurrenceEventRepository = recurrenceEventRepository,
         recurrenceSeriesRepository = recurrenceSeriesRepository,
         recurrenceEntryRepository = recurrenceEntryRepository,
+        walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+        recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
         clock = clock,
     ),
     WalletEntryRemovalService {
@@ -75,6 +84,7 @@ class WalletEntryRemovalServiceImpl(
         val payloadEvent = hydratePostedEventForMutation(existingEvent)
 
         deletePostedEvents(
+            actorUserId = userId,
             events = listOf(payloadEvent),
             recurrenceConfig = null,
         )
@@ -119,7 +129,11 @@ class WalletEntryRemovalServiceImpl(
         when (scope) {
             ScheduledEditScope.ONLY_THIS -> {
                 if (generatedEvent != null) {
-                    deletePostedEvents(events = listOf(generatedEvent), recurrenceConfig = config)
+                    deletePostedEvents(
+                        actorUserId = userId,
+                        events = listOf(generatedEvent),
+                        recurrenceConfig = config,
+                    )
                 } else {
                     handleNonGeneratedOccurrenceDeleteOnlyThis(
                         userId = userId,
@@ -133,6 +147,7 @@ class WalletEntryRemovalServiceImpl(
             ScheduledEditScope.THIS_AND_FUTURE -> {
                 if (generatedEvent != null) {
                     handleGeneratedOccurrenceDeleteThisAndFuture(
+                        actorUserId = userId,
                         config = config,
                         occurrenceDate = request.occurrenceDate,
                     )
@@ -145,7 +160,10 @@ class WalletEntryRemovalServiceImpl(
             }
 
             ScheduledEditScope.ALL_SERIES -> {
-                handleDeleteAllSeries(config)
+                handleDeleteAllSeries(
+                    actorUserId = userId,
+                    config = config,
+                )
             }
         }
 
@@ -184,6 +202,7 @@ class WalletEntryRemovalServiceImpl(
     }
 
     private suspend fun handleGeneratedOccurrenceDeleteThisAndFuture(
+        actorUserId: UUID,
         config: RecurrenceEventEntity,
         occurrenceDate: LocalDate,
     ) {
@@ -196,6 +215,7 @@ class WalletEntryRemovalServiceImpl(
         val eventsToDelete = generatedEvents.filter { !it.date.isBefore(occurrenceDate) }
         if (eventsToDelete.isNotEmpty()) {
             deletePostedEvents(
+                actorUserId = actorUserId,
                 events = eventsToDelete,
                 recurrenceConfig = config,
             )
@@ -215,7 +235,10 @@ class WalletEntryRemovalServiceImpl(
         )
     }
 
-    private suspend fun handleDeleteAllSeries(config: RecurrenceEventEntity) {
+    private suspend fun handleDeleteAllSeries(
+        actorUserId: UUID,
+        config: RecurrenceEventEntity,
+    ) {
         val series = recurrenceSeriesRepository.findById(config.seriesId).awaitSingleOrNull()
         val configsInSeries =
             recurrenceEventRepository
@@ -234,6 +257,7 @@ class WalletEntryRemovalServiceImpl(
 
             if (generatedEvents.isNotEmpty()) {
                 deletePostedEvents(
+                    actorUserId = actorUserId,
                     events = generatedEvents,
                     recurrenceConfig = segment,
                     deleteFromRepository = false,
@@ -245,6 +269,7 @@ class WalletEntryRemovalServiceImpl(
     }
 
     private suspend fun deletePostedEvents(
+        actorUserId: UUID,
         events: List<WalletEventEntity>,
         recurrenceConfig: RecurrenceEventEntity?,
         deleteFromRepository: Boolean = true,
@@ -252,6 +277,7 @@ class WalletEntryRemovalServiceImpl(
         events.forEach { event ->
             val hydratedEvent = hydratePostedEventForMutation(event)
             rollbackPostedImpact(
+                actorUserId = actorUserId,
                 event = hydratedEvent,
                 entries = hydratedEvent.entries!!.filterIsInstance<WalletEntryEntity>(),
                 recurrenceConfig = recurrenceConfig,
@@ -296,6 +322,7 @@ class WalletEntryRemovalServiceImpl(
             endExecution = config.endExecution,
             seriesId = config.seriesId,
             seriesOffset = config.seriesOffset,
+            transferPurpose = config.transferPurpose,
         ).also {
             it.id = config.id
             it.createdAt = config.createdAt

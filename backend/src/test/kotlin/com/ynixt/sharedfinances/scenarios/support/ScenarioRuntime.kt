@@ -132,6 +132,8 @@ internal class ScenarioRuntime(
     val recurrenceSeriesRepository: RecurrenceSeriesRepository = recurrenceSeriesRepositoryRaw
     private val userRepository = InMemoryUserRepository()
     val creditCardBillRepository = InMemoryCreditCardBillRepository(walletItemRepository)
+    private val walletEventBeneficiaryRepository = inMemoryWalletEventBeneficiaryRepository()
+    private val recurrenceEventBeneficiaryRepository = inMemoryRecurrenceEventBeneficiaryRepository()
 
     private val bankAccountMapper = ScenarioBankAccountMapper()
     private val creditCardMapper = ScenarioCreditCardMapper()
@@ -211,6 +213,8 @@ internal class ScenarioRuntime(
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceSimulationService = recurrenceSimulationService,
             recurrenceService = recurrenceService,
+            walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+            recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
         )
 
     val walletEntryCreateService: WalletEntryCreateService =
@@ -224,6 +228,9 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
+            groupDebtService = NoOpGroupDebtService,
+            walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+            recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
             exchangeRateService = exchangeRateService,
@@ -265,6 +272,9 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
+            groupDebtService = NoOpGroupDebtService,
+            walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+            recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
             clock = clock,
@@ -281,6 +291,9 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
+            groupDebtService = NoOpGroupDebtService,
+            walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+            recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
             clock = clock,
@@ -328,6 +341,8 @@ internal class ScenarioRuntime(
                         walletEntryRepository = walletEntryRepository,
                         recurrenceSimulationService = recurrenceSimulationService,
                         creditCardBillService = creditCardBillService,
+                        groupService = groupService,
+                        groupDebtService = NoOpGroupDebtService,
                         clock = clock,
                     ),
                 balanceService = balanceService,

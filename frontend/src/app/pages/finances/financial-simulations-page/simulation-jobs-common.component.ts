@@ -43,15 +43,15 @@ import { GroupService } from '../services/group.service';
 import { SimulationJobService } from '../services/simulation-job.service';
 import { UserActionEventService } from '../services/user-action-event.service';
 import {
-  PlanningDebtInputForm,
+  PlanningExpenseInputForm,
   PlanningSimulationCurrencyPoint,
   PlanningSimulationResultPayload,
   buildPlanningSimulationRequestPayload,
-  defaultPlanningDebtForm,
+  defaultPlanningExpenseForm,
   parsePlanningSimulationResultPayload,
 } from './planning-simulation-payload';
 
-function planningDebtAmountValidator(control: AbstractControl): ValidationErrors | null {
+function planningExpenseAmountValidator(control: AbstractControl): ValidationErrors | null {
   const v = control.value;
   if (v == null) return { required: true };
   const n = typeof v === 'number' ? v : Number(v);
@@ -101,12 +101,12 @@ export class SimulationJobsCommonComponent {
 
   protected readonly GroupPermissions__Obj = GroupPermissions__Obj;
 
-  /** Horizonte da simulação — separado do formulário de inclusão de dívidas. */
+  /** Horizonte da simulação, separado do formulário de inclusão de despesas. */
   readonly simulationForm = this.fb.group({
     horizonMonths: [6, [Validators.required, Validators.min(1), Validators.max(480)]],
   });
 
-  /** Limite inferior do horizonte (= maior número de parcelas entre as dívidas), para o template. */
+  /** Limite inferior do horizonte (= maior número de parcelas entre as despesas), para o template. */
   simulationHorizonMin = 1;
 
   readonly createIcon = faFlask;
@@ -126,7 +126,7 @@ export class SimulationJobsCommonComponent {
   lastCreateCompletedFastPath = false;
   cancelling = new Set<string>();
   planningForm: FormGroup | null = null;
-  debts: PlanningDebtInputForm[] = [];
+  expenses: PlanningExpenseInputForm[] = [];
   lastCreatedJobId: string | null = null;
   groupWithRole: GroupWithRoleDto | null = null;
   deleteError = false;
@@ -135,7 +135,7 @@ export class SimulationJobsCommonComponent {
 
   constructor() {
     void this.loadPage(0);
-    void this.createDefaultPlanningDebtForm();
+    void this.createDefaultPlanningExpenseForm();
 
     if (this.workspace.scope === 'group' && this.workspace.groupId != null) {
       void this.groupService.getGroup(this.workspace.groupId).then(g => (this.groupWithRole = g));
@@ -179,16 +179,16 @@ export class SimulationJobsCommonComponent {
     });
   }
 
-  async createDefaultPlanningDebtForm() {
+  async createDefaultPlanningExpenseForm() {
     const user = await this.userService.getUser();
-    const defaults = defaultPlanningDebtForm(user!!);
+    const defaults = defaultPlanningExpenseForm(user!!);
 
     /** `app-date-picker` / PrimeNG expect native `Date`, not dayjs. */
     const defaultPaymentDate = defaults.firstPaymentDate.toDate();
 
     if (this.planningForm == null) {
       this.planningForm = this.fb.group({
-        amount: [defaults.amount, [planningDebtAmountValidator]],
+        amount: [defaults.amount, [planningExpenseAmountValidator]],
         installments: [defaults.installments, [Validators.required, Validators.min(1)]],
         firstPaymentDate: [defaultPaymentDate, [Validators.required]],
         currency: [defaults.currency, [isoCurrencyCodeValidator]],
@@ -203,14 +203,14 @@ export class SimulationJobsCommonComponent {
     }
   }
 
-  onAddDebtSubmit(event: SubmitEvent): void {
+  onAddExpenseSubmit(event: SubmitEvent): void {
     event.preventDefault();
     if (this.planningForm == null || this.creating) return;
     if (this.planningForm.invalid) {
       this.planningForm.markAllAsTouched();
       return;
     }
-    void this.addDebt();
+    void this.addExpense();
   }
 
   onSimulateSubmit(event: SubmitEvent): void {
@@ -253,7 +253,7 @@ export class SimulationJobsCommonComponent {
         firstPaymentDate: Date;
         currency: string;
       };
-      const pendingDebt: PlanningDebtInputForm = {
+      const pendingExpense: PlanningExpenseInputForm = {
         amount: v.amount,
         installments: v.installments,
         firstPaymentDate: dayjs(v.firstPaymentDate),
@@ -262,8 +262,8 @@ export class SimulationJobsCommonComponent {
 
       const requestPayload = buildPlanningSimulationRequestPayload({
         horizonMonths,
-        debts: this.debts,
-        pendingDebt,
+        expenses: this.expenses,
+        pendingExpense,
       });
 
       const body: CreateSimulationJobRequestDto = {
@@ -294,34 +294,34 @@ export class SimulationJobsCommonComponent {
     }
   }
 
-  async addDebt(): Promise<void> {
+  async addExpense(): Promise<void> {
     if (this.planningForm == null || this.planningForm.invalid) return;
 
-    const debt = this.planningForm.getRawValue() as {
+    const expense = this.planningForm.getRawValue() as {
       amount: number | null;
       installments: number;
       firstPaymentDate: Date;
       currency: string;
     };
-    const amount = Number(debt.amount ?? 0);
+    const amount = Number(expense.amount ?? 0);
 
-    this.debts = [
-      ...this.debts,
+    this.expenses = [
+      ...this.expenses,
       {
         amount,
-        installments: Math.max(1, debt.installments || 1),
-        firstPaymentDate: dayjs(debt.firstPaymentDate),
-        currency: debt.currency.trim().toUpperCase(),
+        installments: Math.max(1, expense.installments || 1),
+        firstPaymentDate: dayjs(expense.firstPaymentDate),
+        currency: expense.currency.trim().toUpperCase(),
       },
     ];
 
-    this.syncSimulationHorizonWithDebts({ resetToSuggested: true });
-    return this.createDefaultPlanningDebtForm();
+    this.syncSimulationHorizonWithExpenses({ resetToSuggested: true });
+    return this.createDefaultPlanningExpenseForm();
   }
 
-  removeDebt(index: number) {
-    this.debts = this.debts.filter((_, i) => i !== index);
-    this.syncSimulationHorizonWithDebts({ resetToSuggested: false });
+  removeExpense(index: number) {
+    this.expenses = this.expenses.filter((_, i) => i !== index);
+    this.syncSimulationHorizonWithExpenses({ resetToSuggested: false });
   }
 
   async refreshPage() {
@@ -572,12 +572,12 @@ export class SimulationJobsCommonComponent {
   }
 
   /**
-   * Mínimo do horizonte = maior parcela entre dívidas (até 480).
-   * Após incluir dívida, o valor sugerido é sempre esse mínimo + 1 (ex.: máx 8 → 9).
+   * Mínimo do horizonte = maior parcela entre despesas (até 480).
+   * Após incluir despesa, o valor sugerido é sempre esse mínimo + 1 (ex.: máx 8 → 9).
    * Após remover, só ajusta o valor se ficar abaixo do novo mínimo ou acima de 480.
    */
-  private syncSimulationHorizonWithDebts(options: { resetToSuggested: boolean }): void {
-    const maxInst = this.debts.length === 0 ? 1 : Math.max(...this.debts.map(d => Math.max(1, d.installments || 1)));
+  private syncSimulationHorizonWithExpenses(options: { resetToSuggested: boolean }): void {
+    const maxInst = this.expenses.length === 0 ? 1 : Math.max(...this.expenses.map(d => Math.max(1, d.installments || 1)));
     const minH = Math.min(Math.max(1, maxInst), 480);
     const suggested = Math.min(maxInst + 1, 480);
 

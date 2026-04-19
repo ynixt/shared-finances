@@ -297,6 +297,7 @@ export class OverviewDashboardChartsComponent {
       PREDEFINED_INDIVIDUAL: 'financesPage.overviewPage.charts.fallbackSliceLabels.individual',
       PREDEFINED_UNCATEGORIZED: 'financesPage.overviewPage.charts.fallbackSliceLabels.uncategorized',
       PREDEFINED_OTHERS: 'financesPage.overviewPage.charts.fallbackSliceLabels.others',
+      PREDEFINED_SHARED_FINANCE_DEBT: 'financesPage.overviewPage.charts.fallbackSliceLabels.sharedFinanceDebt',
     }[label];
   }
 }

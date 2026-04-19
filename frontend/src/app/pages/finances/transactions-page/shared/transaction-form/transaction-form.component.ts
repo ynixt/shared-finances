@@ -29,6 +29,7 @@ import {
   RecurrenceType,
   RecurrenceType__Obj,
   RecurrenceType__Options,
+  TransferPurpose__Obj,
   WalletEntryType,
   WalletEntryType__Obj,
 } from '../../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
@@ -42,12 +43,21 @@ import { WalletItemPickerComponent } from '../../../components/item-picker/walle
 import { CreditCardBillService } from '../../../services/credit-card-bill.service';
 import { GroupService } from '../../../services/group.service';
 import { WalletEntryService } from '../../../services/wallet-entry.service';
-import { ExtraSourceLegInit, mapEventToTransactionFormPatch, mapTransactionFormToNewEntryDto } from './transaction-form.mapper';
+import { defaultBeneficiaryState, validateBeneficiarySplit } from './transaction-form.beneficiaries';
 import {
+  ExtraBeneficiaryLegInit,
+  ExtraSourceLegInit,
+  convertUserToUserForBeneficiary,
+  mapEventToTransactionFormPatch,
+  mapTransactionFormToNewEntryDto,
+} from './transaction-form.mapper';
+import {
+  BeneficiaryLegForm,
   ExtraSourceLegForm,
   NewTransactionForm,
   TransactionFormInitialData,
   TransactionFormMode,
+  UserForBeneficiary,
   ValueType,
 } from './transaction-form.types';
 
@@ -94,7 +104,7 @@ export class TransactionFormComponent {
   private readonly userService = inject(UserService);
   private readonly creditCardBillService = inject(CreditCardBillService);
   private readonly walletEntryService = inject(WalletEntryService);
-  private readonly translate = inject(TranslateService);
+  private readonly translateService = inject(TranslateService);
   private readonly localDatePipeService = inject(LocalDatePipeService);
   private readonly localNumberPipeService = inject(LocalNumberPipeService);
 
@@ -119,6 +129,9 @@ export class TransactionFormComponent {
   private lastTransferRateSnapshot: TransferRateSnapshot | null = null;
   /** Same-currency only: user edited target so it should not follow origin amount. */
   private sameCurrencyTargetUserOverridden = false;
+  private beneficiaryHydrationRequestId = 0;
+  private readonly groupMembersCache = new Map<string, UserForBeneficiary[]>();
+  private readonly groupMembersRequestCache = new Map<string, Promise<UserForBeneficiary[]>>();
 
   get selectedGroup() {
     return this.form.get('group')!!.value;
@@ -138,6 +151,10 @@ export class TransactionFormComponent {
 
   get extraSourceLegs(): FormArray<ExtraSourceLegForm> {
     return this.form.get('extraSourceLegs') as FormArray<ExtraSourceLegForm>;
+  }
+
+  get extraBeneficiaryLegs(): FormArray<BeneficiaryLegForm> {
+    return this.form.get('extraBeneficiaryLegs') as FormArray<BeneficiaryLegForm>;
   }
 
   get targetControl() {
@@ -261,6 +278,7 @@ export class TransactionFormComponent {
         confirmed: [false, [Validators.required]],
         observations: [undefined, [Validators.maxLength(512)]],
         paymentType: [PaymentType__Obj.UNIQUE, [Validators.required]],
+        transferPurpose: [TransferPurpose__Obj.GENERAL, [Validators.required]],
         installments: [undefined, [Validators.min(2), Validators.max(720)]],
         periodicity: [RecurrenceType__Obj.MONTHLY, []],
         valueType: [ValueType.TOTAL, []],
@@ -271,6 +289,9 @@ export class TransactionFormComponent {
         tags: [undefined, []],
         primaryOriginContributionPercent: [100, [Validators.min(0.01), Validators.max(100)]],
         extraSourceLegs: this.formBuilder.array<ExtraSourceLegForm>([]),
+        primaryBeneficiaryUser: [undefined],
+        primaryBeneficiaryPercent: [100, [Validators.min(0.01), Validators.max(100)]],
+        extraBeneficiaryLegs: this.formBuilder.array<BeneficiaryLegForm>([]),
       },
       {
         validators: [
@@ -281,6 +302,9 @@ export class TransactionFormComponent {
           this.requiredOnlyOnTargetCreditCard,
           this.sourcePercentsMustSumTo100,
           this.requiredExtraSourceLegFields,
+          this.beneficiaryPercentsMustSumTo100,
+          this.requiredBeneficiaryFields,
+          this.beneficiaryUsersMustBeUnique,
         ],
       },
     ) as NewTransactionForm;
@@ -292,6 +316,16 @@ export class TransactionFormComponent {
         .get('primaryOriginContributionPercent')!
         .valueChanges.pipe(startWith(this.form.get('primaryOriginContributionPercent')!.value)),
       this.extraSourceLegs.valueChanges.pipe(startWith(this.extraSourceLegs.value)),
+    ])
+      .pipe(untilDestroyed(this))
+      .subscribe(() => {
+        this.form.updateValueAndValidity({ emitEvent: false });
+      });
+
+    combineLatest([
+      this.form.get('primaryBeneficiaryUser')!.valueChanges.pipe(startWith(this.form.get('primaryBeneficiaryUser')!.value)),
+      this.form.get('primaryBeneficiaryPercent')!.valueChanges.pipe(startWith(this.form.get('primaryBeneficiaryPercent')!.value)),
+      this.extraBeneficiaryLegs.valueChanges.pipe(startWith(this.extraBeneficiaryLegs.value)),
     ])
       .pipe(untilDestroyed(this))
       .subscribe(() => {
@@ -322,6 +356,9 @@ export class TransactionFormComponent {
       this.form.patchValue(hydration.patch);
       this.form.get('primaryOriginContributionPercent')?.setValue(hydration.primaryOriginContributionPercent);
       this.resetExtraSourceLegs(hydration.extraSourceLegs);
+      this.form.get('primaryBeneficiaryUser')?.setValue(undefined);
+      this.form.get('primaryBeneficiaryPercent')?.setValue(100);
+      this.resetExtraBeneficiaryLegs([]);
       this.isHydrating = false;
       this.lastTransferRateSnapshot = null;
       this.transferRateDisplay.set(null);
@@ -342,13 +379,16 @@ export class TransactionFormComponent {
       }
 
       this.form.updateValueAndValidity({ emitEvent: false });
+      void this.hydrateBeneficiariesFromMembers(entryKey, entry.group?.id ?? undefined, hydration.beneficiaryLegs);
     });
 
     this.groupControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
+      this.beneficiaryHydrationRequestId++;
       if (this.isHydrating) return;
       this.form.get('origin')?.reset();
       this.form.get('target')?.reset();
       this.resetExtraSourceLegs([]);
+      this.resetBeneficiariesForContext();
       this.form.get('primaryOriginContributionPercent')?.setValue(100);
       this.resetTargetValueControl();
       this.transferRateDisplay.set(null);
@@ -357,9 +397,11 @@ export class TransactionFormComponent {
     });
 
     this.typeControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
+      this.beneficiaryHydrationRequestId++;
       if (this.isHydrating) return;
       this.form.get('target')?.reset();
       this.resetExtraSourceLegs([]);
+      this.resetBeneficiariesForContext();
       this.form.get('primaryOriginContributionPercent')?.setValue(100);
       this.resetTargetValueControl();
       this.transferQuoteError.set(null);
@@ -559,12 +601,43 @@ export class TransactionFormComponent {
     this.form.updateValueAndValidity({ emitEvent: false });
   }
 
+  addExtraBeneficiaryLeg(): void {
+    const arr = this.extraBeneficiaryLegs;
+    if (arr.length === 0) {
+      this.form.get('primaryBeneficiaryPercent')?.setValue(50);
+      arr.push(this.createExtraBeneficiaryLegGroup({ benefitPercent: 50 }));
+    } else {
+      arr.push(this.createExtraBeneficiaryLegGroup({}));
+    }
+    this.form.updateValueAndValidity({ emitEvent: false });
+  }
+
+  removeExtraBeneficiaryLeg(index: number): void {
+    this.extraBeneficiaryLegs.removeAt(index);
+    if (this.extraBeneficiaryLegs.length === 0) {
+      this.form.get('primaryBeneficiaryPercent')?.setValue(100);
+    }
+    this.form.updateValueAndValidity({ emitEvent: false });
+  }
+
   private createExtraSourceLegGroup(init: Partial<ExtraSourceLegInit> = {}): ExtraSourceLegForm {
     return this.formBuilder.group({
       walletItem: [init.walletItem, [Validators.required]],
       contributionPercent: [init.contributionPercent, [Validators.required, Validators.min(0.01), Validators.max(100)]],
       bill: [init.bill],
     }) as ExtraSourceLegForm;
+  }
+
+  private createExtraBeneficiaryLegGroup(
+    init: Partial<{
+      benefitPercent: number;
+      userId: string;
+    }> = {},
+  ): BeneficiaryLegForm {
+    return this.formBuilder.group({
+      userId: [init.userId, [Validators.required]],
+      benefitPercent: [init.benefitPercent, [Validators.required, Validators.min(0.01), Validators.max(100)]],
+    }) as BeneficiaryLegForm;
   }
 
   private resetExtraSourceLegs(legs: ExtraSourceLegInit[]): void {
@@ -576,6 +649,21 @@ export class TransactionFormComponent {
       const g = this.createExtraSourceLegGroup(leg);
       arr.push(g);
       this.attachExtraLegBillSync(g);
+    }
+  }
+
+  private resetExtraBeneficiaryLegs(
+    legs: Array<{
+      benefitPercent: number;
+      userId: string;
+    }>,
+  ): void {
+    const arr = this.extraBeneficiaryLegs;
+    while (arr.length) {
+      arr.removeAt(0);
+    }
+    for (const leg of legs) {
+      arr.push(this.createExtraBeneficiaryLegGroup(leg));
     }
   }
 
@@ -643,6 +731,54 @@ export class TransactionFormComponent {
     return null;
   };
 
+  private beneficiaryPercentsMustSumTo100 = (group: NewTransactionForm): ValidationErrors | null => {
+    const arr = group.get('extraBeneficiaryLegs') as FormArray<BeneficiaryLegForm> | null;
+    return (
+      validateBeneficiarySplit({
+        groupId: group.get('group')?.value?.id,
+        type: group.get('type')?.value,
+        primaryBeneficiaryUser: group.get('primaryBeneficiaryUser')?.value,
+        primaryBeneficiaryPercent: group.get('primaryBeneficiaryPercent')?.value,
+        extraBeneficiaryLegs: arr?.getRawValue() ?? [],
+      })?.beneficiaryPercentsSum ?? null
+    );
+  };
+
+  private requiredBeneficiaryFields = (group: NewTransactionForm): ValidationErrors | null => {
+    const type = group.get('type')?.value;
+    const selectedGroup = group.get('group')?.value;
+    const isRequired = type !== WalletEntryType__Obj.TRANSFER && selectedGroup != null;
+
+    this.requireFieldsIf(group.get('primaryBeneficiaryUser')!, isRequired);
+    this.requireFieldsIf(group.get('primaryBeneficiaryPercent')!, isRequired);
+
+    const arr = group.get('extraBeneficiaryLegs') as FormArray<BeneficiaryLegForm> | null;
+    if (!arr) {
+      return null;
+    }
+
+    for (let i = 0; i < arr.length; i++) {
+      const g = arr.at(i) as FormGroup;
+      this.requireFieldsIf(g.get('userId')!, isRequired);
+      this.requireFieldsIf(g.get('benefitPercent')!, isRequired);
+    }
+
+    return null;
+  };
+
+  private beneficiaryUsersMustBeUnique = (group: NewTransactionForm): ValidationErrors | null => {
+    const arr = group.get('extraBeneficiaryLegs') as FormArray<BeneficiaryLegForm> | null;
+    return validateBeneficiarySplit({
+      groupId: group.get('group')?.value?.id,
+      type: group.get('type')?.value,
+      primaryBeneficiaryUser: group.get('primaryBeneficiaryUser')?.value,
+      primaryBeneficiaryPercent: group.get('primaryBeneficiaryPercent')?.value,
+      extraBeneficiaryLegs: arr?.getRawValue() ?? [],
+    })?.duplicateBeneficiaries
+      ? { duplicateBeneficiaries: true }
+      : null;
+  };
+
   isTypeOptionDisabled(type: WalletEntryType): boolean {
     if (this.mode() !== 'edit') {
       return false;
@@ -658,6 +794,15 @@ export class TransactionFormComponent {
 
   async loadGroups(page = 0, query: string | undefined): Promise<GroupWithRoleDto[]> {
     return await this.groupService.getAllGroups();
+  }
+
+  async loadGroupMembers(page = 0, query: string | undefined): Promise<UserForBeneficiary[]> {
+    const groupId = this.selectedGroup?.id;
+    if (groupId == null) {
+      return [];
+    }
+
+    return this.filterGroupMembers(await this.getGroupMembers(groupId), query);
   }
 
   submit() {
@@ -746,6 +891,108 @@ export class TransactionFormComponent {
     return control.errors;
   }
 
+  private resetBeneficiariesForContext() {
+    const user = this.user();
+
+    if (this.isHydrating || !user) {
+      return;
+    }
+
+    const defaults = defaultBeneficiaryState({
+      currentUser: convertUserToUserForBeneficiary(user, this.translateService),
+      groupId: this.selectedGroup?.id,
+      type: this.typeControl.value,
+    });
+
+    this.form.get('primaryBeneficiaryUser')?.setValue(defaults.primaryBeneficiaryUser, { emitEvent: false });
+    this.form.get('primaryBeneficiaryPercent')?.setValue(defaults.primaryBeneficiaryPercent, { emitEvent: false });
+    this.resetExtraBeneficiaryLegs(
+      defaults.extraBeneficiaryLegs.filter((leg): leg is { userId: string; benefitPercent: number } => {
+        return leg.userId != null && leg.benefitPercent != null;
+      }),
+    );
+  }
+
+  private async getGroupMembers(groupId: string): Promise<UserForBeneficiary[]> {
+    const cached = this.groupMembersCache.get(groupId);
+    if (cached != null) {
+      return cached;
+    }
+
+    const cachedRequest = this.groupMembersRequestCache.get(groupId);
+    if (cachedRequest != null) {
+      return cachedRequest;
+    }
+
+    const request = this.groupService
+      .findAllMembers(groupId)
+      .then(list => list.map(member => convertUserToUserForBeneficiary(member.user, this.translateService)))
+      .then(members => {
+        this.groupMembersCache.set(groupId, members);
+        this.groupMembersRequestCache.delete(groupId);
+        return members;
+      })
+      .catch(error => {
+        this.groupMembersRequestCache.delete(groupId);
+        throw error;
+      });
+
+    this.groupMembersRequestCache.set(groupId, request);
+    return request;
+  }
+
+  private filterGroupMembers(members: UserForBeneficiary[], query: string | undefined): UserForBeneficiary[] {
+    const normalizedQuery = query?.trim().toLowerCase();
+    if (normalizedQuery == null || normalizedQuery.length === 0) {
+      return members;
+    }
+
+    return members.filter(member => {
+      const fullName = `${member.firstName} ${member.lastName}`.trim().toLowerCase();
+      return (
+        member.label.toLowerCase().includes(normalizedQuery) ||
+        fullName.includes(normalizedQuery) ||
+        member.email.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }
+
+  private async hydrateBeneficiariesFromMembers(
+    entryKey: string,
+    groupId: string | undefined,
+    beneficiaryLegs: ExtraBeneficiaryLegInit[],
+  ): Promise<void> {
+    if (groupId == null) {
+      return;
+    }
+
+    if (beneficiaryLegs.length === 0) {
+      this.form.get('primaryBeneficiaryUser')?.setValue(undefined, { emitEvent: false });
+      this.form.get('primaryBeneficiaryPercent')?.setValue(100, { emitEvent: false });
+      this.resetExtraBeneficiaryLegs([]);
+      this.form.updateValueAndValidity({ emitEvent: false });
+      return;
+    }
+
+    const requestId = ++this.beneficiaryHydrationRequestId;
+    const members = await this.getGroupMembers(groupId);
+
+    if (requestId !== this.beneficiaryHydrationRequestId || this.hydratedEntryKey !== entryKey) {
+      return;
+    }
+
+    const usersById = new Map(members.map(member => [member.id, member] as const));
+    // Beneficiaries are a flat list in the domain model. The form requires one object-based
+    // control plus id-based extra rows, so we use the first item only as a UI anchor.
+    const [primaryLeg, ...extraLegs] = beneficiaryLegs;
+    const primaryBeneficiaryUser = primaryLeg == null ? undefined : usersById.get(primaryLeg.userId);
+
+    this.form.get('primaryBeneficiaryUser')?.setValue(primaryBeneficiaryUser, { emitEvent: false });
+    this.form.get('primaryBeneficiaryPercent')?.setValue(primaryLeg?.benefitPercent ?? 100, { emitEvent: false });
+    this.resetExtraBeneficiaryLegs(extraLegs);
+    this.form.updateValueAndValidity({ emitEvent: false });
+  }
+
   private isTransferType(type: WalletEntryType): boolean {
     return type === WalletEntryType__Obj.TRANSFER;
   }
@@ -762,7 +1009,7 @@ export class TransactionFormComponent {
   }
 
   transferRateReadonlyLabel(tr: { rate: number; quoteDate: string; baseCurrency: string; quoteCurrency: string }): string {
-    return this.translate.instant('financesPage.transactionsPage.transferExchangeRateLine', {
+    return this.translateService.instant('financesPage.transactionsPage.transferExchangeRateLine', {
       base: tr.baseCurrency,
       rate: this.localNumberPipeService.transform(tr.rate, {
         maximumFractionDigits: 8,
@@ -774,7 +1021,7 @@ export class TransactionFormComponent {
   transferRateNearestHint(tr: { quoteDate: string }): string {
     const date = dayjs(tr.quoteDate);
 
-    return this.translate.instant('financesPage.transactionsPage.transferExchangeRateNearestHint', {
+    return this.translateService.instant('financesPage.transactionsPage.transferExchangeRateNearestHint', {
       date: this.localDatePipeService.transform(date, 'shortDate'),
     });
   }

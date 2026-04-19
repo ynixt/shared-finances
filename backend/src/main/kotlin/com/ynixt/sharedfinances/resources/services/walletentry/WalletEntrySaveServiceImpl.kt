@@ -2,16 +2,21 @@ package com.ynixt.sharedfinances.resources.services.walletentry
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventBeneficiaryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceSeriesEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventBeneficiaryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupNotFoundException
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidDebtSettlementException
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletBeneficiarySplitException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletSourceSplitException
 import com.ynixt.sharedfinances.domain.exceptions.http.MixedCurrencyWalletSourcesException
 import com.ynixt.sharedfinances.domain.exceptions.http.OriginNotFoundException
@@ -20,8 +25,11 @@ import com.ynixt.sharedfinances.domain.exceptions.http.TransferTargetValueRequir
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.withStartOfMonth
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletBeneficiaryLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
+import com.ynixt.sharedfinances.domain.models.walletentry.ResolvedWalletBeneficiaryLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.ResolvedWalletSourceLeg
+import com.ynixt.sharedfinances.domain.models.walletentry.WalletBeneficiarySplit
 import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
@@ -30,6 +38,8 @@ import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -49,6 +59,8 @@ abstract class WalletEntrySaveServiceImpl(
     protected val recurrenceEventRepository: RecurrenceEventRepository,
     protected val recurrenceSeriesRepository: RecurrenceSeriesRepository,
     protected val recurrenceEntryRepository: RecurrenceEntryRepository,
+    protected val walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    protected val recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     protected val clock: Clock,
 ) {
     protected suspend fun prepareMutationRequest(
@@ -74,7 +86,9 @@ abstract class WalletEntrySaveServiceImpl(
                 .attachOriginBill()
                 .attachTargetBill()
         } else {
-            withGroup.attachResolvedSourceLegs()
+            withGroup
+                .attachResolvedSourceLegs()
+                .attachResolvedBeneficiaries(userId)
         }
     }
 
@@ -96,9 +110,29 @@ abstract class WalletEntrySaveServiceImpl(
                     toCurrency = target.currency,
                 )
             }
+
+            if (newEntryRequest.transferPurpose == TransferPurpose.DEBT_SETTLEMENT) {
+                val group =
+                    newEntryRequest.group
+                        ?: throw InvalidDebtSettlementException("Debt settlement transfer must be scoped to a group")
+                val originId = requireNotNull(origin.id)
+                val targetId = requireNotNull(target.id)
+                if (!group.itemsAssociatedIds.contains(originId) || !group.itemsAssociatedIds.contains(targetId)) {
+                    throw InvalidDebtSettlementException("Debt settlement transfer wallets must belong to the selected group")
+                }
+                if (!sameCurrency) {
+                    throw InvalidDebtSettlementException("Debt settlement transfer must use the same currency in v1")
+                }
+                if (origin.userId == target.userId) {
+                    throw InvalidDebtSettlementException("Debt settlement transfer requires two different group members")
+                }
+            }
         } else {
             requireNotNull(newEntryRequest.value)
             requireNotNull(newEntryRequest.resolvedSources)
+            if (newEntryRequest.groupId != null) {
+                requireNotNull(newEntryRequest.resolvedBeneficiaries)
+            }
         }
 
         if (newEntryRequest.type == WalletEntryType.TRANSFER) {
@@ -178,6 +212,7 @@ abstract class WalletEntrySaveServiceImpl(
             installment = installment,
             recurrenceEventId = recurrenceConfig?.id,
             paymentType = newEntryRequest.paymentType,
+            transferPurpose = newEntryRequest.transferPurpose,
             initialBalance = newEntryRequest.initialBalance,
         ).also {
             it.id = id
@@ -252,6 +287,32 @@ abstract class WalletEntrySaveServiceImpl(
             }
         }
     }
+
+    protected fun requestToWalletEventBeneficiaryEntities(
+        eventId: UUID,
+        newEntryRequest: NewEntryRequest,
+    ): List<WalletEventBeneficiaryEntity> =
+        newEntryRequest.resolvedBeneficiaries
+            ?.map { beneficiary ->
+                WalletEventBeneficiaryEntity(
+                    walletEventId = eventId,
+                    beneficiaryUserId = beneficiary.userId,
+                    benefitPercent = beneficiary.benefitPercent,
+                )
+            }.orEmpty()
+
+    protected fun requestToRecurrenceBeneficiaryEntities(
+        eventId: UUID,
+        newEntryRequest: NewEntryRequest,
+    ): List<RecurrenceEventBeneficiaryEntity> =
+        newEntryRequest.resolvedBeneficiaries
+            ?.map { beneficiary ->
+                RecurrenceEventBeneficiaryEntity(
+                    walletEventId = eventId,
+                    beneficiaryUserId = beneficiary.userId,
+                    benefitPercent = beneficiary.benefitPercent,
+                )
+            }.orEmpty()
 
     protected suspend fun requestToRecurrenceEntity(
         id: UUID?,
@@ -407,6 +468,7 @@ abstract class WalletEntrySaveServiceImpl(
             endExecution = endExecution,
             seriesId = resolvedSeriesId,
             seriesOffset = seriesOffset,
+            transferPurpose = newEntryRequest.transferPurpose,
         ).also {
             if (id != null) {
                 it.id = id
@@ -660,6 +722,64 @@ abstract class WalletEntrySaveServiceImpl(
                         billDate = leg.bill?.billDate,
                     )
                 },
+        )
+    }
+
+    private suspend fun NewEntryRequest.attachResolvedBeneficiaries(userId: UUID): NewEntryRequest {
+        if (groupId == null) {
+            if (!beneficiaries.isNullOrEmpty()) {
+                throw InvalidWalletBeneficiarySplitException("Beneficiaries are supported only for group entries")
+            }
+            return copy(
+                beneficiaries = null,
+                resolvedBeneficiaries = null,
+            )
+        }
+
+        val raw =
+            if (!beneficiaries.isNullOrEmpty()) {
+                beneficiaries!!
+            } else {
+                listOf(
+                    NewWalletBeneficiaryLeg(
+                        userId = userId,
+                        benefitPercent = BigDecimal("100.00"),
+                    ),
+                )
+            }
+
+        WalletBeneficiarySplit.validate(raw)
+
+        val groupMemberIds =
+            groupService
+                .findAllMembers(userId = userId, id = groupId)
+                .map { member -> member.userId }
+                .toSet()
+
+        val outsider = raw.firstOrNull { beneficiary -> !groupMemberIds.contains(beneficiary.userId) }
+        if (outsider != null) {
+            throw InvalidWalletBeneficiarySplitException(
+                "Beneficiary ${outsider.userId} is not a member of group $groupId",
+            )
+        }
+
+        val resolved =
+            raw.map { beneficiary ->
+                ResolvedWalletBeneficiaryLeg(
+                    userId = beneficiary.userId,
+                    benefitPercent = beneficiary.benefitPercent.setScale(2, RoundingMode.HALF_UP),
+                )
+            }
+
+        return copy(
+            beneficiaries =
+                resolved.map { beneficiary ->
+                    NewWalletBeneficiaryLeg(
+                        userId = beneficiary.userId,
+                        benefitPercent = beneficiary.benefitPercent,
+                    )
+                },
+            resolvedBeneficiaries = resolved,
         )
     }
 

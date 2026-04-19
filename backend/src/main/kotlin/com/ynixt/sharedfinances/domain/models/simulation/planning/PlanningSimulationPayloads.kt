@@ -8,10 +8,10 @@ import java.util.UUID
 data class PlanningSimulationRequest(
     val startDate: LocalDate? = null,
     val horizonMonths: Int? = null,
-    val debts: List<PlanningSimulatedDebtRequest>? = null,
+    val expenses: List<PlanningSimulatedExpenseRequest>? = null,
 )
 
-data class PlanningSimulatedDebtRequest(
+data class PlanningSimulatedExpenseRequest(
     val name: String? = null,
     val amount: BigDecimal,
     val firstPaymentDate: LocalDate? = null,
@@ -42,7 +42,9 @@ data class PlanningCurrencyMonthResult(
     val openingBalance: BigDecimal,
     val projectedCashFlow: BigDecimal,
     val creditCardBillOutflow: BigDecimal,
+    val simulatedExpenseOutflow: BigDecimal,
     val debtOutflow: BigDecimal,
+    val debtInflow: BigDecimal,
     val closingBalance: BigDecimal,
     val scheduledGoalContribution: BigDecimal,
     val closingBalanceWithGoalContributions: BigDecimal,

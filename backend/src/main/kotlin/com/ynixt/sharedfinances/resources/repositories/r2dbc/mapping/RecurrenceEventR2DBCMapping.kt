@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import io.r2dbc.spi.Row
 import java.time.LocalDate
@@ -28,6 +29,10 @@ class RecurrenceEventR2DBCMapping {
                 qtyLimit = row.get("${columnPrefix}qty_limit", Int::class.javaObjectType),
                 qtyExecuted = row.get("${columnPrefix}qty_executed", Int::class.javaObjectType)!!,
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
+                transferPurpose =
+                    TransferPurpose.valueOf(
+                        row.get("${columnPrefix}transfer_purpose", String::class.java) ?: TransferPurpose.GENERAL.name,
+                    ),
                 periodicity = RecurrenceType.valueOf(row.get("${columnPrefix}periodicity", String::class.java)!!),
                 seriesId = row.get("${columnPrefix}series_id", UUID::class.java)!!,
                 seriesOffset = row.get("${columnPrefix}series_offset", Int::class.javaObjectType)!!,

@@ -1,10 +1,10 @@
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { PlanningSimulationOutcomeBand } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { ONLY_DATE_FORMAT } from '../../../util/date-util';
 
-export type PlanningDebtInputForm = {
+export type PlanningExpenseInputForm = {
   amount: number | null;
   installments: number;
   firstPaymentDate: dayjs.Dayjs;
@@ -15,7 +15,9 @@ export type PlanningSimulationCurrencyPoint = {
   openingBalance: number;
   projectedCashFlow: number;
   creditCardBillOutflow: number;
-  debtOutflow: number;
+  simulatedExpenseOutflow: number;
+  debtInflow?: number;
+  debtOutflow?: number;
   closingBalance: number;
   scheduledGoalContribution: number;
   closingBalanceWithGoalContributions: number;
@@ -44,7 +46,7 @@ export type PlanningSimulationResultPayload = {
 
 type PlanningSimulationRequestPayload = {
   horizonMonths: number;
-  debts: Array<{
+  expenses: Array<{
     amount: number;
     installments: number;
     firstPaymentDate?: string;
@@ -59,7 +61,7 @@ const OUTCOME_BANDS = new Set<PlanningSimulationOutcomeBand>([
   'DOES_NOT_FIT',
 ]);
 
-export function defaultPlanningDebtForm(user: UserResponseDto, referenceDate = dayjs()): PlanningDebtInputForm {
+export function defaultPlanningExpenseForm(user: UserResponseDto, referenceDate = dayjs()): PlanningExpenseInputForm {
   return {
     amount: null,
     installments: 1,
@@ -74,25 +76,25 @@ export function normalizeHorizonMonths(value: number): number {
 
 export function buildPlanningSimulationRequestPayload(params: {
   horizonMonths: number;
-  debts: PlanningDebtInputForm[];
-  pendingDebt: PlanningDebtInputForm;
+  expenses: PlanningExpenseInputForm[];
+  pendingExpense: PlanningExpenseInputForm;
 }): PlanningSimulationRequestPayload {
   const normalizedHorizon = normalizeHorizonMonths(params.horizonMonths);
-  const allDebts = [...params.debts];
-  if ((params.pendingDebt.amount ?? 0) > 0) {
-    allDebts.push(params.pendingDebt);
+  const allExpenses = [...params.expenses];
+  if ((params.pendingExpense.amount ?? 0) > 0) {
+    allExpenses.push(params.pendingExpense);
   }
 
   return {
     horizonMonths: normalizedHorizon,
-    debts: allDebts
-      .map(debt => ({
-        amount: Number(debt.amount ?? 0),
-        installments: Math.max(1, debt.installments || 1),
-        firstPaymentDate: debt.firstPaymentDate?.format(ONLY_DATE_FORMAT) || undefined,
-        currency: debt.currency.trim() === '' ? undefined : debt.currency.trim().toUpperCase(),
+    expenses: allExpenses
+      .map(expense => ({
+        amount: Number(expense.amount ?? 0),
+        installments: Math.max(1, expense.installments || 1),
+        firstPaymentDate: expense.firstPaymentDate?.format(ONLY_DATE_FORMAT) || undefined,
+        currency: expense.currency.trim() === '' ? undefined : expense.currency.trim().toUpperCase(),
       }))
-      .filter(debt => debt.amount > 0),
+      .filter(expense => expense.amount > 0),
   };
 }
 

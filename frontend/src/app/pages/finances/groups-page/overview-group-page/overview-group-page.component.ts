@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { faPencil, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
+import { faPencil, faPeopleGroup, faScaleBalanced } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -26,6 +26,8 @@ import { GroupsActionEventService } from '../../services/groups-action-event.ser
 })
 @UntilDestroy()
 export class OverviewGroupPageComponent {
+  private readonly debtsButtonIcon = faScaleBalanced;
+
   group: GroupWithRoleDto | null = null;
   loading = true;
   submitting = false;
@@ -87,6 +89,13 @@ export class OverviewGroupPageComponent {
       rounded: true,
       tooltip: 'financesPage.groupsPage.overviewPage.manageTeam',
       icon: faPeopleGroup,
+    });
+
+    extraButtons.push({
+      routerLink: 'debts',
+      rounded: true,
+      tooltip: 'financesPage.groupsPage.overviewPage.viewDebts',
+      icon: this.debtsButtonIcon,
     });
 
     if (this.group?.permissions?.includes(GroupPermissions__Obj.EDIT_GROUP)) {

@@ -19,16 +19,16 @@ financesPage:
     deleteError: Could not remove the simulation. Please try again.
     form:
       title: Planning Simulation
-      hint: Simulate debt installments and estimate liquidity month by month before committing.
+      hint: Simulate installment expenses and estimate liquidity month by month before committing.
       horizonMonths: Horizon (months)
-      debtAmount: Debt amount
+      expenseAmount: Expense amount
       installments: Installments
       firstPaymentDate: First payment date
-      currency: Debt currency
-      addDebt: Add debt
-      pendingDebts: Debts included in this run
-      noDebts: No debts added yet.
-      removeDebt: Remove debt
+      currency: Expense currency
+      addExpense: Add expense
+      pendingExpenses: Expenses included in this run
+      noExpenses: No expenses added yet.
+      removeExpense: Remove expense
     fastPath:
       processing: Simulation is running asynchronously. Results will appear as soon as processing is complete.
       completed: Simulation finished quickly and the result is already available.
@@ -54,6 +54,8 @@ financesPage:
       opening: Opening balance
       projectedFlow: Projected flow
       cardOutflow: Card bill outflow
+      simulatedExpenseOutflow: Simulated expense outflow
+      debtInflow: Debt inflow
       debtOutflow: Debt outflow
       closing: Closing balance
       goalContribution: Scheduled goal contribution

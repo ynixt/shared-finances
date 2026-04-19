@@ -50,7 +50,9 @@ class PlanningSimulationMathTest {
                         YearMonth.of(2026, 2) to "BRL" to BigDecimal("200.00"),
                     ),
                 creditCardBillOutflowByMonthCurrency = emptyMap(),
+                simulatedExpenseOutflowByMonthCurrency = emptyMap(),
                 debtOutflowByMonthCurrency = emptyMap(),
+                debtInflowByMonthCurrency = emptyMap(),
                 scheduledGoalContributionByMonthCurrency = emptyMap(),
                 openingBoostByCurrency = emptyMap(),
             )
@@ -80,13 +82,74 @@ class PlanningSimulationMathTest {
                 openingByCurrency = mapOf("BRL" to BigDecimal("100.00")),
                 projectedByMonthCurrency = emptyMap(),
                 creditCardBillOutflowByMonthCurrency = emptyMap(),
+                simulatedExpenseOutflowByMonthCurrency = emptyMap(),
                 debtOutflowByMonthCurrency = emptyMap(),
+                debtInflowByMonthCurrency = emptyMap(),
                 scheduledGoalContributionByMonthCurrency = mapOf(month to "BRL" to BigDecimal("150.00")),
                 openingBoostByCurrency = emptyMap(),
             )
 
         assertThat(evaluation.baselineFits).isTrue()
         assertThat(evaluation.scheduledGoalTrackFits).isFalse()
+    }
+
+    @Test
+    fun `evaluateTimeline should keep simulated expenses and debt flows as separate components`() {
+        val month = YearMonth.of(2026, 4)
+        val evaluation =
+            PlanningSimulationMath.evaluateTimeline(
+                months = listOf(month),
+                currencies = setOf("BRL"),
+                openingByCurrency = mapOf("BRL" to BigDecimal("300.00")),
+                projectedByMonthCurrency = emptyMap(),
+                creditCardBillOutflowByMonthCurrency = mapOf(month to "BRL" to BigDecimal("10.00")),
+                simulatedExpenseOutflowByMonthCurrency = mapOf(month to "BRL" to BigDecimal("120.00")),
+                debtOutflowByMonthCurrency = mapOf(month to "BRL" to BigDecimal("200.00")),
+                debtInflowByMonthCurrency = mapOf(month to "BRL" to BigDecimal("50.00")),
+                scheduledGoalContributionByMonthCurrency = emptyMap(),
+                openingBoostByCurrency = emptyMap(),
+            )
+
+        assertThat(evaluation.timeline)
+            .singleElement()
+            .satisfies({ monthResult ->
+                val currency = monthResult.byCurrency.getValue("BRL")
+                assertThat(currency.simulatedExpenseOutflow).isEqualByComparingTo("120.00")
+                assertThat(currency.debtOutflow).isEqualByComparingTo("200.00")
+                assertThat(currency.debtInflow).isEqualByComparingTo("50.00")
+                assertThat(currency.closingBalance).isEqualByComparingTo("20.00")
+            })
+    }
+
+    @Test
+    fun `evaluateTimeline should apply later debt settlement only in settlement month`() {
+        val evaluation =
+            PlanningSimulationMath.evaluateTimeline(
+                months =
+                    listOf(
+                        YearMonth.of(2026, 4),
+                        YearMonth.of(2026, 5),
+                    ),
+                currencies = setOf("BRL"),
+                openingByCurrency = mapOf("BRL" to BigDecimal("100.00")),
+                projectedByMonthCurrency = emptyMap(),
+                creditCardBillOutflowByMonthCurrency = emptyMap(),
+                simulatedExpenseOutflowByMonthCurrency = emptyMap(),
+                debtOutflowByMonthCurrency =
+                    mapOf(
+                        YearMonth.of(2026, 4) to "BRL" to BigDecimal("40.00"),
+                        YearMonth.of(2026, 5) to "BRL" to BigDecimal("25.00"),
+                    ),
+                debtInflowByMonthCurrency = emptyMap(),
+                scheduledGoalContributionByMonthCurrency = emptyMap(),
+                openingBoostByCurrency = emptyMap(),
+            )
+
+        assertThat(evaluation.timeline.map { it.byCurrency.getValue("BRL").closingBalance })
+            .containsExactly(
+                BigDecimal("60.00"),
+                BigDecimal("35.00"),
+            )
     }
 
     @Test

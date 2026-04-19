@@ -12,6 +12,7 @@ financesPage:
     overviewPage:
       title: 'Visão geral do grupo: {{name}}'
       manageTeam: Gerenciar pessoas do grupo
+      viewDebts: Abrir a área de dívidas do grupo
     manageTeamPage:
       title: 'Gerenciar pessoas do grupo: {{name}}'
       role: Permissão
@@ -36,3 +37,53 @@ financesPage:
       unassociateCreditCardSuccessMessage: O cartão de crédito foi desassociada do grupo com sucesso.
     associateCreditCardsPage:
       title: 'Associar cartão de crédito ao grupo: {{name}}'
+    debtsPage:
+      title: 'Dívidas do grupo: {{name}}'
+      adjustmentPageTitle: 'Ajuste de dívida: {{name}}'
+      settlementPageTitle: 'Quitação de dívida: {{name}}'
+      balancesTitle: Saldos em aberto
+      emptyBalances: Nenhum saldo de dívida foi encontrado para este grupo.
+      outstanding: Valor em aberto
+      settleAction: Quitar
+      adjustAction: Ajustar
+      month: Mês
+      netAmount: Valor líquido
+      chargeDelta: Delta de cobrança
+      settlementDelta: Delta de quitação
+      adjustmentDelta: Delta de ajuste
+      historyTitle: Histórico de movimentos
+      createdAtColumn: Criado em
+      actorColumn: Autor
+      pair: Par
+      sourceColumn: Origem
+      reasonColumn: Motivo
+      amountColumn: Valor
+      noteColumn: Observação
+      adjustmentFormTitle: Ajuste manual
+      editCompensationHint: Editar um ajuste existente preserva o movimento original e adiciona um delta de compensação.
+      payer: Devedor
+      receiver: Credor
+      currency: Moeda
+      amount: Delta do valor
+      amountHint: Use valores positivos para aumentar a dívida e negativos para reduzi-la.
+      note: Observação
+      adjustmentContextHint: Dados da dívida carregados pelo identificador informado na URL.
+      settlementContextHint: Finalize a quitação selecionando as carteiras de origem e destino.
+      saveAdjustment: Salvar ajuste
+      settlementFormTitle: Quitação de dívida
+      originWallet: Carteira de origem
+      targetWallet: Carteira de destino
+      saveSettlement: Salvar quitação
+      adjustmentSaved: Ajuste de dívida salvo com sucesso.
+      settlementSaved: Transferência de quitação salva com sucesso.
+      settlementEntryName: Quitação de dívida
+      noSource: Sem referência de origem
+      sourceWalletEvent: 'Evento da carteira {{id}}'
+      sourceMovement: 'Movimento {{id}}'
+      reason:
+        BENEFICIARY_CHARGE: Cobrança por beneficiário
+        BENEFICIARY_REVERSAL: Estorno de beneficiário
+        DEBT_SETTLEMENT: Quitação de dívida
+        DEBT_SETTLEMENT_REVERSAL: Estorno de quitação
+        MANUAL_ADJUSTMENT: Ajuste manual
+        MANUAL_ADJUSTMENT_COMPENSATION: Compensação de ajuste manual

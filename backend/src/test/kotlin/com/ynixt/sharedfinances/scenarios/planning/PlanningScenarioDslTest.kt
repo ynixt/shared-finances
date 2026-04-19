@@ -32,7 +32,7 @@ class PlanningScenarioDslTest {
                 openingBalance(currency = "BRL", amount = 80)
                 projectedCashFlow(month = YearMonth.of(2026, 3), currency = "BRL", amount = 10)
                 projectedCashFlow(month = YearMonth.of(2026, 3), currency = "BRL", amount = 15) // multi-origin-like aggregate
-                simulatedInstallmentDebt(total = 120, installments = 3, firstMonth = YearMonth.of(2026, 3), currency = "BRL")
+                simulatedInstallmentExpense(total = 120, installments = 3, firstMonth = YearMonth.of(2026, 3), currency = "BRL")
                 committedGoalAllocation(currency = "BRL", amount = 80)
                 scheduledGoalContribution(month = YearMonth.of(2026, 4), currency = "BRL", amount = 20)
                 groupOptIn(includedMembers = 1, excludedMembers = 1)

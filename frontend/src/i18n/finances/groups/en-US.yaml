@@ -12,6 +12,7 @@ financesPage:
     overviewPage:
       title: 'Group overview: {{name}}'
       manageTeam: Manage people in the group
+      viewDebts: Open group debt workspace
     manageTeamPage:
       title: 'Manage team of group: {{name}}'
       role: Role
@@ -36,3 +37,53 @@ financesPage:
       unassociateCreditCardSuccessMessage: Credit card was successfully unassociated of the group.
     associateCreditCardsPage:
       title: 'Associate credit card to group: {{name}}'
+    debtsPage:
+      title: 'Group debts: {{name}}'
+      adjustmentPageTitle: 'Debt adjustment: {{name}}'
+      settlementPageTitle: 'Debt settlement: {{name}}'
+      balancesTitle: Outstanding balances
+      emptyBalances: No debt balances were found for this group.
+      outstanding: Outstanding amount
+      settleAction: Settle
+      adjustAction: Adjust
+      month: Month
+      netAmount: Net amount
+      chargeDelta: Charge delta
+      settlementDelta: Settlement delta
+      adjustmentDelta: Adjustment delta
+      historyTitle: Movement history
+      createdAtColumn: Created at
+      actorColumn: Actor
+      pair: Pair
+      sourceColumn: Source
+      reasonColumn: Reason
+      amountColumn: Amount
+      noteColumn: Note
+      adjustmentFormTitle: Manual adjustment
+      editCompensationHint: Editing an existing adjustment keeps the original movement and appends a compensation delta.
+      payer: Payer
+      receiver: Receiver
+      currency: Currency
+      amount: Amount delta
+      amountHint: Use positive values to increase the debt and negative values to reduce it.
+      note: Note
+      adjustmentContextHint: Debt data loaded from the identifier in the URL.
+      settlementContextHint: Complete settlement by selecting origin and target wallets.
+      saveAdjustment: Save adjustment
+      settlementFormTitle: Debt settlement
+      originWallet: Origin wallet
+      targetWallet: Target wallet
+      saveSettlement: Save settlement
+      adjustmentSaved: Debt adjustment saved.
+      settlementSaved: Debt settlement transfer saved.
+      settlementEntryName: Debt settlement
+      noSource: No source reference
+      sourceWalletEvent: 'Wallet event {{id}}'
+      sourceMovement: 'Movement {{id}}'
+      reason:
+        BENEFICIARY_CHARGE: Beneficiary charge
+        BENEFICIARY_REVERSAL: Beneficiary reversal
+        DEBT_SETTLEMENT: Debt settlement
+        DEBT_SETTLEMENT_REVERSAL: Debt settlement reversal
+        MANUAL_ADJUSTMENT: Manual adjustment
+        MANUAL_ADJUSTMENT_COMPENSATION: Manual adjustment compensation

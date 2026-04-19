@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.domain.entities.wallet.entries
 import com.ynixt.sharedfinances.domain.entities.AuditedEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Table
@@ -19,10 +20,14 @@ abstract class MinimumWalletEventEntity(
     val tags: List<String>?,
     val observations: String?,
     val paymentType: PaymentType,
+    val transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     val initialBalance: Boolean = false,
 ) : AuditedEntity() {
     @Transient
     var entries: List<MinimumWalletEntryEntity>? = null
+
+    @Transient
+    var beneficiaries: List<MinimumWalletEventBeneficiaryEntity>? = null
 }
 
 @Table("wallet_event")
@@ -39,6 +44,7 @@ class WalletEventEntity(
     val installment: Int?,
     val recurrenceEventId: UUID?,
     paymentType: PaymentType,
+    transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     initialBalance: Boolean = false,
 ) : MinimumWalletEventEntity(
         type = type,
@@ -49,6 +55,7 @@ class WalletEventEntity(
         tags = tags,
         observations = observations,
         paymentType = paymentType,
+        transferPurpose = transferPurpose,
         initialBalance = initialBalance,
     ) {
     @Transient

@@ -19,16 +19,16 @@ financesPage:
     deleteError: Não foi possível remover a simulação. Tente novamente.
     form:
       title: Simulador de planejamento
-      hint: Simule dívidas parceladas e estime a liquidez mês a mês antes de assumir o compromisso.
+      hint: Simule despesas parceladas e estime a liquidez mês a mês antes de assumir o compromisso.
       horizonMonths: Horizonte (meses)
-      debtAmount: Valor da dívida
+      expenseAmount: Valor da despesa
       installments: Parcelas
       firstPaymentDate: Primeira data de pagamento
-      currency: Moeda da dívida
-      addDebt: Adicionar dívida
-      pendingDebts: Dívidas incluídas nesta execução
-      noDebts: Nenhuma dívida adicionada ainda.
-      removeDebt: Remover dívida
+      currency: Moeda da despesa
+      addExpense: Adicionar despesa
+      pendingExpenses: Despesas incluídas nesta execução
+      noExpenses: Nenhuma despesa adicionada ainda.
+      removeExpense: Remover despesa
     fastPath:
       processing: A simulação está processando de forma assíncrona. O resultado aparecerá assim que terminar.
       completed: A simulação terminou rapidamente e o resultado já está disponível.
@@ -54,7 +54,9 @@ financesPage:
       opening: Saldo inicial
       projectedFlow: Fluxo projetado
       cardOutflow: Saída de fatura
-      debtOutflow: Saída da dívida
+      simulatedExpenseOutflow: Saída de despesa simulada
+      debtInflow: Entrada de dívida
+      debtOutflow: Saída de dívida
       closing: Saldo final
       goalContribution: Aporte agendado para meta
       closingWithGoals: Saldo final com aportes de meta

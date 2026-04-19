@@ -26,6 +26,9 @@ pageTitle:
   newGroup: Novo grupo
   editGroup: Editar grupo
   overviewGroup: Visão geral do grupo
+  groupDebts: Dívidas do grupo
+  groupDebtAdjustment: Ajuste de dívida do grupo
+  groupDebtSettlement: Quitação de dívida do grupo
   manageGroupTeam: Gerenciar pessoas do grupo
   acceptInvite: Aceitar convite
   groupBankAccounts: Contas bancárias do grupo

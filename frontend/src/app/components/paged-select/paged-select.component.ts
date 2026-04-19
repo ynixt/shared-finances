@@ -65,19 +65,24 @@ export class PagedSelectComponent extends PagedSelectControlValueAccessor<any> {
     if (value == null) return;
 
     const optionValueField = this.optionValue();
+    const dataKey = this.dataKey();
 
     if (optionValueField == null) {
-      const optionsSet = new Set(this.options);
+      const optionsKeysSet = new Set(this.options.map(o => o[dataKey]));
+      const key = value[dataKey];
 
-      if (!optionsSet.has(value)) {
+      if (!optionsKeysSet.has(key)) {
         this.options = [value, ...this.options];
+        optionsKeysSet.add(key);
       }
+
       return;
     }
 
     const optionsSet = new Set(this.options.map(option => this.getOptionComparisonValue(option)));
 
     if (!optionsSet.has(value)) {
+      optionsSet.add(value);
       this.options = [this.createFallbackOptionFromValue(value), ...this.options];
     }
   }

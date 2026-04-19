@@ -34,6 +34,7 @@ internal class NoOpGroupWalletItemRepository : GroupWalletItemRepository {
     override fun deleteAllForWalletItemsOwnedByUser(userId: UUID): Mono<Long> = Mono.just(0L)
 
     override fun findAllAllowedForGroup(
+        userId: UUID,
         groupId: UUID,
         type: WalletItemType,
     ): Flux<WalletItemEntity> = Flux.empty()

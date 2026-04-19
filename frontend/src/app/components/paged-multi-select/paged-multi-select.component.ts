@@ -56,14 +56,17 @@ export class PagedMultiSelectComponent extends PagedSelectControlValueAccessor<a
     if (value == null || value.length === 0) return;
 
     const optionValueField = this.optionValue();
+    const dataKey = this.dataKey();
 
     if (optionValueField == null) {
-      const optionsSet = new Set(this.options);
+      const optionsKeysSet = new Set(this.options.map(o => o[dataKey]));
       const missingValues: any[] = [];
 
       for (const currentValue of value) {
-        if (!optionsSet.has(currentValue)) {
-          optionsSet.add(currentValue);
+        const currentKey = currentValue[dataKey];
+
+        if (!optionsKeysSet.has(currentKey)) {
+          optionsKeysSet.add(currentKey);
           missingValues.push(currentValue);
         }
       }

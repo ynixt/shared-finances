@@ -436,6 +436,7 @@ class RecurrenceSimulationServiceImpl(
             id = null,
             type = config.type,
             name = config.name,
+            transferPurpose = config.transferPurpose,
             originValue =
                 if (config.type ==
                     com.ynixt.sharedfinances.domain.enums.WalletEntryType.TRANSFER
@@ -449,6 +450,14 @@ class RecurrenceSimulationServiceImpl(
                 },
             // Future transfer occurrences should not freeze the target-side amount before materialization.
             targetValue = null,
+            beneficiaries =
+                config.beneficiaries
+                    ?.map { beneficiary ->
+                        EventListResponse.BeneficiaryResponse(
+                            userId = beneficiary.beneficiaryUserId,
+                            benefitPercent = beneficiary.benefitPercent,
+                        )
+                    }.orEmpty(),
             entries =
                 config.entries!!.mapIndexed { index, entry ->
                     val bill = bills[index]

@@ -21,9 +21,12 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -41,6 +44,7 @@ class WalletEntryEditServiceImpl(
     walletEntryRepository: WalletEntryRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
     walletItemMapper: WalletItemMapper,
+    groupDebtService: GroupDebtService,
     groupService: GroupService,
     walletItemService: WalletItemService,
     creditCardBillService: CreditCardBillService,
@@ -48,10 +52,13 @@ class WalletEntryEditServiceImpl(
     recurrenceEventRepository: RecurrenceEventRepository,
     recurrenceSeriesRepository: RecurrenceSeriesRepository,
     recurrenceEntryRepository: RecurrenceEntryRepository,
+    walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     clock: Clock,
 ) : WalletEntryMutationSupportServiceImpl(
         walletEntryRepository = walletEntryRepository,
         walletItemMapper = walletItemMapper,
+        groupDebtService = groupDebtService,
         groupService = groupService,
         walletItemService = walletItemService,
         creditCardBillService = creditCardBillService,
@@ -59,6 +66,8 @@ class WalletEntryEditServiceImpl(
         recurrenceEventRepository = recurrenceEventRepository,
         recurrenceSeriesRepository = recurrenceSeriesRepository,
         recurrenceEntryRepository = recurrenceEntryRepository,
+        walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+        recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
         clock = clock,
     ),
     WalletEntryEditService {
@@ -571,7 +580,12 @@ class WalletEntryEditServiceImpl(
                 .asFlow()
                 .toList()
 
-        rollbackPostedImpact(existingEvent, oldEntries, recurrenceConfig)
+        rollbackPostedImpact(
+            actorUserId = userId,
+            event = existingEvent,
+            entries = oldEntries,
+            recurrenceConfig = recurrenceConfig,
+        )
 
         val eventToPersist =
             WalletEventEntity(
@@ -587,6 +601,7 @@ class WalletEntryEditServiceImpl(
                 installment = existingEvent.installment,
                 recurrenceEventId = recurrenceEventIdOverride ?: existingEvent.recurrenceEventId,
                 paymentType = preparedRequest.paymentType,
+                transferPurpose = preparedRequest.transferPurpose,
                 initialBalance = existingEvent.initialBalance,
             ).also {
                 it.id = existingEvent.id
@@ -596,6 +611,7 @@ class WalletEntryEditServiceImpl(
         val savedEvent = walletEventRepository.save(eventToPersist).awaitSingle()
 
         walletEntryRepository.deleteAllByWalletEventId(savedEvent.id!!).awaitSingle()
+        walletEventBeneficiaryRepository.deleteAllByWalletEventId(savedEvent.id!!).awaitSingle()
 
         savedEvent.entries =
             walletEntryRepository
@@ -627,7 +643,27 @@ class WalletEntryEditServiceImpl(
                     }
                 }
 
-        applyPostedImpact(savedEvent, savedEvent.entries!!.filterIsInstance<WalletEntryEntity>(), recurrenceConfig)
+        savedEvent.beneficiaries =
+            walletEventBeneficiaryRepository
+                .saveAll(
+                    requestToWalletEventBeneficiaryEntities(
+                        eventId = savedEvent.id!!,
+                        newEntryRequest = preparedRequest,
+                    ),
+                ).asFlow()
+                .toList()
+                .also { persisted ->
+                    persisted.forEach { beneficiary ->
+                        beneficiary.event = savedEvent
+                    }
+                }
+
+        applyPostedImpact(
+            actorUserId = userId,
+            event = savedEvent,
+            entries = savedEvent.entries!!.filterIsInstance<WalletEntryEntity>(),
+            recurrenceConfig = recurrenceConfig,
+        )
         return savedEvent
     }
 
@@ -970,6 +1006,7 @@ class WalletEntryEditServiceImpl(
             currentRequest.periodicity != preparedRequest.periodicity ||
             currentRequest.originBillDate != preparedRequest.originBillDate ||
             currentRequest.targetBillDate != preparedRequest.targetBillDate ||
+            !sameScheduledBeneficiaries(currentRequest, preparedRequest) ||
             normalizeTags(currentRequest.tags) != normalizeTags(preparedRequest.tags)
 
     private fun sameScheduledSources(
@@ -992,6 +1029,24 @@ class WalletEntryEditServiceImpl(
     }
 
     private fun normalizeTags(tags: List<String>?): List<String>? = tags?.ifEmpty { null }
+
+    private fun sameScheduledBeneficiaries(
+        a: NewEntryRequest,
+        b: NewEntryRequest,
+    ): Boolean {
+        if (a.groupId == null && b.groupId == null) {
+            return true
+        }
+
+        val ba = a.beneficiaries ?: return false
+        val bb = b.beneficiaries ?: return false
+        if (ba.size != bb.size) {
+            return false
+        }
+        return ba.zip(bb).all { (x, y) ->
+            x.userId == y.userId && x.benefitPercent.compareTo(y.benefitPercent) == 0
+        }
+    }
 
     private fun validateRequestedQtyLimit(
         requestedSeriesQtyTotal: Int?,

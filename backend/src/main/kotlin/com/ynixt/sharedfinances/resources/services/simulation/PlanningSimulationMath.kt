@@ -32,7 +32,9 @@ internal object PlanningSimulationMath {
         openingByCurrency: Map<String, BigDecimal>,
         projectedByMonthCurrency: Map<Pair<YearMonth, String>, BigDecimal>,
         creditCardBillOutflowByMonthCurrency: Map<Pair<YearMonth, String>, BigDecimal>,
+        simulatedExpenseOutflowByMonthCurrency: Map<Pair<YearMonth, String>, BigDecimal>,
         debtOutflowByMonthCurrency: Map<Pair<YearMonth, String>, BigDecimal>,
+        debtInflowByMonthCurrency: Map<Pair<YearMonth, String>, BigDecimal>,
         scheduledGoalContributionByMonthCurrency: Map<Pair<YearMonth, String>, BigDecimal>,
         openingBoostByCurrency: Map<String, BigDecimal>,
     ): PlanningTimelineEvaluation {
@@ -62,15 +64,28 @@ internal object PlanningSimulationMath {
                 val openingGoalTrack = asMoney(goalTrackBalanceByCurrency.getOrDefault(currency, BigDecimal.ZERO))
                 val projected = asMoney(projectedByMonthCurrency.getOrDefault(month to currency, BigDecimal.ZERO))
                 val billOutflow = asMoney(creditCardBillOutflowByMonthCurrency.getOrDefault(month to currency, BigDecimal.ZERO))
+                val simulatedExpenseOutflow =
+                    asMoney(simulatedExpenseOutflowByMonthCurrency.getOrDefault(month to currency, BigDecimal.ZERO))
                 val debtOutflow = asMoney(debtOutflowByMonthCurrency.getOrDefault(month to currency, BigDecimal.ZERO))
+                val debtInflow = asMoney(debtInflowByMonthCurrency.getOrDefault(month to currency, BigDecimal.ZERO))
                 val goalContribution = asMoney(scheduledGoalContributionByMonthCurrency.getOrDefault(month to currency, BigDecimal.ZERO))
 
-                val closing = asMoney(opening.add(projected).subtract(billOutflow).subtract(debtOutflow))
+                val closing =
+                    asMoney(
+                        opening
+                            .add(projected)
+                            .add(debtInflow)
+                            .subtract(billOutflow)
+                            .subtract(simulatedExpenseOutflow)
+                            .subtract(debtOutflow),
+                    )
                 val closingWithGoals =
                     asMoney(
                         openingGoalTrack
                             .add(projected)
+                            .add(debtInflow)
                             .subtract(billOutflow)
+                            .subtract(simulatedExpenseOutflow)
                             .subtract(debtOutflow)
                             .subtract(goalContribution),
                     )
@@ -90,7 +105,9 @@ internal object PlanningSimulationMath {
                         openingBalance = opening,
                         projectedCashFlow = projected,
                         creditCardBillOutflow = billOutflow,
+                        simulatedExpenseOutflow = simulatedExpenseOutflow,
                         debtOutflow = debtOutflow,
+                        debtInflow = debtInflow,
                         closingBalance = closing,
                         scheduledGoalContribution = goalContribution,
                         closingBalanceWithGoalContributions = closingWithGoals,

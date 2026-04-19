@@ -16,6 +16,7 @@ describe('OverviewDashboardChartsComponent', () => {
         'financesPage.overviewPage.charts.fallbackSliceLabels.individual': 'Individual',
         'financesPage.overviewPage.charts.fallbackSliceLabels.uncategorized': 'Uncategorized',
         'financesPage.overviewPage.charts.fallbackSliceLabels.others': 'Others',
+        'financesPage.overviewPage.charts.fallbackSliceLabels.sharedFinanceDebt': 'Shared finance debt',
       };
 
       return translations[key] ?? key;
@@ -65,6 +66,7 @@ describe('OverviewDashboardChartsComponent', () => {
       ],
       expenseByCategory: [
         { id: 'cat-1', label: 'Mercado', value: 25, executedValue: 15, projectedValue: 10 },
+        { id: null, label: 'PREDEFINED_SHARED_FINANCE_DEBT', value: 7, executedValue: 0, projectedValue: 7 },
         { id: null, label: 'PREDEFINED_UNCATEGORIZED', value: 5, executedValue: 2, projectedValue: 3 },
       ],
     });
@@ -75,8 +77,8 @@ describe('OverviewDashboardChartsComponent', () => {
     expect(component.cashOutByCategoryChartData().datasets[0]?.data).toEqual([35, 5]);
     expect(component.expenseByGroupChartData().labels).toEqual(['Moradia', 'Others', 'Individual']);
     expect(component.expenseByGroupChartData().datasets[0]?.data).toEqual([40, 15, 5]);
-    expect(component.expenseByCategoryChartData().labels).toEqual(['Mercado', 'Uncategorized']);
-    expect(component.expenseByCategoryChartData().datasets[0]?.data).toEqual([25, 5]);
+    expect(component.expenseByCategoryChartData().labels).toEqual(['Mercado', 'Shared finance debt', 'Uncategorized']);
+    expect(component.expenseByCategoryChartData().datasets[0]?.data).toEqual([25, 7, 5]);
   });
 
   it('reports empty state when no breakdown slices are available', () => {

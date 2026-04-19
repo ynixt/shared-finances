@@ -1,0 +1,83 @@
+@if (loading()) {
+  <div class="py-8 text-center">
+    <p-progress-spinner></p-progress-spinner>
+  </div>
+} @else if (group() != null) {
+  <div class="finances-page flex flex-col gap-6">
+    <app-finances-title-bar
+      [title]="'financesPage.groupsPage.debtsPage.settlementPageTitle' | translate: { name: group()!.name }"
+      [closeRouterLink]="['/app/groups', groupId, 'debts']"
+    ></app-finances-title-bar>
+
+    <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h3 class="text-lg font-semibold text-slate-800">{{ 'financesPage.groupsPage.debtsPage.settlementFormTitle' | translate }}</h3>
+      <p class="mt-1 text-sm text-slate-600">{{ 'financesPage.groupsPage.debtsPage.settlementContextHint' | translate }}</p>
+
+      <form [formGroup]="settlementForm" class="mt-4 flex flex-col gap-3" (ngSubmit)="submit()">
+        <div class="grid gap-2 md:grid-cols-2">
+          <label class="flex flex-col gap-2">
+            <span>{{ 'financesPage.groupsPage.debtsPage.payer' | translate }}</span>
+            <p-select
+              [options]="memberOptions()"
+              optionLabel="label"
+              optionValue="userId"
+              formControlName="payerId"
+              appendTo="body"
+            ></p-select>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span>{{ 'financesPage.groupsPage.debtsPage.receiver' | translate }}</span>
+            <p-select
+              [options]="memberOptions()"
+              optionLabel="label"
+              optionValue="userId"
+              formControlName="receiverId"
+              appendTo="body"
+            ></p-select>
+          </label>
+        </div>
+
+        <div class="grid gap-2 md:grid-cols-2">
+          <label class="flex flex-col gap-2">
+            <span>{{ 'financesPage.groupsPage.debtsPage.originWallet' | translate }}</span>
+            <p-select
+              [options]="bankAccountOptionsForUser(settlementForm.get('payerId')?.value)"
+              optionLabel="label"
+              optionValue="id"
+              formControlName="originId"
+              appendTo="body"
+            ></p-select>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span>{{ 'financesPage.groupsPage.debtsPage.targetWallet' | translate }}</span>
+            <p-select
+              [options]="bankAccountOptionsForUser(settlementForm.get('receiverId')?.value)"
+              optionLabel="label"
+              optionValue="id"
+              formControlName="targetId"
+              appendTo="body"
+            ></p-select>
+          </label>
+        </div>
+
+        <div class="grid gap-2 md:grid-cols-2">
+          <label class="flex flex-col gap-2">
+            <span>{{ 'financesPage.groupsPage.debtsPage.amount' | translate }}</span>
+            <p-input-number formControlName="amount" [min]="0.01" [showButtons]="true" fluid></p-input-number>
+          </label>
+
+          <label class="flex flex-col gap-2">
+            <span>{{ 'general.date' | translate }}</span>
+            <app-date-picker formControlName="date"></app-date-picker>
+          </label>
+        </div>
+
+        <button type="submit" pButton [loading]="saving()" [disabled]="settlementForm.invalid || !canMutate()">
+          {{ 'financesPage.groupsPage.debtsPage.saveSettlement' | translate }}
+        </button>
+      </form>
+    </section>
+  </div>
+}

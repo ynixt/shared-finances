@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.application.web.dto.walletentry
 
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -15,6 +16,8 @@ data class NewEntryDto(
     val targetId: UUID?,
     /** Required for non-transfer types (sum of percents = 100). */
     val sources: List<WalletSourceLegDto>? = null,
+    /** Group non-transfer only (sum of percents = 100). */
+    val beneficiaries: List<WalletBeneficiaryLegDto>? = null,
     val name: String?,
     val categoryId: UUID?,
     val date: LocalDate,
@@ -30,4 +33,5 @@ data class NewEntryDto(
     val originBillDate: LocalDate?,
     val targetBillDate: LocalDate?,
     val tags: List<String>?,
+    val transferPurpose: TransferPurpose? = null,
 )

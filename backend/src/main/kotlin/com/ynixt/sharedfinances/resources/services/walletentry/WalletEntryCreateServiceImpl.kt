@@ -23,9 +23,12 @@ import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -50,6 +53,9 @@ class WalletEntryCreateServiceImpl(
     recurrenceEventRepository: RecurrenceEventRepository,
     recurrenceSeriesRepository: RecurrenceSeriesRepository,
     recurrenceEntryRepository: RecurrenceEntryRepository,
+    private val groupDebtService: GroupDebtService,
+    walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
     private val walletItemMapper: WalletItemMapper,
     private val exchangeRateService: ExchangeRateService,
@@ -62,6 +68,8 @@ class WalletEntryCreateServiceImpl(
         recurrenceEventRepository = recurrenceEventRepository,
         recurrenceSeriesRepository = recurrenceSeriesRepository,
         recurrenceEntryRepository = recurrenceEntryRepository,
+        walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+        recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
         clock = clock,
     ),
     WalletEntryCreateService {
@@ -97,6 +105,19 @@ class WalletEntryCreateServiceImpl(
                         }
                     }
             }
+        val beneficiaries =
+            recurrenceEventBeneficiaryRepository
+                .findAllByWalletEventId(recurrenceConfigId)
+                .asFlow()
+                .toList()
+                .also { loaded ->
+                    event.beneficiaries =
+                        loaded.also { items ->
+                            items.forEach { beneficiary ->
+                                beneficiary.event = event
+                            }
+                        }
+                }
 
         require(event.entries!!.isNotEmpty())
 
@@ -166,6 +187,7 @@ class WalletEntryCreateServiceImpl(
                         installment = installment,
                         recurrenceEventId = event.id,
                         paymentType = event.paymentType,
+                        transferPurpose = event.transferPurpose,
                     ),
                 ).awaitSingle()
                 .also {
@@ -233,6 +255,34 @@ class WalletEntryCreateServiceImpl(
                         updateBalance(saved)
                     }
                 }
+
+        walletEventSaved.beneficiaries =
+            if (beneficiaries.isEmpty()) {
+                emptyList()
+            } else {
+                walletEventBeneficiaryRepository
+                    .saveAll(
+                        beneficiaries.map { beneficiary ->
+                            com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventBeneficiaryEntity(
+                                walletEventId = walletEventSaved.id!!,
+                                beneficiaryUserId = beneficiary.beneficiaryUserId,
+                                benefitPercent = beneficiary.benefitPercent,
+                            )
+                        },
+                    ).asFlow()
+                    .toList()
+                    .also { persisted ->
+                        persisted.forEach { beneficiary ->
+                            beneficiary.event = walletEventSaved
+                        }
+                    }
+            }
+
+        groupDebtService.applyWalletEvent(
+            actorUserId = event.createdByUserId,
+            event = walletEventSaved,
+            entries = walletEventSaved.entries!!.filterIsInstance<WalletEntryEntity>(),
+        )
 
         walletEventActionEventService.sendInsertedWalletEvent(event.createdByUserId, walletEventSaved)
 
@@ -392,6 +442,27 @@ class WalletEntryCreateServiceImpl(
 
                 updateBalance(entry)
             }
+
+            it.beneficiaries =
+                walletEventBeneficiaryRepository
+                    .saveAll(
+                        requestToWalletEventBeneficiaryEntities(
+                            eventId = requireNotNull(it.id),
+                            newEntryRequest = newEntryRequest,
+                        ),
+                    ).asFlow()
+                    .toList()
+                    .also { persisted ->
+                        persisted.forEach { beneficiary ->
+                            beneficiary.event = it
+                        }
+                    }
+
+            groupDebtService.applyWalletEvent(
+                actorUserId = userId,
+                event = it,
+                entries = it.entries!!.filterIsInstance<WalletEntryEntity>(),
+            )
         }
     }
 
@@ -406,7 +477,9 @@ class WalletEntryCreateServiceImpl(
                     userId = userId,
                     newEntryRequest = newEntryRequest,
                     qtyLimit = newEntryRequest.installments!!,
-                )
+                ).also { recurrenceEvent ->
+                    persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)
+                }
 
             PaymentType.RECURRING ->
                 requestToRecurrenceEntity(
@@ -414,7 +487,9 @@ class WalletEntryCreateServiceImpl(
                     userId = userId,
                     newEntryRequest = newEntryRequest,
                     qtyLimit = newEntryRequest.periodicityQtyLimit,
-                )
+                ).also { recurrenceEvent ->
+                    persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)
+                }
 
             else -> {
                 if (newEntryRequest.isInFuture(LocalDate.now(clock))) {
@@ -423,10 +498,32 @@ class WalletEntryCreateServiceImpl(
                         userId = userId,
                         newEntryRequest = newEntryRequest,
                         qtyLimit = 1,
-                    )
+                    ).also { recurrenceEvent ->
+                        persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)
+                    }
                 } else {
                     null
                 }
             }
         }
+
+    private suspend fun persistRecurrenceBeneficiaries(
+        recurrenceEvent: RecurrenceEventEntity,
+        newEntryRequest: NewEntryRequest,
+    ) {
+        recurrenceEvent.beneficiaries =
+            recurrenceEventBeneficiaryRepository
+                .saveAll(
+                    requestToRecurrenceBeneficiaryEntities(
+                        eventId = requireNotNull(recurrenceEvent.id),
+                        newEntryRequest = newEntryRequest,
+                    ),
+                ).asFlow()
+                .toList()
+                .also { persisted ->
+                    persisted.forEach { beneficiary ->
+                        beneficiary.event = recurrenceEvent
+                    }
+                }
+    }
 }

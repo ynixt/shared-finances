@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.BankAccountAlreadyInGroupException
+import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
@@ -13,6 +14,7 @@ import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventSer
 import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -38,8 +40,9 @@ class GroupBankAssociationServiceImpl(
                 if (hasPermission) {
                     groupWalletItemRepository
                         .findAllAllowedForGroup(
-                            groupId,
-                            WalletItemType.BANK_ACCOUNT,
+                            userId = userId,
+                            groupId = groupId,
+                            type = WalletItemType.BANK_ACCOUNT,
                         ).collectList()
                         .awaitSingle()
                         .map(bankAccountMapper::toModel)
@@ -82,6 +85,10 @@ class GroupBankAssociationServiceImpl(
                 GroupPermissions.ADD_BANK_ACCOUNT,
             ).let { hasPermission ->
                 if (hasPermission) {
+                    val walletItem = walletItemRepository.findOneById(bankAccountId).awaitSingleOrNull() ?: return false
+                    if (walletItem.type != WalletItemType.BANK_ACCOUNT) return false
+                    if (walletItem.userId != userId) throw UnauthorizedException()
+
                     try {
                         groupWalletItemRepository
                             .save(

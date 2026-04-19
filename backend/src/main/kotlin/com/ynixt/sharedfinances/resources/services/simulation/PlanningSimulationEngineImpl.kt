@@ -3,9 +3,10 @@ package com.ynixt.sharedfinances.resources.services.simulation
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
 import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningGoalTrackResult
 import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningGroupContextResult
-import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningSimulatedDebtRequest
+import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningSimulatedExpenseRequest
 import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningSimulationRequest
 import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningSimulationResult
 import com.ynixt.sharedfinances.domain.models.simulation.planning.PlanningSimulationScopeType
@@ -14,6 +15,7 @@ import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRe
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.simulation.PlanningSimulationContext
 import com.ynixt.sharedfinances.domain.services.simulation.PlanningSimulationEngine
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
@@ -35,6 +37,7 @@ class PlanningSimulationEngineImpl(
     private val groupUsersRepository: GroupUsersRepository,
     private val recurrenceSimulationService: RecurrenceSimulationService,
     private val goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository,
+    private val groupDebtService: GroupDebtService,
     private val dbClient: DatabaseClient,
     private val clock: Clock,
 ) : PlanningSimulationEngine {
@@ -71,9 +74,9 @@ class PlanningSimulationEngineImpl(
                 fromDate = startDate,
                 toDate = maxDate,
             )
-        val debtOutflowByMonthCurrency =
-            buildDebtOutflowByMonthCurrency(
-                debts = request.debts.orEmpty(),
+        val simulatedExpenseOutflowByMonthCurrency =
+            buildSimulatedExpenseOutflowByMonthCurrency(
+                expenses = request.expenses.orEmpty(),
                 fromDate = startDate,
                 toDate = maxDate,
                 bankById = bankById,
@@ -86,6 +89,12 @@ class PlanningSimulationEngineImpl(
                 toDate = maxDate,
                 inScopeBankIds = bankIds,
             )
+        val debtMonthlyCashFlowByMonthCurrency =
+            loadDebtMonthlyCashFlowByMonthCurrency(
+                scopeData = scopeData,
+                fromDate = startDate,
+                toDate = maxDate,
+            )
         val committedByCurrency =
             loadCommittedAllocationsByCurrency(
                 scopeData = scopeData,
@@ -97,7 +106,8 @@ class PlanningSimulationEngineImpl(
                 openingByCurrency.keys +
                     projectedByMonthCurrency.keys.map { it.second } +
                     creditCardBillOutflowByMonthCurrency.keys.map { it.second } +
-                    debtOutflowByMonthCurrency.keys.map { it.second } +
+                    simulatedExpenseOutflowByMonthCurrency.keys.map { it.second } +
+                    debtMonthlyCashFlowByMonthCurrency.keys.map { it.second } +
                     scheduledGoalContributionsByMonthCurrency.keys.map { it.second }
             ).toSortedSet()
 
@@ -108,7 +118,11 @@ class PlanningSimulationEngineImpl(
                 openingByCurrency = openingByCurrency,
                 projectedByMonthCurrency = projectedByMonthCurrency,
                 creditCardBillOutflowByMonthCurrency = creditCardBillOutflowByMonthCurrency,
-                debtOutflowByMonthCurrency = debtOutflowByMonthCurrency,
+                simulatedExpenseOutflowByMonthCurrency = simulatedExpenseOutflowByMonthCurrency,
+                debtOutflowByMonthCurrency =
+                    debtMonthlyCashFlowByMonthCurrency.mapValues { (_, value) -> value.debtOutflow },
+                debtInflowByMonthCurrency =
+                    debtMonthlyCashFlowByMonthCurrency.mapValues { (_, value) -> value.debtInflow },
                 scheduledGoalContributionByMonthCurrency = scheduledGoalContributionsByMonthCurrency,
                 openingBoostByCurrency = emptyMap(),
             )
@@ -120,7 +134,11 @@ class PlanningSimulationEngineImpl(
                 openingByCurrency = openingByCurrency,
                 projectedByMonthCurrency = projectedByMonthCurrency,
                 creditCardBillOutflowByMonthCurrency = creditCardBillOutflowByMonthCurrency,
-                debtOutflowByMonthCurrency = debtOutflowByMonthCurrency,
+                simulatedExpenseOutflowByMonthCurrency = simulatedExpenseOutflowByMonthCurrency,
+                debtOutflowByMonthCurrency =
+                    debtMonthlyCashFlowByMonthCurrency.mapValues { (_, value) -> value.debtOutflow },
+                debtInflowByMonthCurrency =
+                    debtMonthlyCashFlowByMonthCurrency.mapValues { (_, value) -> value.debtInflow },
                 scheduledGoalContributionByMonthCurrency = scheduledGoalContributionsByMonthCurrency,
                 openingBoostByCurrency = committedByCurrency,
             )
@@ -365,28 +383,28 @@ class PlanningSimulationEngineImpl(
         val value: BigDecimal,
     )
 
-    private fun buildDebtOutflowByMonthCurrency(
-        debts: List<PlanningSimulatedDebtRequest>,
+    private fun buildSimulatedExpenseOutflowByMonthCurrency(
+        expenses: List<PlanningSimulatedExpenseRequest>,
         fromDate: LocalDate,
         toDate: LocalDate,
         bankById: Map<UUID, WalletItemEntity>,
         knownCurrencies: Set<String>,
     ): Map<Pair<YearMonth, String>, BigDecimal> {
-        if (debts.isEmpty() || fromDate.isAfter(toDate)) {
+        if (expenses.isEmpty() || fromDate.isAfter(toDate)) {
             return emptyMap()
         }
 
         val byMonthCurrency = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
 
-        debts.forEach { debt ->
-            val total = debt.amount.abs().asMoney()
+        expenses.forEach { expense ->
+            val total = expense.amount.abs().asMoney()
             if (total.compareTo(BigDecimal.ZERO) == 0) {
                 return@forEach
             }
 
-            val currency = resolveDebtCurrency(debt, bankById, knownCurrencies)
-            val firstPaymentDate = debt.firstPaymentDate ?: fromDate
-            val installments = (debt.installments ?: 1).coerceAtLeast(1)
+            val currency = resolveExpenseCurrency(expense, bankById, knownCurrencies)
+            val firstPaymentDate = expense.firstPaymentDate ?: fromDate
+            val installments = (expense.installments ?: 1).coerceAtLeast(1)
             val installmentsPlan = PlanningSimulationMath.splitInstallments(total, installments)
 
             installmentsPlan.forEachIndexed { idx, installmentValue ->
@@ -437,6 +455,24 @@ class PlanningSimulationEngineImpl(
         }
 
         return byMonthCurrency
+    }
+
+    private suspend fun loadDebtMonthlyCashFlowByMonthCurrency(
+        scopeData: ScopeData,
+        fromDate: LocalDate,
+        toDate: LocalDate,
+    ): Map<Pair<YearMonth, String>, GroupDebtMonthlyCashFlow> {
+        val groupId = scopeData.groupIdForProjection ?: return emptyMap()
+        if (fromDate.isAfter(toDate) || scopeData.userIdsForProjection.isEmpty()) {
+            return emptyMap()
+        }
+
+        return groupDebtService.loadMonthlyCashFlow(
+            groupId = groupId,
+            scopedUserIds = scopeData.userIdsForProjection,
+            fromMonth = YearMonth.from(fromDate),
+            toMonth = YearMonth.from(toDate),
+        )
     }
 
     private suspend fun loadCommittedAllocationsByCurrency(
@@ -646,18 +682,18 @@ class PlanningSimulationEngineImpl(
         return result
     }
 
-    private fun resolveDebtCurrency(
-        debt: PlanningSimulatedDebtRequest,
+    private fun resolveExpenseCurrency(
+        expense: PlanningSimulatedExpenseRequest,
         bankById: Map<UUID, WalletItemEntity>,
         knownCurrencies: Set<String>,
     ): String =
         when {
-            debt.sourceWalletItemId != null -> bankById[debt.sourceWalletItemId]?.currency?.uppercase()
-            !debt.currency.isNullOrBlank() -> debt.currency!!.uppercase()
+            expense.sourceWalletItemId != null -> bankById[expense.sourceWalletItemId]?.currency?.uppercase()
+            !expense.currency.isNullOrBlank() -> expense.currency.uppercase()
             knownCurrencies.size == 1 -> knownCurrencies.first()
             knownCurrencies.isNotEmpty() -> knownCurrencies.first()
             else -> "USD"
-        } ?: error("Debt source wallet item was not found in planning scope: ${debt.sourceWalletItemId}")
+        } ?: error("Expense source wallet item was not found in planning scope: ${expense.sourceWalletItemId}")
 
     private fun BigDecimal.asMoney(): BigDecimal = this.setScale(2, RoundingMode.HALF_UP)
 

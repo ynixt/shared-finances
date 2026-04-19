@@ -23,7 +23,9 @@ internal class PlanningScenarioDsl(
     private val projectedByMonthCurrency = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
     private val goalContributionByMonthCurrency = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
     private val committedByCurrency = linkedMapOf<String, BigDecimal>()
+    private val simulatedExpenseOutflowByMonthCurrency = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
     private val debtOutflowByMonthCurrency = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
+    private val debtInflowByMonthCurrency = linkedMapOf<Pair<YearMonth, String>, BigDecimal>()
     private var includedMembers = 1
     private var excludedMembers = 0
 
@@ -81,7 +83,7 @@ internal class PlanningScenarioDsl(
         committedByCurrency[currency.uppercase()] = amount.setScale(2)
     }
 
-    internal fun installmentDebt(
+    internal fun installmentExpense(
         total: BigDecimal,
         installments: Int,
         firstMonth: YearMonth,
@@ -90,8 +92,29 @@ internal class PlanningScenarioDsl(
         PlanningSimulationMath.splitInstallments(total, installments).forEachIndexed { index, value ->
             val month = firstMonth.plusMonths(index.toLong())
             val key = month to currency.uppercase()
-            debtOutflowByMonthCurrency[key] = debtOutflowByMonthCurrency.getOrDefault(key, BigDecimal.ZERO).add(value).setScale(2)
+            simulatedExpenseOutflowByMonthCurrency[key] =
+                simulatedExpenseOutflowByMonthCurrency.getOrDefault(key, BigDecimal.ZERO).add(value).setScale(2)
         }
+    }
+
+    internal fun debtOutflow(
+        month: YearMonth,
+        currency: String,
+        amount: BigDecimal,
+    ) {
+        val key = month to currency.uppercase()
+        debtOutflowByMonthCurrency[key] =
+            debtOutflowByMonthCurrency.getOrDefault(key, BigDecimal.ZERO).add(amount).setScale(2)
+    }
+
+    internal fun debtInflow(
+        month: YearMonth,
+        currency: String,
+        amount: BigDecimal,
+    ) {
+        val key = month to currency.uppercase()
+        debtInflowByMonthCurrency[key] =
+            debtInflowByMonthCurrency.getOrDefault(key, BigDecimal.ZERO).add(amount).setScale(2)
     }
 
     internal fun groupMembers(
@@ -109,7 +132,9 @@ internal class PlanningScenarioDsl(
                 openingByCurrency.keys +
                     projectedByMonthCurrency.keys.map { it.second } +
                     goalContributionByMonthCurrency.keys.map { it.second } +
+                    simulatedExpenseOutflowByMonthCurrency.keys.map { it.second } +
                     debtOutflowByMonthCurrency.keys.map { it.second } +
+                    debtInflowByMonthCurrency.keys.map { it.second } +
                     committedByCurrency.keys
             ).toSet()
 
@@ -120,7 +145,9 @@ internal class PlanningScenarioDsl(
                 openingByCurrency = openingByCurrency,
                 projectedByMonthCurrency = projectedByMonthCurrency,
                 creditCardBillOutflowByMonthCurrency = emptyMap(),
+                simulatedExpenseOutflowByMonthCurrency = simulatedExpenseOutflowByMonthCurrency,
                 debtOutflowByMonthCurrency = debtOutflowByMonthCurrency,
+                debtInflowByMonthCurrency = debtInflowByMonthCurrency,
                 scheduledGoalContributionByMonthCurrency = goalContributionByMonthCurrency,
                 openingBoostByCurrency = emptyMap(),
             )
@@ -131,7 +158,9 @@ internal class PlanningScenarioDsl(
                 openingByCurrency = openingByCurrency,
                 projectedByMonthCurrency = projectedByMonthCurrency,
                 creditCardBillOutflowByMonthCurrency = emptyMap(),
+                simulatedExpenseOutflowByMonthCurrency = simulatedExpenseOutflowByMonthCurrency,
                 debtOutflowByMonthCurrency = debtOutflowByMonthCurrency,
+                debtInflowByMonthCurrency = debtInflowByMonthCurrency,
                 scheduledGoalContributionByMonthCurrency = goalContributionByMonthCurrency,
                 openingBoostByCurrency = committedByCurrency,
             )
@@ -189,13 +218,29 @@ internal class PlanningScenarioGiven internal constructor(
         dsl.committed(currency, amount.toBigDecimalSafe())
     }
 
-    fun simulatedInstallmentDebt(
+    fun simulatedInstallmentExpense(
         total: Number,
         installments: Int,
         firstMonth: YearMonth,
         currency: String,
     ) {
-        dsl.installmentDebt(total.toBigDecimalSafe(), installments, firstMonth, currency)
+        dsl.installmentExpense(total.toBigDecimalSafe(), installments, firstMonth, currency)
+    }
+
+    fun debtOutflow(
+        month: YearMonth,
+        currency: String,
+        amount: Number,
+    ) {
+        dsl.debtOutflow(month, currency, amount.toBigDecimalSafe())
+    }
+
+    fun debtInflow(
+        month: YearMonth,
+        currency: String,
+        amount: Number,
+    ) {
+        dsl.debtInflow(month, currency, amount.toBigDecimalSafe())
     }
 
     fun groupOptIn(

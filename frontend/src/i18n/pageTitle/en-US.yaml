@@ -26,6 +26,9 @@ pageTitle:
   newGroup: New group
   editGroup: Edit group
   overviewGroup: Group overview
+  groupDebts: Group debts
+  groupDebtAdjustment: Group debt adjustment
+  groupDebtSettlement: Group debt settlement
   manageGroupTeam: Manage team
   acceptInvite: Accept invite
   groupBankAccounts: Group bank accounts

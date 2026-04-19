@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.repositories.r2dbc.mapping
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import io.r2dbc.spi.Row
 import java.time.LocalDate
@@ -26,6 +27,10 @@ class WalletEventR2DBCMapping {
                 installment = row.get("${columnPrefix}installment", Int::class.javaObjectType),
                 recurrenceEventId = row.get("${columnPrefix}recurrence_event_id", UUID::class.java),
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
+                transferPurpose =
+                    TransferPurpose.valueOf(
+                        row.get("${columnPrefix}transfer_purpose", String::class.java) ?: TransferPurpose.GENERAL.name,
+                    ),
                 initialBalance = row.get("${columnPrefix}initial_balance", Boolean::class.java) ?: false,
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)

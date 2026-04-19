@@ -15,10 +15,10 @@
       <h2 class="text-base font-semibold text-slate-900">{{ 'financesPage.simulationJobs.form.title' | translate }}</h2>
       <p class="mt-1 text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.hint' | translate }}</p>
 
-      <form class="contents" novalidate [formGroup]="planningForm" (ngSubmit)="onAddDebtSubmit($event)">
+      <form class="contents" novalidate [formGroup]="planningForm" (ngSubmit)="onAddExpenseSubmit($event)">
         <div class="mt-4 grid gap-3 md:grid-cols-4">
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.debtAmount' | translate }}</span>
+            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.expenseAmount' | translate }}</span>
             <p-input-number formControlName="amount" mode="currency" [currency]="planningForm.get('currency')!.value"></p-input-number>
           </label>
 
@@ -40,29 +40,29 @@
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
           <button type="submit" pButton [disabled]="creating || planningForm.invalid">
-            {{ 'financesPage.simulationJobs.form.addDebt' | translate }}
+            {{ 'financesPage.simulationJobs.form.addExpense' | translate }}
           </button>
         </div>
       </form>
 
       <div class="mt-3">
-        <p class="mb-2 text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.pendingDebts' | translate }}</p>
-        @if (debts.length === 0) {
-          <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.noDebts' | translate }}</p>
+        <p class="mb-2 text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.pendingExpenses' | translate }}</p>
+        @if (expenses.length === 0) {
+          <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.noExpenses' | translate }}</p>
         } @else {
           <div class="flex flex-wrap gap-2">
-            @for (debt of debts; track $index) {
+            @for (expense of expenses; track $index) {
               <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
-                {{ debt.amount | localCurrency: debt.currency }} · {{ debt.installments }}x ·
-                {{ debt.firstPaymentDate | localDate: 'shortDate' }}
+                {{ expense.amount | localCurrency: expense.currency }} · {{ expense.installments }}x ·
+                {{ expense.firstPaymentDate | localDate: 'shortDate' }}
                 <button
                   pButton
                   [text]="true"
                   size="small"
                   severity="danger"
                   [disabled]="creating"
-                  (click)="removeDebt($index)"
-                  [pTooltip]="'financesPage.simulationJobs.form.removeDebt' | translate"
+                  (click)="removeExpense($index)"
+                  [pTooltip]="'financesPage.simulationJobs.form.removeExpense' | translate"
                 >
                   <fa-icon [icon]="cancelIcon"></fa-icon>
                 </button>
@@ -254,6 +254,8 @@
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.opening' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.projectedFlow' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.cardOutflow' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.simulatedExpenseOutflow' | translate }}</th>
+                        <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.debtInflow' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.debtOutflow' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.closing' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.goalContribution' | translate }}</th>
@@ -270,7 +272,9 @@
                             <td class="px-2 py-2">{{ point.openingBalance | localCurrency: currency }}</td>
                             <td class="px-2 py-2">{{ point.projectedCashFlow | localCurrency: currency }}</td>
                             <td class="px-2 py-2">{{ -point.creditCardBillOutflow | localCurrency: currency }}</td>
-                            <td class="px-2 py-2">{{ -point.debtOutflow | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ -point.simulatedExpenseOutflow | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ point.debtInflow ?? 0 | localCurrency: currency }}</td>
+                            <td class="px-2 py-2">{{ -(point.debtOutflow ?? 0) | localCurrency: currency }}</td>
                             <td class="px-2 py-2 font-semibold">{{ point.closingBalance | localCurrency: currency }}</td>
                             <td class="px-2 py-2">{{ -point.scheduledGoalContribution | localCurrency: currency }}</td>
                             <td class="px-2 py-2">{{ point.closingBalanceWithGoalContributions | localCurrency: currency }}</td>

@@ -49,6 +49,7 @@ financesPage:
         individual: Individual
         uncategorized: Uncategorized
         others: Others
+        sharedFinanceDebt: Shared finance debt
     detail:
       formula:
         balance: Balance
@@ -57,6 +58,9 @@ financesPage:
         projectedCashIn: Projected cash in
         projectedCashOut: Projected cash out
         endOfPeriodBalance: End-of-period balance
+        sharedFinanceDebtInflow: Shared finance debt receivable in period
+        sharedFinanceDebtOutflow: Shared finance debt payable in period
+        sharedFinanceDebtExpense: Shared finance debt projected in period
       sourceType:
         bankAccount: Bank account
         creditCardBill: Credit card bill

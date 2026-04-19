@@ -147,7 +147,7 @@ export class FinancesOverviewPageComponent {
       return event.group?.id != null && this.dashboardFilters.groupIds.includes(event.group.id);
     }
 
-    return event.group?.id == null;
+    return true;
   }
 
   private bumpTableRefreshKey() {

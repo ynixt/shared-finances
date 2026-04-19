@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.application.web.mapper.impl
 
 import com.ynixt.sharedfinances.application.web.dto.walletentry.EventForListDto
+import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletBeneficiaryLegDto
 import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.RecurrenceEventDtoMapper
@@ -46,7 +47,22 @@ class WalletEventDtoMapperImpl(
                 to::entries fromProperty from::entries transform {
                     it.map { item -> walletEntryDtoMapper.fromEntryResponseToDto(item) }
                 }
+                to::beneficiaries fromProperty from::beneficiaries transform {
+                    it.map { beneficiary ->
+                        WalletBeneficiaryLegDto(
+                            userId = beneficiary.userId,
+                            benefitPercent = beneficiary.benefitPercent,
+                        )
+                    }
+                }
                 to::recurrenceConfig fromProperty from::recurrenceConfig transform { it?.let { recurrenceEventDtoMapper.toDto(it) } }
+                to::transferPurpose fromProperty from::transferPurpose transform {
+                    if (from.type == WalletEntryType.TRANSFER) {
+                        it
+                    } else {
+                        null
+                    }
+                }
                 to::targetValue fromProperty from::targetValue transform {
                     if (from.id == null && from.type == WalletEntryType.TRANSFER) {
                         null

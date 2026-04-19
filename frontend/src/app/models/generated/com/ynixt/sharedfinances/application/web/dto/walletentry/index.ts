@@ -14,4 +14,5 @@ export * from './transfer-quote-dto';
 export * from './transfer-quote-request-dto';
 export * from './transfer-rate-dto';
 export * from './transfer-rate-request-dto';
+export * from './wallet-beneficiary-leg-dto';
 export * from './wallet-source-leg-dto';

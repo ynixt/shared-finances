@@ -25,6 +25,8 @@ internal class OverviewDashboardContributionServiceImpl(
         projectedCreditCardDetails: List<ProjectedCreditCardExpense>,
         executedExpenseSourceSummaries: List<OverviewExpenseSourceSummary>,
         projectedExpenseDetails: List<OverviewExpenseSourceSummary>,
+        selectedMonthProjectedDebtOutflowByCurrency: Map<String, BigDecimal>,
+        selectedMonthProjectedDebtInflowByCurrency: Map<String, BigDecimal>,
     ): Map<OverviewDashboardCardKey, List<RawDetail>> {
         val rawDetailByCardKey = linkedMapOf<OverviewDashboardCardKey, MutableList<RawDetail>>()
 
@@ -121,6 +123,59 @@ internal class OverviewDashboardContributionServiceImpl(
                 ),
             )
         }
+
+        selectedMonthProjectedDebtInflowByCurrency
+            .entries
+            .sortedBy { (currency, _) -> currency }
+            .forEach { (currency, amount) ->
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    return@forEach
+                }
+
+                addRawDetail(
+                    OverviewDashboardCardKey.PROJECTED_CASH_IN,
+                    RawDetail(
+                        sourceId = null,
+                        sourceType = OverviewDashboardDetailSourceType.FORMULA,
+                        label = PROJECTED_DEBT_INFLOW_DETAIL_LABEL,
+                        value = amount,
+                        currency = currency.uppercase(),
+                        referenceDate = selectedMonthEnd,
+                    ),
+                )
+            }
+
+        selectedMonthProjectedDebtOutflowByCurrency
+            .entries
+            .sortedBy { (currency, _) -> currency }
+            .forEach { (currency, amount) ->
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    return@forEach
+                }
+
+                addRawDetail(
+                    OverviewDashboardCardKey.PROJECTED_CASH_OUT,
+                    RawDetail(
+                        sourceId = null,
+                        sourceType = OverviewDashboardDetailSourceType.FORMULA,
+                        label = PROJECTED_DEBT_OUTFLOW_DETAIL_LABEL,
+                        value = amount,
+                        currency = currency.uppercase(),
+                        referenceDate = selectedMonthEnd,
+                    ),
+                )
+                addRawDetail(
+                    OverviewDashboardCardKey.PROJECTED_EXPENSES,
+                    RawDetail(
+                        sourceId = null,
+                        sourceType = OverviewDashboardDetailSourceType.FORMULA,
+                        label = PROJECTED_DEBT_EXPENSE_DETAIL_LABEL,
+                        value = amount,
+                        currency = currency.uppercase(),
+                        referenceDate = selectedMonthEnd,
+                    ),
+                )
+            }
 
         executedExpenseSourceSummaries.forEach { expenseSummary ->
             addRawDetail(

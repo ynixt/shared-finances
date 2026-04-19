@@ -13,6 +13,8 @@ financesPage:
       INSTALLMENT: Parcela
     category: Categoria
     value: Valor
+    originsTitle: Origens
+    originsHint: Divida a origem do dinheiro desta transação. Os porcentuais devem somar 100%.
     originValue: Valor da origem
     targetValue: Valor do destino
     targetValueDeferredHint: O valor do destino sera definido automaticamente quando a ocorrencia concreta da transferencia for criada.
@@ -31,8 +33,16 @@ financesPage:
     extraFundingSource: Origem adicional
     removeFundingSource: Remover origem
     sourcePercent: Percentual desta origem
-    addFundingSource: Adicionar outra origem
+    addFundingSource: Adicionar origem
     sourcePercentsMustEqual100: 'A soma dos percentuais das origens deve ser 100% (total atual {{sum}}%).'
+    beneficiariesTitle: Beneficiários
+    beneficiariesHint: Divida quem recebe o benefício desta transação em grupo. Os percentuais devem somar 100%.
+    addBeneficiary: Adicionar beneficiário
+    beneficiary: Beneficiário
+    removeBeneficiary: Remover beneficiário
+    beneficiaryPercent: Percentual do beneficiário
+    beneficiaryPercentsMustEqual100: 'A soma dos percentuais dos beneficiários deve ser 100% (total atual {{sum}}%).'
+    beneficiariesMustBeUnique: Cada beneficiário pode aparecer somente uma vez.
     originBill: Fatura da origem
     targetBill: Fatura do destino
     tags: Tags

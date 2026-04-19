@@ -1,15 +1,19 @@
+import { TranslateService } from '@ngx-translate/core';
+
 import dayjs from 'dayjs';
 
+import { UserSimpleDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { WalletItemSearchResponseDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
 import { EventForListDto, NewEntryDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { EntryResponseDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry/EventForListDto/entry-response-dto';
 import {
   PaymentType__Obj,
   RecurrenceType__Obj,
+  TransferPurpose__Obj,
   WalletEntryType__Obj,
 } from '../../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { ONLY_DATE_FORMAT } from '../../../../../util/date-util';
-import { NewTransactionForm, ValueType } from './transaction-form.types';
+import { NewTransactionForm, UserForBeneficiary, ValueType } from './transaction-form.types';
 
 function getTransferOriginEntry(entry: EventForListDto) {
   return entry.entries.find(item => item.value <= 0) ?? entry.entries[0];
@@ -60,10 +64,16 @@ export interface ExtraSourceLegInit {
   bill?: Date;
 }
 
+export interface ExtraBeneficiaryLegInit {
+  benefitPercent: number;
+  userId: string;
+}
+
 export interface TransactionFormHydration {
   patch: Partial<NewTransactionForm['value']>;
   primaryOriginContributionPercent: number;
   extraSourceLegs: ExtraSourceLegInit[];
+  beneficiaryLegs: ExtraBeneficiaryLegInit[];
 }
 
 export function getEditableValueFromEvent(entry: EventForListDto): number {
@@ -102,6 +112,7 @@ export function mapEventToTransactionFormPatch(entry: EventForListDto): Transact
         confirmed: entry.confirmed,
         observations: entry.observations ?? undefined,
         paymentType: paymentType,
+        transferPurpose: entry.transferPurpose ?? TransferPurpose__Obj.GENERAL,
         installments: isInstallment ? (recurrence?.qtyLimit ?? entry.installment ?? undefined) : undefined,
         periodicity: recurrence?.periodicity ?? RecurrenceType__Obj.MONTHLY,
         valueType: isInstallment ? ValueType.INSTALLMENT : ValueType.TOTAL,
@@ -112,16 +123,26 @@ export function mapEventToTransactionFormPatch(entry: EventForListDto): Transact
       },
       primaryOriginContributionPercent: 100,
       extraSourceLegs: [],
+      beneficiaryLegs: [],
     };
   }
 
   const percents = resolveContributionPercents(entry.entries);
   const first = entry.entries[0]!;
   const rest = entry.entries.slice(1);
+
   const extraSourceLegs: ExtraSourceLegInit[] = rest.map((e, i) => ({
     walletItem: e.walletItem as WalletItemSearchResponseDto,
     contributionPercent: percents[i + 1]!,
     bill: e.billDate == null ? undefined : dayjs(e.billDate).toDate(),
+  }));
+
+  const beneficiaries =
+    entry.beneficiaries.length > 0 ? entry.beneficiaries : entry.user?.id != null ? [{ userId: entry.user.id, benefitPercent: 100 }] : [];
+
+  const beneficiaryLegs: ExtraBeneficiaryLegInit[] = beneficiaries.map(beneficiary => ({
+    userId: beneficiary.userId,
+    benefitPercent: beneficiary.benefitPercent,
   }));
 
   return {
@@ -138,6 +159,7 @@ export function mapEventToTransactionFormPatch(entry: EventForListDto): Transact
       confirmed: entry.confirmed,
       observations: entry.observations ?? undefined,
       paymentType: paymentType,
+      transferPurpose: entry.transferPurpose ?? TransferPurpose__Obj.GENERAL,
       installments: isInstallment ? (recurrence?.qtyLimit ?? entry.installment ?? undefined) : undefined,
       periodicity: recurrence?.periodicity ?? RecurrenceType__Obj.MONTHLY,
       valueType: isInstallment ? ValueType.INSTALLMENT : ValueType.TOTAL,
@@ -148,6 +170,7 @@ export function mapEventToTransactionFormPatch(entry: EventForListDto): Transact
     },
     primaryOriginContributionPercent: percents[0]!,
     extraSourceLegs,
+    beneficiaryLegs,
   };
 }
 
@@ -168,6 +191,7 @@ export function mapTransactionFormToNewEntryDto(
 
   if (formValue.type === WalletEntryType__Obj.TRANSFER) {
     return {
+      beneficiaries: null,
       categoryId: formValue.category?.id,
       confirmed: formValue.confirmed ?? false,
       date: dayjs(formValue.date!!).format(ONLY_DATE_FORMAT),
@@ -178,6 +202,7 @@ export function mapTransactionFormToNewEntryDto(
       originBillDate: formValue.originBill == null ? null : dayjs(formValue.originBill).format(ONLY_DATE_FORMAT),
       originId: formValue.origin!!.id,
       paymentType: formValue.paymentType!!,
+      transferPurpose: formValue.transferPurpose ?? TransferPurpose__Obj.GENERAL,
       periodicity: formValue.paymentType == PaymentType__Obj.UNIQUE ? RecurrenceType__Obj.SINGLE : formValue.periodicity,
       periodicityQtyLimit: formValue.periodicityQtyLimit,
       tags: formValue.tags,
@@ -205,8 +230,22 @@ export function mapTransactionFormToNewEntryDto(
       billDate: leg.bill == null ? null : dayjs(leg.bill).format(ONLY_DATE_FORMAT),
     })),
   ];
+  const beneficiaries =
+    formValue.group?.id == null || formValue.primaryBeneficiaryUser == null
+      ? null
+      : [
+          {
+            userId: formValue.primaryBeneficiaryUser?.id,
+            benefitPercent: parseFloat(Number(formValue.primaryBeneficiaryPercent ?? 100).toFixed(2)),
+          },
+          ...((formValue.extraBeneficiaryLegs ?? []).map(leg => ({
+            userId: leg.userId!,
+            benefitPercent: parseFloat(Number(leg.benefitPercent ?? 0).toFixed(2)),
+          })) ?? []),
+        ];
 
   return {
+    beneficiaries,
     categoryId: formValue.category?.id,
     confirmed: formValue.confirmed ?? false,
     date: dayjs(formValue.date!!).format(ONLY_DATE_FORMAT),
@@ -217,6 +256,7 @@ export function mapTransactionFormToNewEntryDto(
     originBillDate: null,
     originId: null,
     paymentType: formValue.paymentType!!,
+    transferPurpose: formValue.transferPurpose ?? TransferPurpose__Obj.GENERAL,
     periodicity: formValue.paymentType == PaymentType__Obj.UNIQUE ? RecurrenceType__Obj.SINGLE : formValue.periodicity,
     periodicityQtyLimit: formValue.periodicityQtyLimit,
     sources,
@@ -227,5 +267,15 @@ export function mapTransactionFormToNewEntryDto(
     value: normalizedValue,
     originValue: null,
     targetValue: null,
+  };
+}
+
+export function convertUserToUserForBeneficiary(user: UserSimpleDto, translateService: TranslateService): UserForBeneficiary {
+  return {
+    ...user,
+    label: translateService.instant('name.fullName', {
+      lastName: user.lastName,
+      firstName: user.firstName,
+    }),
   };
 }

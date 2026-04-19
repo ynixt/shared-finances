@@ -73,6 +73,11 @@ export const defaultCategories: NewCategoryDto[] = [
     color: '#F39C12',
     parentId: null,
   },
+  {
+    name: 'defaultCategories.debtSf',
+    color: '#f31261',
+    parentId: null,
+  },
 ];
 
 export const getDefaultCategoriesTranslated = (translateService: TranslateService) => {

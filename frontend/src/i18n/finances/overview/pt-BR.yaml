@@ -49,6 +49,7 @@ financesPage:
         individual: Individual
         uncategorized: Não categorizado
         others: Outros
+        sharedFinanceDebt: Dívida SF
     detail:
       formula:
         balance: Saldo
@@ -57,6 +58,9 @@ financesPage:
         projectedCashIn: Entrada projetada do período
         projectedCashOut: Saída projetada do período
         endOfPeriodBalance: Saldo no fim do período
+        sharedFinanceDebtInflow: Dívida SF a receber no período
+        sharedFinanceDebtOutflow: Dívida SF a pagar no período
+        sharedFinanceDebtExpense: Dívida SF projetada no período
       sourceType:
         bankAccount: Conta bancária
         creditCardBill: Fatura do cartão

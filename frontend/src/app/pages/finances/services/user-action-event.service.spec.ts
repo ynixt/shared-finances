@@ -115,6 +115,33 @@ describe('UserActionEventService', () => {
     expect(deleted).toEqual(['tx-delete']);
   });
 
+  it('emits group-scoped wallet events in transaction observable', async () => {
+    environment.singleSsePerBrowser = false;
+    const coordinator = buildCoordinatorMock();
+    const service = new UserActionEventService(
+      { token$: of('token-1') } as unknown as TokenStateService,
+      buildZoneMock() as unknown as NgZone,
+      coordinator as unknown as SingleSseCoordinatorService,
+    );
+
+    const updated: string[] = [];
+    service.transactionUpdated$.subscribe(event => updated.push(event.id ?? ''));
+
+    await flushAsyncWork();
+    const onMessage = eventSourceHarness.handlers[0]?.onMessage;
+    expect(onMessage).toBeTruthy();
+
+    onMessage?.({
+      id: 'evt-group-update',
+      event: 'WALLET_EVENT',
+      data: JSON.stringify({ id: 'evt-group-update', type: 'UPDATE', groupId: 'group-1', data: { id: 'tx-group-update' } }),
+    });
+
+    await flushAsyncWork();
+
+    expect(updated).toEqual(['tx-group-update']);
+  });
+
   it('delivers transaction updates from cross-tab broadcast when follower', async () => {
     environment.singleSsePerBrowser = true;
     const coordinator = buildCoordinatorMock('follower');

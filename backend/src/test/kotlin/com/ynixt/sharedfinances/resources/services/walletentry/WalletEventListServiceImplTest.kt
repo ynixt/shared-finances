@@ -35,6 +35,8 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
+import com.ynixt.sharedfinances.scenarios.support.inMemoryRecurrenceEventBeneficiaryRepository
+import com.ynixt.sharedfinances.scenarios.support.inMemoryWalletEventBeneficiaryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryCreditCardBillRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceSeriesRepository
@@ -683,6 +685,8 @@ class WalletEventListServiceImplTest {
             recurrenceSeriesRepository = InMemoryRecurrenceSeriesRepository(),
             recurrenceSimulationService = recurrenceSimulationService(simulatedEvents),
             recurrenceService = noOpRecurrenceService(),
+            walletEventBeneficiaryRepository = inMemoryWalletEventBeneficiaryRepository(),
+            recurrenceEventBeneficiaryRepository = inMemoryRecurrenceEventBeneficiaryRepository(),
         )
 
     private fun saveEvent(

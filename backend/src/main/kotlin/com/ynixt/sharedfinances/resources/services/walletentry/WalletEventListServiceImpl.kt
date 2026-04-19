@@ -29,6 +29,8 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -52,6 +54,8 @@ class WalletEventListServiceImpl(
     private val recurrenceSeriesRepository: RecurrenceSeriesRepository,
     private val recurrenceSimulationService: RecurrenceSimulationService,
     private val recurrenceService: RecurrenceService,
+    private val walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    private val recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
 ) : WalletEventListService {
     override suspend fun list(
         userId: UUID,
@@ -217,6 +221,16 @@ class WalletEventListServiceImpl(
                         entry.event = event
                     }
                 }
+        event.beneficiaries =
+            walletEventBeneficiaryRepository
+                .findAllByWalletEventId(walletEventId)
+                .asFlow()
+                .toList()
+                .also { loaded ->
+                    loaded.forEach { beneficiary ->
+                        beneficiary.event = event
+                    }
+                }
 
         return convertEntityToEntryListResponse(event)
     }
@@ -260,6 +274,16 @@ class WalletEventListServiceImpl(
                     entry.event = config
                 }
             }
+        config.beneficiaries =
+            recurrenceEventBeneficiaryRepository
+                .findAllByWalletEventId(recurrenceConfigId)
+                .asFlow()
+                .toList()
+                .also { loaded ->
+                    loaded.forEach { beneficiary ->
+                        beneficiary.event = config
+                    }
+                }
 
         val walletItemsById =
             walletItemService
@@ -432,8 +456,17 @@ class WalletEventListServiceImpl(
                     recurrenceConfigId = event.recurrenceEventId,
                     recurrenceConfig = event.recurrenceEventId?.let { recurrenceConfigById[it] },
                     currency = requireNotNull(walletItemById[entries.first().walletItemId]).currency,
+                    transferPurpose = event.transferPurpose,
                     originValue = originValue,
                     targetValue = targetValue,
+                    beneficiaries =
+                        event.beneficiaries
+                            ?.map { beneficiary ->
+                                EventListResponse.BeneficiaryResponse(
+                                    userId = beneficiary.beneficiaryUserId,
+                                    benefitPercent = beneficiary.benefitPercent,
+                                )
+                            }.orEmpty(),
                 )
             }
 
