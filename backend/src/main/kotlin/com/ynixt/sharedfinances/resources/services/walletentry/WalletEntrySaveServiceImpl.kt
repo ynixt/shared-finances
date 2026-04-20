@@ -12,8 +12,10 @@ import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.TransferPurpose
+import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.exceptions.http.CategoryNotFoundException
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupNotFoundException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidDebtSettlementException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletBeneficiarySplitException
@@ -36,6 +38,8 @@ import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
@@ -54,6 +58,8 @@ import java.util.UUID
 abstract class WalletEntrySaveServiceImpl(
     protected val groupService: GroupService,
     protected val walletItemService: WalletItemService,
+    protected val genericCategoryService: GenericCategoryService,
+    protected val categoryConceptService: CategoryConceptService,
     protected val creditCardBillService: CreditCardBillService,
     protected val recurrenceService: RecurrenceService,
     protected val recurrenceEventRepository: RecurrenceEventRepository,
@@ -78,15 +84,17 @@ abstract class WalletEntrySaveServiceImpl(
         newEntryRequest: NewEntryRequest,
     ): NewEntryRequest {
         val withGroup = newEntryRequest.attachGroup(userId)
+        val withNormalizedDebtCategory = withGroup.normalizeDebtSettlementCategory()
+        val withCategory = withNormalizedDebtCategory.attachCategory()
 
-        return if (withGroup.type == WalletEntryType.TRANSFER) {
-            withGroup
+        return if (withCategory.type == WalletEntryType.TRANSFER) {
+            withCategory
                 .attachOriginForTransfer()
                 .attachTarget()
                 .attachOriginBill()
                 .attachTargetBill()
         } else {
-            withGroup
+            withCategory
                 .attachResolvedSourceLegs()
                 .attachResolvedBeneficiaries(userId)
         }
@@ -652,6 +660,49 @@ abstract class WalletEntrySaveServiceImpl(
             onFound = { group -> copy(group = group) },
             onNotFound = { groupId -> GroupNotFoundException(groupId) },
         )
+
+    private suspend fun NewEntryRequest.normalizeDebtSettlementCategory(): NewEntryRequest {
+        if (type != WalletEntryType.TRANSFER || transferPurpose != TransferPurpose.DEBT_SETTLEMENT) {
+            return this
+        }
+
+        val currentGroupId =
+            groupId
+                ?: throw InvalidDebtSettlementException("Debt settlement transfer must be scoped to a group")
+        val debtConceptId = categoryConceptService.findRequiredByCode(WalletCategoryConceptCode.DEBT_SF).id!!
+        val debtCategories =
+            genericCategoryService.findAllByGroupIdAndConceptId(
+                groupId = currentGroupId,
+                conceptId = debtConceptId,
+            )
+
+        if (debtCategories.isEmpty()) {
+            throw InvalidDebtSettlementException("Group $currentGroupId has no DEBT_SF category configured")
+        }
+        if (debtCategories.size > 1) {
+            throw InvalidDebtSettlementException("Group $currentGroupId has multiple DEBT_SF categories configured")
+        }
+
+        val resolvedCategory = debtCategories.single()
+
+        return copy(
+            categoryId = resolvedCategory.id,
+            category = resolvedCategory,
+        )
+    }
+
+    private suspend fun NewEntryRequest.attachCategory(): NewEntryRequest {
+        if (category != null || categoryId == null) {
+            return this
+        }
+
+        return attachOptional(
+            id = categoryId,
+            fetch = { id -> genericCategoryService.findById(id) },
+            onFound = { found -> copy(category = found) },
+            onNotFound = { id -> CategoryNotFoundException(id) },
+        )
+    }
 
     private suspend fun NewEntryRequest.attachOriginForTransfer(): NewEntryRequest =
         attachRequired(

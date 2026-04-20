@@ -67,6 +67,12 @@ class WalletEventListServiceImpl(
 
         val requestedWalletItemIds = (request.bankAccountIds + request.creditCardIds).toSet()
         val requestedEntryTypes = request.entryTypes
+        val selectedCategoryConceptIds = resolveSelectedCategoryConceptIds(userId = userId, categoryIds = request.categoryIds)
+
+        if (request.categoryIds.isNotEmpty() && selectedCategoryConceptIds.isEmpty() && !request.includeUncategorized) {
+            return CursorPage.empty()
+        }
+
         val queryScope = buildQueryScope(userId = userId, request = request)
 
         val now = LocalDate.now()
@@ -83,6 +89,8 @@ class WalletEventListServiceImpl(
                         userIds = request.userIds,
                         walletItemIds = requestedWalletItemIds,
                         entryTypes = requestedEntryTypes,
+                        categoryConceptIds = selectedCategoryConceptIds,
+                        includeUncategorized = request.includeUncategorized,
                     )
                 } else {
                     recurrenceSimulationService.simulateGenerationWithFilters(
@@ -95,6 +103,8 @@ class WalletEventListServiceImpl(
                         userIds = request.userIds,
                         walletItemIds = requestedWalletItemIds,
                         entryTypes = requestedEntryTypes,
+                        categoryConceptIds = selectedCategoryConceptIds,
+                        includeUncategorized = request.includeUncategorized,
                     )
                 }
         }
@@ -120,6 +130,8 @@ class WalletEventListServiceImpl(
                     walletItemId = request.walletItemId,
                     walletItemIds = requestedWalletItemIds,
                     entryTypes = requestedEntryTypes,
+                    categoryConceptIds = selectedCategoryConceptIds,
+                    includeUncategorized = request.includeUncategorized,
                     minimumDate = request.minimumDate,
                     maximumDate = request.maximumDate,
                     billId = request.billId,
@@ -152,6 +164,38 @@ class WalletEventListServiceImpl(
                     },
             )
         }
+    }
+
+    private suspend fun resolveSelectedCategoryConceptIds(
+        userId: UUID,
+        categoryIds: Set<UUID>,
+    ): Set<UUID> {
+        if (categoryIds.isEmpty()) {
+            return emptySet()
+        }
+
+        val categories = genericCategoryService.findAllByIdIn(categoryIds).toList()
+        if (categories.isEmpty()) {
+            return emptySet()
+        }
+
+        val groupPermissionById =
+            categories
+                .mapNotNull { it.groupId }
+                .toSet()
+                .associateWith { groupId ->
+                    groupPermissionService.hasPermission(
+                        userId = userId,
+                        groupId = groupId,
+                    )
+                }
+
+        return categories
+            .filter { category ->
+                category.userId == userId ||
+                    (category.groupId != null && groupPermissionById[category.groupId] == true)
+            }.map { it.conceptId }
+            .toSet()
     }
 
     private suspend fun validateScopeBeforeSelect(

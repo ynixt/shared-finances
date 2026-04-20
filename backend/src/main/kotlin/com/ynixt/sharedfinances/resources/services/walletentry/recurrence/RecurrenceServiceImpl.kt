@@ -81,6 +81,8 @@ class RecurrenceServiceImpl(
                     walletItemId = null,
                     walletItemIds = emptySet(),
                     entryTypes = emptySet(),
+                    categoryConceptIds = emptySet(),
+                    includeUncategorized = false,
                     sort = sort,
                 ).asFlow()
         }
@@ -110,6 +112,8 @@ class RecurrenceServiceImpl(
         userIds: Set<UUID>,
         groupIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         sort: Sort,
     ): Flow<RecurrenceEventEntity> {
         val scope =
@@ -132,6 +136,8 @@ class RecurrenceServiceImpl(
                 walletItemId = walletItemId,
                 walletItemIds = walletItemIds,
                 entryTypes = entryTypes,
+                categoryConceptIds = categoryConceptIds,
+                includeUncategorized = includeUncategorized,
                 sort = sort,
             ).asFlow()
     }

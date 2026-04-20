@@ -51,6 +51,8 @@ interface RecurrenceService {
         userIds: Set<UUID> = emptySet(),
         groupIds: Set<UUID> = emptySet(),
         entryTypes: Set<WalletEntryType> = emptySet(),
+        categoryConceptIds: Set<UUID> = emptySet(),
+        includeUncategorized: Boolean = false,
         sort: Sort = Sort.unsorted(),
     ): Flow<RecurrenceEventEntity>
 

@@ -19,6 +19,8 @@ financesPage:
       bankAccounts: Contas bancárias
       creditCards: Cartões de crédito
       entryTypes: Tipo de transação
+      categories: Categorias
+      itemsNotCategorized: Itens não categorizados
       noOptions: Sem opções disponíveis
     cards:
       balance: Saldo

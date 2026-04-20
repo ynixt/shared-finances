@@ -2,10 +2,14 @@ package com.ynixt.sharedfinances.resources.services.walletentry
 
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryConceptEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
+import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptKind
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidDebtSettlementException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletBeneficiarySplitException
@@ -21,11 +25,14 @@ import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -43,6 +50,12 @@ import java.time.ZoneOffset
 import java.util.UUID
 
 class WalletEntrySaveServiceImplTest {
+    private enum class DebtCategoryMode {
+        SINGLE,
+        NONE,
+        DUPLICATED,
+    }
+
     @Test
     fun `prepareMutationRequest should default group beneficiaries to author`() =
         runBlocking {
@@ -158,9 +171,120 @@ class WalletEntrySaveServiceImplTest {
         }.isInstanceOf(InvalidDebtSettlementException::class.java)
     }
 
+    @Test
+    fun `prepareMutationRequest should force group DEBT_SF category for debt settlement`() =
+        runBlocking {
+            val actorUserId = UUID.randomUUID()
+            val receiverUserId = UUID.randomUUID()
+            val origin = bankAccount(id = UUID.randomUUID(), userId = actorUserId, currency = "BRL")
+            val target = bankAccount(id = UUID.randomUUID(), userId = receiverUserId, currency = "BRL")
+            val fixture =
+                Fixture(
+                    items = listOf(origin, target),
+                    members = listOf(actorUserId, receiverUserId),
+                )
+
+            val prepared =
+                fixture.service.prepare(
+                    userId = actorUserId,
+                    request =
+                        NewEntryRequest(
+                            type = WalletEntryType.TRANSFER,
+                            groupId = fixture.groupId,
+                            originId = requireNotNull(origin.id),
+                            targetId = requireNotNull(target.id),
+                            categoryId = UUID.randomUUID(),
+                            name = "Debt settlement",
+                            date = LocalDate.of(2026, 4, 10),
+                            originValue = BigDecimal("25.00"),
+                            targetValue = BigDecimal("25.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.UNIQUE,
+                            transferPurpose = TransferPurpose.DEBT_SETTLEMENT,
+                        ),
+                )
+
+            assertThat(prepared.categoryId).isEqualTo(UUID.fromString("00000000-0000-0000-0000-00000000ca71"))
+        }
+
+    @Test
+    fun `prepareMutationRequest should fail when group has no DEBT_SF category`() {
+        val actorUserId = UUID.randomUUID()
+        val receiverUserId = UUID.randomUUID()
+        val origin = bankAccount(id = UUID.randomUUID(), userId = actorUserId, currency = "BRL")
+        val target = bankAccount(id = UUID.randomUUID(), userId = receiverUserId, currency = "BRL")
+        val fixture =
+            Fixture(
+                items = listOf(origin, target),
+                members = listOf(actorUserId, receiverUserId),
+                debtCategoryMode = DebtCategoryMode.NONE,
+            )
+
+        assertThatThrownBy {
+            runBlocking {
+                fixture.service.prepare(
+                    userId = actorUserId,
+                    request =
+                        NewEntryRequest(
+                            type = WalletEntryType.TRANSFER,
+                            groupId = fixture.groupId,
+                            originId = requireNotNull(origin.id),
+                            targetId = requireNotNull(target.id),
+                            name = "Debt settlement",
+                            date = LocalDate.of(2026, 4, 10),
+                            originValue = BigDecimal("25.00"),
+                            targetValue = BigDecimal("25.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.UNIQUE,
+                            transferPurpose = TransferPurpose.DEBT_SETTLEMENT,
+                        ),
+                )
+            }
+        }.isInstanceOf(InvalidDebtSettlementException::class.java)
+            .hasMessageContaining("has no DEBT_SF category configured")
+    }
+
+    @Test
+    fun `prepareMutationRequest should fail when group has duplicate DEBT_SF categories`() {
+        val actorUserId = UUID.randomUUID()
+        val receiverUserId = UUID.randomUUID()
+        val origin = bankAccount(id = UUID.randomUUID(), userId = actorUserId, currency = "BRL")
+        val target = bankAccount(id = UUID.randomUUID(), userId = receiverUserId, currency = "BRL")
+        val fixture =
+            Fixture(
+                items = listOf(origin, target),
+                members = listOf(actorUserId, receiverUserId),
+                debtCategoryMode = DebtCategoryMode.DUPLICATED,
+            )
+
+        assertThatThrownBy {
+            runBlocking {
+                fixture.service.prepare(
+                    userId = actorUserId,
+                    request =
+                        NewEntryRequest(
+                            type = WalletEntryType.TRANSFER,
+                            groupId = fixture.groupId,
+                            originId = requireNotNull(origin.id),
+                            targetId = requireNotNull(target.id),
+                            name = "Debt settlement",
+                            date = LocalDate.of(2026, 4, 10),
+                            originValue = BigDecimal("25.00"),
+                            targetValue = BigDecimal("25.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.UNIQUE,
+                            transferPurpose = TransferPurpose.DEBT_SETTLEMENT,
+                        ),
+                )
+            }
+        }.isInstanceOf(InvalidDebtSettlementException::class.java)
+            .hasMessageContaining("has multiple DEBT_SF categories configured")
+    }
+
     private class Fixture(
         items: List<WalletItem>,
         members: List<UUID>,
+        debtCategoryMode: DebtCategoryMode = DebtCategoryMode.SINGLE,
     ) {
         val groupId: UUID = UUID.randomUUID()
         private val group =
@@ -186,6 +310,8 @@ class WalletEntrySaveServiceImplTest {
             TestWalletEntrySaveService(
                 groupService = FakeGroupService(group, groupMembers),
                 walletItemService = FakeWalletItemService(items.associateBy { requireNotNull(it.id) }),
+                genericCategoryService = FakeGenericCategoryService(groupId, debtCategoryMode),
+                categoryConceptService = FakeCategoryConceptService(),
                 creditCardBillService = mock(CreditCardBillService::class.java),
                 recurrenceService = mock(RecurrenceService::class.java),
                 recurrenceEventRepository = mock(RecurrenceEventRepository::class.java),
@@ -199,6 +325,8 @@ class WalletEntrySaveServiceImplTest {
     private class TestWalletEntrySaveService(
         groupService: GroupService,
         walletItemService: WalletItemService,
+        genericCategoryService: GenericCategoryService,
+        categoryConceptService: CategoryConceptService,
         creditCardBillService: CreditCardBillService,
         recurrenceService: RecurrenceService,
         recurrenceEventRepository: RecurrenceEventRepository,
@@ -209,6 +337,8 @@ class WalletEntrySaveServiceImplTest {
     ) : WalletEntrySaveServiceImpl(
             groupService = groupService,
             walletItemService = walletItemService,
+            genericCategoryService = genericCategoryService,
+            categoryConceptService = categoryConceptService,
             creditCardBillService = creditCardBillService,
             recurrenceService = recurrenceService,
             recurrenceEventRepository = recurrenceEventRepository,
@@ -222,6 +352,80 @@ class WalletEntrySaveServiceImplTest {
             userId: UUID,
             request: NewEntryRequest,
         ): NewEntryRequest = prepareMutationRequest(userId, request)
+    }
+
+    private class FakeCategoryConceptService : CategoryConceptService {
+        private val debtConcept =
+            WalletCategoryConceptEntity(
+                kind = WalletCategoryConceptKind.PREDEFINED,
+                code = WalletCategoryConceptCode.DEBT_SF,
+                displayName = null,
+            ).also { it.id = UUID.fromString("00000000-0000-0000-0000-00000000debf") }
+
+        override suspend fun findById(id: UUID): WalletCategoryConceptEntity? = if (id == debtConcept.id) debtConcept else null
+
+        override suspend fun findRequiredByCode(code: WalletCategoryConceptCode): WalletCategoryConceptEntity = debtConcept
+
+        override suspend fun listAvailableForUser(userId: UUID): List<WalletCategoryConceptEntity> = listOf(debtConcept)
+
+        override suspend fun resolveForMutation(
+            conceptId: UUID?,
+            customConceptName: String?,
+        ): WalletCategoryConceptEntity = debtConcept
+
+        override suspend fun cleanupOrphanedCustomConcept(conceptId: UUID): Boolean = false
+    }
+
+    private class FakeGenericCategoryService(
+        groupId: UUID,
+        debtCategoryMode: DebtCategoryMode,
+    ) : GenericCategoryService {
+        private val debtCategories: List<WalletEntryCategoryEntity> =
+            when (debtCategoryMode) {
+                DebtCategoryMode.SINGLE ->
+                    listOf(
+                        debtCategory(
+                            id = UUID.fromString("00000000-0000-0000-0000-00000000ca71"),
+                            groupId = groupId,
+                        ),
+                    )
+                DebtCategoryMode.NONE -> emptyList()
+                DebtCategoryMode.DUPLICATED ->
+                    listOf(
+                        debtCategory(
+                            id = UUID.fromString("00000000-0000-0000-0000-00000000ca71"),
+                            groupId = groupId,
+                        ),
+                        debtCategory(
+                            id = UUID.fromString("00000000-0000-0000-0000-00000000ca72"),
+                            groupId = groupId,
+                        ),
+                    )
+            }
+
+        override suspend fun findById(id: UUID): WalletEntryCategoryEntity? = debtCategories.firstOrNull { it.id == id }
+
+        override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> =
+            ids
+                .mapNotNull { categoryId -> debtCategories.firstOrNull { it.id == categoryId } }
+                .asFlow()
+
+        override suspend fun findAllByGroupIdAndConceptId(
+            groupId: UUID,
+            conceptId: UUID,
+        ): List<WalletEntryCategoryEntity> = debtCategories.filter { it.groupId == groupId && it.conceptId == conceptId }
+
+        private fun debtCategory(
+            id: UUID,
+            groupId: UUID,
+        ) = WalletEntryCategoryEntity(
+            name = "Debt SF",
+            color = "#f31261",
+            userId = null,
+            groupId = groupId,
+            parentId = null,
+            conceptId = UUID.fromString("00000000-0000-0000-0000-00000000debf"),
+        ).also { it.id = id }
     }
 
     private class FakeWalletItemService(

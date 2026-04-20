@@ -143,11 +143,28 @@ export class FinancesOverviewPageComponent {
       return false;
     }
 
+    if (!this.matchesCategoryFilters(event)) {
+      return false;
+    }
+
     if (this.dashboardFilters.groupIds.length > 0) {
       return event.group?.id != null && this.dashboardFilters.groupIds.includes(event.group.id);
     }
 
     return true;
+  }
+
+  private matchesCategoryFilters(event: EventForListDto): boolean {
+    if (this.dashboardFilters.categoryIds.length === 0 && !this.dashboardFilters.includeUncategorized) {
+      return true;
+    }
+
+    const categoryId = event.category?.id;
+    if (categoryId == null) {
+      return this.dashboardFilters.includeUncategorized;
+    }
+
+    return this.dashboardFilters.categoryIds.length === 0 || this.dashboardFilters.categoryIds.includes(categoryId);
   }
 
   private bumpTableRefreshKey() {

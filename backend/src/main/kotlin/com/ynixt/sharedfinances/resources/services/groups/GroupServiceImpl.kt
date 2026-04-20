@@ -223,6 +223,8 @@ class GroupServiceImpl(
                         )
                 }
 
+                groupCategoryService.ensureDebtSfCategory(group.id!!)
+
                 groupActionEventService
                     .sendInsertedGroup(
                         group = group,

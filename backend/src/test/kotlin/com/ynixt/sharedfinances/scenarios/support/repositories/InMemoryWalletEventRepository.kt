@@ -16,7 +16,22 @@ import java.util.UUID
 internal class InMemoryWalletEventRepository(
     private val walletItemRepository: InMemoryWalletItemRepository,
 ) : WalletEventRepository {
+    data class LastFindAllQuery(
+        val scope: WalletTransactionQueryScope,
+        val limit: Int,
+        val walletItemId: UUID?,
+        val walletItemIds: Set<UUID>,
+        val entryTypes: Set<WalletEntryType>,
+        val categoryConceptIds: Set<UUID>,
+        val includeUncategorized: Boolean,
+        val minimumDate: LocalDate?,
+        val maximumDate: LocalDate?,
+        val billId: UUID?,
+        val cursor: WalletEventCursorFindAll?,
+    )
+
     private val data = linkedMapOf<UUID, WalletEventEntity>()
+    var lastFindAllQuery: LastFindAllQuery? = null
 
     fun snapshot(): List<WalletEventEntity> = data.values.toList()
 
@@ -103,11 +118,28 @@ internal class InMemoryWalletEventRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
         cursor: WalletEventCursorFindAll?,
     ): Flux<WalletEventEntity> {
+        lastFindAllQuery =
+            LastFindAllQuery(
+                scope = scope,
+                limit = limit,
+                walletItemId = walletItemId,
+                walletItemIds = walletItemIds,
+                entryTypes = entryTypes,
+                categoryConceptIds = categoryConceptIds,
+                includeUncategorized = includeUncategorized,
+                minimumDate = minimumDate,
+                maximumDate = maximumDate,
+                billId = billId,
+                cursor = cursor,
+            )
+
         val filtered =
             data.values
                 .asSequence()
@@ -137,7 +169,14 @@ internal class InMemoryWalletEventRepository(
                             .any { entry -> entry.billId == billId }
                 }.filter { walletItemId == null || it.entries.orEmpty().any { entry -> entry.walletItemId == walletItemId } }
                 .filter { walletItemIds.isEmpty() || it.entries.orEmpty().any { entry -> walletItemIds.contains(entry.walletItemId) } }
-                .sortedWith(
+                .filter { event ->
+                    when {
+                        categoryConceptIds.isEmpty() && !includeUncategorized -> true
+                        categoryConceptIds.isEmpty() && includeUncategorized -> event.categoryId == null
+                        categoryConceptIds.isNotEmpty() && includeUncategorized -> true
+                        else -> event.categoryId != null
+                    }
+                }.sortedWith(
                     compareByDescending<WalletEventEntity> { it.date }
                         .thenByDescending { it.id },
                 ).filter { event ->

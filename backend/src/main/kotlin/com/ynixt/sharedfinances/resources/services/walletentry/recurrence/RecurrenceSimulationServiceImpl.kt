@@ -96,6 +96,8 @@ class RecurrenceSimulationServiceImpl(
             walletItemId = walletItemId,
             walletItemIds = emptySet(),
             entryTypes = emptySet(),
+            categoryConceptIds = emptySet(),
+            includeUncategorized = false,
         )
 
     override suspend fun simulateGenerationForCreditCardWithFilters(
@@ -106,6 +108,8 @@ class RecurrenceSimulationServiceImpl(
         userIds: Set<UUID>,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
     ): List<EventListResponse> {
         val bill =
             creditCardBillService.getBillFromDatabaseOrSimulate(
@@ -122,6 +126,8 @@ class RecurrenceSimulationServiceImpl(
             userIds = userIds,
             walletItemIds = walletItemIds,
             entryTypes = entryTypes,
+            categoryConceptIds = categoryConceptIds,
+            includeUncategorized = includeUncategorized,
         )
     }
 
@@ -150,6 +156,8 @@ class RecurrenceSimulationServiceImpl(
         userIds: Set<UUID>,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
     ): List<EventListResponse> =
         simulateGenerationWithFilters(
             minimumEndExecution = null,
@@ -161,6 +169,8 @@ class RecurrenceSimulationServiceImpl(
             userIds = userIds,
             walletItemIds = walletItemIds,
             entryTypes = entryTypes,
+            categoryConceptIds = categoryConceptIds,
+            includeUncategorized = includeUncategorized,
         )
 
     override suspend fun simulateGeneration(
@@ -171,6 +181,8 @@ class RecurrenceSimulationServiceImpl(
         userIds: Set<UUID>,
         walletItemId: UUID?,
         billDate: LocalDate?,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
     ): List<EventListResponse> =
         simulateGenerationWithFilters(
             minimumEndExecution = minimumEndExecution,
@@ -182,6 +194,8 @@ class RecurrenceSimulationServiceImpl(
             userIds = userIds,
             walletItemIds = emptySet(),
             entryTypes = emptySet(),
+            categoryConceptIds = categoryConceptIds,
+            includeUncategorized = includeUncategorized,
         )
 
     override suspend fun simulateGenerationWithFilters(
@@ -194,6 +208,8 @@ class RecurrenceSimulationServiceImpl(
         userIds: Set<UUID>,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
     ): List<EventListResponse> {
         require(groupIds.isNotEmpty() || userIds.isEmpty()) {
             "Filter userIds requires at least one groupId."
@@ -218,6 +234,8 @@ class RecurrenceSimulationServiceImpl(
                     userIds = ownerUserIds,
                     groupIds = groupIds,
                     entryTypes = entryTypes,
+                    categoryConceptIds = categoryConceptIds,
+                    includeUncategorized = includeUncategorized,
                     sort = defaultSort,
                 ).toList()
 

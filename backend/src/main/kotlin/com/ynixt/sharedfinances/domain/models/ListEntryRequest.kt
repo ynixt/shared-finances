@@ -10,6 +10,8 @@ data class ListEntryRequest(
     val userIds: Set<UUID> = emptySet(),
     val creditCardIds: Set<UUID> = emptySet(),
     val bankAccountIds: Set<UUID> = emptySet(),
+    val categoryIds: Set<UUID> = emptySet(),
+    val includeUncategorized: Boolean = false,
     val entryTypes: Set<WalletEntryType> = emptySet(),
     val pageRequest: CursorPageRequest,
     val minimumDate: LocalDate?,

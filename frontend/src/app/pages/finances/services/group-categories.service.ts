@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { lastValueFrom, take } from 'rxjs';
 
 import {
+  CategoryConceptDto,
   CategoryDto,
   EditCategoryDto,
   NewCategoryDto,
@@ -66,6 +67,16 @@ export class GroupCategoriesService {
 
     if (user != null) {
       return lastValueFrom(this.httpClient.put<CategoryDto>(`/api/groups/${groupId}/categories/${id}`, body).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async getAvailableConcepts(): Promise<CategoryConceptDto[]> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      return lastValueFrom(this.httpClient.get<CategoryConceptDto[]>('/api/categories/concepts').pipe(take(1)));
     }
 
     throw new UserMissingError();

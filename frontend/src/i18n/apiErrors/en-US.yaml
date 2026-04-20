@@ -42,3 +42,4 @@ apiErrors:
   financialGoalMovementNotFound: Ledger movement not found.
   simulationJobNotFound: Simulation job not found.
   simulationJobForbidden: You are not allowed to access this simulation job.
+  duplicatedCategoryConcept: Already there exists a category with this concept.

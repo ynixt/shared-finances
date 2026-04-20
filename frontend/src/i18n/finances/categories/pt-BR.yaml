@@ -5,6 +5,9 @@ financesPage:
       title: Nova categoria
       color: Cor
       parent: Categoria pai
+      concept: Conceito
+      customConceptName: Nome do conceito customizado
     editCategoriesPage:
       title: 'Editar categoria: {{name}}'
       successDeleteMessage: A categoria foi deletada com sucesso
+      debtSfConceptLocked: O conceito Dívida SF é fixo e essa categoria não pode ser deletada.

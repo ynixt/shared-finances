@@ -35,6 +35,8 @@ class RecurrenceEventDatabaseClientRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         sort: Sort = Sort.unsorted(),
     ): Flux<RecurrenceEventEntity> {
         val orderClause = resolveOrderClause(sort)
@@ -49,6 +51,8 @@ class RecurrenceEventDatabaseClientRepository(
                         walletItemId = walletItemId,
                         walletItemIds = walletItemIds,
                         entryTypes = entryTypes,
+                        categoryConceptIds = categoryConceptIds,
+                        includeUncategorized = includeUncategorized,
                         orderClause = orderClause,
                     )
                 WalletTransactionQueryPath.GROUP_SCOPE ->
@@ -60,6 +64,8 @@ class RecurrenceEventDatabaseClientRepository(
                         walletItemId = walletItemId,
                         walletItemIds = walletItemIds,
                         entryTypes = entryTypes,
+                        categoryConceptIds = categoryConceptIds,
+                        includeUncategorized = includeUncategorized,
                         orderClause = orderClause,
                     )
             }
@@ -90,6 +96,9 @@ class RecurrenceEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             spec = spec.bind("entryTypes", entryTypes.map { it.name }.toTypedArray())
         }
+        if (categoryConceptIds.isNotEmpty()) {
+            spec = spec.bind("categoryConceptIds", categoryConceptIds.toTypedArray())
+        }
 
         return spec
             .map { row, _ -> row.get("id", UUID::class.java)!! }
@@ -113,6 +122,7 @@ class RecurrenceEventDatabaseClientRepository(
                         cat.user_id AS event_category_user_id,
                         cat.group_id AS event_category_group_id,
                         cat.parent_id AS event_category_parent_id,
+                        cat.concept_id AS event_category_concept_id,
                         grp.id AS event_group_id,
                         grp.created_at AS event_group_created_at,
                         grp.updated_at AS event_group_updated_at,
@@ -169,6 +179,8 @@ class RecurrenceEventDatabaseClientRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         orderClause: String,
     ): String {
         var sql =
@@ -201,6 +213,7 @@ class RecurrenceEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             sql += " AND re.type = ANY(:entryTypes)"
         }
+        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
 
         sql += " GROUP BY re.id, re.next_execution"
         sql += " ORDER BY $orderClause"
@@ -215,6 +228,8 @@ class RecurrenceEventDatabaseClientRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         orderClause: String,
     ): String {
         var sql =
@@ -245,10 +260,41 @@ class RecurrenceEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             sql += " AND re.type = ANY(:entryTypes)"
         }
+        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
 
         sql += " ORDER BY $orderClause"
         return sql
     }
+
+    private fun buildCategoryPredicateSql(
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
+    ): String =
+        when {
+            categoryConceptIds.isEmpty() && !includeUncategorized -> ""
+            categoryConceptIds.isEmpty() && includeUncategorized -> " AND re.category_id IS NULL"
+            categoryConceptIds.isNotEmpty() && includeUncategorized ->
+                """
+                AND (
+                   re.category_id IS NULL
+                   OR EXISTS (
+                       SELECT 1
+                       FROM wallet_entry_category cat
+                       WHERE cat.id = re.category_id
+                         AND cat.concept_id = ANY(:categoryConceptIds)
+                   )
+                )
+                """.trimIndent()
+            else ->
+                """
+                AND EXISTS (
+                   SELECT 1
+                   FROM wallet_entry_category cat
+                   WHERE cat.id = re.category_id
+                     AND cat.concept_id = ANY(:categoryConceptIds)
+                )
+                """.trimIndent()
+        }
 
     private fun resolveOrderClause(sort: Sort): String {
         if (!sort.isSorted) {
@@ -280,6 +326,7 @@ class RecurrenceEventDatabaseClientRepository(
             userId = row.get("event_category_user_id", UUID::class.java),
             groupId = row.get("event_category_group_id", UUID::class.java),
             parentId = row.get("event_category_parent_id", UUID::class.java),
+            conceptId = row.get("event_category_concept_id", UUID::class.java)!!,
         ).also { category ->
             category.id = categoryId
             category.createdAt = row.get("event_category_created_at", OffsetDateTime::class.java)

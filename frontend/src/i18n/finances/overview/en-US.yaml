@@ -19,6 +19,8 @@ financesPage:
       bankAccounts: Bank accounts
       creditCards: Credit cards
       entryTypes: Transaction type
+      categories: Categories
+      itemsNotCategorized: Items not categorized
       noOptions: No options available
     cards:
       balance: Balance

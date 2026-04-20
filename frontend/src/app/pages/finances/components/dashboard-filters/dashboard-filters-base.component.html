@@ -62,5 +62,18 @@
         [showToggleAll]="false"
       ></app-paged-multi-select>
     </label>
+
+    <label class="flex flex-col gap-1 text-sm text-surface-700">
+      <span class="font-medium">{{ 'financesPage.overviewPage.filters.categories' | translate }}</span>
+      <app-paged-multi-select
+        [optionsGetter]="categoryOptionsGetter"
+        [placeholder]="'general.all' | translate"
+        formControlName="categorySelectionIds"
+        [pageSize]="multiSelectPageSize"
+        optionLabel="label"
+        optionValue="id"
+        dataKey="id"
+      ></app-paged-multi-select>
+    </label>
   </form>
 </div>

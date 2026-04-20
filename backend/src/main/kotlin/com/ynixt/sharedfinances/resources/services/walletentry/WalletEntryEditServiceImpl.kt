@@ -21,6 +21,8 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
@@ -47,6 +49,8 @@ class WalletEntryEditServiceImpl(
     groupDebtService: GroupDebtService,
     groupService: GroupService,
     walletItemService: WalletItemService,
+    genericCategoryService: GenericCategoryService,
+    categoryConceptService: CategoryConceptService,
     creditCardBillService: CreditCardBillService,
     recurrenceService: RecurrenceService,
     recurrenceEventRepository: RecurrenceEventRepository,
@@ -61,6 +65,8 @@ class WalletEntryEditServiceImpl(
         groupDebtService = groupDebtService,
         groupService = groupService,
         walletItemService = walletItemService,
+        genericCategoryService = genericCategoryService,
+        categoryConceptService = categoryConceptService,
         creditCardBillService = creditCardBillService,
         recurrenceService = recurrenceService,
         recurrenceEventRepository = recurrenceEventRepository,

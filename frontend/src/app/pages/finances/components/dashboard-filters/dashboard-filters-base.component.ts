@@ -17,6 +17,7 @@ type DashboardFiltersForm = {
   creditCardIds: FormControl<string[]>;
   bankAccountIds: FormControl<string[]>;
   entryTypes: FormControl<WalletEntryType[]>;
+  categorySelectionIds: FormControl<string[]>;
 };
 
 @Component({
@@ -25,6 +26,8 @@ type DashboardFiltersForm = {
   templateUrl: './dashboard-filters-base.component.html',
 })
 export class DashboardFiltersBaseComponent {
+  private static readonly UNCATEGORIZED_OPTION_ID = '__UNCATEGORIZED_OPTION__';
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly translateService = inject(TranslateService);
 
@@ -34,9 +37,11 @@ export class DashboardFiltersBaseComponent {
   readonly contextOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
   readonly bankAccountOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
   readonly creditCardOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
+  readonly categoryOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
   readonly contextOptions = input<DashboardFilterOption[]>([]);
   readonly bankAccountOptions = input<DashboardFilterOption[]>([]);
   readonly creditCardOptions = input<DashboardFilterOption[]>([]);
+  readonly categoryOptions = input<DashboardFilterOption[]>([]);
   readonly multiSelectPageSize = 10;
 
   readonly filtersChange = output<DashboardFeedFilters>();
@@ -47,6 +52,7 @@ export class DashboardFiltersBaseComponent {
     creditCardIds: new FormControl<string[]>([], { nonNullable: true }),
     bankAccountIds: new FormControl<string[]>([], { nonNullable: true }),
     entryTypes: new FormControl<WalletEntryType[]>([], { nonNullable: true }),
+    categorySelectionIds: new FormControl<string[]>([], { nonNullable: true }),
   });
 
   readonly entryTypeOptions: Array<{ id: WalletEntryType; labelKey: string }> = [
@@ -78,6 +84,12 @@ export class DashboardFiltersBaseComponent {
 
     return this.paginateOptions(this.creditCardOptions(), page);
   };
+  readonly categoryOptionsGetter = async (page: number, query?: string | undefined): Promise<DashboardFilterOption[]> => {
+    const getter = this.categoryOptionsGetterInput();
+    const loadedOptions = getter != null ? await getter(page, query) : this.paginateOptions(this.categoryOptions(), page);
+
+    return this.withUncategorizedOption(loadedOptions, page);
+  };
   readonly entryTypeOptionsGetter = async (page: number): Promise<Array<{ id: WalletEntryType; label: string }>> => {
     const translatedOptions = this.entryTypeOptions.map(option => ({
       id: option.id,
@@ -99,6 +111,7 @@ export class DashboardFiltersBaseComponent {
         creditCardIds: [],
         bankAccountIds: [],
         entryTypes: [],
+        categorySelectionIds: [],
       },
       { emitEvent: false },
     );
@@ -107,6 +120,10 @@ export class DashboardFiltersBaseComponent {
 
   serializeFilters(): DashboardFeedFilters {
     const value = this.form.getRawValue();
+    const selectedCategoryOptionIds = value.categorySelectionIds;
+    const includeUncategorized = selectedCategoryOptionIds.includes(DashboardFiltersBaseComponent.UNCATEGORIZED_OPTION_ID);
+    const categoryIds = selectedCategoryOptionIds.filter(id => id !== DashboardFiltersBaseComponent.UNCATEGORIZED_OPTION_ID);
+
     return {
       ...EMPTY_DASHBOARD_FEED_FILTERS,
       groupIds: value.groupIds,
@@ -114,6 +131,8 @@ export class DashboardFiltersBaseComponent {
       creditCardIds: value.creditCardIds,
       bankAccountIds: value.bankAccountIds,
       entryTypes: value.entryTypes,
+      categoryIds,
+      includeUncategorized,
     };
   }
 
@@ -124,5 +143,18 @@ export class DashboardFiltersBaseComponent {
   private paginateOptions<TOption>(options: TOption[], page: number): TOption[] {
     const start = page * this.multiSelectPageSize;
     return options.slice(start, start + this.multiSelectPageSize);
+  }
+
+  private withUncategorizedOption(options: DashboardFilterOption[], page: number): DashboardFilterOption[] {
+    if (page > 0) {
+      return options;
+    }
+
+    const firstOption: DashboardFilterOption = {
+      id: DashboardFiltersBaseComponent.UNCATEGORIZED_OPTION_ID,
+      label: this.translateService.instant('financesPage.overviewPage.filters.itemsNotCategorized'),
+    };
+
+    return [firstOption, ...options.filter(option => option.id !== DashboardFiltersBaseComponent.UNCATEGORIZED_OPTION_ID)];
   }
 }

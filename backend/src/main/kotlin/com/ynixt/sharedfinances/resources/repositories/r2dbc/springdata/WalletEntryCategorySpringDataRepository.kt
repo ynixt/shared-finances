@@ -18,7 +18,8 @@ interface WalletEntryCategorySpringDataRepository :
         set
             name = :newName,
             color = :newColor,
-            parent_id = :newParentId
+            parent_id = :newParentId,
+            concept_id = :newConceptId
         where
             id = :id
             and user_id = :userId
@@ -30,6 +31,7 @@ interface WalletEntryCategorySpringDataRepository :
         newName: String,
         newColor: String,
         newParentId: UUID?,
+        newConceptId: UUID,
     ): Mono<Long>
 
     @Modifying
@@ -39,7 +41,8 @@ interface WalletEntryCategorySpringDataRepository :
         set
             name = :newName,
             color = :newColor,
-            parent_id = :newParentId
+            parent_id = :newParentId,
+            concept_id = :newConceptId
         where
             id = :id
             and group_id = :groupId
@@ -51,5 +54,6 @@ interface WalletEntryCategorySpringDataRepository :
         newName: String,
         newColor: String,
         newParentId: UUID?,
+        newConceptId: UUID,
     ): Mono<Long>
 }

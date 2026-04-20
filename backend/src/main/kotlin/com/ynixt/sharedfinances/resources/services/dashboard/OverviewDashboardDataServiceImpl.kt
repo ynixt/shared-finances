@@ -276,6 +276,8 @@ internal class OverviewDashboardDataServiceImpl(
                     groupIds = emptySet(),
                     walletItemIds = visibleItems.walletItemIds,
                     entryTypes = emptySet(),
+                    categoryConceptIds = emptySet(),
+                    includeUncategorized = false,
                 )
             }
 
@@ -358,6 +360,8 @@ internal class OverviewDashboardDataServiceImpl(
                 groupIds = emptySet(),
                 walletItemId = null,
                 billDate = null,
+                categoryConceptIds = emptySet(),
+                includeUncategorized = false,
             ).forEach { simulated ->
                 val month = YearMonth.from(simulated.date)
                 val byWallet = map.getOrPut(month) { mutableMapOf() }
@@ -407,6 +411,8 @@ internal class OverviewDashboardDataServiceImpl(
                 billDate = null,
                 walletItemIds = visibleBankAccountIds,
                 entryTypes = emptySet(),
+                categoryConceptIds = emptySet(),
+                includeUncategorized = false,
             ).forEach { simulated ->
                 if (YearMonth.from(simulated.date) != selectedMonth) {
                     return@forEach
@@ -472,6 +478,8 @@ internal class OverviewDashboardDataServiceImpl(
                 groupIds = emptySet(),
                 walletItemIds = visibleWalletItemIds,
                 entryTypes = setOf(WalletEntryType.EXPENSE),
+                categoryConceptIds = emptySet(),
+                includeUncategorized = false,
             ).forEach { simulated ->
                 if (simulated.type != WalletEntryType.EXPENSE) {
                     return@forEach
@@ -593,6 +601,8 @@ internal class OverviewDashboardDataServiceImpl(
                     groupIds = emptySet(),
                     walletItemId = null,
                     billDate = null,
+                    categoryConceptIds = emptySet(),
+                    includeUncategorized = false,
                 ).flatMap { event ->
                     event.entries.asSequence()
                 }.filter { entry ->

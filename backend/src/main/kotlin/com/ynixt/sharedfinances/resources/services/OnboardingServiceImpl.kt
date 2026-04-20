@@ -31,6 +31,8 @@ class OnboardingServiceImpl(
                             categoryDtoMapper.fromNewDtoToNewRequest(cat),
                         )
                 }
+
+                userCategoryService.ensureDebtSfCategory(userId)
             }
         }
 }

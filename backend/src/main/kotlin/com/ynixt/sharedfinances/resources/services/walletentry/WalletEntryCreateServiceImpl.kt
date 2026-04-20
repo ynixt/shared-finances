@@ -22,6 +22,8 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
@@ -48,6 +50,8 @@ class WalletEntryCreateServiceImpl(
     private val walletEntryRepository: WalletEntryRepository,
     groupService: GroupService,
     walletItemService: WalletItemService,
+    genericCategoryService: GenericCategoryService,
+    categoryConceptService: CategoryConceptService,
     creditCardBillService: CreditCardBillService,
     recurrenceService: RecurrenceService,
     recurrenceEventRepository: RecurrenceEventRepository,
@@ -63,6 +67,8 @@ class WalletEntryCreateServiceImpl(
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
         walletItemService = walletItemService,
+        genericCategoryService = genericCategoryService,
+        categoryConceptService = categoryConceptService,
         creditCardBillService = creditCardBillService,
         recurrenceService = recurrenceService,
         recurrenceEventRepository = recurrenceEventRepository,

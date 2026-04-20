@@ -45,6 +45,7 @@ import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEve
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -664,12 +665,212 @@ class WalletEventListServiceImplTest {
             assertThat(mergedIds.toSet()).hasSize(3)
         }
 
+    @Test
+    fun `should resolve selected categories to deduplicated concept ids for query`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val conceptId = UUID.randomUUID()
+            val categoryAId = UUID.randomUUID()
+            val categoryBId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
+            val walletEntryRepository = InMemoryWalletEntryRepository()
+
+            val genericCategoryService =
+                object : GenericCategoryService {
+                    override suspend fun findById(id: UUID): WalletEntryCategoryEntity? = null
+
+                    override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> =
+                        flow {
+                            val categories =
+                                listOf(
+                                    categoryEntity(id = categoryAId, userId = userId, conceptId = conceptId),
+                                    categoryEntity(id = categoryBId, userId = userId, conceptId = conceptId),
+                                )
+
+                            categories
+                                .filter { category -> ids.contains(category.id) }
+                                .forEach { emit(it) }
+                        }
+
+                    override suspend fun findAllByGroupIdAndConceptId(
+                        groupId: UUID,
+                        conceptId: UUID,
+                    ): List<WalletEntryCategoryEntity> = emptyList()
+                }
+
+            val service =
+                createService(
+                    walletEventRepository = walletEventRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    walletItemRepository = walletItemRepository,
+                    allowedGroupIds = emptySet(),
+                    simulatedEvents = emptyList(),
+                    genericCategoryService = genericCategoryService,
+                )
+
+            service.list(
+                userId = userId,
+                request =
+                    ListEntryRequest(
+                        walletItemId = null,
+                        categoryIds = setOf(categoryAId, categoryBId),
+                        includeUncategorized = false,
+                        pageRequest = CursorPageRequest(size = 20, nextCursor = mapOf("skipFuture" to true)),
+                        minimumDate = LocalDate.of(2026, 4, 1),
+                        maximumDate = LocalDate.of(2026, 4, 30),
+                        billId = null,
+                        billDate = null,
+                    ),
+            )
+
+            val query = walletEventRepository.lastFindAllQuery
+            assertThat(query).isNotNull()
+            assertThat(query!!.categoryConceptIds).containsExactlyInAnyOrder(conceptId)
+            assertThat(query.includeUncategorized).isFalse()
+        }
+
+    @Test
+    fun `should send uncategorized only filter to query`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val walletItemRepository = InMemoryWalletItemRepository()
+            val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
+            val walletEntryRepository = InMemoryWalletEntryRepository()
+            val service =
+                createService(
+                    walletEventRepository = walletEventRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    walletItemRepository = walletItemRepository,
+                    allowedGroupIds = emptySet(),
+                    simulatedEvents = emptyList(),
+                )
+
+            service.list(
+                userId = userId,
+                request =
+                    ListEntryRequest(
+                        walletItemId = null,
+                        categoryIds = emptySet(),
+                        includeUncategorized = true,
+                        pageRequest = CursorPageRequest(size = 20, nextCursor = mapOf("skipFuture" to true)),
+                        minimumDate = LocalDate.of(2026, 4, 1),
+                        maximumDate = LocalDate.of(2026, 4, 30),
+                        billId = null,
+                        billDate = null,
+                    ),
+            )
+
+            val query = walletEventRepository.lastFindAllQuery
+            assertThat(query).isNotNull()
+            assertThat(query!!.categoryConceptIds).isEmpty()
+            assertThat(query.includeUncategorized).isTrue()
+        }
+
+    @Test
+    fun `should send combined category and uncategorized filter to query`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val conceptId = UUID.randomUUID()
+            val categoryId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
+            val walletEntryRepository = InMemoryWalletEntryRepository()
+
+            val genericCategoryService =
+                object : GenericCategoryService {
+                    override suspend fun findById(id: UUID): WalletEntryCategoryEntity? = null
+
+                    override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> =
+                        flow {
+                            if (ids.contains(categoryId)) {
+                                emit(categoryEntity(id = categoryId, userId = userId, conceptId = conceptId))
+                            }
+                        }
+
+                    override suspend fun findAllByGroupIdAndConceptId(
+                        groupId: UUID,
+                        conceptId: UUID,
+                    ): List<WalletEntryCategoryEntity> = emptyList()
+                }
+
+            val service =
+                createService(
+                    walletEventRepository = walletEventRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    walletItemRepository = walletItemRepository,
+                    allowedGroupIds = emptySet(),
+                    simulatedEvents = emptyList(),
+                    genericCategoryService = genericCategoryService,
+                )
+
+            service.list(
+                userId = userId,
+                request =
+                    ListEntryRequest(
+                        walletItemId = null,
+                        categoryIds = setOf(categoryId),
+                        includeUncategorized = true,
+                        pageRequest = CursorPageRequest(size = 20, nextCursor = mapOf("skipFuture" to true)),
+                        minimumDate = LocalDate.of(2026, 4, 1),
+                        maximumDate = LocalDate.of(2026, 4, 30),
+                        billId = null,
+                        billDate = null,
+                    ),
+            )
+
+            val query = walletEventRepository.lastFindAllQuery
+            assertThat(query).isNotNull()
+            assertThat(query!!.categoryConceptIds).containsExactlyInAnyOrder(conceptId)
+            assertThat(query.includeUncategorized).isTrue()
+        }
+
+    @Test
+    fun `should not apply category filter when none is selected`() =
+        runBlocking {
+            val userId = UUID.randomUUID()
+            val walletItemRepository = InMemoryWalletItemRepository()
+            val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
+            val walletEntryRepository = InMemoryWalletEntryRepository()
+            val service =
+                createService(
+                    walletEventRepository = walletEventRepository,
+                    walletEntryRepository = walletEntryRepository,
+                    walletItemRepository = walletItemRepository,
+                    allowedGroupIds = emptySet(),
+                    simulatedEvents = emptyList(),
+                )
+
+            service.list(
+                userId = userId,
+                request =
+                    ListEntryRequest(
+                        walletItemId = null,
+                        categoryIds = emptySet(),
+                        includeUncategorized = false,
+                        pageRequest = CursorPageRequest(size = 20, nextCursor = mapOf("skipFuture" to true)),
+                        minimumDate = LocalDate.of(2026, 4, 1),
+                        maximumDate = LocalDate.of(2026, 4, 30),
+                        billId = null,
+                        billDate = null,
+                    ),
+            )
+
+            val query = walletEventRepository.lastFindAllQuery
+            assertThat(query).isNotNull()
+            assertThat(query!!.categoryConceptIds).isEmpty()
+            assertThat(query.includeUncategorized).isFalse()
+        }
+
     private fun createService(
         walletEventRepository: InMemoryWalletEventRepository,
         walletEntryRepository: InMemoryWalletEntryRepository,
         walletItemRepository: InMemoryWalletItemRepository,
         allowedGroupIds: Set<UUID>,
         simulatedEvents: List<EventListResponse>,
+        genericCategoryService: GenericCategoryService = noOpCategoryService(),
     ): WalletEventListServiceImpl =
         WalletEventListServiceImpl(
             walletEventRepository = walletEventRepository,
@@ -678,7 +879,7 @@ class WalletEventListServiceImplTest {
             creditCardBillRepository = InMemoryCreditCardBillRepository(walletItemRepository),
             walletItemMapper = WalletItemMapperImpl(BankAccountMapperImpl(), CreditCardMapperImpl()),
             walletItemService = noOpWalletItemService(),
-            genericCategoryService = noOpCategoryService(),
+            genericCategoryService = genericCategoryService,
             groupService = noOpGroupService(),
             groupPermissionService = allowListedGroupPermissionService(allowedGroupIds),
             userService = noOpUserService(),
@@ -695,6 +896,20 @@ class WalletEventListServiceImplTest {
     ) {
         repository.save(event).block()
     }
+
+    private fun categoryEntity(
+        id: UUID,
+        userId: UUID,
+        conceptId: UUID,
+    ): WalletEntryCategoryEntity =
+        WalletEntryCategoryEntity(
+            name = "Category-$id",
+            color = "#000000",
+            userId = userId,
+            groupId = null,
+            parentId = null,
+            conceptId = conceptId,
+        ).also { it.id = id }
 
     private fun walletEvent(
         id: UUID,
@@ -789,7 +1004,14 @@ class WalletEventListServiceImplTest {
 
     private fun noOpCategoryService(): GenericCategoryService =
         object : GenericCategoryService {
+            override suspend fun findById(id: UUID): WalletEntryCategoryEntity? = null
+
             override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> = emptyFlow()
+
+            override suspend fun findAllByGroupIdAndConceptId(
+                groupId: UUID,
+                conceptId: UUID,
+            ): List<WalletEntryCategoryEntity> = emptyList()
         }
 
     private fun noOpGroupService(): GroupService =
@@ -943,6 +1165,8 @@ class WalletEventListServiceImplTest {
                 userIds: Set<UUID>,
                 groupIds: Set<UUID>,
                 entryTypes: Set<WalletEntryType>,
+                categoryConceptIds: Set<UUID>,
+                includeUncategorized: Boolean,
                 sort: Sort,
             ): Flow<RecurrenceEventEntity> = emptyFlow()
 
@@ -993,6 +1217,8 @@ class WalletEventListServiceImplTest {
                 userIds: Set<UUID>,
                 walletItemId: UUID?,
                 billDate: LocalDate?,
+                categoryConceptIds: Set<UUID>,
+                includeUncategorized: Boolean,
             ): List<EventListResponse> =
                 events.filter {
                     (minimumEndExecution == null || !it.date.isBefore(minimumEndExecution)) &&

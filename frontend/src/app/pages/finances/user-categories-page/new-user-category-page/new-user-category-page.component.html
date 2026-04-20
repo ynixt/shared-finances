@@ -22,6 +22,24 @@
       <app-category-picker formControlName="parent" [getAllCategoriesParams]="getAllCategoriesParams"></app-category-picker>
     </label>
 
+    <label class="flex flex-col gap-2">
+      <span
+        >{{ 'financesPage.categoriesPage.newCategoriesPage.concept' | translate }}
+        <app-required-field-asterisk></app-required-field-asterisk
+      ></span>
+      <app-concept-picker controlName="conceptId" [excludeDebtSf]="true" [includeCustomOption]="true"></app-concept-picker>
+    </label>
+
+    @if (customConceptSelected) {
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.categoriesPage.newCategoriesPage.customConceptName' | translate }}
+          <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <input formControlName="customConceptName" pInputText type="text" />
+      </label>
+    }
+
     <button pButton type="submit" [loading]="submitting" [disabled]="formGroup.invalid">{{ 'general.save' | translate }}</button>
   </form>
 </div>

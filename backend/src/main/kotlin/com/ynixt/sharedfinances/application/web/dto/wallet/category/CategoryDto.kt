@@ -8,4 +8,5 @@ data class CategoryDto(
     val color: String,
     var children: List<CategoryDto>?,
     val parentId: UUID?,
+    val conceptId: UUID,
 )

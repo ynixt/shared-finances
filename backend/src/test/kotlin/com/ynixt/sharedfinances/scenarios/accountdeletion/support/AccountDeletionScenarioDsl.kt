@@ -283,6 +283,8 @@ class AccountDeletionScenarioDsl {
                         walletItemId = null,
                         walletItemIds = emptySet(),
                         entryTypes = emptySet(),
+                        categoryConceptIds = emptySet(),
+                        includeUncategorized = false,
                     ).collectList()
                     .awaitSingle()
             Assertions.assertTrue(list.isEmpty())
@@ -302,6 +304,8 @@ class AccountDeletionScenarioDsl {
                         walletItemId = null,
                         walletItemIds = emptySet(),
                         entryTypes = emptySet(),
+                        categoryConceptIds = emptySet(),
+                        includeUncategorized = false,
                     ).collectList()
                     .awaitSingle()
             Assertions.assertTrue(list.none { event -> event.createdByUserId == userId && event.groupId == groupId })

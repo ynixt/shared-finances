@@ -40,6 +40,8 @@ interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         sort: Sort = Sort.unsorted(),
     ): Flux<RecurrenceEventEntity>
 }

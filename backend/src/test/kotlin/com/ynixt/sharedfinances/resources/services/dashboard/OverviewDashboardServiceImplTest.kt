@@ -1928,6 +1928,8 @@ class OverviewDashboardServiceImplTest {
                 userIds: Set<UUID>,
                 walletItemId: UUID?,
                 billDate: LocalDate?,
+                categoryConceptIds: Set<UUID>,
+                includeUncategorized: Boolean,
             ): List<EventListResponse> =
                 events.filter {
                     (minimumEndExecution == null || !it.date.isBefore(minimumEndExecution)) &&
@@ -1955,6 +1957,8 @@ class OverviewDashboardServiceImplTest {
                 userIds: Set<UUID>,
                 walletItemIds: Set<UUID>,
                 entryTypes: Set<WalletEntryType>,
+                categoryConceptIds: Set<UUID>,
+                includeUncategorized: Boolean,
             ): List<EventListResponse> =
                 events.filter { event ->
                     (minimumEndExecution == null || !event.date.isBefore(minimumEndExecution)) &&
@@ -2027,6 +2031,8 @@ class OverviewDashboardServiceImplTest {
             userIds: Set<UUID>,
             walletItemId: UUID?,
             billDate: LocalDate?,
+            categoryConceptIds: Set<UUID>,
+            includeUncategorized: Boolean,
         ): List<EventListResponse> {
             unfilteredSimulationCalls += 1
             return events.filter {
@@ -2045,6 +2051,8 @@ class OverviewDashboardServiceImplTest {
             userIds: Set<UUID>,
             walletItemIds: Set<UUID>,
             entryTypes: Set<WalletEntryType>,
+            categoryConceptIds: Set<UUID>,
+            includeUncategorized: Boolean,
         ): List<EventListResponse> {
             filteredSimulationCalls += 1
             return events.filter { event ->
@@ -2061,7 +2069,17 @@ class OverviewDashboardServiceImplTest {
             userIds: Set<UUID>,
             billDate: LocalDate?,
         ): List<EventListResponse> =
-            simulateGeneration(minimumEndExecution, maximumNextExecution, null, emptySet(), userIds, null, billDate)
+            simulateGeneration(
+                minimumEndExecution = minimumEndExecution,
+                maximumNextExecution = maximumNextExecution,
+                userId = null,
+                groupIds = emptySet(),
+                userIds = userIds,
+                walletItemId = null,
+                billDate = billDate,
+                categoryConceptIds = emptySet(),
+                includeUncategorized = false,
+            )
 
         override suspend fun simulateGenerationAsEntrySumResult(
             minimumEndExecution: LocalDate?,
@@ -2469,6 +2487,7 @@ class OverviewDashboardServiceImplTest {
                 userId = null,
                 groupId = null,
                 parentId = null,
+                conceptId = UUID.nameUUIDFromBytes("concept-$name".toByteArray()),
             ).also { it.id = UUID.nameUUIDFromBytes(name.toByteArray()) }
 
     private fun bill(

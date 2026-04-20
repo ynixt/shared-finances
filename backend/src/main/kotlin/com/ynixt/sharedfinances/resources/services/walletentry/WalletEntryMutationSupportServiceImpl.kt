@@ -20,6 +20,8 @@ import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
+import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
@@ -40,6 +42,8 @@ abstract class WalletEntryMutationSupportServiceImpl(
     protected val groupDebtService: GroupDebtService,
     groupService: GroupService,
     walletItemService: WalletItemService,
+    genericCategoryService: GenericCategoryService,
+    categoryConceptService: CategoryConceptService,
     creditCardBillService: CreditCardBillService,
     recurrenceService: RecurrenceService,
     recurrenceEventRepository: RecurrenceEventRepository,
@@ -51,6 +55,8 @@ abstract class WalletEntryMutationSupportServiceImpl(
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
         walletItemService = walletItemService,
+        genericCategoryService = genericCategoryService,
+        categoryConceptService = categoryConceptService,
         creditCardBillService = creditCardBillService,
         recurrenceService = recurrenceService,
         recurrenceEventRepository = recurrenceEventRepository,

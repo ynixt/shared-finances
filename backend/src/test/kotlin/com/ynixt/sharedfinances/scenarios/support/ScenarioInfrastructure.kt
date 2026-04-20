@@ -6,10 +6,12 @@ import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.CreditCardBillEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryConceptEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
@@ -29,6 +31,7 @@ import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
@@ -257,7 +260,29 @@ internal class NoOpGroupService : GroupService {
 }
 
 internal class NoOpGenericCategoryService : GenericCategoryService {
+    override suspend fun findById(id: UUID): WalletEntryCategoryEntity? = null
+
     override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> = emptyFlow()
+
+    override suspend fun findAllByGroupIdAndConceptId(
+        groupId: UUID,
+        conceptId: UUID,
+    ): List<WalletEntryCategoryEntity> = emptyList()
+}
+
+internal object NoOpCategoryConceptService : CategoryConceptService {
+    override suspend fun findById(id: UUID): WalletCategoryConceptEntity? = null
+
+    override suspend fun findRequiredByCode(code: WalletCategoryConceptCode): WalletCategoryConceptEntity = error("not used")
+
+    override suspend fun listAvailableForUser(userId: UUID): List<WalletCategoryConceptEntity> = emptyList()
+
+    override suspend fun resolveForMutation(
+        conceptId: UUID?,
+        customConceptName: String?,
+    ): WalletCategoryConceptEntity = error("not used")
+
+    override suspend fun cleanupOrphanedCustomConcept(conceptId: UUID): Boolean = false
 }
 
 internal class ScenarioGroupPermissionService(

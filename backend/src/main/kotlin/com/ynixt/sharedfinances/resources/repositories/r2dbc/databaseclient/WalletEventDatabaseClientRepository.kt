@@ -24,6 +24,8 @@ class WalletEventDatabaseClientRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
@@ -37,6 +39,8 @@ class WalletEventDatabaseClientRepository(
                         walletItemId = walletItemId,
                         walletItemIds = walletItemIds,
                         entryTypes = entryTypes,
+                        categoryConceptIds = categoryConceptIds,
+                        includeUncategorized = includeUncategorized,
                         minimumDate = minimumDate,
                         maximumDate = maximumDate,
                         billId = billId,
@@ -48,6 +52,8 @@ class WalletEventDatabaseClientRepository(
                         walletItemId = walletItemId,
                         walletItemIds = walletItemIds,
                         entryTypes = entryTypes,
+                        categoryConceptIds = categoryConceptIds,
+                        includeUncategorized = includeUncategorized,
                         minimumDate = minimumDate,
                         maximumDate = maximumDate,
                         billId = billId,
@@ -68,6 +74,7 @@ class WalletEventDatabaseClientRepository(
         if (walletItemId != null) spec = spec.bind("walletItemId", walletItemId)
         if (walletItemIds.isNotEmpty()) spec = spec.bind("walletItemIds", walletItemIds.toTypedArray())
         if (entryTypes.isNotEmpty()) spec = spec.bind("entryTypes", entryTypes.map { it.name }.toTypedArray())
+        if (categoryConceptIds.isNotEmpty()) spec = spec.bind("categoryConceptIds", categoryConceptIds.toTypedArray())
         if (billId != null) spec = spec.bind("billId", billId)
         if (minimumDate != null) spec = spec.bind("minimumDate", minimumDate)
         if (maximumDate != null) spec = spec.bind("maximumDate", maximumDate)
@@ -124,6 +131,8 @@ class WalletEventDatabaseClientRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
@@ -154,6 +163,7 @@ class WalletEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             sql += " AND CAST(we.type AS TEXT) = ANY(:entryTypes)"
         }
+        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
         if (minimumDate != null) {
             sql += " AND we.date >= :minimumDate"
         }
@@ -173,6 +183,8 @@ class WalletEventDatabaseClientRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,
@@ -200,6 +212,7 @@ class WalletEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             sql += " AND CAST(we.type AS TEXT) = ANY(:entryTypes)"
         }
+        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
         if (minimumDate != null) {
             sql += " AND we.date >= :minimumDate"
         }
@@ -212,4 +225,34 @@ class WalletEventDatabaseClientRepository(
 
         return sql
     }
+
+    private fun buildCategoryPredicateSql(
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
+    ): String =
+        when {
+            categoryConceptIds.isEmpty() && !includeUncategorized -> ""
+            categoryConceptIds.isEmpty() && includeUncategorized -> " AND we.category_id IS NULL"
+            categoryConceptIds.isNotEmpty() && includeUncategorized ->
+                """
+                AND (
+                   we.category_id IS NULL
+                   OR EXISTS (
+                       SELECT 1
+                       FROM wallet_entry_category cat
+                       WHERE cat.id = we.category_id
+                         AND cat.concept_id = ANY(:categoryConceptIds)
+                   )
+                )
+                """.trimIndent()
+            else ->
+                """
+                AND EXISTS (
+                   SELECT 1
+                   FROM wallet_entry_category cat
+                   WHERE cat.id = we.category_id
+                     AND cat.concept_id = ANY(:categoryConceptIds)
+                )
+                """.trimIndent()
+        }
 }

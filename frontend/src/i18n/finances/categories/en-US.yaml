@@ -5,6 +5,9 @@ financesPage:
       title: New category
       color: Color
       parent: Parent category
+      concept: Concept
+      customConceptName: Custom concept name
     editCategoriesPage:
       title: 'Edit category: {{name}}'
       successDeleteMessage: Category deleted successfully
+      debtSfConceptLocked: Debt SF concept is fixed and this category cannot be deleted.

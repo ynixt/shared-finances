@@ -6,9 +6,11 @@ export interface ListEntryRequestDto {
   bankAccountIds?: Array<string> | null;
   billDate?: string | null;
   billId?: string | null;
+  categoryIds?: Array<string> | null;
   creditCardIds?: Array<string> | null;
   entryTypes?: Array<WalletEntryType> | null;
   groupIds?: Array<string> | null;
+  includeUncategorized?: boolean | null;
   maximumDate?: string | null;
   minimumDate?: string | null;
   pageRequest?: any | null;

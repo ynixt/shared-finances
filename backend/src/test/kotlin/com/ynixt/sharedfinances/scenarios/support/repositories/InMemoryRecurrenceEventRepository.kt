@@ -104,6 +104,8 @@ internal class InMemoryRecurrenceEventRepository(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         sort: Sort,
     ): Flux<RecurrenceEventEntity> {
         val filtered =
@@ -148,6 +150,13 @@ internal class InMemoryRecurrenceEventRepository(
                             entries.any { entry -> walletItemIds.contains(entry.walletItemId) }
 
                     walletItemMatches && walletItemIdsMatches
+                }.filter { event ->
+                    when {
+                        categoryConceptIds.isEmpty() && !includeUncategorized -> true
+                        categoryConceptIds.isEmpty() && includeUncategorized -> event.categoryId == null
+                        categoryConceptIds.isNotEmpty() && includeUncategorized -> true
+                        else -> event.categoryId != null
+                    }
                 }.toList()
         return Flux.fromIterable(filtered)
     }

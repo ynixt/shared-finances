@@ -42,3 +42,4 @@ apiErrors:
   financialGoalMovementNotFound: Lançamento do ledger não encontrado.
   simulationJobNotFound: Job de simulação não encontrado.
   simulationJobForbidden: Você não tem permissão para acessar este job de simulação.
+  duplicatedCategoryConcept: Já existe uma categoria com esse conceito.

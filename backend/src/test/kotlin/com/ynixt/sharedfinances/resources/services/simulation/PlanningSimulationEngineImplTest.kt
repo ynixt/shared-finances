@@ -168,6 +168,8 @@ class PlanningSimulationEngineImplTest {
             userIds: Set<UUID>,
             walletItemId: UUID?,
             billDate: LocalDate?,
+            categoryConceptIds: Set<UUID>,
+            includeUncategorized: Boolean,
         ): List<EventListResponse> {
             if (userId != null) {
                 singleUserCalls += 1

@@ -12,6 +12,7 @@ class WalletEntryCategoryEntity(
     val userId: UUID?,
     val groupId: UUID?,
     val parentId: UUID?,
+    val conceptId: UUID,
 ) : AuditedEntity() {
     @Transient
     var children: List<WalletEntryCategoryEntity>? = null

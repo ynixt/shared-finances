@@ -119,6 +119,8 @@ class WalletEntryDtoMapperImpl(
                 to::userIds fromProperty from::userIds transform { it?.toSet() ?: emptySet() }
                 to::creditCardIds fromProperty from::creditCardIds transform { it?.toSet() ?: emptySet() }
                 to::bankAccountIds fromProperty from::bankAccountIds transform { it?.toSet() ?: emptySet() }
+                to::categoryIds fromProperty from::categoryIds transform { it?.toSet() ?: emptySet() }
+                to::includeUncategorized fromProperty from::includeUncategorized transform { it ?: false }
                 to::entryTypes fromProperty from::entryTypes transform { it?.toSet() ?: emptySet() }
             }
     }

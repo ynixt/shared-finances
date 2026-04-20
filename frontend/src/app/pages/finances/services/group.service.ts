@@ -14,6 +14,7 @@ import {
   NewGroupDto,
   UpdateGroupPlanningSimulatorOptInDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { CategoryConceptDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
 import { UserGroupRole } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { Page, PageRequest } from '../../../models/pagination';
 import { PaginationService } from '../../../services/pagination.service';
@@ -86,15 +87,16 @@ export class GroupService {
   async newGroup(newGroupDto: NewGroupDto, useDefaultCategories = true): Promise<GroupDto> {
     const user = await this.userService.getUser();
 
+    if (user == null) {
+      throw new UserMissingError();
+    }
+
     if (useDefaultCategories) {
-      newGroupDto.categories = getDefaultCategoriesTranslated(this.translateService);
+      const concepts = await lastValueFrom(this.http.get<CategoryConceptDto[]>('/api/categories/concepts').pipe(take(1)));
+      newGroupDto.categories = getDefaultCategoriesTranslated(this.translateService, concepts);
     }
 
-    if (user != null) {
-      return lastValueFrom(this.http.post<GroupDto>('/api/groups', newGroupDto).pipe(take(1)));
-    }
-
-    throw new UserMissingError();
+    return lastValueFrom(this.http.post<GroupDto>('/api/groups', newGroupDto).pipe(take(1)));
   }
 
   async findAllMembers(groupId: string): Promise<Array<GroupUserDto>> {

@@ -20,24 +20,44 @@ class FawazExchangeRateProvider(
 ) : ExchangeRateProvider {
     override val source: String = "fawazahmed0"
 
-    // providerUrl e.g. https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest
-    // providerBaseUrl e.g. https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@
-    private val providerBaseUrl: String by lazy {
-        providerUrl.substringBeforeLast("@")
+    // jsdelivr npm URL: https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{tag}/v1/...
+    // app.exchangeRates.providerUrl is the package root ending with "@" (no tag in config), e.g. ...currency-api@
+    // fetchLatest -> ...@{latest} ; fetchForDate -> ...@{yyyy-MM-dd}
+    // Plain base URLs without "@" (e.g. local mock) are used as-is for both.
+    private val packageRootUrl: String by lazy {
+        val at = providerUrl.lastIndexOf('@')
+        if (at < 0) providerUrl else providerUrl.substring(0, at)
+    }
+
+    private val usesNpmTaggedBase: Boolean by lazy {
+        providerUrl.lastIndexOf('@') >= 0
     }
 
     private val latestClient: FawazApiClient by lazy {
+        val target =
+            if (usesNpmTaggedBase) {
+                "$packageRootUrl@latest"
+            } else {
+                providerUrl
+            }
         Feign
             .builder()
             .decoder(JacksonDecoder())
-            .target(FawazApiClient::class.java, providerUrl)
+            .target(FawazApiClient::class.java, target)
     }
 
-    private fun historicalClient(date: LocalDate): FawazApiClient =
-        Feign
+    private fun historicalClient(date: LocalDate): FawazApiClient {
+        val target =
+            if (usesNpmTaggedBase) {
+                "$packageRootUrl@$date"
+            } else {
+                providerUrl
+            }
+        return Feign
             .builder()
             .decoder(JacksonDecoder())
-            .target(FawazApiClient::class.java, "$providerBaseUrl@$date")
+            .target(FawazApiClient::class.java, target)
+    }
 
     override suspend fun fetchLatest(
         baseCurrency: String,

@@ -27,6 +27,8 @@ interface UserCategoryService {
         newCategoryRequest: NewCategoryRequest,
     ): WalletEntryCategoryEntity
 
+    suspend fun ensureDebtSfCategory(userId: UUID): WalletEntryCategoryEntity
+
     suspend fun editCategory(
         userId: UUID,
         id: UUID,

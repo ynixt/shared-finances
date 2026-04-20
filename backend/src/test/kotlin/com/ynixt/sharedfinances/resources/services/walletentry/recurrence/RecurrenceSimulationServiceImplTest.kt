@@ -73,6 +73,8 @@ class RecurrenceSimulationServiceImplTest {
                 org.mockito.ArgumentMatchers.anySet(),
                 org.mockito.ArgumentMatchers.anySet(),
                 org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.anySet(),
+                org.mockito.ArgumentMatchers.anyBoolean(),
                 org.mockito.ArgumentMatchers.any(),
             )
         }
@@ -101,6 +103,8 @@ class RecurrenceSimulationServiceImplTest {
                     setOf(ownerA, ownerB),
                     setOf(groupA, groupB),
                     emptySet(),
+                    emptySet(),
+                    false,
                     expectedSort,
                 ),
             ).thenReturn(emptyFlow())
@@ -128,6 +132,8 @@ class RecurrenceSimulationServiceImplTest {
                 setOf(ownerA, ownerB),
                 setOf(groupA, groupB),
                 emptySet(),
+                emptySet(),
+                false,
                 expectedSort,
             )
         }
@@ -160,6 +166,8 @@ class RecurrenceSimulationServiceImplTest {
                     setOf(userId),
                     emptySet(),
                     emptySet(),
+                    emptySet(),
+                    false,
                     expectedSort,
                 ),
             ).thenReturn(flowOf(configA, configB, configC))
@@ -293,6 +301,8 @@ class RecurrenceSimulationServiceImplTest {
                     setOf(userId),
                     emptySet(),
                     emptySet(),
+                    emptySet(),
+                    false,
                     expectedSort,
                 ),
             ).thenReturn(flowOf(config))
@@ -418,6 +428,7 @@ class RecurrenceSimulationServiceImplTest {
                     userId = userId,
                     groupId = null,
                     parentId = null,
+                    conceptId = UUID.randomUUID(),
                 ).also { it.id = UUID.randomUUID() }
             val hydratedGroup =
                 GroupEntity(
@@ -454,6 +465,8 @@ class RecurrenceSimulationServiceImplTest {
                     setOf(userId),
                     emptySet(),
                     emptySet(),
+                    emptySet(),
+                    false,
                     expectedSort,
                 ),
             ).thenReturn(flowOf(config))

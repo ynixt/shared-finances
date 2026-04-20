@@ -438,6 +438,8 @@ class FinancialGoalManagementServiceImplTest {
             userIds: Set<UUID>,
             groupIds: Set<UUID>,
             entryTypes: Set<WalletEntryType>,
+            categoryConceptIds: Set<UUID>,
+            includeUncategorized: Boolean,
             sort: Sort,
         ): Flow<RecurrenceEventEntity> = emptyFlow()
 

@@ -20,6 +20,8 @@ import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { CategoryPickerComponent } from '../../components/item-picker/category-picker/category-picker.component';
+import { ConceptPickerComponent } from '../../components/item-picker/concept-picker/concept-picker.component';
+import { isCustomCategoryConceptOption, isDebtSfConcept, resolveCategoryConceptPayload } from '../../services/category-concept-form.util';
 import { GroupCategoriesService } from '../../services/group-categories.service';
 import { GetAllCategoriesParams } from '../../services/user-categories.service';
 
@@ -35,6 +37,7 @@ import { GetAllCategoriesParams } from '../../services/user-categories.service';
     ProgressSpinner,
     ConfirmDialog,
     CategoryPickerComponent,
+    ConceptPickerComponent,
     RequiredFieldAsteriskComponent,
   ],
   templateUrl: './edit-group-category-page.component.html',
@@ -50,6 +53,7 @@ export class EditGroupCategoryPageComponent {
 
   formGroup: FormGroup | undefined;
   category: CategoryDto | null = null;
+  isDebtSfCategory = false;
   loading: boolean = true;
   submitting = false;
   groupId: string | undefined;
@@ -90,10 +94,17 @@ export class EditGroupCategoryPageComponent {
     this.submitting = true;
 
     try {
+      const formValue = this.formGroup.getRawValue();
+      const conceptPayload = this.isDebtSfCategory
+        ? { conceptId: this.category.conceptId, customConceptName: null }
+        : resolveCategoryConceptPayload(formValue.conceptId, formValue.customConceptName);
+
       await this.groupCategoriesService.editCategory(this.groupId, this.category.id, {
-        name: this.formGroup.value.name,
-        color: this.formGroup.value.color,
-        parentId: this.formGroup.value.parent?.id,
+        name: formValue.name,
+        color: formValue.color,
+        parentId: formValue.parent?.id,
+        conceptId: conceptPayload.conceptId,
+        customConceptName: conceptPayload.customConceptName,
       });
       await this.router.navigate(['../..'], { relativeTo: this.route });
     } catch (error) {
@@ -104,6 +115,10 @@ export class EditGroupCategoryPageComponent {
   }
 
   async askForConfirmationToDelete() {
+    if (this.isDebtSfCategory) {
+      return;
+    }
+
     this.confirmationService.confirm({
       message: this.translateService.instant('general.genericConfirmation'),
       header: this.translateService.instant('general.confirmation'),
@@ -149,22 +164,41 @@ export class EditGroupCategoryPageComponent {
   }
 
   private async createForm(groupId: string) {
-    if (this.category == null) return;
+    const currentCategory = this.category;
+    if (currentCategory == null) return;
 
     let parentCategory: CategoryDto | null = null;
 
-    if (this.category.parentId != null) {
-      parentCategory = await this.groupCategoriesService.getCategory(groupId, this.category.parentId, { mountChildren: false });
+    if (currentCategory.parentId != null) {
+      parentCategory = await this.groupCategoriesService.getCategory(groupId, currentCategory.parentId, { mountChildren: false });
     }
 
+    const concepts = await this.groupCategoriesService.getAvailableConcepts();
+    const currentConcept = concepts.find(concept => concept.id === currentCategory.conceptId);
+    this.isDebtSfCategory = isDebtSfConcept(currentConcept);
+
     this.formGroup = this.fb.group({
-      name: [this.category.name, [Validators.required]],
+      name: [currentCategory.name, [Validators.required]],
       parent: [parentCategory, []],
-      color: [this.category.color, [Validators.required]],
+      color: [currentCategory.color, [Validators.required]],
+      conceptId: [currentCategory.conceptId, [Validators.required]],
+      customConceptName: ['', []],
     });
 
-    if (this.category.children && this.category.children.length > 0) {
+    if (currentCategory.children && currentCategory.children.length > 0) {
       this.formGroup.get('parent')?.disable();
+    }
+
+    this.formGroup
+      .get('conceptId')
+      ?.valueChanges.pipe(untilDestroyed(this))
+      .subscribe(value => this.updateCustomConceptValidators(value));
+
+    if (this.isDebtSfCategory) {
+      this.formGroup.get('conceptId')?.disable({ emitEvent: false });
+      this.formGroup.get('customConceptName')?.disable({ emitEvent: false });
+    } else {
+      this.updateCustomConceptValidators(currentCategory.conceptId);
     }
   }
 
@@ -196,5 +230,24 @@ export class EditGroupCategoryPageComponent {
 
       console.error(err);
     }
+  }
+
+  get customConceptSelected(): boolean {
+    return !this.isDebtSfCategory && isCustomCategoryConceptOption(this.formGroup?.value?.conceptId);
+  }
+
+  private updateCustomConceptValidators(conceptId: string | null | undefined): void {
+    const customConceptControl = this.formGroup?.get('customConceptName');
+    if (customConceptControl == null) {
+      return;
+    }
+
+    if (isCustomCategoryConceptOption(conceptId)) {
+      customConceptControl.setValidators([Validators.required, Validators.maxLength(255)]);
+    } else {
+      customConceptControl.clearValidators();
+      customConceptControl.setValue('', { emitEvent: false });
+    }
+    customConceptControl.updateValueAndValidity({ emitEvent: false });
   }
 }

@@ -1,10 +1,12 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
+import com.ynixt.sharedfinances.application.web.dto.wallet.category.CategoryConceptDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.CategoryDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.EditCategoryDto
 import com.ynixt.sharedfinances.application.web.dto.wallet.category.NewCategoryDto
 import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.UserCategoryService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -31,6 +33,7 @@ import java.util.UUID
 )
 class UserCategoryController(
     private val userCategoryService: UserCategoryService,
+    private val categoryConceptService: CategoryConceptService,
     private val categoryDtoMapper: CategoryDtoMapper,
 ) {
     @Operation(summary = "Get all user categories")
@@ -50,6 +53,15 @@ class UserCategoryController(
                 query = query,
                 pageable,
             ).map(categoryDtoMapper::toDto)
+
+    @Operation(summary = "Get all available category concepts")
+    @GetMapping("/concepts")
+    suspend fun findAllConcepts(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+    ): List<CategoryConceptDto> =
+        categoryConceptService
+            .listAvailableForUser(principalToken.principal.id)
+            .map(categoryDtoMapper::toConceptDto)
 
     @Operation(summary = "Get user category by id")
     @GetMapping("/{id}")

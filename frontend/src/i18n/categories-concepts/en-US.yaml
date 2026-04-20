@@ -1,0 +1,49 @@
+financesPage:
+  categoriesPage:
+    concepts:
+      codes:
+        BEAUTY_CARE: Beauty and care
+        CHARITY: Charity
+        CHILDCARE: Childcare
+        CLOTHING: Clothing
+        CREDIT_CARD_PAYMENT: Credit card payment
+        CRYPTOCURRENCY: Cryptocurrency
+        DEBT_SF: Debt SF
+        DINING_OUT: Dining out
+        DIVIDENDS: Dividends
+        DONATIONS: Donations
+        EDUCATION: Education
+        ELECTRONICS: Electronics
+        ENTERTAINMENT: Entertainment
+        FAMILY: Family
+        FEES: Fees
+        FINES_PENALTIES: Fines and penalties
+        FURNITURE: Furniture
+        GAMES: Games
+        GIFTS_DONATIONS: Gifts and donations
+        GOVERNMENT_BENEFITS: Government benefits
+        HEALTH: Health
+        HOME: Home
+        HOUSING_RENT: Housing and rent
+        INSURANCE: Insurance
+        INVESTMENTS: Investments
+        MAINTENANCE_REPAIRS: Maintenance and repairs
+        PERSONAL: Personal
+        PETS: Pets
+        PHARMACY: Pharmacy
+        PROFIT_BONUS: Profit bonus
+        PROFIT_SHARING: Profit sharing
+        REFUND: Refund
+        SAVINGS: Savings
+        SERVICES: Services
+        SUBSCRIPTIONS: Subscriptions
+        SUPERMARKET: Supermarket
+        TAXES: Taxes
+        TRANSPORT: Transport
+        TRAVEL: Travel
+        UTILITIES: Utilities
+        VEHICLE_FINES_PENALTIES: Vehicle fines and penalties
+        VEHICLE: Vehicle
+        WAGE: Wage
+        WELL_BEING: Well-being
+      customOption: Customizado

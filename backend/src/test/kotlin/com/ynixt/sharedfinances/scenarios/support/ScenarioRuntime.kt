@@ -3,6 +3,8 @@ package com.ynixt.sharedfinances.scenarios.support
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryConceptEntity
+import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
@@ -18,6 +20,7 @@ import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.UserService
 import com.ynixt.sharedfinances.domain.services.WalletItemService
+import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.dashboard.OverviewDashboardService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
@@ -62,6 +65,7 @@ import reactor.core.publisher.Flux
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Locale
+import java.util.UUID
 
 internal fun identityExchangeRateService(): ExchangeRateService =
     object : ExchangeRateService {
@@ -140,6 +144,21 @@ internal class ScenarioRuntime(
     val creditCardBillMapper: CreditCardBillMapper = ScenarioCreditCardBillMapper()
     private val walletItemMapper = ScenarioWalletItemMapper(bankAccountMapper, creditCardMapper)
     private val genericCategoryService: GenericCategoryService = NoOpGenericCategoryService()
+    private val categoryConceptService: CategoryConceptService =
+        object : CategoryConceptService {
+            override suspend fun findById(id: UUID): WalletCategoryConceptEntity? = null
+
+            override suspend fun findRequiredByCode(code: WalletCategoryConceptCode): WalletCategoryConceptEntity = error("not used")
+
+            override suspend fun listAvailableForUser(userId: UUID): List<WalletCategoryConceptEntity> = emptyList()
+
+            override suspend fun resolveForMutation(
+                conceptId: UUID?,
+                customConceptName: String?,
+            ): WalletCategoryConceptEntity = error("not used")
+
+            override suspend fun cleanupOrphanedCustomConcept(conceptId: UUID): Boolean = false
+        }
     val walletEventActionEventService = RecordingWalletEventActionEventService()
 
     val walletItemService: WalletItemService = WalletItemServiceImpl(walletItemRepository, walletItemMapper)
@@ -223,6 +242,8 @@ internal class ScenarioRuntime(
             walletEntryRepository = walletEntryRepository,
             groupService = groupService,
             walletItemService = walletItemService,
+            genericCategoryService = genericCategoryService,
+            categoryConceptService = categoryConceptService,
             creditCardBillService = creditCardBillService,
             recurrenceService = recurrenceService,
             recurrenceEventRepository = recurrenceEventRepository,
@@ -267,6 +288,8 @@ internal class ScenarioRuntime(
             walletEntryRepository = walletEntryRepository,
             groupService = groupService,
             walletItemService = walletItemService,
+            genericCategoryService = genericCategoryService,
+            categoryConceptService = categoryConceptService,
             creditCardBillService = creditCardBillService,
             recurrenceService = recurrenceService,
             recurrenceEventRepository = recurrenceEventRepository,
@@ -286,6 +309,8 @@ internal class ScenarioRuntime(
             walletEntryRepository = walletEntryRepository,
             groupService = groupService,
             walletItemService = walletItemService,
+            genericCategoryService = genericCategoryService,
+            categoryConceptService = categoryConceptService,
             creditCardBillService = creditCardBillService,
             recurrenceService = recurrenceService,
             recurrenceEventRepository = recurrenceEventRepository,

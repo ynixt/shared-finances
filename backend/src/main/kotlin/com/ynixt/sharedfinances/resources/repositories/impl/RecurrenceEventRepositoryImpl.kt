@@ -61,6 +61,8 @@ class RecurrenceEventRepositoryImpl(
         walletItemId: UUID?,
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
         sort: Sort,
     ): Flux<RecurrenceEventEntity> =
         dcRepository.findAllEntries(
@@ -71,6 +73,8 @@ class RecurrenceEventRepositoryImpl(
             walletItemId = walletItemId,
             walletItemIds = walletItemIds,
             entryTypes = entryTypes,
+            categoryConceptIds = categoryConceptIds,
+            includeUncategorized = includeUncategorized,
             sort = sort,
         )
 }

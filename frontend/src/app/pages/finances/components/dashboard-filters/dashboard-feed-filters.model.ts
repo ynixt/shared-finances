@@ -6,6 +6,8 @@ export interface DashboardFeedFilters {
   creditCardIds: string[];
   bankAccountIds: string[];
   entryTypes: WalletEntryType[];
+  categoryIds: string[];
+  includeUncategorized: boolean;
 }
 
 export interface DashboardFilterOption {
@@ -19,4 +21,6 @@ export const EMPTY_DASHBOARD_FEED_FILTERS: DashboardFeedFilters = {
   creditCardIds: [],
   bankAccountIds: [],
   entryTypes: [],
+  categoryIds: [],
+  includeUncategorized: false,
 };

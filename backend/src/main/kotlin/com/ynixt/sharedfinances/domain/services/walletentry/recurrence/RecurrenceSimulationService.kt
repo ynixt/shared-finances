@@ -37,6 +37,8 @@ interface RecurrenceSimulationService {
         userIds: Set<UUID> = emptySet(),
         walletItemId: UUID?,
         billDate: LocalDate?,
+        categoryConceptIds: Set<UUID> = emptySet(),
+        includeUncategorized: Boolean = false,
     ): List<EventListResponse>
 
     suspend fun simulateGenerationWithFilters(
@@ -49,6 +51,8 @@ interface RecurrenceSimulationService {
         userIds: Set<UUID> = emptySet(),
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
     ): List<EventListResponse> =
         simulateGeneration(
             minimumEndExecution = minimumEndExecution,
@@ -58,6 +62,8 @@ interface RecurrenceSimulationService {
             userIds = userIds,
             walletItemId = walletItemId,
             billDate = billDate,
+            categoryConceptIds = categoryConceptIds,
+            includeUncategorized = includeUncategorized,
         )
 
     suspend fun simulateGenerationForUsers(
@@ -92,6 +98,8 @@ interface RecurrenceSimulationService {
         userIds: Set<UUID> = emptySet(),
         walletItemIds: Set<UUID>,
         entryTypes: Set<WalletEntryType>,
+        categoryConceptIds: Set<UUID>,
+        includeUncategorized: Boolean,
     ): List<EventListResponse> =
         simulateGenerationForCreditCard(
             billDate = billDate,

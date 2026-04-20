@@ -77,12 +77,23 @@ interface WalletEntryCategoryRepository : EntityRepository<WalletEntryCategoryEn
         groupId: UUID,
     ): Mono<WalletEntryCategoryEntity>
 
+    fun findAllByUserIdAndConceptId(
+        userId: UUID,
+        conceptId: UUID,
+    ): Flux<WalletEntryCategoryEntity>
+
+    fun findAllByGroupIdAndConceptId(
+        groupId: UUID,
+        conceptId: UUID,
+    ): Flux<WalletEntryCategoryEntity>
+
     fun updateByUserId(
         id: UUID,
         userId: UUID,
         newName: String,
         newColor: String,
         newParentId: UUID?,
+        newConceptId: UUID,
     ): Mono<Long>
 
     fun updateByGroupId(
@@ -91,5 +102,6 @@ interface WalletEntryCategoryRepository : EntityRepository<WalletEntryCategoryEn
         newName: String,
         newColor: String,
         newParentId: UUID?,
+        newConceptId: UUID,
     ): Mono<Long>
 }

@@ -32,6 +32,8 @@ describe('DashboardFiltersBaseComponent', () => {
       creditCardIds: [],
       bankAccountIds: [],
       entryTypes: [],
+      categoryIds: [],
+      includeUncategorized: false,
     });
   });
 
@@ -42,6 +44,7 @@ describe('DashboardFiltersBaseComponent', () => {
       creditCardIds: ['card-1'],
       bankAccountIds: ['bank-1'],
       entryTypes: ['EXPENSE', 'TRANSFER'],
+      categorySelectionIds: ['category-1', 'category-2'],
     });
 
     expect(component.serializeFilters()).toEqual({
@@ -50,6 +53,29 @@ describe('DashboardFiltersBaseComponent', () => {
       creditCardIds: ['card-1'],
       bankAccountIds: ['bank-1'],
       entryTypes: ['EXPENSE', 'TRANSFER'],
+      categoryIds: ['category-1', 'category-2'],
+      includeUncategorized: false,
+    });
+  });
+
+  it('serializes uncategorized selection separately from category ids', () => {
+    component.form.setValue({
+      groupIds: [],
+      memberIds: [],
+      creditCardIds: [],
+      bankAccountIds: [],
+      entryTypes: [],
+      categorySelectionIds: ['__UNCATEGORIZED_OPTION__', 'category-1'],
+    });
+
+    expect(component.serializeFilters()).toEqual({
+      groupIds: [],
+      memberIds: [],
+      creditCardIds: [],
+      bankAccountIds: [],
+      entryTypes: [],
+      categoryIds: ['category-1'],
+      includeUncategorized: true,
     });
   });
 });

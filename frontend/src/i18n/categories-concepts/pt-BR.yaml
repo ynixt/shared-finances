@@ -1,0 +1,49 @@
+financesPage:
+  categoriesPage:
+    concepts:
+      codes:
+        BEAUTY_CARE: Beleza e cuidados
+        CHARITY: Caridade
+        CHILDCARE: Cuidados infantis
+        CLOTHING: Vestuário
+        CREDIT_CARD_PAYMENT: Pagamento de cartão de crédito
+        CRYPTOCURRENCY: Criptomoedas
+        DEBT_SF: Dívida SF
+        DINING_OUT: Comer fora
+        DIVIDENDS: Dividendos
+        DONATIONS: Doações
+        EDUCATION: Educação
+        ELECTRONICS: Eletrônicos
+        ENTERTAINMENT: Entretenimento
+        FAMILY: Família
+        FEES: Taxas
+        FINES_PENALTIES: Multas e penalidades
+        FURNITURE: Móveis
+        GAMES: Jogos
+        GIFTS_DONATIONS: Presentes e doações
+        GOVERNMENT_BENEFITS: Benefícios do governo
+        HEALTH: Saúde
+        HOME: Casa
+        HOUSING_RENT: Moradia e aluguel
+        INSURANCE: Seguros
+        INVESTMENTS: Investimentos
+        MAINTENANCE_REPAIRS: Manutenção e reparos
+        PERSONAL: Pessoal
+        PETS: Pets
+        PHARMACY: Farmácia
+        PROFIT_BONUS: Bônus de lucro
+        PROFIT_SHARING: Participação nos lucros
+        REFUND: Reembolso
+        SAVINGS: Poupança
+        SERVICES: Serviços
+        SUBSCRIPTIONS: Assinaturas
+        SUPERMARKET: Supermercado
+        TAXES: Impostos
+        TRANSPORT: Transporte
+        TRAVEL: Viagem
+        UTILITIES: Contas da casa
+        VEHICLE_FINES_PENALTIES: Multas e penalidades de veículo
+        VEHICLE: Veículo
+        WAGE: Salário
+        WELL_BEING: Bem estar
+      customOption: Customizado

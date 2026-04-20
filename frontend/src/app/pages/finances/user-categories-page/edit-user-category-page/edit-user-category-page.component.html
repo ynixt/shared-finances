@@ -4,7 +4,7 @@
   } @else {
     <app-finances-title-bar
       [title]="'financesPage.categoriesPage.editCategoriesPage.title' | translate: { name: category.name }"
-      [showDeleteButton]="true"
+      [showDeleteButton]="!isDebtSfCategory"
       (deleteButtonClicked)="askForConfirmationToDelete()"
       closeRouterLink="../.."
     ></app-finances-title-bar>
@@ -31,6 +31,36 @@
           [filterCategoriesAfterLoad]="filterCategoriesForParentPicker.bind(this)"
         ></app-category-picker>
       </label>
+
+      <label class="flex flex-col gap-2">
+        <span
+          >{{ 'financesPage.categoriesPage.newCategoriesPage.concept' | translate }}
+          <app-required-field-asterisk></app-required-field-asterisk
+        ></span>
+        <app-concept-picker
+          controlName="conceptId"
+          [excludeDebtSf]="!isDebtSfCategory"
+          [currentConceptId]="category.conceptId"
+          [includeCustomOption]="!isDebtSfCategory"
+          [autoSelectFirst]="false"
+        ></app-concept-picker>
+      </label>
+
+      @if (isDebtSfCategory) {
+        <small class="text-xs text-surface-500">{{
+          'financesPage.categoriesPage.editCategoriesPage.debtSfConceptLocked' | translate
+        }}</small>
+      }
+
+      @if (customConceptSelected) {
+        <label class="flex flex-col gap-2">
+          <span
+            >{{ 'financesPage.categoriesPage.newCategoriesPage.customConceptName' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk
+          ></span>
+          <input formControlName="customConceptName" pInputText type="text" />
+        </label>
+      }
 
       <button pButton type="submit" [loading]="submitting" [disabled]="formGroup.invalid">{{ 'general.save' | translate }}</button>
     </form>

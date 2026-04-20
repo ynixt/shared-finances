@@ -35,6 +35,8 @@ interface GroupCategoryService {
         newCategoryRequest: NewCategoryRequest,
     ): WalletEntryCategoryEntity?
 
+    suspend fun ensureDebtSfCategory(groupId: UUID): WalletEntryCategoryEntity
+
     suspend fun editCategory(
         userId: UUID,
         groupId: UUID,

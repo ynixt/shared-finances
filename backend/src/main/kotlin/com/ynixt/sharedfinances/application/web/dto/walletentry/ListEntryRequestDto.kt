@@ -11,6 +11,8 @@ data class ListEntryRequestDto(
     val creditCardIds: List<UUID>?,
     val userIds: List<UUID>?,
     val bankAccountIds: List<UUID>?,
+    val categoryIds: List<UUID>?,
+    val includeUncategorized: Boolean?,
     val entryTypes: List<WalletEntryType>?,
     val pageRequest: CursorPageRequest?,
     val minimumDate: LocalDate?,

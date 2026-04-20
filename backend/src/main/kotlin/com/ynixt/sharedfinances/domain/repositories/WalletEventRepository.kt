@@ -50,6 +50,8 @@ interface WalletEventRepository {
         walletItemId: UUID?,
         walletItemIds: Set<UUID> = emptySet(),
         entryTypes: Set<WalletEntryType> = emptySet(),
+        categoryConceptIds: Set<UUID> = emptySet(),
+        includeUncategorized: Boolean = false,
         minimumDate: LocalDate?,
         maximumDate: LocalDate?,
         billId: UUID?,

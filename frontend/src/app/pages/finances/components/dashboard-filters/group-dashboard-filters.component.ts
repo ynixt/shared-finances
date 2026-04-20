@@ -15,6 +15,7 @@ export class GroupDashboardFiltersComponent {
   readonly memberOptions = input<DashboardFilterOption[]>([]);
   readonly bankAccountOptions = input<DashboardFilterOption[]>([]);
   readonly creditCardOptions = input<DashboardFilterOption[]>([]);
+  readonly categoryOptions = input<DashboardFilterOption[]>([]);
 
   onFiltersChange(filters: DashboardFeedFilters) {
     this.filtersChange.emit(filters);

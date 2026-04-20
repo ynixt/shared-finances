@@ -74,6 +74,8 @@ export class WalletEntryTableComponent {
   readonly creditCardIds = input<string[] | undefined>(undefined);
   readonly bankAccountIds = input<string[] | undefined>(undefined);
   readonly entryTypes = input<WalletEntryType[] | undefined>(undefined);
+  readonly categoryIds = input<string[] | undefined>(undefined);
+  readonly includeUncategorized = input<boolean | undefined>(undefined);
   readonly refreshKey = input<number>(0);
   readonly listenToUserEvents = input<boolean>(true);
   readonly creditCardBillId = input<string | undefined | null>(undefined);
@@ -107,6 +109,8 @@ export class WalletEntryTableComponent {
       const filterCreditCardIds = this.creditCardIds();
       const filterBankAccountIds = this.bankAccountIds();
       const filterEntryTypes = this.entryTypes();
+      const filterCategoryIds = this.categoryIds();
+      const filterIncludeUncategorized = this.includeUncategorized();
       const refreshKey = this.refreshKey();
       const isLoading = this.loading();
       void wId;
@@ -115,6 +119,8 @@ export class WalletEntryTableComponent {
       void filterCreditCardIds;
       void filterBankAccountIds;
       void filterEntryTypes;
+      void filterCategoryIds;
+      void filterIncludeUncategorized;
       void refreshKey;
 
       if (isLoading) return;
@@ -139,6 +145,8 @@ export class WalletEntryTableComponent {
   ): Promise<CursorPage<EventForListDto>> => {
     const billId = this.creditCardBillId();
     const billDate = this.creditCardBillDate();
+    const selectedCategoryIds = this.categoryIds() ?? [];
+    const includeUncategorized = this.includeUncategorized() === true;
 
     return await this.walletEntryService.listWalletEntries(
       {
@@ -155,6 +163,8 @@ export class WalletEntryTableComponent {
         creditCardIds: this.creditCardIds(),
         bankAccountIds: this.bankAccountIds(),
         entryTypes: this.entryTypes(),
+        categoryIds: selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
+        includeUncategorized: includeUncategorized ? true : undefined,
       },
     );
   };
@@ -233,12 +243,32 @@ export class WalletEntryTableComponent {
       return false;
     }
 
+    if (!this.matchesCategoryFilters(dto)) {
+      return false;
+    }
+
     const creditCardBillDate = this.creditCardBillDate();
     if (creditCardBillDate != null) {
       return dto.entries.find(entry => entry.billDate && creditCardBillDate.isSame(dayjs(entry.billDate), 'day')) != null;
     }
 
     return true;
+  }
+
+  private matchesCategoryFilters(dto: EventForListDto): boolean {
+    const selectedCategoryIds = this.categoryIds() ?? [];
+    const includeUncategorized = this.includeUncategorized() ?? false;
+
+    if (selectedCategoryIds.length === 0 && !includeUncategorized) {
+      return true;
+    }
+
+    const categoryId = dto.category?.id;
+    if (categoryId == null) {
+      return includeUncategorized;
+    }
+
+    return selectedCategoryIds.length === 0 || selectedCategoryIds.includes(categoryId);
   }
 
   canEdit(entry: EventForListDto): boolean {
