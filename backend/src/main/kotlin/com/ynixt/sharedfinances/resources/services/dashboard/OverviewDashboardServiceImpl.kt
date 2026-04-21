@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.resources.services.dashboard
 
+import com.ynixt.sharedfinances.domain.models.dashboard.GroupOverviewDashboard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardScope
 import com.ynixt.sharedfinances.domain.services.dashboard.OverviewDashboardService
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -19,6 +21,7 @@ internal class OverviewDashboardServiceImpl(
     private val assemblyService: OverviewDashboardAssemblyServiceImpl,
     private val cardService: OverviewDashboardCardServiceImpl,
     private val chartService: OverviewDashboardChartServiceImpl,
+    private val groupOverviewBuilderService: GroupOverviewBuilderService,
     private val clock: Clock,
 ) : OverviewDashboardService {
     override suspend fun getOverview(
@@ -99,7 +102,7 @@ internal class OverviewDashboardServiceImpl(
 
         val goalCommitmentContext =
             goalService.loadGoalCommitmentContext(
-                userId = userId,
+                scope = OverviewDashboardScope.Individual(actorUserId = userId),
                 bankAccountIds = visibleItems.bankAccountIds,
                 bankAccountById = visibleItems.bankAccountById,
                 rawBalanceByBankId = rawBalanceByBankId,
@@ -219,4 +222,17 @@ internal class OverviewDashboardServiceImpl(
             goalOverCommittedWarning = goalOverCommittedWarning,
         )
     }
+
+    override suspend fun getGroupOverview(
+        userId: UUID,
+        groupId: UUID,
+        defaultCurrency: String,
+        selectedMonth: YearMonth,
+    ): GroupOverviewDashboard =
+        groupOverviewBuilderService.build(
+            userId = userId,
+            groupId = groupId,
+            defaultCurrency = defaultCurrency,
+            selectedMonth = selectedMonth,
+        )
 }

@@ -43,3 +43,4 @@ apiErrors:
   simulationJobNotFound: Job de simulação não encontrado.
   simulationJobForbidden: Você não tem permissão para acessar este job de simulação.
   duplicatedCategoryConcept: Já existe uma categoria com esse conceito.
+  unauthorized: Sem permissão para executar essa ação.

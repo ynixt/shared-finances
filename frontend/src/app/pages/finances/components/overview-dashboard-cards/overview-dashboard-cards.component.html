@@ -16,7 +16,7 @@
             >
               <span class="text-sm text-surface-700 dark:text-surface-100">{{ detailLabel(detail) | translate }}</span>
               <span class="text-xs text-surface-400">{{ detailSublabel(detail) | translate }}</span>
-              <span class="text-sm font-semibold" [class.text-green-700]="detail.value >= 0" [class.text-red-700]="detail.value < 0">
+              <span class="text-sm font-semibold {{ detailValueCss(selectedCard, detail) }}">
                 {{ detail.value | localCurrency: currency() }}
               </span>
             </div>

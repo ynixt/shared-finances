@@ -199,7 +199,7 @@
       <div formArrayName="extraBeneficiaryLegs" class="flex flex-col gap-3">
         @for (ctrl of extraBeneficiaryLegs.controls; track $index; let i = $index) {
           <div [formGroupName]="i" class="grid gap-2 md:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)_auto]">
-            <label class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2">
               <div class="flex gap-2 items-center">
                 <span>{{ 'financesPage.transactionsPage.beneficiary' | translate }}</span>
 
@@ -215,7 +215,7 @@
                 dataKey="userId"
                 formControlName="userId"
               ></app-paged-select>
-            </label>
+            </div>
 
             <label class="flex flex-col gap-2">
               <span class="py-2">{{ 'financesPage.transactionsPage.beneficiaryPercent' | translate }}</span>

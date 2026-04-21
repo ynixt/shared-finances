@@ -28,5 +28,9 @@ interface GoalLedgerCommittedSummaryRepository {
 
     fun summarizeCommittedByUserGoalsDetailed(userId: UUID): Flux<GoalCommittedByGoalRow>
 
+    fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow>
+
+    fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow>
+
     fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow>
 }

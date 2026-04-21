@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
+import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import org.assertj.core.api.Assertions.assertThat
@@ -407,5 +408,194 @@ class WalletScenarioThen internal constructor(
         assertThat(overview.goalOverCommittedWarning)
             .describedAs("overview goal over-committed warning")
             .isEqualTo(expected)
+    }
+
+    fun groupOverviewCardShouldBe(
+        key: OverviewDashboardCardKey,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val actual = overview.cards.first { it.key == key }.value
+
+        assertThat(actual)
+            .describedAs("group overview card $key")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun groupOverviewCashInForMonthShouldBe(
+        month: YearMonth,
+        executed: Number,
+        projected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val point =
+            overview.charts.cashIn.total
+                .first { it.month == month }
+
+        assertThat(point.executedValue)
+            .describedAs("group overview cash-in executed value for $month")
+            .isEqualByComparingTo(executed.toBigDecimalSafe())
+        assertThat(point.projectedValue)
+            .describedAs("group overview cash-in projected value for $month")
+            .isEqualByComparingTo(projected.toBigDecimalSafe())
+    }
+
+    fun groupOverviewExpenseForMonthShouldBe(
+        month: YearMonth,
+        executed: Number,
+        projected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val point =
+            overview.charts.expense.total
+                .first { it.month == month }
+
+        assertThat(point.executedValue)
+            .describedAs("group overview expense executed value for $month")
+            .isEqualByComparingTo(executed.toBigDecimalSafe())
+        assertThat(point.projectedValue)
+            .describedAs("group overview expense projected value for $month")
+            .isEqualByComparingTo(projected.toBigDecimalSafe())
+    }
+
+    fun groupOverviewExpenseCategorySliceShouldBe(
+        label: String,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val actual =
+            overview.charts.expenseByCategory
+                .first { it.label == label }
+                .value
+
+        assertThat(actual)
+            .describedAs("group overview expense-by-category slice $label")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun groupOverviewExpenseCategoryByMemberSliceShouldBe(
+        memberId: UUID,
+        label: String,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val actual =
+            overview.charts.expenseByCategoryByMember
+                .first { it.memberId == memberId }
+                .slices
+                .first { it.label == label }
+                .value
+
+        assertThat(actual)
+            .describedAs("group overview expense-by-category by-member slice for $memberId and label $label")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun groupOverviewDebtPairsSizeShouldBe(expected: Int) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        assertThat(overview.debtPairs)
+            .describedAs("group overview debt pairs")
+            .hasSize(expected)
+    }
+
+    fun groupOverviewDebtPairShouldBe(
+        payerId: UUID,
+        receiverId: UUID,
+        outstanding: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val pair = overview.debtPairs.first { it.payerId == payerId && it.receiverId == receiverId }
+        assertThat(pair.outstandingAmount)
+            .describedAs("group overview debt pair outstanding amount")
+            .isEqualByComparingTo(outstanding.toBigDecimalSafe())
+    }
+
+    fun groupOverviewDebtPairShouldNotExist(
+        payerId: UUID,
+        receiverId: UUID,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        assertThat(overview.debtPairs.none { it.payerId == payerId && it.receiverId == receiverId })
+            .describedAs("group overview debt pair should not exist")
+            .isTrue()
+    }
+
+    fun groupOverviewDebtPairDetailLabelsShouldContain(
+        payerId: UUID,
+        receiverId: UUID,
+        expectedLabels: Collection<String>,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val pair = overview.debtPairs.first { it.payerId == payerId && it.receiverId == receiverId }
+        val labels = pair.details.map { it.label }
+
+        assertThat(labels)
+            .describedAs("group overview debt pair detail labels")
+            .containsAll(expectedLabels)
+    }
+
+    fun groupFeedShouldHaveSize(expected: Int) {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        assertThat(page.items)
+            .describedAs("group feed items")
+            .hasSize(expected)
+    }
+
+    fun groupFeedShouldHaveNext(expected: Boolean) {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        assertThat(page.hasNext)
+            .describedAs("group feed has next page")
+            .isEqualTo(expected)
+    }
+
+    fun groupFeedShouldContainOnlyGroup(groupId: UUID) {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        assertThat(page.items.all { it.group?.id == groupId })
+            .describedAs("group feed should contain only events from selected group")
+            .isTrue()
+    }
+
+    fun groupFeedShouldContainOnlyTypes(types: Set<WalletEntryType>) {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        assertThat(page.items.all { types.contains(it.type) })
+            .describedAs("group feed should contain only selected entry types")
+            .isTrue()
+    }
+
+    fun groupFeedShouldContainEventId(eventId: UUID) {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        assertThat(page.items.any { it.id == eventId })
+            .describedAs("group feed should contain event $eventId")
+            .isTrue()
+    }
+
+    fun groupFeedShouldNotContainEventId(eventId: UUID) {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        assertThat(page.items.none { it.id == eventId })
+            .describedAs("group feed should not contain event $eventId")
+            .isTrue()
+    }
+
+    fun groupFeedShouldBeOrderedByDateDescIdDesc() {
+        val page = requireNotNull(context.lastGroupFeedPage) { "Group feed was not fetched yet" }
+        val items = page.items
+
+        if (items.size <= 1) return
+
+        for (index in 1 until items.size) {
+            val previous = items[index - 1]
+            val current = items[index]
+            assertThat(previous.date.isAfter(current.date) || previous.date.isEqual(current.date))
+                .describedAs("group feed should be ordered by date DESC")
+                .isTrue()
+
+            if (previous.date == current.date) {
+                val previousId = previous.id?.toString().orEmpty()
+                val currentId = current.id?.toString().orEmpty()
+                assertThat(previousId >= currentId)
+                    .describedAs("group feed should be ordered by id DESC when date ties")
+                    .isTrue()
+            }
+        }
     }
 }

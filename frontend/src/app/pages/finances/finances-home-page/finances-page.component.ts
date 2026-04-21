@@ -27,10 +27,13 @@ import { Tooltip } from 'primeng/tooltip';
 import { AdvancedMenuComponent, AdvancedMenuItem } from '../../../components/advanced-menu/advanced-menu.component';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { GroupPermissions, GroupPermissions__Obj } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { UserService } from '../../../services/user.service';
 import { GroupService } from '../services/group.service';
 import { GroupsActionEventService } from '../services/groups-action-event.service';
 import { UserActionEventService } from '../services/user-action-event.service';
+
+type GroupMenuGroup = GroupDto & { permissions?: GroupPermissions[] };
 
 @Component({
   selector: 'app-finances-page',
@@ -56,7 +59,7 @@ export class FinancesPageComponent {
 
   items: AdvancedMenuItem[] | undefined;
 
-  private groups: GroupDto[] | undefined = undefined;
+  private groups: GroupMenuGroup[] | undefined = undefined;
   private groupMenuRoot: AdvancedMenuItem | undefined;
 
   get shouldShowNewTransactionButton() {
@@ -222,13 +225,54 @@ export class FinancesPageComponent {
   private convertGroupsIntoMenu() {
     if (!this.groupMenuRoot || !this.groups) return;
 
-    const items: AdvancedMenuItem[] = this.groups.map(g => ({
-      id: 'group-' + g.id,
-      label: g.name,
-      expanded: false,
-      routeToAutoExpand: ['/app/groups', g.id].join('/'),
-      showCollapseIcon: true,
-      items: [
+    const items: AdvancedMenuItem[] = this.groups.map(g => {
+      const linksItems: AdvancedMenuItem[] = [];
+      const registrationsItems: AdvancedMenuItem[] = [];
+
+      if (this.hasAnyPermission(g, GroupPermissions__Obj.ADD_BANK_ACCOUNT, GroupPermissions__Obj.REMOVE_BANK_ACCOUNT)) {
+        linksItems.push({
+          fa: faBuildingColumns,
+          label: this.translateService.instant('financesPage.menu.bankAccounts'),
+          routerLink: ['/app/groups', g.id, 'bankAccounts'],
+          routerLinkActiveOptions: { exact: true },
+        });
+      }
+
+      if (this.hasAnyPermission(g, GroupPermissions__Obj.ADD_CREDIT_CARD, GroupPermissions__Obj.REMOVE_CREDIT_CARD)) {
+        linksItems.push({
+          fa: faCreditCard,
+          label: this.translateService.instant('financesPage.menu.creditCards'),
+          routerLink: ['/app/groups', g.id, 'creditCards'],
+          routerLinkActiveOptions: { exact: true },
+        });
+      }
+
+      if (
+        this.hasAnyPermission(
+          g,
+          GroupPermissions__Obj.NEW_CATEGORY,
+          GroupPermissions__Obj.EDIT_CATEGORY,
+          GroupPermissions__Obj.DELETE_CATEGORY,
+        )
+      ) {
+        registrationsItems.push({
+          fa: faTag,
+          label: this.translateService.instant('financesPage.menu.categories'),
+          routerLink: ['/app/groups', g.id, 'categories'],
+          routerLinkActiveOptions: { exact: true },
+        });
+      }
+
+      if (this.hasAnyPermission(g, GroupPermissions__Obj.MANAGE_GOALS)) {
+        registrationsItems.push({
+          fa: faBullseye,
+          label: this.translateService.instant('financesPage.menu.goals'),
+          routerLink: ['/app/groups', g.id, 'goals'],
+          routerLinkActiveOptions: { exact: true },
+        });
+      }
+
+      const groupChildren: AdvancedMenuItem[] = [
         {
           fa: faGrip,
           label: this.translateService.instant('financesPage.menu.overview'),
@@ -247,47 +291,46 @@ export class FinancesPageComponent {
           routerLink: ['/app/groups', g.id, 'simulations'],
           routerLinkActiveOptions: { exact: true },
         },
-        {
+      ];
+
+      if (linksItems.length > 0) {
+        groupChildren.push({
           label: this.translateService.instant('financesPage.menu.links'),
           expanded: true,
-          items: [
-            {
-              fa: faBuildingColumns,
-              label: this.translateService.instant('financesPage.menu.bankAccounts'),
-              routerLink: ['/app/groups', g.id, 'bankAccounts'],
-              routerLinkActiveOptions: { exact: true },
-            },
-            {
-              fa: faCreditCard,
-              label: this.translateService.instant('financesPage.menu.creditCards'),
-              routerLink: ['/app/groups', g.id, 'creditCards'],
-              routerLinkActiveOptions: { exact: true },
-            },
-          ],
-        },
-        {
+          items: linksItems,
+        });
+      }
+
+      if (registrationsItems.length > 0) {
+        groupChildren.push({
           label: this.translateService.instant('financesPage.menu.registrations'),
           expanded: true,
-          items: [
-            {
-              fa: faTag,
-              label: this.translateService.instant('financesPage.menu.categories'),
-              routerLink: ['/app/groups', g.id, 'categories'],
-              routerLinkActiveOptions: { exact: true },
-            },
-            {
-              fa: faBullseye,
-              label: this.translateService.instant('financesPage.menu.goals'),
-              routerLink: ['/app/groups', g.id, 'goals'],
-              routerLinkActiveOptions: { exact: true },
-            },
-          ],
-        },
-      ],
-    }));
+          items: registrationsItems,
+        });
+      }
+
+      return {
+        id: 'group-' + g.id,
+        label: g.name,
+        expanded: false,
+        routeToAutoExpand: ['/app/groups', g.id].join('/'),
+        showCollapseIcon: true,
+        items: groupChildren,
+      };
+    });
 
     this.groupMenuRoot!!.itemsLoading = false;
     this.groupMenuRoot!!.items = items;
+  }
+
+  private hasAnyPermission(group: GroupMenuGroup, ...permissions: GroupPermissions[]): boolean {
+    const groupPermissions = group.permissions;
+
+    if (groupPermissions == null || groupPermissions.length === 0) {
+      return true;
+    }
+
+    return permissions.some(permission => groupPermissions.includes(permission));
   }
 
   protected readonly newTransactionButtonIcon = faDollarSign;

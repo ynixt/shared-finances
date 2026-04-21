@@ -4,6 +4,31 @@
   <h1 class="text-xl font-semibold">{{ 'authFlows.pending.title' | translate }}</h1>
   <p class="leading-relaxed whitespace-pre-wrap">{{ 'authFlows.pending.body' | translate: { email: email } }}</p>
 
+  <form [formGroup]="confirmForm" (ngSubmit)="confirmByCode()" class="space-y-2">
+    <label class="flex flex-col gap-1">
+      <span>{{ 'authFlows.pending.code' | translate }}</span>
+
+      <p-input-otp formControlName="code" [length]="8" [autofocus]="true" (paste)="handlePaste($event)">
+        <ng-template #input let-token let-events="events" let-index="index">
+          <input
+            type="text"
+            [maxLength]="1"
+            (input)="events.input($event)"
+            (keydown)="events.keydown($event)"
+            [attr.value]="token"
+            class="p-inputotp-input p-component p-inputtext"
+          />
+          @if (index === 4) {
+            <div class="px-4">
+              <i class="pi pi-minus"></i>
+            </div>
+          }
+        </ng-template>
+      </p-input-otp>
+    </label>
+    <p-button type="submit" [disabled]="confirmForm.invalid || confirming" [label]="'authFlows.pending.confirmCode' | translate" />
+  </form>
+
   <app-turnstile-widget #turnstile (resolved)="turnstileToken = $event" />
 
   <div class="space-y-2">

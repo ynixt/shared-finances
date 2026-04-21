@@ -3,17 +3,23 @@ package com.ynixt.sharedfinances.resources.services.dashboard
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
+import com.ynixt.sharedfinances.domain.models.CursorPageRequest
+import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewCashDirection
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardScope
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewExpenseSourceSummary
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
+import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardBillService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.domain.Pageable
@@ -30,23 +36,53 @@ internal class OverviewDashboardDataServiceImpl(
     private val walletItemRepository: WalletItemRepository,
     private val walletItemMapper: WalletItemMapper,
     private val walletEntryRepository: WalletEntryRepository,
+    private val walletEventListService: WalletEventListService,
     private val recurrenceSimulationService: RecurrenceSimulationService,
     private val creditCardBillService: CreditCardBillService,
     private val groupService: GroupService,
     private val groupDebtService: GroupDebtService,
     private val clock: Clock,
 ) {
-    internal suspend fun loadVisibleItems(userId: UUID): OverviewDashboardVisibleItems {
+    internal suspend fun loadVisibleItems(userId: UUID): OverviewDashboardVisibleItems =
+        loadVisibleItems(OverviewDashboardScope.Individual(actorUserId = userId))
+
+    internal suspend fun loadVisibleItems(scope: OverviewDashboardScope): OverviewDashboardVisibleItems {
+        val ownerUserIds =
+            when (scope) {
+                is OverviewDashboardScope.Individual -> setOf(scope.actorUserId)
+                is OverviewDashboardScope.Group ->
+                    groupService
+                        .findAllMembers(
+                            userId = scope.actorUserId,
+                            id = scope.groupId,
+                        ).map { it.userId }
+                        .toSet()
+            }
+
+        if (ownerUserIds.isEmpty()) {
+            return OverviewDashboardVisibleItems(
+                items = emptyList(),
+                bankAccounts = emptyList(),
+                creditCards = emptyList(),
+                walletItemIds = emptySet(),
+                bankAccountById = emptyMap(),
+                bankAccountIds = emptySet(),
+            )
+        }
+
         val visibleWalletItems: List<WalletItem> =
-            walletItemRepository
-                .findAllByUserIdAndEnabledAndShowOnDashboard(
-                    userId = userId,
-                    enabled = true,
-                    showOnDashboard = true,
-                    pageable = Pageable.unpaged(),
-                ).map(walletItemMapper::toModel)
-                .collectList()
-                .awaitSingle()
+            ownerUserIds
+                .flatMap { ownerUserId ->
+                    walletItemRepository
+                        .findAllByUserIdAndEnabledAndShowOnDashboard(
+                            userId = ownerUserId,
+                            enabled = true,
+                            showOnDashboard = true,
+                            pageable = Pageable.unpaged(),
+                        ).map(walletItemMapper::toModel)
+                        .collectList()
+                        .awaitSingle()
+                }.distinctBy { it.id }
 
         val visibleBankAccounts = visibleWalletItems.filterIsInstance<BankAccount>()
         val visibleCreditCards = visibleWalletItems.filterIsInstance<CreditCard>()
@@ -59,6 +95,114 @@ internal class OverviewDashboardDataServiceImpl(
             walletItemIds = visibleWalletItems.mapNotNull { it.id }.toSet(),
             bankAccountById = bankAccountById,
             bankAccountIds = bankAccountById.keys,
+        )
+    }
+
+    internal suspend fun loadGroupMembers(
+        actorUserId: UUID,
+        groupId: UUID,
+    ) = groupService.findAllMembers(userId = actorUserId, id = groupId)
+
+    internal suspend fun loadGroupDebtWorkspace(
+        actorUserId: UUID,
+        groupId: UUID,
+    ): GroupDebtWorkspace = groupDebtService.getWorkspace(userId = actorUserId, groupId = groupId)
+
+    internal suspend fun loadExecutedEvents(
+        scope: OverviewDashboardScope,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+        entryTypes: Set<WalletEntryType> = setOf(WalletEntryType.REVENUE, WalletEntryType.EXPENSE),
+    ): List<EventListResponse> {
+        if (minimumDate.isAfter(maximumDate)) {
+            return emptyList()
+        }
+
+        val now = LocalDate.now(clock)
+        val safeMaximumDate = minOf(now, maximumDate)
+        if (minimumDate.isAfter(safeMaximumDate)) {
+            return emptyList()
+        }
+
+        val (groupIds, userIds) =
+            when (scope) {
+                is OverviewDashboardScope.Individual -> emptySet<UUID>() to emptySet<UUID>()
+                is OverviewDashboardScope.Group -> setOf(scope.groupId) to emptySet<UUID>()
+            }
+
+        val events = mutableListOf<EventListResponse>()
+        var nextCursor: Map<String, Any>? = mapOf("skipFuture" to true)
+
+        while (true) {
+            val page =
+                walletEventListService.list(
+                    userId = scope.actorUserId,
+                    request =
+                        ListEntryRequest(
+                            walletItemId = null,
+                            groupIds = groupIds,
+                            userIds = userIds,
+                            creditCardIds = emptySet(),
+                            bankAccountIds = emptySet(),
+                            categoryIds = emptySet(),
+                            entryTypes = entryTypes,
+                            pageRequest =
+                                CursorPageRequest(
+                                    size = OVERVIEW_EVENTS_PAGE_SIZE,
+                                    nextCursor = nextCursor,
+                                ),
+                            minimumDate = minimumDate,
+                            maximumDate = safeMaximumDate,
+                            billId = null,
+                            billDate = null,
+                            // `includeUncategorized=true` means "only uncategorized" in wallet-event query semantics.
+                            // Group overview must not filter by category when no explicit category filter is requested.
+                            includeUncategorized = false,
+                        ),
+                )
+
+            events.addAll(page.items)
+
+            if (!page.hasNext || page.nextCursor == null) {
+                break
+            }
+
+            nextCursor = page.nextCursor
+        }
+
+        return events
+    }
+
+    internal suspend fun loadProjectedEvents(
+        scope: OverviewDashboardScope,
+        minimumDate: LocalDate,
+        maximumDate: LocalDate,
+        visibleWalletItemIds: Set<UUID>,
+        entryTypes: Set<WalletEntryType> = setOf(WalletEntryType.REVENUE, WalletEntryType.EXPENSE),
+    ): List<EventListResponse> {
+        if (minimumDate.isAfter(maximumDate) || visibleWalletItemIds.isEmpty()) {
+            return emptyList()
+        }
+
+        val (groupIds, userIds) =
+            when (scope) {
+                is OverviewDashboardScope.Individual -> emptySet<UUID>() to emptySet<UUID>()
+                is OverviewDashboardScope.Group -> setOf(scope.groupId) to emptySet<UUID>()
+            }
+
+        return recurrenceSimulationService.simulateGenerationWithFilters(
+            minimumEndExecution = minimumDate,
+            maximumNextExecution = maximumDate,
+            userId = scope.actorUserId,
+            walletItemId = null,
+            billDate = null,
+            groupIds = groupIds,
+            userIds = userIds,
+            walletItemIds = visibleWalletItemIds,
+            entryTypes = entryTypes,
+            categoryConceptIds = emptySet(),
+            // Keep category unfiltered for overview projected events.
+            includeUncategorized = false,
         )
     }
 

@@ -470,6 +470,10 @@ class FinancialGoalManagementServiceImplTest {
 
         override fun summarizeCommittedByUserGoalsDetailed(userId: UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
 
+        override fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+        override fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
+
         override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
     }
 

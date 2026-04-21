@@ -7,7 +7,6 @@ import reactor.core.publisher.Mono
 import tools.jackson.databind.ObjectMapper
 import java.security.MessageDigest
 import java.time.Duration
-import java.util.Base64
 import java.util.UUID
 
 data class EmailVerificationTokenPayload(
@@ -36,10 +35,10 @@ class EmailVerificationTokenRedisRepository(
     fun issueToken(
         userId: UUID,
         email: String,
+        rawToken: String,
         ttl: Duration,
-    ): Mono<String> {
-        val raw = newOpaqueToken()
-        val hashHex = sha256Hex(raw)
+    ): Mono<Void> {
+        val hashHex = sha256Hex(rawToken)
         val payload = EmailVerificationTokenPayload(userId = userId, email = email.lowercase())
         val json = objectMapper.writeValueAsString(payload)
         val tokenKey = AuthRedisKeys.emailVerifyToken(hashHex)
@@ -58,7 +57,7 @@ class EmailVerificationTokenRedisRepository(
                 redisTemplate
                     .opsForValue()
                     .set(activeKey, hashHex, ttl),
-            ).thenReturn(raw)
+            ).then()
     }
 
     fun consumeRawToken(rawToken: String): Mono<EmailVerificationTokenPayload> {
@@ -75,12 +74,6 @@ class EmailVerificationTokenRedisRepository(
     }
 
     fun deleteActivePointer(userId: UUID): Mono<Long> = redisTemplate.delete(AuthRedisKeys.emailVerifyActive(userId))
-
-    private fun newOpaqueToken(): String {
-        val data = ByteArray(48)
-        java.security.SecureRandom().nextBytes(data)
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(data)
-    }
 
     private fun sha256Hex(input: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))

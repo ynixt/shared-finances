@@ -9,8 +9,64 @@
       [extraButtons]="extraButtons"
     ></app-finances-title-bar>
 
-    <div class="flex">
+    <div class="mt-10 flex">
       <app-group-user-list [groupId]="group.id" [limitBeforeMoreMembers]="7"></app-group-user-list>
     </div>
+
+    <app-advanced-date-picker class="mb-8 block" [formControl]="dateControl" selectionMode="single" viewMode="month" />
+
+    @if (dashboardLoading) {
+      <div class="flex justify-center py-8">
+        <p-progress-spinner />
+      </div>
+    } @else if (dashboard == null) {
+      <div class="rounded-xl border border-surface-200 bg-white p-8 text-center text-surface-500">
+        {{ 'financesPage.overviewPage.empty' | translate }}
+      </div>
+    } @else {
+      @if (dashboard.goalOverCommittedWarning) {
+        <p-message severity="warn" icon="pi pi-exclamation-triangle" styleClass="mb-2">
+          {{ 'financesPage.overviewPage.goalBalances.overCommittedWarning' | translate }}
+        </p-message>
+      }
+
+      <app-overview-dashboard-cards class="block" [cards]="dashboard.cards" [currency]="dashboard.currency"></app-overview-dashboard-cards>
+
+      <app-group-overview-dashboard-charts
+        class="mt-10 block"
+        [charts]="dashboard.charts"
+        [currency]="dashboard.currency"
+        [overviewDateRange]="dateControl.value"
+      ></app-group-overview-dashboard-charts>
+
+      <app-group-debt-pairs-panel
+        class="mt-10 block"
+        [debtPairs]="dashboard.debtPairs"
+        [currency]="dashboard.currency"
+      ></app-group-debt-pairs-panel>
+
+      <app-group-dashboard-filters
+        class="mt-10 block"
+        [memberOptionsGetterInput]="memberOptionsGetter"
+        [bankAccountOptionsGetterInput]="bankAccountOptionsGetter"
+        [creditCardOptionsGetterInput]="creditCardOptionsGetter"
+        [categoryOptionsGetterInput]="categoryOptionsGetter"
+        (filtersChange)="onFiltersChange($event)"
+      ></app-group-dashboard-filters>
+
+      <app-wallet-entry-table
+        class="mt-10 block"
+        [dateRange]="dateControl.value == null ? undefined : dateControl.value"
+        [groupIds]="groupId == null ? [] : [groupId]"
+        [memberIds]="dashboardFilters.memberIds"
+        [creditCardIds]="dashboardFilters.creditCardIds"
+        [bankAccountIds]="dashboardFilters.bankAccountIds"
+        [entryTypes]="dashboardFilters.entryTypes"
+        [categoryIds]="dashboardFilters.categoryIds"
+        [includeUncategorized]="dashboardFilters.includeUncategorized"
+        [refreshKey]="tableRefreshKey"
+        [listenToUserEvents]="false"
+      ></app-wallet-entry-table>
+    }
   </div>
 }

@@ -2,8 +2,10 @@ authFlows:
   pending:
     title: Confirme seu e-mail
     body: >-
-      Enviamos um link de confirmação para {{email}}. Você deve confirmar em até 3 horas; após isso a
-      conta pode ser removida. O login permanece bloqueado até a confirmação.
+      Enviamos um link e um código de confirmação para {{email}}. Você deve confirmar em até 3 horas;
+      após isso a conta pode ser removida. O login permanece bloqueado até a confirmação.
+    code: Código de verificação
+    confirmCode: Confirmar código
     resend: Reenviar e-mail
     resendIn: Reenviar em {{seconds}}s
     newEmail: Novo endereço de e-mail

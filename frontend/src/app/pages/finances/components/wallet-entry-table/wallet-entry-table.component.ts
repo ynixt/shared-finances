@@ -71,6 +71,7 @@ export class WalletEntryTableComponent {
   readonly loading = input<boolean>(false);
   readonly dateRange = input<DateRange | undefined>(undefined);
   readonly groupIds = input<string[] | undefined>(undefined);
+  readonly memberIds = input<string[] | undefined>(undefined);
   readonly creditCardIds = input<string[] | undefined>(undefined);
   readonly bankAccountIds = input<string[] | undefined>(undefined);
   readonly entryTypes = input<WalletEntryType[] | undefined>(undefined);
@@ -106,6 +107,7 @@ export class WalletEntryTableComponent {
       const wId = this.walletItemId();
       const dRange = this.dateRange();
       const filterGroupIds = this.groupIds();
+      const filterMemberIds = this.memberIds();
       const filterCreditCardIds = this.creditCardIds();
       const filterBankAccountIds = this.bankAccountIds();
       const filterEntryTypes = this.entryTypes();
@@ -116,6 +118,7 @@ export class WalletEntryTableComponent {
       void wId;
       void dRange;
       void filterGroupIds;
+      void filterMemberIds;
       void filterCreditCardIds;
       void filterBankAccountIds;
       void filterEntryTypes;
@@ -160,6 +163,7 @@ export class WalletEntryTableComponent {
         minimumDate: dateRange?.startDate?.format(ONLY_DATE_FORMAT),
         maximumDate: dateRange?.endDate?.format(ONLY_DATE_FORMAT),
         groupIds: this.groupIds(),
+        userIds: this.memberIds(),
         creditCardIds: this.creditCardIds(),
         bankAccountIds: this.bankAccountIds(),
         entryTypes: this.entryTypes(),
@@ -235,6 +239,15 @@ export class WalletEntryTableComponent {
 
     const groupIds = this.groupIds() ?? [];
     if (groupIds.length > 0 && (dto.group?.id == null || !groupIds.includes(dto.group.id))) {
+      return false;
+    }
+
+    const memberIds = this.memberIds() ?? [];
+    if (
+      memberIds.length > 0 &&
+      dto.entries.find(entry => entry.walletItem.user?.id != null && memberIds.includes(entry.walletItem.user.id)) == null &&
+      (dto.user?.id == null || !memberIds.includes(dto.user.id))
+    ) {
       return false;
     }
 

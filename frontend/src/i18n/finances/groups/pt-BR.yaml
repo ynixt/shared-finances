@@ -13,6 +13,17 @@ financesPage:
       title: 'Visão geral do grupo: {{name}}'
       manageTeam: Gerenciar pessoas do grupo
       viewDebts: Abrir a área de dívidas do grupo
+      charts:
+        cashInByMember: Entrada em caixa por integrante (12 meses)
+        expenseByMemberSeries: Despesas por integrante (12 meses)
+        cashInByCategoryTotal: Entrada em caixa por categoria (grupo)
+        cashInByCategoryByMember: Entrada em caixa por categoria (por integrante)
+        expenseByCategoryByMember: Despesas por categoria (por integrante)
+        expenseByMemberPie: Despesas por integrante
+      debtPairs:
+        title: Entre pares do grupo
+        empty: Nenhuma dívida em aberto entre membros para o período selecionado.
+        detailTitle: 'Detalhes: {{payer}} -> {{receiver}}'
     manageTeamPage:
       title: 'Gerenciar pessoas do grupo: {{name}}'
       role: Permissão

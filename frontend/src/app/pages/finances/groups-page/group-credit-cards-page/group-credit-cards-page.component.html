@@ -5,7 +5,7 @@
     <app-finances-title-bar
       [title]="'financesPage.groupsPage.creditCardsAssociatedPage.title' | translate: { name: group.name }"
       closeRouterLink=".."
-      newRouterLink="new"
+      [newRouterLink]="canAddCreditCard ? 'new' : undefined"
     ></app-finances-title-bar>
 
     <div class="group-credit-cards-table w-full">
@@ -26,7 +26,7 @@
 
             <td>
               <div class="flex items-center justify-center gap-2">
-                @if (group.permissions.includes(GroupPermissions__Obj.REMOVE_CREDIT_CARD)) {
+                @if (canRemoveCreditCard) {
                   <button
                     pButton
                     pRipple

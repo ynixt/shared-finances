@@ -13,6 +13,17 @@ financesPage:
       title: 'Group overview: {{name}}'
       manageTeam: Manage people in the group
       viewDebts: Open group debt workspace
+      charts:
+        cashInByMember: Cash in by member (12 months)
+        expenseByMemberSeries: Expense by member (12 months)
+        cashInByCategoryTotal: Cash in by category (group)
+        cashInByCategoryByMember: Cash in by category (by member)
+        expenseByCategoryByMember: Expense by category (by member)
+        expenseByMemberPie: Expense by member
+      debtPairs:
+        title: Debt between members
+        empty: No outstanding debt between members for the selected period.
+        detailTitle: 'Details: {{payer}} -> {{receiver}}'
     manageTeamPage:
       title: 'Manage team of group: {{name}}'
       role: Role

@@ -19,6 +19,7 @@ import {
   GoalContributionScheduleDto,
   GoalLedgerMovementDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/goals';
+import { GroupPermissions__Obj } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { Page } from '../../../models/pagination';
 import { LocalCurrencyPipe, LocalCurrencyPipeService } from '../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../pipes/local-date.pipe';
@@ -27,6 +28,7 @@ import { LocaleService } from '../../../services/locale.service';
 import { createEmptyPage } from '../../../services/pagination.service';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../components/finances-title-bar/finances-title-bar.component';
 import { FinancialGoalService } from '../services/financial-goal.service';
+import { GroupService } from '../services/group.service';
 import { resolveGoalWorkspaceContext } from './goal-workspace-context';
 
 interface GoalCommitmentChartViewModel {
@@ -58,6 +60,7 @@ export class FinancialGoalDetailPageComponent {
   readonly loading = signal(true);
   readonly loadingMovements = signal(false);
   readonly loadingSchedules = signal(false);
+  readonly canManageGoal = signal(true);
   readonly movementPage = signal<Page<GoalLedgerMovementDto>>(createEmptyPage());
   readonly schedulePage = signal<Page<GoalContributionScheduleDto>>(createEmptyPage());
   readonly movementPageSize = 10;
@@ -84,6 +87,7 @@ export class FinancialGoalDetailPageComponent {
 
   constructor(
     private financialGoalService: FinancialGoalService,
+    private groupService: GroupService,
     private messageService: MessageService,
     private errorMessageService: ErrorMessageService,
     private translateService: TranslateService,
@@ -102,6 +106,7 @@ export class FinancialGoalDetailPageComponent {
     try {
       const d = await this.financialGoalService.getGoal(this.goalId);
       this.detail.set(d);
+      await this.resolveManageGoalsPermission(d.goal.groupId ?? this.workspace.groupId);
       await Promise.all([this.loadMovements(0), this.loadSchedules(0)]);
     } catch (e) {
       this.errorMessageService.handleError(e, this.messageService);
@@ -175,6 +180,10 @@ export class FinancialGoalDetailPageComponent {
   }
 
   async deleteSchedule(scheduleId: string) {
+    if (!this.canManageGoal()) {
+      return;
+    }
+
     try {
       await this.financialGoalService.deleteSchedule(this.goalId, scheduleId);
       await this.loadSchedules(this.currentSchedulePage);
@@ -188,6 +197,10 @@ export class FinancialGoalDetailPageComponent {
   }
 
   editExtras(): FinancesTitleBarExtraButton[] {
+    if (!this.canManageGoal()) {
+      return [];
+    }
+
     return [
       {
         routerLink: [...this.workspace.goalsRoot, this.goalId, 'edit'],
@@ -196,6 +209,25 @@ export class FinancialGoalDetailPageComponent {
         icon: this.editIcon,
       },
     ];
+  }
+
+  private async resolveManageGoalsPermission(goalGroupId: string | null | undefined) {
+    if (this.workspace.scope !== 'group') {
+      this.canManageGoal.set(true);
+      return;
+    }
+
+    if (goalGroupId == null || goalGroupId === '') {
+      this.canManageGoal.set(false);
+      return;
+    }
+
+    try {
+      const group = await this.groupService.getGroup(goalGroupId);
+      this.canManageGoal.set(group.permissions.includes(GroupPermissions__Obj.MANAGE_GOALS));
+    } catch {
+      this.canManageGoal.set(false);
+    }
   }
 
   private buildCommitmentChartData(series: GoalCommitmentChartSeriesDto): ChartData<'line'> {

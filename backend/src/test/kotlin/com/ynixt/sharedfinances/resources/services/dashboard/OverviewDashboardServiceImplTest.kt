@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.resources.services.dashboard
 
+import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
@@ -8,6 +9,7 @@ import com.ynixt.sharedfinances.domain.mapper.impl.BankAccountMapperImpl
 import com.ynixt.sharedfinances.domain.mapper.impl.CreditCardMapperImpl
 import com.ynixt.sharedfinances.domain.mapper.impl.WalletItemMapperImpl
 import com.ynixt.sharedfinances.domain.models.CursorPage
+import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.dashboard.BankAccountMonthlySummary
@@ -37,6 +39,7 @@ import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
@@ -57,6 +60,150 @@ import java.util.UUID
 import kotlin.system.measureTimeMillis
 
 class OverviewDashboardServiceImplTest {
+    @Test
+    fun `group overview should include categorized and uncategorized expenses`() =
+        runBlocking {
+            val actorUserId = UUID.randomUUID()
+            val memberUserId = UUID.randomUUID()
+            val groupId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 4)
+            val actorBankId = UUID.randomUUID()
+            val memberBankId = UUID.randomUUID()
+
+            val walletItemRepository = InMemoryWalletItemRepository()
+            val actorBank =
+                bankAccountEntity(
+                    id = actorBankId,
+                    userId = actorUserId,
+                    name = "Actor bank",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                )
+            val memberBank =
+                bankAccountEntity(
+                    id = memberBankId,
+                    userId = memberUserId,
+                    name = "Member bank",
+                    currency = "BRL",
+                    balance = "1000.00",
+                    showOnDashboard = true,
+                )
+            walletItemRepository.save(actorBank)
+            walletItemRepository.save(memberBank)
+
+            val actorWalletItem = walletFromEntity(actorBank)
+            val memberWalletItem = walletFromEntity(memberBank)
+            val categorizedExpense =
+                EventListResponse(
+                    id = UUID.randomUUID(),
+                    type = WalletEntryType.EXPENSE,
+                    name = "categorized expense",
+                    category = categoryEntity("Lazer"),
+                    user = null,
+                    group = null,
+                    tags = emptyList(),
+                    observations = null,
+                    date = LocalDate.of(2026, 4, 21),
+                    confirmed = false,
+                    installment = null,
+                    recurrenceConfigId = null,
+                    recurrenceConfig = null,
+                    currency = "BRL",
+                    entries = listOf(simulatedEntry(walletItemId = memberBankId, walletItem = memberWalletItem, value = "-3.00")),
+                )
+            val uncategorizedExpense =
+                EventListResponse(
+                    id = UUID.randomUUID(),
+                    type = WalletEntryType.EXPENSE,
+                    name = "uncategorized expense",
+                    category = null,
+                    user = null,
+                    group = null,
+                    tags = emptyList(),
+                    observations = null,
+                    date = LocalDate.of(2026, 4, 21),
+                    confirmed = false,
+                    installment = null,
+                    recurrenceConfigId = null,
+                    recurrenceConfig = null,
+                    currency = "BRL",
+                    entries = listOf(simulatedEntry(walletItemId = actorBankId, walletItem = actorWalletItem, value = "-500.00")),
+                )
+
+            val walletEventListService =
+                object : WalletEventListService by fakeWalletEventListService() {
+                    override suspend fun list(
+                        userId: UUID,
+                        request: ListEntryRequest,
+                    ): CursorPage<EventListResponse> {
+                        val all = listOf(categorizedExpense, uncategorizedExpense)
+                        val filtered =
+                            if (request.includeUncategorized && request.categoryIds.isEmpty()) {
+                                all.filter { it.category == null }
+                            } else {
+                                all
+                            }
+
+                        return CursorPage(items = filtered, nextCursor = null, hasNext = false)
+                    }
+                }
+
+            val groupService =
+                object : GroupService by NoOpGroupService() {
+                    override suspend fun findAllMembers(
+                        userId: UUID,
+                        id: UUID,
+                    ): List<GroupUserEntity> =
+                        if (id == groupId) {
+                            listOf(
+                                GroupUserEntity(groupId = groupId, userId = actorUserId, role = UserGroupRole.EDITOR),
+                                GroupUserEntity(groupId = groupId, userId = memberUserId, role = UserGroupRole.EDITOR),
+                            )
+                        } else {
+                            emptyList()
+                        }
+                }
+
+            val service =
+                createService(
+                    clock = fixedClock("2026-04-21T12:00:00Z"),
+                    walletItemRepository = walletItemRepository,
+                    walletEntryRepository = stubWalletEntryRepository(emptyList()),
+                    recurrenceSimulationService = fakeRecurrenceSimulationService(emptyList()),
+                    creditCardBillService = fakeCreditCardBillService(emptyMap()),
+                    exchangeRateService = identityExchangeRateService(),
+                    groupService = groupService,
+                    walletEventListService = walletEventListService,
+                )
+
+            val result =
+                service.getGroupOverview(
+                    userId = actorUserId,
+                    groupId = groupId,
+                    defaultCurrency = "BRL",
+                    selectedMonth = selectedMonth,
+                )
+
+            assertMoney(result.cards.first { it.key == OverviewDashboardCardKey.PERIOD_EXPENSES }.value, "503.00")
+            assertMoney(
+                result.charts.expense.total.first { it.month == selectedMonth }.executedValue,
+                "503.00",
+            )
+            assertMoney(
+                result.charts.expense.byMember
+                    .first { it.memberId == memberUserId }
+                    .points
+                    .first { it.month == selectedMonth }
+                    .executedValue,
+                "3.00",
+            )
+            assertMoney(
+                result.charts.expenseByCategory.fold(BigDecimal.ZERO) { acc, slice -> acc.add(slice.value) },
+                "503.00",
+            )
+        }
+
     @Test
     fun `should include goal committed and free balance from ledger summary`() =
         runBlocking {
@@ -121,6 +268,10 @@ class OverviewDashboardServiceImplTest {
                         } else {
                             Flux.empty()
                         }
+
+                    override fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+                    override fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
 
                     override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
                 }
@@ -266,6 +417,10 @@ class OverviewDashboardServiceImplTest {
                         } else {
                             Flux.empty()
                         }
+
+                    override fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+                    override fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
 
                     override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
                 }
@@ -1415,6 +1570,10 @@ class OverviewDashboardServiceImplTest {
                             ),
                         )
 
+                    override fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+                    override fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
+
                     override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
                 }
 
@@ -1590,30 +1749,48 @@ class OverviewDashboardServiceImplTest {
         recurrenceSimulationService: RecurrenceSimulationService,
         creditCardBillService: CreditCardBillService,
         exchangeRateService: ExchangeRateService,
+        walletEventListService: WalletEventListService = fakeWalletEventListService(),
         goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository = NoOpGoalLedgerCommittedSummaryRepository,
         groupService: GroupService = NoOpGroupService(),
         groupDebtService: GroupDebtService = NoOpGroupDebtService,
     ): OverviewDashboardServiceImpl {
         val balanceService = OverviewDashboardBalanceServiceImpl()
+        val dataService =
+            OverviewDashboardDataServiceImpl(
+                walletItemRepository = walletItemRepository,
+                walletItemMapper = WalletItemMapperImpl(BankAccountMapperImpl(), CreditCardMapperImpl()),
+                walletEntryRepository = walletEntryRepository,
+                walletEventListService = walletEventListService,
+                recurrenceSimulationService = recurrenceSimulationService,
+                creditCardBillService = creditCardBillService,
+                groupService = groupService,
+                groupDebtService = groupDebtService,
+                clock = clock,
+            )
+        val goalService = OverviewDashboardGoalServiceImpl(goalLedgerSummaryRepository)
+        val contributionService = OverviewDashboardContributionServiceImpl(balanceService)
+        val chartService = OverviewDashboardChartServiceImpl()
+        val assemblyService = OverviewDashboardAssemblyServiceImpl(exchangeRateService)
+        val groupOverviewBuilderService =
+            GroupOverviewBuilderService(
+                dataService = dataService,
+                goalService = goalService,
+                balanceService = balanceService,
+                contributionService = contributionService,
+                chartService = chartService,
+                assemblyService = assemblyService,
+                clock = clock,
+            )
 
         return OverviewDashboardServiceImpl(
-            dataService =
-                OverviewDashboardDataServiceImpl(
-                    walletItemRepository = walletItemRepository,
-                    walletItemMapper = WalletItemMapperImpl(BankAccountMapperImpl(), CreditCardMapperImpl()),
-                    walletEntryRepository = walletEntryRepository,
-                    recurrenceSimulationService = recurrenceSimulationService,
-                    creditCardBillService = creditCardBillService,
-                    groupService = groupService,
-                    groupDebtService = groupDebtService,
-                    clock = clock,
-                ),
+            dataService = dataService,
             balanceService = balanceService,
-            contributionService = OverviewDashboardContributionServiceImpl(balanceService),
-            goalService = OverviewDashboardGoalServiceImpl(goalLedgerSummaryRepository),
-            assemblyService = OverviewDashboardAssemblyServiceImpl(exchangeRateService),
+            contributionService = contributionService,
+            goalService = goalService,
+            assemblyService = assemblyService,
             cardService = OverviewDashboardCardServiceImpl(),
-            chartService = OverviewDashboardChartServiceImpl(),
+            chartService = chartService,
+            groupOverviewBuilderService = groupOverviewBuilderService,
             clock = clock,
         )
     }
@@ -1902,6 +2079,39 @@ class OverviewDashboardServiceImplTest {
         ): Flux<OverviewExpenseBreakdownSummary> =
             delegate.summarizeOverviewExpenseBreakdown(userId, minimumDate, maximumDate).also { expenseBreakdownCalls += 1 }
     }
+
+    private fun fakeWalletEventListService(): WalletEventListService =
+        object : WalletEventListService {
+            override suspend fun list(
+                userId: UUID,
+                request: ListEntryRequest,
+            ): CursorPage<EventListResponse> =
+                CursorPage(
+                    items = emptyList(),
+                    nextCursor = null,
+                    hasNext = false,
+                )
+
+            override suspend fun findById(
+                userId: UUID,
+                walletEventId: UUID,
+            ): EventListResponse? = null
+
+            override suspend fun findScheduledByRecurrenceConfigId(
+                userId: UUID,
+                recurrenceConfigId: UUID,
+            ): EventListResponse? = null
+
+            override suspend fun convertEntityToEntryListResponse(
+                events: List<com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity>,
+                simulateBillForRecurrence: Boolean,
+            ): List<EventListResponse> = emptyList()
+
+            override suspend fun convertEntityToEntryListResponse(
+                event: com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity,
+                simulateBillForRecurrence: Boolean,
+            ): EventListResponse = error("not used")
+        }
 
     private fun fakeRecurrenceSimulationService(events: List<EventListResponse>): RecurrenceSimulationService =
         object : RecurrenceSimulationService {
@@ -2201,6 +2411,10 @@ class OverviewDashboardServiceImplTest {
             detailedCalls += 1
             return Flux.fromIterable(detailedRows)
         }
+
+        override fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+        override fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
 
         override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
     }

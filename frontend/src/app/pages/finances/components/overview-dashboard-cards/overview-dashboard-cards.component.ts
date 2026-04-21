@@ -7,6 +7,7 @@ import {
   faChartSimple,
   faClock,
   faDollarSign,
+  faScaleBalanced,
   faWallet,
 } from '@fortawesome/free-solid-svg-icons';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -41,6 +42,7 @@ export class OverviewDashboardCardsComponent {
   readonly projectedCashOutIcon = faClock;
   readonly endBalanceIcon = faWallet;
   readonly endNetCashFlowIcon = faChartSimple;
+  readonly groupMemberDebtsIcon = faScaleBalanced;
 
   selectedCard: OverviewDashboardCardDto | undefined = undefined;
 
@@ -83,6 +85,7 @@ export class OverviewDashboardCardsComponent {
         PROJECTED_EXPENSES: 'financesPage.overviewPage.cards.projectedExpenses',
         PERIOD_EXPENSES: 'financesPage.overviewPage.cards.periodExpenses',
         END_OF_PERIOD_NET_CASH_FLOW: 'financesPage.overviewPage.cards.endOfPeriodNetCashFlow',
+        GROUP_MEMBER_DEBTS: 'financesPage.overviewPage.cards.groupMemberDebts',
       }[cardKey] ?? 'financesPage.overviewPage.unknownCard'
     );
   }
@@ -103,6 +106,7 @@ export class OverviewDashboardCardsComponent {
         EXPENSES: this.periodCashOutIcon,
         PROJECTED_EXPENSES: this.periodCashOutIcon,
         PERIOD_EXPENSES: this.periodCashOutIcon,
+        GROUP_MEMBER_DEBTS: this.groupMemberDebtsIcon,
       }[cardKey] ?? this.balanceIcon
     );
   }
@@ -112,15 +116,13 @@ export class OverviewDashboardCardsComponent {
       return card.value >= 0 ? 'text-surface-900 dark:text-surface-0' : 'text-red-700';
     }
 
-    if (card.key === 'PERIOD_CASH_OUT' || card.key === 'PROJECTED_CASH_OUT') {
-      return 'text-red-700';
-    }
+    const inverseColors = this.inverseColors(card.key);
 
-    if (card.key === 'PERIOD_CASH_IN' || card.key === 'PROJECTED_CASH_IN') {
-      return 'text-green-700';
+    if (inverseColors) {
+      return card.value <= 0 ? 'text-green-700' : 'text-red-700';
+    } else {
+      return card.value >= 0 ? 'text-green-700' : 'text-red-700';
     }
-
-    return card.value >= 0 ? 'text-green-700' : 'text-red-700';
   }
 
   detailLabel(detail: OverviewDashboardDetailDto): string {
@@ -134,8 +136,19 @@ export class OverviewDashboardCardsComponent {
         CREDIT_CARD_BILL: 'financesPage.overviewPage.detail.sourceType.creditCardBill',
         GOAL: 'financesPage.overviewPage.detail.sourceType.goal',
         FORMULA: 'financesPage.overviewPage.detail.sourceType.formula',
+        GROUP_DEBT_PAIR: 'financesPage.overviewPage.detail.sourceType.groupDebtPair',
       }[detail.sourceType] ?? 'financesPage.overviewPage.detail.sourceType.unknown'
     );
+  }
+
+  detailValueCss(card: OverviewDashboardCardDto, detail: OverviewDashboardDetailDto): string {
+    const inverseColors = this.inverseColors(card.key);
+
+    if (inverseColors) {
+      return detail.value <= 0 ? 'text-green-700' : 'text-red-700';
+    } else {
+      return detail.value >= 0 ? 'text-green-700' : 'text-red-700';
+    }
   }
 
   trackByCardKey(index: number, card: OverviewDashboardCardDto) {
@@ -144,5 +157,9 @@ export class OverviewDashboardCardsComponent {
 
   trackDetail(index: number, detail: OverviewDashboardDetailDto): string {
     return `${index}-${detail.sourceType}-${detail.sourceId ?? ''}-${detail.label}`;
+  }
+
+  private inverseColors(key: string): boolean {
+    return key === 'EXPENSES' || key === 'PROJECTED_EXPENSES' || key === 'PERIOD_EXPENSES' || key === 'PERIOD_CASH_OUT';
   }
 }

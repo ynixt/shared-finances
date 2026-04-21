@@ -36,6 +36,7 @@ financesPage:
       expenses: Despesas
       projectedExpenses: Despesas projetadas
       periodExpenses: Despesas do período
+      groupMemberDebts: Dívidas entre membros
     charts:
       includeProjectedToggle: Incluir projetado
       balance: Saldo (12 meses)
@@ -68,6 +69,7 @@ financesPage:
         creditCardBill: Fatura do cartão
         goal: Meta
         formula: Fórmula
+        groupDebtPair: Dívida entre pares
         unknown: Origem desconhecida
     feed:
       title: Transações do período

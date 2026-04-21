@@ -69,6 +69,7 @@ enum class OverviewDashboardCardKey {
     EXPENSES,
     PROJECTED_EXPENSES,
     PERIOD_EXPENSES,
+    GROUP_MEMBER_DEBTS,
 }
 
 enum class OverviewDashboardDetailSourceType {
@@ -76,4 +77,5 @@ enum class OverviewDashboardDetailSourceType {
     CREDIT_CARD_BILL,
     GOAL,
     FORMULA,
+    GROUP_DEBT_PAIR,
 }

@@ -1,5 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faArrowUpRightFromSquare, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -10,11 +11,14 @@ import { ButtonDirective } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
 import { TreeTableLazyLoadEvent, TreeTableModule } from 'primeng/treetable';
 
+import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
+import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { Page } from '../../../../models/pagination';
 import { createEmptyPage } from '../../../../services/pagination.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupCategoriesService } from '../../services/group-categories.service';
+import { GroupService } from '../../services/group.service';
 
 @UntilDestroy()
 @Component({
@@ -26,6 +30,7 @@ import { GroupCategoriesService } from '../../services/group-categories.service'
 export class GroupCategoriesPageComponent {
   readonly pageSize = 12;
 
+  group: GroupWithRoleDto | null = null;
   loading = true;
   categories: Page<CategoryDto> = createEmptyPage();
   categoriesTree: TreeNode[] = [];
@@ -36,6 +41,8 @@ export class GroupCategoriesPageComponent {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
+    private groupService: GroupService,
     private groupCategoriesService: GroupCategoriesService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
@@ -44,7 +51,9 @@ export class GroupCategoriesPageComponent {
         this.groupId = id;
         // Avoid double request on first render: we are about to load explicitly
         this.skipNextLazyLoad = true;
-        this.loadPage(0);
+        void this.loadGroupAndPage(id);
+      } else {
+        void this.goToNotFound();
       }
     });
   }
@@ -59,6 +68,30 @@ export class GroupCategoriesPageComponent {
     const first = (event.first as number) ?? 0;
     const newPage = Math.floor(first / rows);
     this.loadPage(newPage);
+  }
+
+  get canCreateCategory(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.NEW_CATEGORY) === true;
+  }
+
+  get canEditCategory(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.EDIT_CATEGORY) === true;
+  }
+
+  private async loadGroupAndPage(groupId: string): Promise<void> {
+    this.loading = true;
+
+    try {
+      this.group = await this.groupService.getGroup(groupId);
+      await this.loadPage(0);
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400)) {
+        await this.goToNotFound();
+        return;
+      }
+
+      throw error;
+    }
   }
 
   private async loadPage(page = 0) {
@@ -85,6 +118,10 @@ export class GroupCategoriesPageComponent {
     }));
 
     this.loading = false;
+  }
+
+  private goToNotFound() {
+    return this.router.navigateByUrl('/not-found');
   }
 
   protected readonly openFinanceIcon = faArrowUpRightFromSquare;

@@ -10,6 +10,7 @@ import com.ynixt.sharedfinances.domain.exceptions.http.auth.PasswordRecoveryDisa
 import com.ynixt.sharedfinances.domain.repositories.SessionRepository
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
+import com.ynixt.sharedfinances.domain.services.auth.EmailTokenGeneratorService
 import com.ynixt.sharedfinances.domain.services.auth.OpenAuthEmailWorkflowService
 import com.ynixt.sharedfinances.resources.repositories.redis.AuthRedisKeys
 import com.ynixt.sharedfinances.resources.repositories.redis.AuthResendCooldownRedisRepository
@@ -31,6 +32,7 @@ class OpenAuthEmailWorkflowServiceImpl(
     private val databaseHelperService: DatabaseHelperService,
     private val emailVerificationTokenRedisRepository: EmailVerificationTokenRedisRepository,
     private val passwordResetTokenRedisRepository: PasswordResetTokenRedisRepository,
+    private val emailTokenGeneratorService: EmailTokenGeneratorService,
     private val authResendCooldownRedisRepository: AuthResendCooldownRedisRepository,
     private val authTransactionalMailMessageComposer: AuthTransactionalMailMessageComposer,
     private val transactionalEmailDispatchService: TransactionalEmailDispatchService,
@@ -44,10 +46,11 @@ class OpenAuthEmailWorkflowServiceImpl(
 
         val userId = user.id ?: return
         val ttl = Duration.ofMinutes(authProperties.emailConfirmation.ttlMinutes)
-        val raw =
-            emailVerificationTokenRedisRepository
-                .issueToken(userId, user.email, ttl)
-                .awaitSingle()
+        val raw = emailTokenGeneratorService.generateEmailVerificationToken()
+
+        emailVerificationTokenRedisRepository
+            .issueToken(userId, user.email, raw, ttl)
+            .awaitSingleOrNull()
 
         dispatchConfirmationEmail(user.email, getUserLocale(user), raw)
         markEmailConfirmationResendCooldown(user.email)
@@ -58,9 +61,11 @@ class OpenAuthEmailWorkflowServiceImpl(
             throw EmailConfirmationDisabledException()
         }
 
+        val normalizedToken = normalizeEmailConfirmationToken(rawToken)
+
         val payload =
             emailVerificationTokenRedisRepository
-                .consumeRawToken(rawToken)
+                .consumeRawToken(normalizedToken)
                 .awaitSingleOrNull()
                 ?: throw AuthTokenInvalidOrExpiredException("apiErrors.auth.emailConfirmationTokenInvalid")
 
@@ -105,10 +110,11 @@ class OpenAuthEmailWorkflowServiceImpl(
 
         val userId = user.id!!
         val ttl = Duration.ofMinutes(authProperties.emailConfirmation.ttlMinutes)
-        val raw =
-            emailVerificationTokenRedisRepository
-                .issueToken(userId, user.email, ttl)
-                .awaitSingle()
+        val raw = emailTokenGeneratorService.generateEmailVerificationToken()
+
+        emailVerificationTokenRedisRepository
+            .issueToken(userId, user.email, raw, ttl)
+            .awaitSingleOrNull()
 
         dispatchConfirmationEmail(user.email, getUserLocale(user), raw)
         markResendCooldown(cooldownKey)
@@ -155,11 +161,13 @@ class OpenAuthEmailWorkflowServiceImpl(
             userRepository
                 .findById(userId)
                 .awaitSingle()
+
         val ttl = Duration.ofMinutes(authProperties.emailConfirmation.ttlMinutes)
-        val raw =
-            emailVerificationTokenRedisRepository
-                .issueToken(userId, updated.email, ttl)
-                .awaitSingle()
+        val raw = emailTokenGeneratorService.generateEmailVerificationToken()
+
+        emailVerificationTokenRedisRepository
+            .issueToken(userId, updated.email, raw, ttl)
+            .awaitSingleOrNull()
 
         dispatchConfirmationEmail(updated.email, getUserLocale(updated), raw)
         markResendCooldown(AuthRedisKeys.emailVerifyResend(userId))
@@ -282,6 +290,16 @@ class OpenAuthEmailWorkflowServiceImpl(
     }
 
     private fun normalizeEmail(email: String): String = email.trim().lowercase()
+
+    private fun normalizeEmailConfirmationToken(rawToken: String): String {
+        val trimmed = rawToken.trim()
+
+        return if (trimmed.length == 8 && trimmed.all { it.isLetterOrDigit() }) {
+            trimmed.uppercase(Locale.ROOT)
+        } else {
+            trimmed
+        }
+    }
 
     private fun getUserLocale(user: UserEntity): Locale = Locale.forLanguageTag(user.lang)
 }

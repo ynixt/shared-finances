@@ -4,7 +4,9 @@ import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryConceptEntity
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
+import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptKind
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
@@ -26,6 +28,7 @@ import com.ynixt.sharedfinances.domain.services.dashboard.OverviewDashboardServi
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.ScheduledExecutionManagerService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
@@ -58,6 +61,8 @@ import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepos
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import org.springframework.context.MessageSource
 import org.springframework.context.MessageSourceResolvable
 import org.springframework.context.NoSuchMessageException
@@ -109,6 +114,7 @@ internal fun identityExchangeRateService(): ExchangeRateService =
 internal class ScenarioRuntime(
     initialDate: LocalDate,
     private val groupService: GroupService = NoOpGroupService(),
+    private val groupDebtService: GroupDebtService = NoOpGroupDebtService,
     private val exchangeRateService: ExchangeRateService = identityExchangeRateService(),
 ) {
     val queueProducer = InMemoryGenerateEntryRecurrenceQueueProducer()
@@ -143,12 +149,71 @@ internal class ScenarioRuntime(
     private val creditCardMapper = ScenarioCreditCardMapper()
     val creditCardBillMapper: CreditCardBillMapper = ScenarioCreditCardBillMapper()
     private val walletItemMapper = ScenarioWalletItemMapper(bankAccountMapper, creditCardMapper)
-    private val genericCategoryService: GenericCategoryService = NoOpGenericCategoryService()
+    private val debtCategoryConceptId = UUID.nameUUIDFromBytes("scenario-debt-sf-concept".toByteArray())
+    private val debtCategoryConcept =
+        WalletCategoryConceptEntity(
+            kind = WalletCategoryConceptKind.PREDEFINED,
+            code = WalletCategoryConceptCode.DEBT_SF,
+            displayName = "Shared finance debt",
+        ).also { concept ->
+            concept.id = debtCategoryConceptId
+        }
+    private val debtCategoryByGroupId = mutableMapOf<UUID, WalletEntryCategoryEntity>()
+    private val genericCategoryService: GenericCategoryService =
+        object : GenericCategoryService {
+            override suspend fun findById(id: UUID): WalletEntryCategoryEntity? =
+                debtCategoryByGroupId.values.firstOrNull { category -> category.id == id }
+
+            override fun findAllByIdIn(ids: Collection<UUID>): Flow<WalletEntryCategoryEntity> =
+                flowOf(
+                    *debtCategoryByGroupId.values
+                        .filter { category -> ids.contains(category.id) }
+                        .toTypedArray(),
+                )
+
+            override suspend fun findAllByGroupIdAndConceptId(
+                groupId: UUID,
+                conceptId: UUID,
+            ): List<WalletEntryCategoryEntity> {
+                if (conceptId != debtCategoryConceptId) {
+                    return emptyList()
+                }
+
+                val existing = debtCategoryByGroupId[groupId]
+                if (existing != null) {
+                    return listOf(existing)
+                }
+
+                val created =
+                    WalletEntryCategoryEntity(
+                        name = "Shared finance debt",
+                        color = "#ef4444",
+                        userId = null,
+                        groupId = groupId,
+                        parentId = null,
+                        conceptId = debtCategoryConceptId,
+                    ).also { category ->
+                        category.id = UUID.nameUUIDFromBytes("scenario-debt-category-$groupId".toByteArray())
+                    }
+                debtCategoryByGroupId[groupId] = created
+                return listOf(created)
+            }
+        }
     private val categoryConceptService: CategoryConceptService =
         object : CategoryConceptService {
-            override suspend fun findById(id: UUID): WalletCategoryConceptEntity? = null
+            override suspend fun findById(id: UUID): WalletCategoryConceptEntity? =
+                if (id == debtCategoryConceptId) {
+                    debtCategoryConcept
+                } else {
+                    null
+                }
 
-            override suspend fun findRequiredByCode(code: WalletCategoryConceptCode): WalletCategoryConceptEntity = error("not used")
+            override suspend fun findRequiredByCode(code: WalletCategoryConceptCode): WalletCategoryConceptEntity =
+                if (code == WalletCategoryConceptCode.DEBT_SF) {
+                    debtCategoryConcept
+                } else {
+                    error("Category concept $code is not supported in scenario runtime")
+                }
 
             override suspend fun listAvailableForUser(userId: UUID): List<WalletCategoryConceptEntity> = emptyList()
 
@@ -249,7 +314,7 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
-            groupDebtService = NoOpGroupDebtService,
+            groupDebtService = groupDebtService,
             walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
             recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
@@ -295,7 +360,7 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
-            groupDebtService = NoOpGroupDebtService,
+            groupDebtService = groupDebtService,
             walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
             recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
@@ -316,7 +381,7 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
-            groupDebtService = NoOpGroupDebtService,
+            groupDebtService = groupDebtService,
             walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
             recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
@@ -357,36 +422,53 @@ internal class ScenarioRuntime(
             val balanceService =
                 com.ynixt.sharedfinances.resources.services.dashboard
                     .OverviewDashboardBalanceServiceImpl()
+            val dataService =
+                com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardDataServiceImpl(
+                    walletItemRepository = walletItemRepository,
+                    walletItemMapper = walletItemMapper,
+                    walletEntryRepository = walletEntryRepository,
+                    walletEventListService = walletEventListService,
+                    recurrenceSimulationService = recurrenceSimulationService,
+                    creditCardBillService = creditCardBillService,
+                    groupService = groupService,
+                    groupDebtService = groupDebtService,
+                    clock = clock,
+                )
+            val goalService =
+                com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardGoalServiceImpl(
+                    NoOpGoalLedgerCommittedSummaryRepository,
+                )
+            val contributionService =
+                com.ynixt.sharedfinances.resources.services.dashboard
+                    .OverviewDashboardContributionServiceImpl(balanceService)
+            val chartService =
+                com.ynixt.sharedfinances.resources.services.dashboard
+                    .OverviewDashboardChartServiceImpl()
+            val assemblyService =
+                com.ynixt.sharedfinances.resources.services.dashboard
+                    .OverviewDashboardAssemblyServiceImpl(exchangeRateService)
+            val groupOverviewBuilderService =
+                com.ynixt.sharedfinances.resources.services.dashboard.GroupOverviewBuilderService(
+                    dataService = dataService,
+                    goalService = goalService,
+                    balanceService = balanceService,
+                    contributionService = contributionService,
+                    chartService = chartService,
+                    assemblyService = assemblyService,
+                    clock = clock,
+                )
 
             OverviewDashboardServiceImpl(
-                dataService =
-                    com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardDataServiceImpl(
-                        walletItemRepository = walletItemRepository,
-                        walletItemMapper = walletItemMapper,
-                        walletEntryRepository = walletEntryRepository,
-                        recurrenceSimulationService = recurrenceSimulationService,
-                        creditCardBillService = creditCardBillService,
-                        groupService = groupService,
-                        groupDebtService = NoOpGroupDebtService,
-                        clock = clock,
-                    ),
+                dataService = dataService,
                 balanceService = balanceService,
-                contributionService =
-                    com.ynixt.sharedfinances.resources.services.dashboard
-                        .OverviewDashboardContributionServiceImpl(balanceService),
-                goalService =
-                    com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardGoalServiceImpl(
-                        NoOpGoalLedgerCommittedSummaryRepository,
-                    ),
-                assemblyService =
-                    com.ynixt.sharedfinances.resources.services.dashboard
-                        .OverviewDashboardAssemblyServiceImpl(exchangeRateService),
+                contributionService = contributionService,
+                goalService = goalService,
+                assemblyService = assemblyService,
                 cardService =
                     com.ynixt.sharedfinances.resources.services.dashboard
                         .OverviewDashboardCardServiceImpl(),
-                chartService =
-                    com.ynixt.sharedfinances.resources.services.dashboard
-                        .OverviewDashboardChartServiceImpl(),
+                chartService = chartService,
+                groupOverviewBuilderService = groupOverviewBuilderService,
                 clock = clock,
             )
         }
@@ -396,6 +478,10 @@ internal object NoOpGoalLedgerCommittedSummaryRepository : GoalLedgerCommittedSu
     override fun summarizeCommittedByUserGoals(userId: java.util.UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
 
     override fun summarizeCommittedByUserGoalsDetailed(userId: java.util.UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
+
+    override fun summarizeCommittedByGroupGoals(groupId: java.util.UUID): Flux<GoalCommittedByWalletRow> = Flux.empty()
+
+    override fun summarizeCommittedByGroupGoalsDetailed(groupId: java.util.UUID): Flux<GoalCommittedByGoalRow> = Flux.empty()
 
     override fun summarizeCommittedByGoal(goalId: java.util.UUID): Flux<GoalCurrencyCommittedRow> = Flux.empty()
 }

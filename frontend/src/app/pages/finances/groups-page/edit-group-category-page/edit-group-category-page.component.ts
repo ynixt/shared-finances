@@ -13,7 +13,9 @@ import { InputText } from 'primeng/inputtext';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { RequiredFieldAsteriskComponent } from '../../../../components/required-field-asterisk/required-field-asterisk.component';
+import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
+import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
@@ -23,6 +25,7 @@ import { CategoryPickerComponent } from '../../components/item-picker/category-p
 import { ConceptPickerComponent } from '../../components/item-picker/concept-picker/concept-picker.component';
 import { isCustomCategoryConceptOption, isDebtSfConcept, resolveCategoryConceptPayload } from '../../services/category-concept-form.util';
 import { GroupCategoriesService } from '../../services/group-categories.service';
+import { GroupService } from '../../services/group.service';
 import { GetAllCategoriesParams } from '../../services/user-categories.service';
 
 @Component({
@@ -53,6 +56,7 @@ export class EditGroupCategoryPageComponent {
 
   formGroup: FormGroup | undefined;
   category: CategoryDto | null = null;
+  group: GroupWithRoleDto | null = null;
   isDebtSfCategory = false;
   loading: boolean = true;
   submitting = false;
@@ -65,6 +69,7 @@ export class EditGroupCategoryPageComponent {
     private router: Router,
     private route: ActivatedRoute,
     private groupCategoriesService: GroupCategoriesService,
+    private groupService: GroupService,
     private errorMessageService: ErrorMessageService,
     private confirmationService: ConfirmationService,
     private translateService: TranslateService,
@@ -75,9 +80,9 @@ export class EditGroupCategoryPageComponent {
 
       if (groupId && categoryId) {
         this.groupId = groupId;
-        this.getCategory(groupId, categoryId);
+        void this.getCategory(groupId, categoryId);
       } else {
-        this.goToNotFound();
+        void this.goToNotFound();
       }
     });
   }
@@ -115,7 +120,7 @@ export class EditGroupCategoryPageComponent {
   }
 
   async askForConfirmationToDelete() {
-    if (this.isDebtSfCategory) {
+    if (this.isDebtSfCategory || !this.canDeleteCategory) {
       return;
     }
 
@@ -142,6 +147,13 @@ export class EditGroupCategoryPageComponent {
   private async getCategory(groupId: string, categoryId: string): Promise<void> {
     try {
       this.loading = true;
+      this.group = await this.groupService.getGroup(groupId);
+
+      if (!this.canEditCategory) {
+        await this.goToNotFound();
+        return;
+      }
+
       this.category = await this.groupCategoriesService.getCategory(groupId, categoryId);
       await this.createForm(groupId);
       this.loading = false;
@@ -203,7 +215,7 @@ export class EditGroupCategoryPageComponent {
   }
 
   private async deleteCategory() {
-    if (this.category == null || this.submitting || !this.groupId) return;
+    if (this.category == null || this.submitting || !this.groupId || !this.canDeleteCategory) return;
 
     this.submitting = true;
 
@@ -249,5 +261,13 @@ export class EditGroupCategoryPageComponent {
       customConceptControl.setValue('', { emitEvent: false });
     }
     customConceptControl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  get canEditCategory(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.EDIT_CATEGORY) === true;
+  }
+
+  get canDeleteCategory(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.DELETE_CATEGORY) === true;
   }
 }

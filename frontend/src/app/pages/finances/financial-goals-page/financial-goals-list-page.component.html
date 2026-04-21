@@ -1,6 +1,6 @@
 <app-finances-title-bar
   [title]="'financesPage.goalsPage.listTitle' | translate"
-  [newRouterLink]="newGoalRouterLink"
+  [newRouterLink]="canManageGoals ? newGoalRouterLink : undefined"
   [closeRouterLink]="closeRouterLink"
 ></app-finances-title-bar>
 
@@ -26,18 +26,20 @@
                 <div class="flex items-center gap-2">
                   <span class="mr-auto truncate">{{ g.name }}</span>
                   <div class="flex items-center">
-                    <a
-                      [routerLink]="goalEditRouterLink(g.id)"
-                      pButton
-                      [rounded]="true"
-                      [text]="true"
-                      severity="secondary"
-                      size="small"
-                      [pTooltip]="'general.edit' | translate"
-                      tooltipPosition="top"
-                    >
-                      <fa-icon [icon]="editFinanceIcon"></fa-icon>
-                    </a>
+                    @if (canManageGoals) {
+                      <a
+                        [routerLink]="goalEditRouterLink(g.id)"
+                        pButton
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        size="small"
+                        [pTooltip]="'general.edit' | translate"
+                        tooltipPosition="top"
+                      >
+                        <fa-icon [icon]="editFinanceIcon"></fa-icon>
+                      </a>
+                    }
                     <a
                       [routerLink]="goalDetailRouterLink(g.id)"
                       pButton

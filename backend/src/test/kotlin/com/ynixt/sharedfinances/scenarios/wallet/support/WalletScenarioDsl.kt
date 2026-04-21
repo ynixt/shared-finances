@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.scenarios.wallet.support
 
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.support.identityExchangeRateService
@@ -12,6 +14,7 @@ import java.time.LocalDate
 fun walletScenario(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
     groupService: GroupService = NoOpGroupService(),
+    groupDebtService: GroupDebtService = NoOpGroupDebtService,
     exchangeRateService: ExchangeRateService? = null,
     block: suspend WalletScenarioDsl.() -> Unit,
 ): WalletScenarioDsl =
@@ -19,6 +22,7 @@ fun walletScenario(
         WalletScenarioDsl(
             initialDate = initialDate,
             groupService = groupService,
+            groupDebtService = groupDebtService,
             exchangeRateService = exchangeRateService,
         ).apply {
             block()
@@ -28,12 +32,14 @@ fun walletScenario(
 class WalletScenarioDsl(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
     groupService: GroupService = NoOpGroupService(),
+    groupDebtService: GroupDebtService = NoOpGroupDebtService,
     exchangeRateService: ExchangeRateService? = null,
 ) {
     private val runtime =
         ScenarioRuntime(
             initialDate = initialDate,
             groupService = groupService,
+            groupDebtService = groupDebtService,
             exchangeRateService = exchangeRateService ?: identityExchangeRateService(),
         )
     private val context = WalletScenarioContext()

@@ -10,11 +10,13 @@ import { DataView, DataViewLazyLoadEvent } from 'primeng/dataview';
 import { Tooltip } from 'primeng/tooltip';
 
 import { FinancialGoalSummaryDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/goals';
+import { GroupPermissions__Obj } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { Page } from '../../../models/pagination';
 import { LocalDatePipe } from '../../../pipes/local-date.pipe';
 import { createEmptyPage } from '../../../services/pagination.service';
 import { FinancesTitleBarComponent } from '../components/finances-title-bar/finances-title-bar.component';
 import { FinancialGoalService } from '../services/financial-goal.service';
+import { GroupService } from '../services/group.service';
 import { resolveGoalWorkspaceContext } from './goal-workspace-context';
 
 @Component({
@@ -34,9 +36,13 @@ export class FinancialGoalsListPageComponent {
   goals: Page<FinancialGoalSummaryDto> = createEmptyPage();
   loading = true;
   loadError = false;
+  canManageGoals = true;
 
-  constructor(private financialGoalService: FinancialGoalService) {
-    void this.loadPage();
+  constructor(
+    private financialGoalService: FinancialGoalService,
+    private groupService: GroupService,
+  ) {
+    void this.loadWorkspaceData();
   }
 
   get newGoalRouterLink(): string[] {
@@ -97,6 +103,25 @@ export class FinancialGoalsListPageComponent {
     } finally {
       this.loading = false;
       this.loadingPage = null;
+    }
+  }
+
+  private async loadWorkspaceData() {
+    await this.resolveManageGoalsPermission();
+    await this.loadPage();
+  }
+
+  private async resolveManageGoalsPermission() {
+    if (this.workspace.scope !== 'group' || this.workspace.groupId == null) {
+      this.canManageGoals = true;
+      return;
+    }
+
+    try {
+      const group = await this.groupService.getGroup(this.workspace.groupId);
+      this.canManageGoals = group.permissions.includes(GroupPermissions__Obj.MANAGE_GOALS);
+    } catch {
+      this.canManageGoals = false;
     }
   }
 }

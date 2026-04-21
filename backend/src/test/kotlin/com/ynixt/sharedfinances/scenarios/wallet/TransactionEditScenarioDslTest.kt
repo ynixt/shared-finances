@@ -9,10 +9,12 @@ import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimitException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletSourceSplitException
+import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
@@ -378,6 +380,55 @@ class TransactionEditScenarioDslTest {
 
             then {
                 fetchedWalletEventShouldNotExist()
+            }
+        }
+    }
+
+    @Test
+    fun `should deny group create without SEND_ENTRIES keeping original financial state`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val groupService = ScenarioGroupService()
+        val groupId = groupService.createGroup(name = "Shared Group")
+        lateinit var userId: UUID
+        lateinit var groupBankAccountId: UUID
+        var unauthorizedThrown = false
+
+        walletScenario(initialDate = today, groupService = groupService) {
+            given {
+                userId = user(defaultCurrency = "BRL")
+                groupBankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                groupService.upsertMemberScope(
+                    groupId = groupId,
+                    userId = userId,
+                    permissions = emptySet(),
+                    associatedItemIds = setOf(groupBankAccountId),
+                )
+                clearPublishedEvents()
+
+                try {
+                    createEntry(
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            groupId = groupId,
+                            originId = groupBankAccountId,
+                            date = today,
+                            value = BigDecimal("25.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.UNIQUE,
+                        ),
+                    )
+                } catch (_: UnauthorizedException) {
+                    unauthorizedThrown = true
+                }
+            }
+
+            then {
+                assertThat(unauthorizedThrown).isTrue()
+                balanceShouldBe(BigDecimal("1000.00"), groupBankAccountId)
+                publishedWalletEventsShouldBe(ActionEventType.INSERT, 0)
             }
         }
     }
@@ -835,6 +886,7 @@ class TransactionEditScenarioDslTest {
         lateinit var userId: UUID
         lateinit var originId: UUID
         lateinit var targetId: UUID
+        var unauthorizedThrown = false
 
         walletScenario(initialDate = today, groupService = groupService) {
             given {
@@ -874,23 +926,28 @@ class TransactionEditScenarioDslTest {
                 )
 
                 clearPublishedEvents()
-                editOneOff(
-                    newEntryRequest =
-                        NewEntryRequest(
-                            type = WalletEntryType.TRANSFER,
-                            groupId = groupId,
-                            originId = originId,
-                            targetId = targetId,
-                            date = today,
-                            value = null,
-                            originValue = BigDecimal("50.00"),
-                            confirmed = true,
-                            paymentType = PaymentType.UNIQUE,
-                        ),
-                )
+                try {
+                    editOneOff(
+                        newEntryRequest =
+                            NewEntryRequest(
+                                type = WalletEntryType.TRANSFER,
+                                groupId = groupId,
+                                originId = originId,
+                                targetId = targetId,
+                                date = today,
+                                value = null,
+                                originValue = BigDecimal("50.00"),
+                                confirmed = true,
+                                paymentType = PaymentType.UNIQUE,
+                            ),
+                    )
+                } catch (_: UnauthorizedException) {
+                    unauthorizedThrown = true
+                }
             }
 
             then {
+                assertThat(unauthorizedThrown).isTrue()
                 balanceShouldBe(BigDecimal("900.00"), originId)
                 balanceShouldBe(BigDecimal("600.00"), targetId)
                 publishedWalletEventsShouldBe(ActionEventType.UPDATE, 0)

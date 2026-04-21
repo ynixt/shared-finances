@@ -4,7 +4,7 @@
   } @else {
     <app-finances-title-bar
       [title]="'financesPage.categoriesPage.editCategoriesPage.title' | translate: { name: category.name }"
-      [showDeleteButton]="!isDebtSfCategory"
+      [showDeleteButton]="!isDebtSfCategory && canDeleteCategory"
       (deleteButtonClicked)="askForConfirmationToDelete()"
       closeRouterLink="../.."
     ></app-finances-title-bar>

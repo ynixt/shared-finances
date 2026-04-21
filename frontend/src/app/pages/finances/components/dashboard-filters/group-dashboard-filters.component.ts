@@ -11,6 +11,10 @@ import { DashboardFiltersBaseComponent } from './dashboard-filters-base.componen
 })
 export class GroupDashboardFiltersComponent {
   readonly filtersChange = output<DashboardFeedFilters>();
+  readonly memberOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
+  readonly bankAccountOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
+  readonly creditCardOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
+  readonly categoryOptionsGetterInput = input<(page: number, query?: string | undefined) => Promise<DashboardFilterOption[]>>();
 
   readonly memberOptions = input<DashboardFilterOption[]>([]);
   readonly bankAccountOptions = input<DashboardFilterOption[]>([]);

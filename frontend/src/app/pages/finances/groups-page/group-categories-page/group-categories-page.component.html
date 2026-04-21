@@ -2,7 +2,7 @@
   <app-finances-title-bar
     [title]="'financesPage.categoriesPage.title' | translate"
     closeRouterLink=".."
-    newRouterLink="new"
+    [newRouterLink]="canCreateCategory ? 'new' : undefined"
   ></app-finances-title-bar>
 
   <p-tree-table
@@ -35,18 +35,20 @@
         </td>
         <td>
           <div class="flex items-center">
-            <a
-              [routerLink]="['edit', rowData.id]"
-              pButton
-              [rounded]="true"
-              [text]="true"
-              severity="secondary"
-              size="small"
-              [pTooltip]="'general.edit' | translate"
-              tooltipPosition="top"
-            >
-              <fa-icon [icon]="editFinanceIcon"></fa-icon>
-            </a>
+            @if (canEditCategory) {
+              <a
+                [routerLink]="['edit', rowData.id]"
+                pButton
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                [pTooltip]="'general.edit' | translate"
+                tooltipPosition="top"
+              >
+                <fa-icon [icon]="editFinanceIcon"></fa-icon>
+              </a>
+            }
             <a
               [routerLink]="[rowData.id]"
               pButton

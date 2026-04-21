@@ -91,6 +91,10 @@ export class GroupCreditCardsPageComponent {
   }
 
   async showDeleteConfirmation(creditCard: CreditCardForGroupAssociateDto) {
+    if (!this.canRemoveCreditCard) {
+      return;
+    }
+
     this.confirmationService.confirm({
       message: this.translateService.instant('general.genericConfirmation'),
       header: this.translateService.instant('general.confirmation'),
@@ -112,7 +116,7 @@ export class GroupCreditCardsPageComponent {
   }
 
   private async unassociateCreditCard(creditCard: CreditCardForGroupAssociateDto) {
-    if (this.submitting || this.groupId == null) return;
+    if (!this.canRemoveCreditCard || this.submitting || this.groupId == null) return;
 
     this.submitting = true;
 
@@ -192,6 +196,13 @@ export class GroupCreditCardsPageComponent {
     }
   }
 
-  protected readonly GroupPermissions__Obj = GroupPermissions__Obj;
+  get canAddCreditCard(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.ADD_CREDIT_CARD) === true;
+  }
+
+  get canRemoveCreditCard(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.REMOVE_CREDIT_CARD) === true;
+  }
+
   protected readonly faTrash = faTrash;
 }

@@ -11,7 +11,7 @@ import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.asFlow
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -193,7 +193,16 @@ internal class ScenarioGroupService : GroupService {
         return true
     }
 
-    override fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity> = emptyFlow()
+    override fun findAllByIdIn(ids: Collection<UUID>): Flow<GroupEntity> =
+        groups.values
+            .asSequence()
+            .filter { state -> ids.contains(state.id) }
+            .map { state ->
+                GroupEntity(name = state.name).also { entity ->
+                    entity.id = state.id
+                }
+            }.toList()
+            .asFlow()
 
     private fun resolveGroup(
         userId: UUID,

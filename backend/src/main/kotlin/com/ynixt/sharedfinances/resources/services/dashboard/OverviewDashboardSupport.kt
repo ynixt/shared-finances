@@ -23,6 +23,7 @@ internal const val PREDEFINED_SHARED_FINANCE_DEBT_LABEL = "PREDEFINED_SHARED_FIN
 internal const val PROJECTED_DEBT_INFLOW_DETAIL_LABEL = "financesPage.overviewPage.detail.formula.sharedFinanceDebtInflow"
 internal const val PROJECTED_DEBT_OUTFLOW_DETAIL_LABEL = "financesPage.overviewPage.detail.formula.sharedFinanceDebtOutflow"
 internal const val PROJECTED_DEBT_EXPENSE_DETAIL_LABEL = "financesPage.overviewPage.detail.formula.sharedFinanceDebtExpense"
+internal const val OVERVIEW_EVENTS_PAGE_SIZE = 100
 
 internal data class OverviewDashboardVisibleItems(
     val items: List<WalletItem>,

@@ -4,7 +4,10 @@ import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import com.ynixt.sharedfinances.domain.models.CursorPageRequest
+import com.ynixt.sharedfinances.domain.models.ListEntryRequest
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
@@ -39,6 +42,7 @@ class WalletScenarioWhen internal constructor(
     suspend fun revenue(
         value: Number,
         originId: UUID? = null,
+        groupId: UUID? = null,
         date: LocalDate,
         name: String = "Revenue",
         confirmed: Boolean = true,
@@ -52,6 +56,7 @@ class WalletScenarioWhen internal constructor(
                 newEntryRequest =
                     NewEntryRequest(
                         type = WalletEntryType.REVENUE,
+                        groupId = groupId,
                         originId = resolvedOrigin.originId,
                         date = date,
                         value = value.toBigDecimalSafe(),
@@ -69,6 +74,7 @@ class WalletScenarioWhen internal constructor(
     suspend fun expense(
         value: Number,
         originId: UUID? = null,
+        groupId: UUID? = null,
         date: LocalDate,
         name: String = "Expense",
         confirmed: Boolean = true,
@@ -83,6 +89,7 @@ class WalletScenarioWhen internal constructor(
                 newEntryRequest =
                     NewEntryRequest(
                         type = WalletEntryType.EXPENSE,
+                        groupId = groupId,
                         originId = resolvedOrigin.originId,
                         date = date,
                         value = value.toBigDecimalSafe(),
@@ -250,6 +257,7 @@ class WalletScenarioWhen internal constructor(
         periodicityQtyLimit: Int? = null,
         originBillDate: LocalDate? = null,
         targetBillDate: LocalDate? = null,
+        transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     ) {
         val userId = resolver.ensureUser()
 
@@ -300,6 +308,7 @@ class WalletScenarioWhen internal constructor(
                             periodicityQtyLimit = periodicityQtyLimit,
                             originBillDate = resolvedOriginBillDate,
                             targetBillDate = resolvedTargetBillDate,
+                            transferPurpose = transferPurpose,
                         ),
                 ),
             ) { "Transfer was rejected due to insufficient permissions for selected group/origin/target" }
@@ -432,6 +441,119 @@ class WalletScenarioWhen internal constructor(
                 defaultCurrency = context.currentCurrency,
                 selectedMonth = selectedMonth,
             )
+    }
+
+    suspend fun fetchGroupOverview(
+        groupId: UUID,
+        selectedMonth: YearMonth = YearMonth.from(runtime.clock.today()),
+    ) {
+        val userId = resolver.ensureUser()
+        context.lastGroupOverview =
+            runtime.overviewDashboardService.getGroupOverview(
+                userId = userId,
+                groupId = groupId,
+                defaultCurrency = context.currentCurrency,
+                selectedMonth = selectedMonth,
+            )
+    }
+
+    suspend fun fetchGroupFeed(
+        groupId: UUID,
+        selectedMonth: YearMonth,
+        pageSize: Int = 30,
+        memberIds: Set<UUID> = emptySet(),
+        bankAccountIds: Set<UUID> = emptySet(),
+        creditCardIds: Set<UUID> = emptySet(),
+        entryTypes: Set<WalletEntryType> = emptySet(),
+    ) {
+        val userId = resolver.ensureUser()
+        context.lastGroupFeedRequest =
+            GroupFeedRequest(
+                groupId = groupId,
+                selectedMonth = selectedMonth,
+                pageSize = pageSize,
+                memberIds = memberIds,
+                bankAccountIds = bankAccountIds,
+                creditCardIds = creditCardIds,
+                entryTypes = entryTypes,
+            )
+        context.lastGroupFeedPage =
+            runtime.walletEventListService.list(
+                userId = userId,
+                request =
+                    ListEntryRequest(
+                        walletItemId = null,
+                        groupIds = setOf(groupId),
+                        userIds = memberIds,
+                        creditCardIds = creditCardIds,
+                        bankAccountIds = bankAccountIds,
+                        categoryIds = emptySet(),
+                        includeUncategorized = true,
+                        entryTypes = entryTypes,
+                        pageRequest =
+                            CursorPageRequest(
+                                size = pageSize,
+                                nextCursor = null,
+                            ),
+                        minimumDate = selectedMonth.atDay(1),
+                        maximumDate = selectedMonth.atEndOfMonth(),
+                        billId = null,
+                        billDate = null,
+                    ),
+            )
+    }
+
+    suspend fun fetchNextGroupFeedPage() {
+        val request =
+            requireNotNull(context.lastGroupFeedRequest) {
+                "No group feed request tracked in scenario"
+            }
+        val currentPage =
+            requireNotNull(context.lastGroupFeedPage) {
+                "No group feed page tracked in scenario"
+            }
+        val nextCursor =
+            requireNotNull(currentPage.nextCursor) {
+                "Group feed has no next page cursor"
+            }
+        val normalizedCursor =
+            nextCursor.mapValues { (key, value) ->
+                when {
+                    key == "id" && value is UUID -> value.toString()
+                    key == "date" && value is LocalDate -> value.toString()
+                    else -> value
+                }
+            }
+        val userId = resolver.ensureUser()
+
+        context.lastGroupFeedPage =
+            runtime.walletEventListService.list(
+                userId = userId,
+                request =
+                    ListEntryRequest(
+                        walletItemId = null,
+                        groupIds = setOf(request.groupId),
+                        userIds = request.memberIds,
+                        creditCardIds = request.creditCardIds,
+                        bankAccountIds = request.bankAccountIds,
+                        categoryIds = emptySet(),
+                        includeUncategorized = true,
+                        entryTypes = request.entryTypes,
+                        pageRequest =
+                            CursorPageRequest(
+                                size = request.pageSize,
+                                nextCursor = normalizedCursor,
+                            ),
+                        minimumDate = request.selectedMonth.atDay(1),
+                        maximumDate = request.selectedMonth.atEndOfMonth(),
+                        billId = null,
+                        billDate = null,
+                    ),
+            )
+    }
+
+    fun switchUser(userId: UUID) {
+        context.currentUserId = userId
     }
 
     fun lastWalletEventId(): UUID = resolver.requireLastWalletEventId()

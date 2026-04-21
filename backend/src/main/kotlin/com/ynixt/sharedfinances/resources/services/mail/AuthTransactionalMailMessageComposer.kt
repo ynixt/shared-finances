@@ -29,7 +29,7 @@ class AuthTransactionalMailMessageComposer(
         val text =
             messageSource.getMessage(
                 "mail.auth.emailConfirmation.text",
-                arrayOf(window, link),
+                arrayOf(window, link, rawToken.chunked(4).joinToString("-")),
                 locale,
             )
 

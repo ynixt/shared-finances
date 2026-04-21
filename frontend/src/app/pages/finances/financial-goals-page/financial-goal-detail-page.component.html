@@ -3,29 +3,31 @@
 } @else if (detail() != null) {
   <app-finances-title-bar [title]="detail()!.goal.name" [closeRouterLink]="closeRouterLink" [extraButtons]="editExtras()" />
 
-  <div class="mb-6 flex flex-wrap gap-2">
-    <a
-      [routerLink]="goalActionRouterLink('allocate')"
-      pButton
-      type="button"
-      class="p-button-sm"
-      [label]="'financesPage.goalsPage.allocate' | translate"
-    ></a>
-    <a
-      [routerLink]="goalActionRouterLink('reverse')"
-      pButton
-      type="button"
-      class="p-button-sm p-button-secondary"
-      [label]="'financesPage.goalsPage.reverse' | translate"
-    ></a>
-    <a
-      [routerLink]="goalActionRouterLink('schedule')"
-      pButton
-      type="button"
-      class="p-button-sm p-button-secondary"
-      [label]="'financesPage.goalsPage.newSchedule' | translate"
-    ></a>
-  </div>
+  @if (canManageGoal()) {
+    <div class="mb-6 flex flex-wrap gap-2">
+      <a
+        [routerLink]="goalActionRouterLink('allocate')"
+        pButton
+        type="button"
+        class="p-button-sm"
+        [label]="'financesPage.goalsPage.allocate' | translate"
+      ></a>
+      <a
+        [routerLink]="goalActionRouterLink('reverse')"
+        pButton
+        type="button"
+        class="p-button-sm p-button-secondary"
+        [label]="'financesPage.goalsPage.reverse' | translate"
+      ></a>
+      <a
+        [routerLink]="goalActionRouterLink('schedule')"
+        pButton
+        type="button"
+        class="p-button-sm p-button-secondary"
+        [label]="'financesPage.goalsPage.newSchedule' | translate"
+      ></a>
+    </div>
+  }
 
   <section class="mb-8">
     <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.targets' | translate }}</h3>
@@ -89,13 +91,15 @@
           <td>{{ m.signedAmount | localCurrency: m.currency }}</td>
           <td>{{ m.note ?? '—' }}</td>
           <td class="text-end">
-            <a
-              [routerLink]="movementEditRouterLink(m.id)"
-              pButton
-              type="button"
-              class="p-button-text p-button-sm"
-              [label]="'general.edit' | translate"
-            ></a>
+            @if (canManageGoal()) {
+              <a
+                [routerLink]="movementEditRouterLink(m.id)"
+                pButton
+                type="button"
+                class="p-button-text p-button-sm"
+                [label]="'general.edit' | translate"
+              ></a>
+            }
           </td>
         </tr>
       </ng-template>
@@ -146,20 +150,22 @@
           <td>{{ s.nextExecution != null ? (s.nextExecution | localDate: 'shortDate') : '—' }}</td>
           <td>{{ s.endExecution != null ? (s.endExecution | localDate: 'shortDate') : '—' }}</td>
           <td class="flex flex-wrap justify-end gap-1">
-            <a
-              [routerLink]="scheduleEditRouterLink(s.id)"
-              pButton
-              type="button"
-              class="p-button-text p-button-sm"
-              [label]="'general.edit' | translate"
-            ></a>
-            <button
-              pButton
-              type="button"
-              class="p-button-text p-button-danger p-button-sm"
-              (click)="deleteSchedule(s.id)"
-              [label]="'general.delete' | translate"
-            ></button>
+            @if (canManageGoal()) {
+              <a
+                [routerLink]="scheduleEditRouterLink(s.id)"
+                pButton
+                type="button"
+                class="p-button-text p-button-sm"
+                [label]="'general.edit' | translate"
+              ></a>
+              <button
+                pButton
+                type="button"
+                class="p-button-text p-button-danger p-button-sm"
+                (click)="deleteSchedule(s.id)"
+                [label]="'general.delete' | translate"
+              ></button>
+            }
           </td>
         </tr>
       </ng-template>

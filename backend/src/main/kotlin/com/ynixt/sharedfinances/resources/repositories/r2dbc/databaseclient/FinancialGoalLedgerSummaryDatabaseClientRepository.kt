@@ -70,6 +70,56 @@ class FinancialGoalLedgerSummaryDatabaseClientRepository(
             }.all()
     }
 
+    override fun summarizeCommittedByGroupGoals(groupId: UUID): Flux<GoalCommittedByWalletRow> {
+        val sql =
+            """
+            SELECT m.wallet_item_id, wi.currency, SUM(m.signed_amount) AS committed
+            FROM financial_goal_ledger_movement m
+            INNER JOIN financial_goal g ON g.id = m.financial_goal_id
+            INNER JOIN wallet_item wi ON wi.id = m.wallet_item_id
+            WHERE wi.type = 'BANK_ACCOUNT'
+            AND g.group_id = :groupId
+            GROUP BY m.wallet_item_id, wi.currency
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("groupId", groupId)
+            .map { row, _ ->
+                GoalCommittedByWalletRow(
+                    walletItemId = row.get("wallet_item_id", UUID::class.java)!!,
+                    currency = row.get("currency", String::class.java)!!,
+                    committed = row.get("committed", BigDecimal::class.java)!!,
+                )
+            }.all()
+    }
+
+    override fun summarizeCommittedByGroupGoalsDetailed(groupId: UUID): Flux<GoalCommittedByGoalRow> {
+        val sql =
+            """
+            SELECT g.id AS goal_id, g.name AS goal_name, m.wallet_item_id, wi.currency, SUM(m.signed_amount) AS committed
+            FROM financial_goal_ledger_movement m
+            INNER JOIN financial_goal g ON g.id = m.financial_goal_id
+            INNER JOIN wallet_item wi ON wi.id = m.wallet_item_id
+            WHERE wi.type = 'BANK_ACCOUNT'
+            AND g.group_id = :groupId
+            GROUP BY g.id, g.name, m.wallet_item_id, wi.currency
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("groupId", groupId)
+            .map { row, _ ->
+                GoalCommittedByGoalRow(
+                    goalId = row.get("goal_id", UUID::class.java)!!,
+                    goalName = row.get("goal_name", String::class.java)!!,
+                    walletItemId = row.get("wallet_item_id", UUID::class.java)!!,
+                    currency = row.get("currency", String::class.java)!!,
+                    committed = row.get("committed", BigDecimal::class.java)!!,
+                )
+            }.all()
+    }
+
     override fun summarizeCommittedByGoal(goalId: UUID): Flux<GoalCurrencyCommittedRow> {
         val sql =
             """

@@ -4,11 +4,13 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEn
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimitException
+import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
@@ -916,8 +918,15 @@ class WalletEntryEditServiceImpl(
 
         val requestWithOwnership = request.copy(groupId = existingGroupId)
         val preparedRequest = prepareMutationRequest(userId, requestWithOwnership)
+        ensureGroupMutationPermission(preparedRequest)
 
         return if (hasMutationPermission(userId, preparedRequest)) preparedRequest else null
+    }
+
+    private fun ensureGroupMutationPermission(preparedRequest: NewEntryRequest) {
+        if (preparedRequest.groupId != null && preparedRequest.group?.permissions?.contains(GroupPermissions.SEND_ENTRIES) != true) {
+            throw UnauthorizedException()
+        }
     }
 
     private fun isTransferBoundaryViolation(

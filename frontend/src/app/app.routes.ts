@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
 
 import { authGuard } from './guards/auth.guard';
+import { groupPermissionGuard } from './guards/group-permission.guard';
 import { notLoggedGuard } from './guards/not-logged.guard';
 import { emailConfirmationFlowsEnabledGuard, passwordRecoveryEnabledGuard } from './guards/open-auth-feature.guards';
+import { GroupPermissions__Obj } from './models/generated/com/ynixt/sharedfinances/domain/enums';
 
 export const routes: Routes = [
   {
@@ -402,59 +404,74 @@ export const routes: Routes = [
               },
               {
                 path: 'new',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-upsert-page.component').then(
                     m => m.FinancialGoalUpsertPageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.groupNewGoal' },
+                data: { pageTitleKey: 'pageTitle.groupNewGoal', groupPermission: GroupPermissions__Obj.MANAGE_GOALS },
               },
               {
                 path: ':id/allocate',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-allocation-form-page.component').then(
                     m => m.FinancialGoalAllocationFormPageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.goalAllocate', goalLedgerMode: 'allocate' },
+                data: {
+                  pageTitleKey: 'pageTitle.goalAllocate',
+                  goalLedgerMode: 'allocate',
+                  groupPermission: GroupPermissions__Obj.MANAGE_GOALS,
+                },
               },
               {
                 path: ':id/reverse',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-allocation-form-page.component').then(
                     m => m.FinancialGoalAllocationFormPageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.goalReverse', goalLedgerMode: 'deallocate' },
+                data: {
+                  pageTitleKey: 'pageTitle.goalReverse',
+                  goalLedgerMode: 'deallocate',
+                  groupPermission: GroupPermissions__Obj.MANAGE_GOALS,
+                },
               },
               {
                 path: ':id/schedule',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-schedule-page.component').then(
                     m => m.FinancialGoalSchedulePageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.goalSchedule' },
+                data: { pageTitleKey: 'pageTitle.goalSchedule', groupPermission: GroupPermissions__Obj.MANAGE_GOALS },
               },
               {
                 path: ':id/schedules/:scheduleId/edit',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-edit-schedule-page.component').then(
                     m => m.FinancialGoalEditSchedulePageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.goalEditSchedule' },
+                data: { pageTitleKey: 'pageTitle.goalEditSchedule', groupPermission: GroupPermissions__Obj.MANAGE_GOALS },
               },
               {
                 path: ':id/movements/:movementId/edit',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-edit-ledger-movement-page.component').then(
                     m => m.FinancialGoalEditLedgerMovementPageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.goalEditLedgerMovement' },
+                data: { pageTitleKey: 'pageTitle.goalEditLedgerMovement', groupPermission: GroupPermissions__Obj.MANAGE_GOALS },
               },
               {
                 path: ':id/edit',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/financial-goals-page/financial-goal-upsert-page.component').then(
                     m => m.FinancialGoalUpsertPageComponent,
                   ),
-                data: { pageTitleKey: 'pageTitle.editGoal' },
+                data: { pageTitleKey: 'pageTitle.editGoal', groupPermission: GroupPermissions__Obj.MANAGE_GOALS },
               },
               {
                 path: ':id',
@@ -537,12 +554,14 @@ export const routes: Routes = [
               },
               {
                 path: 'new',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/groups-page/associate-bank-account-group-page/associate-bank-account-group-page.component').then(
                     m => m.AssociateBankAccountGroupPageComponent,
                   ),
                 data: {
                   pageTitleKey: 'pageTitle.associateBankAccountGroup',
+                  groupPermission: GroupPermissions__Obj.ADD_BANK_ACCOUNT,
                 },
               },
             ],
@@ -562,12 +581,14 @@ export const routes: Routes = [
               },
               {
                 path: 'new',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/groups-page/associate-credit-card-group-page/associate-credit-card-group-page.component').then(
                     m => m.AssociateCreditCardGroupPageComponent,
                   ),
                 data: {
                   pageTitleKey: 'pageTitle.associateCreditCardGroup',
+                  groupPermission: GroupPermissions__Obj.ADD_CREDIT_CARD,
                 },
               },
             ],
@@ -587,22 +608,26 @@ export const routes: Routes = [
               },
               {
                 path: 'new',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/groups-page/new-group-category-page/new-group-category-page.component').then(
                     m => m.NewGroupCategoryPageComponent,
                   ),
                 data: {
                   pageTitleKey: 'pageTitle.newCategory',
+                  groupPermission: GroupPermissions__Obj.NEW_CATEGORY,
                 },
               },
               {
                 path: 'edit/:categoryId',
+                canActivate: [groupPermissionGuard],
                 loadComponent: () =>
                   import('./pages/finances/groups-page/edit-group-category-page/edit-group-category-page.component').then(
                     m => m.EditGroupCategoryPageComponent,
                   ),
                 data: {
                   pageTitleKey: 'pageTitle.editCategory',
+                  groupPermission: GroupPermissions__Obj.EDIT_CATEGORY,
                 },
               },
             ],

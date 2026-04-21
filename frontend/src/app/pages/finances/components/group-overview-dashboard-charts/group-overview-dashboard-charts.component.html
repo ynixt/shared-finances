@@ -1,0 +1,236 @@
+<div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.cashIn' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeCashInProjected()"
+          (ngModelChange)="includeCashInProjected.set($event)"
+          inputId="groupCashInProjectedToggle"
+        />
+        <label for="groupCashInProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <p-chart type="line" [data]="cashInTotalChartData()" [options]="lineChartOptions"></p-chart>
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.groupsPage.overviewPage.charts.cashInByMember' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeCashInByMemberProjected()"
+          (ngModelChange)="includeCashInByMemberProjected.set($event)"
+          inputId="groupCashInByMemberProjectedToggle"
+        />
+        <label for="groupCashInByMemberProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      @for (series of cashInByMember(); track series.memberId) {
+        <div class="rounded-lg border border-surface-200 bg-surface-50 p-3">
+          <h4 class="mb-2 text-sm font-semibold text-surface-700">{{ series.memberName }}</h4>
+          <p-chart type="line" [data]="series.chartData" [options]="lineChartOptions"></p-chart>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expense' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeExpenseProjected()"
+          (ngModelChange)="includeExpenseProjected.set($event)"
+          inputId="groupExpenseProjectedToggle"
+        />
+        <label for="groupExpenseProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <p-chart type="line" [data]="expenseTotalChartData()" [options]="lineChartOptions"></p-chart>
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.groupsPage.overviewPage.charts.expenseByMemberSeries' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeExpenseByMemberProjected()"
+          (ngModelChange)="includeExpenseByMemberProjected.set($event)"
+          inputId="groupExpenseByMemberProjectedToggle"
+        />
+        <label for="groupExpenseByMemberProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      @for (series of expenseByMember(); track series.memberId) {
+        <div class="rounded-lg border border-surface-200 bg-surface-50 p-3">
+          <h4 class="mb-2 text-sm font-semibold text-surface-700">{{ series.memberName }}</h4>
+          <p-chart type="line" [data]="series.chartData" [options]="lineChartOptions"></p-chart>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.groupsPage.overviewPage.charts.cashInByCategoryTotal' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeCashInByCategoryProjected()"
+          (ngModelChange)="includeCashInByCategoryProjected.set($event)"
+          inputId="groupCashInCategoryProjectedToggle"
+        />
+        <label for="groupCashInCategoryProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    @if (hasCashInByCategoryTotal()) {
+      <div class="h-80">
+        <p-chart type="pie" [data]="cashInByCategoryTotalChartData()" [options]="pieChartOptions"></p-chart>
+      </div>
+    } @else {
+      <div
+        class="flex h-80 items-center justify-center rounded-lg border border-dashed border-surface-200 bg-surface-50 px-6 text-center text-sm text-surface-500"
+      >
+        {{ 'financesPage.overviewPage.charts.emptyBreakdown' | translate }}
+      </div>
+    }
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.overviewPage.charts.expenseByCategory' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeExpenseByCategoryProjected()"
+          (ngModelChange)="includeExpenseByCategoryProjected.set($event)"
+          inputId="groupExpenseCategoryProjectedToggle"
+        />
+        <label for="groupExpenseCategoryProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    @if (hasExpenseByCategory()) {
+      <div class="h-80">
+        <p-chart type="pie" [data]="expenseByCategoryChartData()" [options]="pieChartOptions"></p-chart>
+      </div>
+    } @else {
+      <div
+        class="flex h-80 items-center justify-center rounded-lg border border-dashed border-surface-200 bg-surface-50 px-6 text-center text-sm text-surface-500"
+      >
+        {{ 'financesPage.overviewPage.charts.emptyBreakdown' | translate }}
+      </div>
+    }
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">
+        {{ 'financesPage.groupsPage.overviewPage.charts.cashInByCategoryByMember' | translate }}
+      </h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeCashInByCategoryByMemberProjected()"
+          (ngModelChange)="includeCashInByCategoryByMemberProjected.set($event)"
+          inputId="groupCashInCategoryByMemberProjectedToggle"
+        />
+        <label for="groupCashInCategoryByMemberProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      @for (memberPie of cashInByCategoryByMember(); track memberPie.memberId) {
+        <div class="rounded-lg border border-surface-200 bg-surface-50 p-3">
+          <h4 class="mb-2 text-sm font-semibold text-surface-700">{{ memberPie.memberName }}</h4>
+          @if (memberPie.hasData) {
+            <div class="h-72">
+              <p-chart type="pie" [data]="memberPie.chartData" [options]="pieChartOptions"></p-chart>
+            </div>
+          } @else {
+            <div
+              class="flex h-72 items-center justify-center rounded-lg border border-dashed border-surface-200 bg-white px-6 text-center text-sm text-surface-500"
+            >
+              {{ 'financesPage.overviewPage.charts.emptyBreakdown' | translate }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">
+        {{ 'financesPage.groupsPage.overviewPage.charts.expenseByCategoryByMember' | translate }}
+      </h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeExpenseByCategoryByMemberProjected()"
+          (ngModelChange)="includeExpenseByCategoryByMemberProjected.set($event)"
+          inputId="groupExpenseCategoryByMemberProjectedToggle"
+        />
+        <label for="groupExpenseCategoryByMemberProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      @for (memberPie of expenseByCategoryByMember(); track memberPie.memberId) {
+        <div class="rounded-lg border border-surface-200 bg-surface-50 p-3">
+          <h4 class="mb-2 text-sm font-semibold text-surface-700">{{ memberPie.memberName }}</h4>
+          @if (memberPie.hasData) {
+            <div class="h-72">
+              <p-chart type="pie" [data]="memberPie.chartData" [options]="pieChartOptions"></p-chart>
+            </div>
+          } @else {
+            <div
+              class="flex h-72 items-center justify-center rounded-lg border border-dashed border-surface-200 bg-white px-6 text-center text-sm text-surface-500"
+            >
+              {{ 'financesPage.overviewPage.charts.emptyBreakdown' | translate }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm xl:col-span-2">
+    <div class="mb-4 flex flex-col gap-4 md:flex-row">
+      <h3 class="font-semibold text-surface-800">{{ 'financesPage.groupsPage.overviewPage.charts.expenseByMemberPie' | translate }}</h3>
+      <div class="flex flex-wrap items-center gap-3 md:ml-auto">
+        <p-toggleswitch
+          [ngModel]="includeExpenseByMemberPieProjected()"
+          (ngModelChange)="includeExpenseByMemberPieProjected.set($event)"
+          inputId="groupExpenseByMemberPieProjectedToggle"
+        />
+        <label for="groupExpenseByMemberPieProjectedToggle" class="cursor-pointer text-sm font-medium text-surface-700">
+          {{ 'financesPage.overviewPage.charts.includeProjectedToggle' | translate }}
+        </label>
+      </div>
+    </div>
+    @if (hasExpenseByMember()) {
+      <div class="h-80">
+        <p-chart type="pie" [data]="expenseByMemberChartData()" [options]="pieChartOptions"></p-chart>
+      </div>
+    } @else {
+      <div
+        class="flex h-80 items-center justify-center rounded-lg border border-dashed border-surface-200 bg-surface-50 px-6 text-center text-sm text-surface-500"
+      >
+        {{ 'financesPage.overviewPage.charts.emptyBreakdown' | translate }}
+      </div>
+    }
+  </div>
+</div>

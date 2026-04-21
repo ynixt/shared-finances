@@ -91,6 +91,10 @@ export class GroupBankAccountsPageComponent {
   }
 
   async showDeleteConfirmation(bankAccount: BankAccountForGroupAssociateDto) {
+    if (!this.canRemoveBankAccount) {
+      return;
+    }
+
     this.confirmationService.confirm({
       message: this.translateService.instant('general.genericConfirmation'),
       header: this.translateService.instant('general.confirmation'),
@@ -112,7 +116,7 @@ export class GroupBankAccountsPageComponent {
   }
 
   private async unassociateBankAccount(bankAccount: BankAccountForGroupAssociateDto) {
-    if (this.submitting || this.groupId == null) return;
+    if (!this.canRemoveBankAccount || this.submitting || this.groupId == null) return;
 
     this.submitting = true;
 
@@ -192,6 +196,13 @@ export class GroupBankAccountsPageComponent {
     }
   }
 
-  protected readonly GroupPermissions__Obj = GroupPermissions__Obj;
+  get canAddBankAccount(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.ADD_BANK_ACCOUNT) === true;
+  }
+
+  get canRemoveBankAccount(): boolean {
+    return this.group?.permissions.includes(GroupPermissions__Obj.REMOVE_BANK_ACCOUNT) === true;
+  }
+
   protected readonly faTrash = faTrash;
 }

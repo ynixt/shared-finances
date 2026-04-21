@@ -2,8 +2,10 @@ authFlows:
   pending:
     title: Confirm your email
     body: >-
-      We sent a confirmation link to {{email}}. You must confirm within 3 hours before the account may
-      be removed. Login stays disabled until confirmation completes.
+      We sent a confirmation link and code to {{email}}. You must confirm within 3 hours before the
+      account may be removed. Login stays disabled until confirmation completes.
+    code: Verification code
+    confirmCode: Confirm code
     resend: Resend email
     resendIn: Resend in {{seconds}}s
     newEmail: New email address

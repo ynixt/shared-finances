@@ -5,7 +5,7 @@
     <app-finances-title-bar
       [title]="'financesPage.groupsPage.bankAccountsAssociatedPage.title' | translate: { name: group.name }"
       closeRouterLink=".."
-      newRouterLink="new"
+      [newRouterLink]="canAddBankAccount ? 'new' : undefined"
     ></app-finances-title-bar>
 
     <div class="group-bank-accounts-table w-full">
@@ -26,7 +26,7 @@
 
             <td>
               <div class="flex items-center justify-center gap-2">
-                @if (group.permissions.includes(GroupPermissions__Obj.REMOVE_BANK_ACCOUNT)) {
+                @if (canRemoveBankAccount) {
                   <button
                     pButton
                     pRipple

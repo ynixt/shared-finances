@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.services.dashboard
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetail
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailSourceType
+import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardScope
 import com.ynixt.sharedfinances.domain.repositories.GoalLedgerCommittedSummaryRepository
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
@@ -15,16 +16,23 @@ internal class OverviewDashboardGoalServiceImpl(
     private val goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository,
 ) {
     internal suspend fun loadGoalCommitmentContext(
-        userId: UUID,
+        scope: OverviewDashboardScope,
         bankAccountIds: Set<UUID>,
         bankAccountById: Map<UUID, BankAccount>,
         rawBalanceByBankId: Map<UUID, BigDecimal>,
         referenceDate: LocalDate,
     ): GoalCommitmentContext {
         val detailedRows =
-            goalLedgerSummaryRepository
-                .summarizeCommittedByUserGoalsDetailed(userId)
-                .collectList()
+            (
+                when (scope) {
+                    is OverviewDashboardScope.Individual ->
+                        goalLedgerSummaryRepository
+                            .summarizeCommittedByUserGoalsDetailed(scope.actorUserId)
+                    is OverviewDashboardScope.Group ->
+                        goalLedgerSummaryRepository
+                            .summarizeCommittedByGroupGoalsDetailed(scope.groupId)
+                }
+            ).collectList()
                 .awaitSingle()
                 .filter { committed -> bankAccountIds.contains(committed.walletItemId) }
 

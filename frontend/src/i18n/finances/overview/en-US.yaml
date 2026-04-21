@@ -36,6 +36,7 @@ financesPage:
       expenses: Expenses
       projectedExpenses: Projected expenses
       periodExpenses: Period expenses
+      groupMemberDebts: Member debts
     charts:
       includeProjectedToggle: Include projected
       balance: Balance (12 months)
@@ -68,6 +69,7 @@ financesPage:
         creditCardBill: Credit card bill
         goal: Goal
         formula: Formula
+        groupDebtPair: Debt pair
         unknown: Unknown source
     feed:
       title: Transactions in period

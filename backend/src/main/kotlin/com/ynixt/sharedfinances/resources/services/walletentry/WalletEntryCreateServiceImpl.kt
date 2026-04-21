@@ -7,9 +7,11 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
+import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.extensions.LocalDateExtensions.isSameMonthYear
+import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
@@ -85,12 +87,19 @@ class WalletEntryCreateServiceImpl(
         newEntryRequest: NewEntryRequest,
     ): MinimumWalletEventEntity? {
         val preparedRequest = prepareMutationRequest(userId, newEntryRequest)
+        ensureGroupMutationPermission(preparedRequest)
 
         return if (hasMutationPermission(userId, preparedRequest)) {
             createWithoutCheckPermissions(userId, preparedRequest)
                 .also { walletEventActionEventService.sendInsertedWalletEvent(userId, it) }
         } else {
             null
+        }
+    }
+
+    private fun ensureGroupMutationPermission(preparedRequest: NewEntryRequest) {
+        if (preparedRequest.groupId != null && preparedRequest.group?.permissions?.contains(GroupPermissions.SEND_ENTRIES) != true) {
+            throw UnauthorizedException()
         }
     }
 
