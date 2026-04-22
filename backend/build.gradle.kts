@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "com.ynixt"
-version = "3.0.0"
+version = "3.0.0-alpha.1"
 
 java {
     toolchain {
