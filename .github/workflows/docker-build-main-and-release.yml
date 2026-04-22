@@ -1,4 +1,4 @@
-name: Docker Build on Main
+name: Docker Build on Main and release package
 
 permissions:
   contents: read
