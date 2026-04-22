@@ -1,5 +1,8 @@
 name: Docker Build on Main and release package
 
+on:
+  workflow_dispatch:
+
 permissions:
   contents: read
   packages: write
