@@ -27,7 +27,7 @@ export type ExtraSourceLegForm = FormGroup<{
 }>;
 
 export type BeneficiaryLegForm = FormGroup<{
-  userId: FormControl<string | undefined>;
+  user: FormControl<UserForBeneficiary | undefined>;
   benefitPercent: FormControl<number | undefined>;
 }>;
 

@@ -458,6 +458,42 @@ class WalletScenarioThen internal constructor(
             .isEqualByComparingTo(projected.toBigDecimalSafe())
     }
 
+    fun groupOverviewExpenseByMemberForMonthShouldBe(
+        memberId: UUID,
+        month: YearMonth,
+        executed: Number,
+        projected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val point =
+            overview.charts.expense.byMember
+                .first { it.memberId == memberId }
+                .points
+                .first { it.month == month }
+
+        assertThat(point.executedValue)
+            .describedAs("group overview expense-by-member executed value for $memberId and $month")
+            .isEqualByComparingTo(executed.toBigDecimalSafe())
+        assertThat(point.projectedValue)
+            .describedAs("group overview expense-by-member projected value for $memberId and $month")
+            .isEqualByComparingTo(projected.toBigDecimalSafe())
+    }
+
+    fun groupOverviewExpenseByMemberSliceShouldBe(
+        memberId: UUID,
+        expected: Number,
+    ) {
+        val overview = requireNotNull(context.lastGroupOverview) { "Group overview was not fetched yet" }
+        val actual =
+            overview.charts.expenseByMember
+                .first { it.id == memberId }
+                .value
+
+        assertThat(actual)
+            .describedAs("group overview expense-by-member pie slice for $memberId")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
     fun groupOverviewExpenseCategorySliceShouldBe(
         label: String,
         expected: Number,

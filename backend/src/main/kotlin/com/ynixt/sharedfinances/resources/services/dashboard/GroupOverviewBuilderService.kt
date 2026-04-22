@@ -17,6 +17,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetailS
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardPieSlice
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardScope
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
+import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Clock
@@ -230,7 +231,6 @@ internal class GroupOverviewBuilderService(
 
                 val walletItem = entry.walletItem
                 val memberId = walletItem.userId
-                val memberName = resolveMemberName(memberId, memberNameById)
 
                 when (event.type) {
                     WalletEntryType.REVENUE -> {
@@ -286,17 +286,32 @@ internal class GroupOverviewBuilderService(
 
                     WalletEntryType.EXPENSE -> {
                         val expenseValue = entry.value.abs().asMoney()
+                        val expenseSharesByMember =
+                            splitExpenseByMember(
+                                event = event,
+                                fallbackMemberId = memberId,
+                                expenseValue = expenseValue,
+                            )
                         if (inChartRange) {
-                            addChartContribution(
+                            addChartContributionToAll(
                                 month = month,
                                 value = expenseValue,
                                 currency = walletItem.currency,
                                 component = component,
-                                memberId = memberId,
                                 allContributions = rawChartContributions,
-                                memberContributions = rawChartContributionsByMember,
                                 series = ChartSeries.EXPENSE,
                             )
+                            expenseSharesByMember.forEach { share ->
+                                addChartContributionToMember(
+                                    month = month,
+                                    value = share.value,
+                                    currency = walletItem.currency,
+                                    component = component,
+                                    memberId = share.memberId,
+                                    memberContributions = rawChartContributionsByMember,
+                                    series = ChartSeries.EXPENSE,
+                                )
+                            }
                         }
 
                         if (inSelectedMonth) {
@@ -321,7 +336,7 @@ internal class GroupOverviewBuilderService(
 
                             val categoryId = event.category?.id
                             val categoryLabel = event.category?.name ?: PREDEFINED_UNCATEGORIZED_LABEL
-                            addBreakdownContribution(
+                            addBreakdownContributionToAll(
                                 breakdownType = BreakdownType.EXPENSE_CATEGORY,
                                 component = component,
                                 value = expenseValue,
@@ -329,21 +344,32 @@ internal class GroupOverviewBuilderService(
                                 sliceId = categoryId,
                                 label = categoryLabel,
                                 referenceDate = selectedMonthEnd,
-                                memberId = memberId,
                                 allBreakdowns = rawExpenseCategoryBreakdown,
-                                memberBreakdowns = rawExpenseCategoryBreakdownByMember,
                             )
-                            rawExpenseByMemberBreakdown.add(
-                                RawBreakdownContribution(
-                                    breakdownType = BreakdownType.EXPENSE_GROUP,
+                            expenseSharesByMember.forEach { share ->
+                                addBreakdownContributionToMember(
+                                    breakdownType = BreakdownType.EXPENSE_CATEGORY,
                                     component = component,
-                                    sliceId = memberId,
-                                    label = memberName,
-                                    value = expenseValue,
-                                    currency = walletItem.currency.uppercase(),
+                                    value = share.value,
+                                    currency = walletItem.currency,
+                                    sliceId = categoryId,
+                                    label = categoryLabel,
                                     referenceDate = selectedMonthEnd,
-                                ),
-                            )
+                                    memberId = share.memberId,
+                                    memberBreakdowns = rawExpenseCategoryBreakdownByMember,
+                                )
+                                rawExpenseByMemberBreakdown.add(
+                                    RawBreakdownContribution(
+                                        breakdownType = BreakdownType.EXPENSE_GROUP,
+                                        component = component,
+                                        sliceId = share.memberId,
+                                        label = resolveMemberName(share.memberId, memberNameById),
+                                        value = share.value,
+                                        currency = walletItem.currency.uppercase(),
+                                        referenceDate = selectedMonthEnd,
+                                    ),
+                                )
+                            }
                         }
                     }
 
@@ -711,7 +737,34 @@ internal class GroupOverviewBuilderService(
         memberContributions: MutableMap<UUID, MutableList<RawChartContribution>>,
         series: ChartSeries,
     ) {
-        val contribution =
+        addChartContributionToAll(
+            month = month,
+            value = value,
+            currency = currency,
+            component = component,
+            allContributions = allContributions,
+            series = series,
+        )
+        addChartContributionToMember(
+            month = month,
+            value = value,
+            currency = currency,
+            component = component,
+            memberId = memberId,
+            memberContributions = memberContributions,
+            series = series,
+        )
+    }
+
+    private fun addChartContributionToAll(
+        month: YearMonth,
+        value: BigDecimal,
+        currency: String,
+        component: ChartPointComponent,
+        allContributions: MutableList<RawChartContribution>,
+        series: ChartSeries,
+    ) {
+        allContributions.add(
             RawChartContribution(
                 chartSeries = series,
                 component = component,
@@ -719,9 +772,30 @@ internal class GroupOverviewBuilderService(
                 value = value.asMoney(),
                 currency = currency.uppercase(),
                 referenceDate = month.atEndOfMonth(),
+            ),
+        )
+    }
+
+    private fun addChartContributionToMember(
+        month: YearMonth,
+        value: BigDecimal,
+        currency: String,
+        component: ChartPointComponent,
+        memberId: UUID,
+        memberContributions: MutableMap<UUID, MutableList<RawChartContribution>>,
+        series: ChartSeries,
+    ) {
+        memberContributions.getOrPut(memberId) { mutableListOf() }
+            .add(
+                RawChartContribution(
+                    chartSeries = series,
+                    component = component,
+                    month = month,
+                    value = value.asMoney(),
+                    currency = currency.uppercase(),
+                    referenceDate = month.atEndOfMonth(),
+                ),
             )
-        allContributions.add(contribution)
-        memberContributions.getOrPut(memberId) { mutableListOf() }.add(contribution)
     }
 
     private fun addBreakdownContribution(
@@ -736,7 +810,40 @@ internal class GroupOverviewBuilderService(
         allBreakdowns: MutableList<RawBreakdownContribution>,
         memberBreakdowns: MutableMap<UUID, MutableList<RawBreakdownContribution>>,
     ) {
-        val contribution =
+        addBreakdownContributionToAll(
+            breakdownType = breakdownType,
+            component = component,
+            value = value,
+            currency = currency,
+            sliceId = sliceId,
+            label = label,
+            referenceDate = referenceDate,
+            allBreakdowns = allBreakdowns,
+        )
+        addBreakdownContributionToMember(
+            breakdownType = breakdownType,
+            component = component,
+            value = value,
+            currency = currency,
+            sliceId = sliceId,
+            label = label,
+            referenceDate = referenceDate,
+            memberId = memberId,
+            memberBreakdowns = memberBreakdowns,
+        )
+    }
+
+    private fun addBreakdownContributionToAll(
+        breakdownType: BreakdownType,
+        component: ChartPointComponent,
+        value: BigDecimal,
+        currency: String,
+        sliceId: UUID?,
+        label: String,
+        referenceDate: LocalDate,
+        allBreakdowns: MutableList<RawBreakdownContribution>,
+    ) {
+        allBreakdowns.add(
             RawBreakdownContribution(
                 breakdownType = breakdownType,
                 component = component,
@@ -745,9 +852,68 @@ internal class GroupOverviewBuilderService(
                 value = value.asMoney(),
                 currency = currency.uppercase(),
                 referenceDate = referenceDate,
+            ),
+        )
+    }
+
+    private fun addBreakdownContributionToMember(
+        breakdownType: BreakdownType,
+        component: ChartPointComponent,
+        value: BigDecimal,
+        currency: String,
+        sliceId: UUID?,
+        label: String,
+        referenceDate: LocalDate,
+        memberId: UUID,
+        memberBreakdowns: MutableMap<UUID, MutableList<RawBreakdownContribution>>,
+    ) {
+        memberBreakdowns.getOrPut(memberId) { mutableListOf() }
+            .add(
+                RawBreakdownContribution(
+                    breakdownType = breakdownType,
+                    component = component,
+                    sliceId = sliceId,
+                    label = label,
+                    value = value.asMoney(),
+                    currency = currency.uppercase(),
+                    referenceDate = referenceDate,
+                ),
             )
-        allBreakdowns.add(contribution)
-        memberBreakdowns.getOrPut(memberId) { mutableListOf() }.add(contribution)
+    }
+
+    private fun splitExpenseByMember(
+        event: EventListResponse,
+        fallbackMemberId: UUID,
+        expenseValue: BigDecimal,
+    ): List<MemberExpenseShare> {
+        val beneficiaries =
+            event.beneficiaries
+                .takeIf { it.isNotEmpty() }
+                ?: return listOf(MemberExpenseShare(memberId = fallbackMemberId, value = expenseValue))
+
+        val shares =
+            WalletSourceSplit
+                .distributeLegValues(
+                    type = WalletEntryType.EXPENSE,
+                    totalMagnitude = expenseValue,
+                    percents = beneficiaries.map { beneficiary -> beneficiary.benefitPercent },
+                ).map { share -> share.abs().asMoney() }
+
+        val valueByMember =
+            linkedMapOf<UUID, BigDecimal>()
+        beneficiaries.zip(shares).forEach { (beneficiary, share) ->
+            valueByMember[beneficiary.userId] =
+                valueByMember
+                    .getOrDefault(beneficiary.userId, BigDecimal.ZERO)
+                    .add(share)
+                    .asMoney()
+        }
+
+        return valueByMember
+            .asSequence()
+            .filter { (_, value) -> value.compareTo(BigDecimal.ZERO) > 0 }
+            .map { (memberId, value) -> MemberExpenseShare(memberId = memberId, value = value) }
+            .toList()
     }
 
     private fun buildChartPoints(
@@ -775,10 +941,11 @@ internal class GroupOverviewBuilderService(
         memberNameById: MutableMap<UUID, String>,
         allMemberIds: MutableSet<UUID>,
     ) {
-        events
-            .asSequence()
-            .flatMap { event -> event.entries.asSequence() }
-            .forEach { entry ->
+        events.forEach { event ->
+            event.beneficiaries.forEach { beneficiary ->
+                allMemberIds.add(beneficiary.userId)
+            }
+            event.entries.forEach { entry ->
                 val memberId = entry.walletItem.userId
                 allMemberIds.add(memberId)
                 val firstName =
@@ -800,6 +967,7 @@ internal class GroupOverviewBuilderService(
                     memberNameById.putIfAbsent(memberId, fullName)
                 }
             }
+        }
     }
 
     private fun userDisplayName(member: GroupUserEntity): String {
@@ -877,6 +1045,11 @@ internal class GroupOverviewBuilderService(
         val currency: String,
         val outstandingAmount: BigDecimal,
         val monthValues: List<GroupDebtMonthRaw>,
+    )
+
+    private data class MemberExpenseShare(
+        val memberId: UUID,
+        val value: BigDecimal,
     )
 
     companion object {

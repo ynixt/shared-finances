@@ -44,6 +44,8 @@ import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.Recurrenc
 import com.ynixt.sharedfinances.scenarios.support.NoOpGoalLedgerCommittedSummaryRepository
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupService
+import com.ynixt.sharedfinances.scenarios.support.inMemoryRecurrenceEventBeneficiaryRepository
+import com.ynixt.sharedfinances.scenarios.support.inMemoryWalletEventBeneficiaryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import kotlinx.coroutines.runBlocking
@@ -1753,6 +1755,10 @@ class OverviewDashboardServiceImplTest {
         goalLedgerSummaryRepository: GoalLedgerCommittedSummaryRepository = NoOpGoalLedgerCommittedSummaryRepository,
         groupService: GroupService = NoOpGroupService(),
         groupDebtService: GroupDebtService = NoOpGroupDebtService,
+        walletEventBeneficiaryRepository: com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository =
+            inMemoryWalletEventBeneficiaryRepository(),
+        recurrenceEventBeneficiaryRepository: com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository =
+            inMemoryRecurrenceEventBeneficiaryRepository(),
     ): OverviewDashboardServiceImpl {
         val balanceService = OverviewDashboardBalanceServiceImpl()
         val dataService =
@@ -1762,6 +1768,8 @@ class OverviewDashboardServiceImplTest {
                 walletEntryRepository = walletEntryRepository,
                 walletEventListService = walletEventListService,
                 recurrenceSimulationService = recurrenceSimulationService,
+                walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+                recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
                 creditCardBillService = creditCardBillService,
                 groupService = groupService,
                 groupDebtService = groupDebtService,

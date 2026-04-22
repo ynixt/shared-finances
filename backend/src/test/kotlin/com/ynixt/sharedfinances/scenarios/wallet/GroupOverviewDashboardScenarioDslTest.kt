@@ -5,10 +5,13 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyComposition
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairBalance
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
+import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletBeneficiaryLeg
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
+import com.ynixt.sharedfinances.domain.enums.PaymentType
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -184,6 +187,125 @@ class GroupOverviewDashboardScenarioDslTest {
                     label = "PREDEFINED_UNCATEGORIZED",
                     expected = 25,
                 )
+            }
+        }
+    }
+
+    @Test
+    fun `group overview expense member charts should split by beneficiaries including projected values`() {
+        val today = LocalDate.of(2026, 4, 10)
+        val selectedMonth = YearMonth.of(2026, 4)
+        val groupService = ScenarioGroupService()
+        val groupId = groupService.createGroup(name = "Shared Group")
+
+        lateinit var gabrielId: UUID
+        lateinit var gabrielBankId: UUID
+        lateinit var joaoId: UUID
+        lateinit var joaoBankId: UUID
+
+        walletScenario(initialDate = today, groupService = groupService) {
+            given {
+                gabrielId = user(email = "gabriel@example.com", firstName = "Gabriel", lastName = "Silva", defaultCurrency = "BRL")
+                gabrielBankId = bankAccount(name = "Gabriel bank", balance = 1000, currency = "BRL", showOnDashboard = true)
+                joaoId = user(email = "joao@example.com", firstName = "Joao", lastName = "Souza", defaultCurrency = "BRL")
+                joaoBankId = bankAccount(name = "Joao bank", balance = 1000, currency = "BRL", showOnDashboard = true)
+            }
+
+            `when` {
+                groupService.upsertMemberScope(
+                    groupId = groupId,
+                    userId = gabrielId,
+                    associatedItemIds = setOf(gabrielBankId, joaoBankId),
+                )
+                groupService.upsertMemberScope(
+                    groupId = groupId,
+                    userId = joaoId,
+                    associatedItemIds = setOf(gabrielBankId, joaoBankId),
+                )
+
+                switchUser(gabrielId)
+                expense(
+                    value = 500,
+                    originId = gabrielBankId,
+                    groupId = groupId,
+                    date = LocalDate.of(2026, 4, 5),
+                    name = "Gabriel full expense",
+                )
+
+                switchUser(joaoId)
+                expense(
+                    value = 3,
+                    originId = joaoBankId,
+                    groupId = groupId,
+                    date = LocalDate.of(2026, 4, 6),
+                    name = "Joao full expense",
+                )
+
+                switchUser(gabrielId)
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        groupId = groupId,
+                        originId = gabrielBankId,
+                        date = LocalDate.of(2026, 4, 7),
+                        value = BigDecimal("50.00"),
+                        name = "Split executed expense",
+                        confirmed = true,
+                        paymentType = PaymentType.UNIQUE,
+                        beneficiaries =
+                            listOf(
+                                NewWalletBeneficiaryLeg(userId = gabrielId, benefitPercent = BigDecimal("50.00")),
+                                NewWalletBeneficiaryLeg(userId = joaoId, benefitPercent = BigDecimal("50.00")),
+                            ),
+                    ),
+                )
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        groupId = groupId,
+                        originId = gabrielBankId,
+                        date = LocalDate.of(2026, 4, 20),
+                        value = BigDecimal("10.00"),
+                        name = "Split projected expense",
+                        confirmed = true,
+                        paymentType = PaymentType.UNIQUE,
+                        beneficiaries =
+                            listOf(
+                                NewWalletBeneficiaryLeg(userId = gabrielId, benefitPercent = BigDecimal("50.00")),
+                                NewWalletBeneficiaryLeg(userId = joaoId, benefitPercent = BigDecimal("50.00")),
+                            ),
+                    ),
+                )
+
+                fetchGroupOverview(groupId = groupId, selectedMonth = selectedMonth)
+            }
+
+            then {
+                groupOverviewExpenseForMonthShouldBe(month = selectedMonth, executed = 553, projected = 10)
+                groupOverviewExpenseByMemberForMonthShouldBe(
+                    memberId = gabrielId,
+                    month = selectedMonth,
+                    executed = 525,
+                    projected = 5,
+                )
+                groupOverviewExpenseByMemberForMonthShouldBe(
+                    memberId = joaoId,
+                    month = selectedMonth,
+                    executed = 28,
+                    projected = 5,
+                )
+                groupOverviewExpenseCategoryByMemberSliceShouldBe(
+                    memberId = gabrielId,
+                    label = "PREDEFINED_UNCATEGORIZED",
+                    expected = 530,
+                )
+                groupOverviewExpenseCategoryByMemberSliceShouldBe(
+                    memberId = joaoId,
+                    label = "PREDEFINED_UNCATEGORIZED",
+                    expected = 33,
+                )
+                groupOverviewExpenseByMemberSliceShouldBe(memberId = gabrielId, expected = 530)
+                groupOverviewExpenseByMemberSliceShouldBe(memberId = joaoId, expected = 33)
             }
         }
     }

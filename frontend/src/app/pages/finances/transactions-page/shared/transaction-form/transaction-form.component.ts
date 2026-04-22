@@ -631,11 +631,11 @@ export class TransactionFormComponent {
   private createExtraBeneficiaryLegGroup(
     init: Partial<{
       benefitPercent: number;
-      userId: string;
+      user: UserForBeneficiary;
     }> = {},
   ): BeneficiaryLegForm {
     return this.formBuilder.group({
-      userId: [init.userId, [Validators.required]],
+      user: [init.user, [Validators.required]],
       benefitPercent: [init.benefitPercent, [Validators.required, Validators.min(0.01), Validators.max(100)]],
     }) as BeneficiaryLegForm;
   }
@@ -759,7 +759,7 @@ export class TransactionFormComponent {
 
     for (let i = 0; i < arr.length; i++) {
       const g = arr.at(i) as FormGroup;
-      this.requireFieldsIf(g.get('userId')!, isRequired);
+      this.requireFieldsIf(g.get('user')!, isRequired);
       this.requireFieldsIf(g.get('benefitPercent')!, isRequired);
     }
 

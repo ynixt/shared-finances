@@ -429,6 +429,8 @@ internal class ScenarioRuntime(
                     walletEntryRepository = walletEntryRepository,
                     walletEventListService = walletEventListService,
                     recurrenceSimulationService = recurrenceSimulationService,
+                    walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
+                    recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
                     creditCardBillService = creditCardBillService,
                     groupService = groupService,
                     groupDebtService = groupDebtService,

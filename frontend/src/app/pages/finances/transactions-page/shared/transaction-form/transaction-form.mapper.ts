@@ -239,7 +239,7 @@ export function mapTransactionFormToNewEntryDto(
             benefitPercent: parseFloat(Number(formValue.primaryBeneficiaryPercent ?? 100).toFixed(2)),
           },
           ...((formValue.extraBeneficiaryLegs ?? []).map(leg => ({
-            userId: leg.userId!,
+            userId: leg.user!!.id!!,
             benefitPercent: parseFloat(Number(leg.benefitPercent ?? 0).toFixed(2)),
           })) ?? []),
         ];

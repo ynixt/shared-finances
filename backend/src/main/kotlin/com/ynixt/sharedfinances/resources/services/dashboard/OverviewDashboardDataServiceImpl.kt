@@ -21,6 +21,8 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -38,6 +40,8 @@ internal class OverviewDashboardDataServiceImpl(
     private val walletEntryRepository: WalletEntryRepository,
     private val walletEventListService: WalletEventListService,
     private val recurrenceSimulationService: RecurrenceSimulationService,
+    private val walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
+    private val recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     private val creditCardBillService: CreditCardBillService,
     private val groupService: GroupService,
     private val groupDebtService: GroupDebtService,
@@ -170,7 +174,7 @@ internal class OverviewDashboardDataServiceImpl(
             nextCursor = page.nextCursor
         }
 
-        return events
+        return hydrateMissingBeneficiaries(events)
     }
 
     internal suspend fun loadProjectedEvents(
@@ -190,20 +194,91 @@ internal class OverviewDashboardDataServiceImpl(
                 is OverviewDashboardScope.Group -> setOf(scope.groupId) to emptySet<UUID>()
             }
 
-        return recurrenceSimulationService.simulateGenerationWithFilters(
-            minimumEndExecution = minimumDate,
-            maximumNextExecution = maximumDate,
-            userId = scope.actorUserId,
-            walletItemId = null,
-            billDate = null,
-            groupIds = groupIds,
-            userIds = userIds,
-            walletItemIds = visibleWalletItemIds,
-            entryTypes = entryTypes,
-            categoryConceptIds = emptySet(),
-            // Keep category unfiltered for overview projected events.
-            includeUncategorized = false,
+        return hydrateMissingBeneficiaries(
+            recurrenceSimulationService.simulateGenerationWithFilters(
+                minimumEndExecution = minimumDate,
+                maximumNextExecution = maximumDate,
+                userId = scope.actorUserId,
+                walletItemId = null,
+                billDate = null,
+                groupIds = groupIds,
+                userIds = userIds,
+                walletItemIds = visibleWalletItemIds,
+                entryTypes = entryTypes,
+                categoryConceptIds = emptySet(),
+                // Keep category unfiltered for overview projected events.
+                includeUncategorized = false,
+            ),
         )
+    }
+
+    private suspend fun hydrateMissingBeneficiaries(events: List<EventListResponse>): List<EventListResponse> {
+        if (events.isEmpty()) {
+            return events
+        }
+
+        val missingWalletEventIds =
+            events
+                .asSequence()
+                .filter { event -> event.beneficiaries.isEmpty() }
+                .mapNotNull { event -> event.id }
+                .toSet()
+        val missingRecurrenceConfigIds =
+            events
+                .asSequence()
+                .filter { event -> event.beneficiaries.isEmpty() }
+                .mapNotNull { event -> event.recurrenceConfigId }
+                .toSet()
+
+        if (missingWalletEventIds.isEmpty() && missingRecurrenceConfigIds.isEmpty()) {
+            return events
+        }
+
+        val walletBeneficiariesByEventId =
+            missingWalletEventIds.associateWith { eventId ->
+                walletEventBeneficiaryRepository
+                    .findAllByWalletEventId(eventId)
+                    .collectList()
+                    .awaitSingle()
+                    .map { beneficiary ->
+                        EventListResponse.BeneficiaryResponse(
+                            userId = beneficiary.beneficiaryUserId,
+                            benefitPercent = beneficiary.benefitPercent,
+                        )
+                    }
+            }
+        val recurrenceBeneficiariesByConfigId =
+            missingRecurrenceConfigIds.associateWith { configId ->
+                recurrenceEventBeneficiaryRepository
+                    .findAllByWalletEventId(configId)
+                    .collectList()
+                    .awaitSingle()
+                    .map { beneficiary ->
+                        EventListResponse.BeneficiaryResponse(
+                            userId = beneficiary.beneficiaryUserId,
+                            benefitPercent = beneficiary.benefitPercent,
+                        )
+                    }
+            }
+
+        return events.map { event ->
+            if (event.beneficiaries.isNotEmpty()) {
+                return@map event
+            }
+
+            val hydrated =
+                when {
+                    event.id != null -> walletBeneficiariesByEventId[event.id].orEmpty()
+                    event.recurrenceConfigId != null -> recurrenceBeneficiariesByConfigId[event.recurrenceConfigId].orEmpty()
+                    else -> emptyList()
+                }
+
+            if (hydrated.isEmpty()) {
+                event
+            } else {
+                event.copy(beneficiaries = hydrated)
+            }
+        }
     }
 
     internal suspend fun fetchExecutedByMonthByBank(
