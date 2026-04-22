@@ -43,12 +43,12 @@ services:
       - "auto_explain.log_timing=off"
 
   pghero:
-    image: ankane/pghero:v3.7.0
+    image: ankane/pghero:v3.8.0
     restart: unless-stopped
     environment:
-      SHARED_FINANCES_URL: postgres://${PGHERO_USER}:${PGHERO_PASSWORD}@db:${POSTGRES_PORT}/${SF_APP_POSTGRES_DB}
-      PGHERO_USERNAME: ${POSTGRES_PGHERO_USER}
-      PGHERO_PASSWORD: ${POSTGRES_PGHERO_PASSWORD}
+      SHARED_FINANCES_URL:  postgres://${POSTGRES_PGHERO_USER}:${POSTGRES_PGHERO_PASSWORD}@db:${POSTGRES_PORT}/${SF_APP_POSTGRES_DB}
+      PGHERO_USERNAME: ${PGHERO_USER}
+      PGHERO_PASSWORD: ${PGHERO_PASSWORD}
     ports:
       - "8083:8080"
     depends_on:

@@ -2,10 +2,10 @@ name: shared-finances-production
 
 services:
   shared-finances:
-#    image: "${SHARED_FINANCES_IMAGE}"
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/ynixt/shared-finances:main-20260422-044205-8591ecf
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
     restart: unless-stopped
     stop_grace_period: 45s
     env_file:
@@ -75,15 +75,15 @@ services:
       - "auto_explain.log_timing=off"
 
   pghero:
-    image: ankane/pghero:v3.7.0
+    image: ankane/pghero:v3.8.0
     restart: unless-stopped
     profiles: ["ops"]
     environment:
-      SHARED_FINANCES_URL: postgres://${PGHERO_USER}:${PGHERO_PASSWORD}@db:${POSTGRES_PORT}/${SF_APP_POSTGRES_DB}
-      PGHERO_USERNAME: ${POSTGRES_PGHERO_USER}
-      PGHERO_PASSWORD: ${POSTGRES_PGHERO_PASSWORD}
+      SHARED_FINANCES_URL: postgres://${POSTGRES_PGHERO_USER}:${POSTGRES_PGHERO_PASSWORD}@db:${POSTGRES_PORT}/${SF_APP_POSTGRES_DB}
+      PGHERO_USERNAME: ${PGHERO_USER}
+      PGHERO_PASSWORD: ${PGHERO_PASSWORD}
     ports:
-      - "127.0.0.1:${PGHERO_PORT:-8083}:8080"
+      - "{PGHERO_PORT:-8083}:8080"
     depends_on:
       db:
         condition: service_healthy
