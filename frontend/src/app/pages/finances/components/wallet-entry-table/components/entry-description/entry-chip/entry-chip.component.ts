@@ -12,5 +12,6 @@ import { Chip } from 'primeng/chip';
 })
 export class EntryChipComponent {
   text = input<string>('');
+  subtext = input<string | undefined>(undefined);
   icon = input<IconDefinition | undefined>(undefined);
 }

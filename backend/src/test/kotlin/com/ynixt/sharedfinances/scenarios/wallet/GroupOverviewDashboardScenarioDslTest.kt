@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.scenarios.wallet
 
+import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyComposition
@@ -11,7 +12,6 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
-import com.ynixt.sharedfinances.domain.enums.PaymentType
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate

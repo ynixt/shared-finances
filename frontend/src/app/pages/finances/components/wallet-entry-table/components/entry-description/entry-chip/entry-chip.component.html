@@ -1,8 +1,16 @@
-<p-chip class="!py-0 !pl-0 !pr-4 h-6">
-  <span class="bg-primary text-primary-contrast rounded-full w-6 h-6 flex items-center justify-center">
-    <fa-icon size="sm" [icon]="icon()!!"></fa-icon>
-  </span>
-  <span class="ml-1">
-    {{ text() }}
-  </span>
+<p-chip class="!py-0 !px-0 flex flex-col gap-2">
+  <div class="flex items-center gap-2 h-6 !pr-4">
+    <span class="bg-primary text-primary-contrast rounded-full w-6 h-6 flex items-center justify-center">
+      <fa-icon size="sm" [icon]="icon()!!"></fa-icon>
+    </span>
+    <span class="ml-1">
+      {{ text() }}
+    </span>
+  </div>
+
+  @if (subtext() != null) {
+    <div class="pb-2 text-center flex justify-center w-full px-2">
+      <span class="text-xs text-surface-500">{{ subtext() }}</span>
+    </div>
+  }
 </p-chip>

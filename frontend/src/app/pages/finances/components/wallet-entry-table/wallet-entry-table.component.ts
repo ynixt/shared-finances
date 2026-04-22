@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, computed, effect, inject, input } from '@angular/core';
+import { Component, Signal, computed, effect, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -17,10 +17,12 @@ import { TableModule } from 'primeng/table';
 
 import { InfinitePaginatorComponent } from '../../../../components/infinite-paginator/infinite-paginator.component';
 import { CursorPage } from '../../../../models/cursor-pagination';
+import { UserResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { ScheduledEditScope, WalletEntryType } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe, LocalDatePipeService } from '../../../../pipes/local-date.pipe';
+import { UserService } from '../../../../services/user.service';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
 import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
@@ -55,11 +57,12 @@ import { EntryTypeComponent } from './components/entry-type/entry-type.component
 })
 @UntilDestroy()
 export class WalletEntryTableComponent {
-  readonly walletEntryService = inject(WalletEntryService);
-  readonly localDatePipeService = inject(LocalDatePipeService);
-  readonly userActionEventService = inject(UserActionEventService);
-  readonly confirmationService = inject(ConfirmationService);
+  private readonly walletEntryService = inject(WalletEntryService);
+  private readonly localDatePipeService = inject(LocalDatePipeService);
+  private readonly userActionEventService = inject(UserActionEventService);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly translateService = inject(TranslateService);
+  private readonly userService = inject(UserService);
 
   readonly pageSize = 30;
   readonly pages: Map<number, CursorPage<EventForListDto>> = new Map();
@@ -82,6 +85,7 @@ export class WalletEntryTableComponent {
   readonly creditCardBillId = input<string | undefined | null>(undefined);
   readonly creditCardBillDate = input<dayjs.Dayjs | undefined>(undefined);
   readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
+  readonly user = this.userService.user.asReadonly();
   scopeSelectionEntry: EventForListDto | null = null;
   readonly noWalletEntryFoundDynamicMessage = computed(() => {
     if (this.noWalletEntryFoundMessage() == null) {

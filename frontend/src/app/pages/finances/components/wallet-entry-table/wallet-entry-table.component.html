@@ -80,7 +80,11 @@
                   }
                 </div>
 
-                <app-entry-description [event]="item"></app-entry-description>
+                <app-entry-description
+                  [event]="item"
+                  [showWalletOwner]="item.group != null || item.type === 'TRANSFER'"
+                  [currentUserId]="user()?.id"
+                ></app-entry-description>
               </div>
             </div>
           }

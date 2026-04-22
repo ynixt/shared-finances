@@ -1,27 +1,53 @@
-@let currentEntry = event();
+@let currentEvent = event();
 
-@if (currentEntry != null) {
+@if (currentEvent != null) {
   <div class="flex flex-col gap-4 leading-none">
     <div class="flex flex-wrap lg:flex-nowrap gap-2 h-full">
-      <a [href]="originLink()">
-        <app-entry-chip [text]="currentEntry.entries[0].walletItem.name" [icon]="originIcon()"></app-entry-chip>
+      <a [routerLink]="originLink()">
+        <app-entry-chip
+          [text]="currentEvent.entries[0].walletItem.name"
+          [icon]="originIcon()"
+          [subtext]="
+            showWalletOwner()
+              ? ('name.fullName'
+                | translate
+                  : {
+                      lastName: currentEvent.entries[0].walletItem.user?.lastName,
+                      firstName: currentEvent.entries[0].walletItem.user?.firstName,
+                    })
+              : undefined
+          "
+        ></app-entry-chip>
       </a>
 
-      @if (currentEntry.entries.length > 1) {
-        <a [href]="targetLink()">
-          <app-entry-chip [text]="currentEntry.entries[1].walletItem.name" [icon]="targetIcon()"></app-entry-chip>
+      @if (currentEvent.entries.length > 1) {
+        <a [routerLink]="targetLink()">
+          <app-entry-chip
+            [text]="currentEvent.entries[1].walletItem.name"
+            [icon]="targetIcon()"
+            [subtext]="
+              showWalletOwner()
+                ? ('name.fullName'
+                  | translate
+                    : {
+                        lastName: currentEvent.entries[1].walletItem.user?.lastName,
+                        firstName: currentEvent.entries[1].walletItem.user?.firstName,
+                      })
+                : undefined
+            "
+          ></app-entry-chip>
         </a>
       }
 
-      @if (currentEntry.category != null) {
-        <a [href]="categoryLink()">
-          <app-entry-chip [text]="currentEntry.category.name" [icon]="categoryIcon"></app-entry-chip>
+      @if (currentEvent.category != null) {
+        <a [routerLink]="categoryLink()">
+          <app-entry-chip [text]="currentEvent.category.name" [icon]="categoryIcon"></app-entry-chip>
         </a>
       }
 
-      @if (currentEntry.tags != null) {
-        @for (tag of currentEntry.tags; track tag) {
-          <a [href]="getTagLink(tag, inGroup())">
+      @if (currentEvent.tags != null) {
+        @for (tag of currentEvent.tags; track tag) {
+          <a [routerLink]="getTagLink(tag, inGroup())">
             <app-entry-chip [text]="tag" [icon]="tagIcon"></app-entry-chip>
           </a>
         }

@@ -372,7 +372,6 @@ internal class GroupOverviewBuilderService(
                             }
                         }
                     }
-
                 }
             }
         }
@@ -785,7 +784,8 @@ internal class GroupOverviewBuilderService(
         memberContributions: MutableMap<UUID, MutableList<RawChartContribution>>,
         series: ChartSeries,
     ) {
-        memberContributions.getOrPut(memberId) { mutableListOf() }
+        memberContributions
+            .getOrPut(memberId) { mutableListOf() }
             .add(
                 RawChartContribution(
                     chartSeries = series,
@@ -867,7 +867,8 @@ internal class GroupOverviewBuilderService(
         memberId: UUID,
         memberBreakdowns: MutableMap<UUID, MutableList<RawBreakdownContribution>>,
     ) {
-        memberBreakdowns.getOrPut(memberId) { mutableListOf() }
+        memberBreakdowns
+            .getOrPut(memberId) { mutableListOf() }
             .add(
                 RawBreakdownContribution(
                     breakdownType = breakdownType,
