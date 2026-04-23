@@ -21,6 +21,30 @@ RUN chmod +x ./gradlew
 COPY backend/src ./src
 RUN ./gradlew --no-daemon build bootJar
 
+FROM nginx:1.29.8 AS frontend-runtime
+
+RUN rm -f /etc/nginx/conf.d/default.conf
+COPY docker/nginx/shared-finances-frontend-only.conf /etc/nginx/conf.d/default.conf
+
+COPY --from=frontend-builder /workspace/frontend/dist/shared-finances/browser/ /usr/share/nginx/html/
+
+EXPOSE 80
+
+FROM eclipse-temurin:25-jre AS backend-runtime
+
+ENV SF_APP_PORT=8081 \
+    JAVA_OPTS=""
+
+WORKDIR /opt/shared-finances
+
+COPY --from=backend-builder /workspace/backend/build/libs/shared-finances-*.jar /tmp/
+RUN find /tmp -maxdepth 1 -type f -name '*-plain.jar' -delete \
+    && mv /tmp/shared-finances-*.jar /opt/shared-finances/shared-finances.jar
+
+EXPOSE 8081
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /opt/shared-finances/shared-finances.jar"]
+
 FROM eclipse-temurin:25-jre AS jre-provider
 
 FROM nginx:1.29.8 AS runtime

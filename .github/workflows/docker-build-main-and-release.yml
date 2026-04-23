@@ -35,6 +35,24 @@ jobs:
           echo "DATE_TAG=$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_ENV"
           echo "SHA_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
+      - name: Build and push main-only-frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: frontend-runtime
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-frontend-${{ env.DATE_TAG }}-${{ env.SHA_TAG }}
+
+      - name: Build and push main-only-backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: backend-runtime
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-backend-${{ env.DATE_TAG }}-${{ env.SHA_TAG }}
+
       - name: Build and push main image
         uses: docker/build-push-action@v6
         with:
