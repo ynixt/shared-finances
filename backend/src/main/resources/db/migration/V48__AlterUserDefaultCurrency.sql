@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN default_currency TYPE VARCHAR(5);

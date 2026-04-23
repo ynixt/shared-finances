@@ -24,7 +24,7 @@ data class RegisterDto(
     @field:Size(min = 1, max = 8, message = "apiErrors.generic.fieldInvalid")
     val lang: String,
     @field:NotBlank(message = "apiErrors.generic.fieldInvalid")
-    @field:Size(min = 1, max = 3, message = "apiErrors.generic.fieldInvalid")
+    @field:Size(min = 1, max = 5, message = "apiErrors.generic.fieldInvalid")
     val defaultCurrency: String,
     @field:NotBlank(message = "apiErrors.generic.fieldInvalid")
     @field:Size(min = 1, max = 255, message = "apiErrors.generic.fieldInvalid")
