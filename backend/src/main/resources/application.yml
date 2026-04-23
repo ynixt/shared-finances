@@ -86,8 +86,8 @@ app:
     base-url: ${SF_APP_PUBLIC_WEB_BASE_URL:http://localhost:4200}
   auth:
     features:
-      email-confirmation-enabled: ${SF_APP_EMAIL_CONFIRMATION_ENABLED:true}
-      password-recovery-enabled: ${SF_APP_PASSWORD_RECOVERY_ENABLED:true}
+      email-confirmation-enabled: ${SF_APP_EMAIL_CONFIRMATION_ENABLED:false}
+      password-recovery-enabled: ${SF_APP_PASSWORD_RECOVERY_ENABLED:false}
       turnstile-enabled: ${SF_APP_TURNSTILE_ENABLED:false}
     email-confirmation:
       ttl-minutes: ${SF_APP_EMAIL_CONFIRMATION_TOKEN_TTL_MINUTES:180}
