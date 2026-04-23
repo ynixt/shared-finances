@@ -88,7 +88,7 @@ app:
     features:
       email-confirmation-enabled: ${SF_APP_EMAIL_CONFIRMATION_ENABLED:true}
       password-recovery-enabled: ${SF_APP_PASSWORD_RECOVERY_ENABLED:true}
-      turnstile-enabled: ${SF_APP_TURNSTILE_ENABLED:true}
+      turnstile-enabled: ${SF_APP_TURNSTILE_ENABLED:false}
     email-confirmation:
       ttl-minutes: ${SF_APP_EMAIL_CONFIRMATION_TOKEN_TTL_MINUTES:180}
     password-recovery:

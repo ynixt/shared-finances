@@ -5,5 +5,5 @@ export const environment = {
   defaultPrimeLanguage: 'en',
   singleSsePerBrowser: true,
   /** Cloudflare Turnstile site key (visible). Set at build/deploy time for production. */
-  turnstileSiteKey: '',
+  turnstileSiteKey: '0x4AAAAAADBd863_my4ChMXj',
 };
