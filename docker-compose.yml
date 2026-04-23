@@ -77,13 +77,12 @@ services:
   pghero:
     image: ankane/pghero:v3.8.0
     restart: unless-stopped
-    profiles: ["ops"]
     environment:
       SHARED_FINANCES_URL: postgres://${POSTGRES_PGHERO_USER}:${POSTGRES_PGHERO_PASSWORD}@db:${POSTGRES_PORT}/${SF_APP_POSTGRES_DB}
       PGHERO_USERNAME: ${PGHERO_USER}
       PGHERO_PASSWORD: ${PGHERO_PASSWORD}
     ports:
-      - "{PGHERO_PORT:-8083}:8080"
+      - "${PGHERO_PORT:-8083}:8080"
     depends_on:
       db:
         condition: service_healthy
