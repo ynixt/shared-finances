@@ -32,6 +32,8 @@ EXPOSE 80
 
 FROM eclipse-temurin:25-jre AS backend-runtime
 
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 ENV SF_APP_PORT=8081 \
     JAVA_OPTS=""
 
