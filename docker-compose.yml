@@ -2,17 +2,16 @@ name: shared-finances-production
 
 services:
   shared-finances:
-    image: ghcr.io/ynixt/shared-finances:main-20260422-044205-8591ecf
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
+#    image: ghcr.io/ynixt/shared-finances:main-20260422-044205-8591ecf
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     stop_grace_period: 45s
     env_file:
       - .env.production
     ports:
       - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
     depends_on:
       db:
         condition: service_healthy

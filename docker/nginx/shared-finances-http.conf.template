@@ -2,15 +2,10 @@ server {
     listen 80;
     listen [::]:80;
     server_name _;
+    http2 on;
 
     root /usr/share/nginx/html;
     index index.html;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www/letsencrypt;
-        default_type text/plain;
-        try_files $uri =404;
-    }
 
     location = /api {
         return 301 /api/;

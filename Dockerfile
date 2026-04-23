@@ -23,15 +23,10 @@ RUN ./gradlew --no-daemon build bootJar
 
 FROM eclipse-temurin:25-jre AS jre-provider
 
-FROM certbot/certbot:latest AS certbot-provider
-
 FROM nginx:1.29.8 AS runtime
 
 ENV SF_APP_PORT=8081 \
     BACKEND_UPSTREAM_PORT=8081 \
-    ENABLE_TLS=false \
-    LETSENCRYPT_DOMAIN="" \
-    LETSENCRYPT_EMAIL="" \
     JAVA_OPTS=""
 
 # Copy JRE
@@ -39,13 +34,8 @@ COPY --from=jre-provider /opt/java/openjdk /opt/java/openjdk
 ENV JAVA_HOME=/opt/java/openjdk \
     PATH="/opt/java/openjdk/bin:$PATH"
 
-# Copy certbot
-COPY --from=certbot-provider /opt/certbot /opt/certbot
-RUN ln -sf /opt/certbot/bin/certbot /usr/local/bin/certbot
-
 # Create folders
 RUN mkdir -p /opt/shared-finances \
-             /var/www/letsencrypt \
              /etc/nginx/templates \
              /etc/nginx/snippets \
              /run/nginx \
@@ -55,7 +45,6 @@ RUN mkdir -p /opt/shared-finances \
 COPY docker/nginx/nginx.conf                              /etc/nginx/nginx.conf
 COPY docker/nginx/shared-finances-proxy.conf               /etc/nginx/snippets/shared-finances-proxy.conf
 COPY docker/nginx/shared-finances-http.conf.template       /etc/nginx/templates/shared-finances-http.conf.template
-COPY docker/nginx/shared-finances-https.conf.template      /etc/nginx/templates/shared-finances-https.conf.template
 
 # Frontend (build Angular)
 COPY --from=frontend-builder /workspace/frontend/dist/shared-finances/browser/ /usr/share/nginx/html/
@@ -68,7 +57,7 @@ RUN find /tmp -maxdepth 1 -type f -name '*-plain.jar' -delete \
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 80 443
+EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
     CMD curl -fsS http://localhost/api/open/actuator/health > /dev/null || exit 1
