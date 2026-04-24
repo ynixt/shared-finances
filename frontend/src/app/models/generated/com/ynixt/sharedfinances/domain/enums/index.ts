@@ -14,5 +14,7 @@ export * from './simulation-job-status';
 export * from './simulation-job-type';
 export * from './transfer-purpose';
 export * from './user-group-role';
+export * from './wallet-category-concept-code';
+export * from './wallet-category-concept-kind';
 export * from './wallet-entry-type';
 export * from './wallet-item-type';

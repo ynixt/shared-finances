@@ -15,6 +15,10 @@ plugins {
 group = "com.ynixt"
 version = "3.0.0-alpha.1"
 
+springBoot {
+    buildInfo()
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)

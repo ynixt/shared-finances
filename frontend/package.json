@@ -28,6 +28,7 @@
     "@apollo/client": "^4.0.9",
     "@fortawesome/angular-fontawesome": "^4.0.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
     "@ngneat/until-destroy": "^10.0.0",
     "@ngx-translate/core": "^17.0.0",
     "@primeuix/themes": "^2.0.3",

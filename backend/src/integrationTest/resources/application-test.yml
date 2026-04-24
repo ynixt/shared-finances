@@ -107,13 +107,13 @@ app:
     jwt:
       publicKeyBase64: ${SF_APP_JWT_PUBLIC_KEY}
       privateKeyBase64: ${SF_APP_JWT_PRIVATE_KEY}
-      kid: ${SF_APP_JWT_KID}
+      kid: ${SF_APP_JWT_KID:1}
       issuer: ${SF_APP_JWT_ISSUER}
       accessTokenTTLMinutes: ${SF_APP_JWT_ACCESS_TOKEN_TTL_MINUTES:15}
       refreshTokenTTLMinutes: ${SF_APP_JWT_REFRESH_TOKEN_TTL_MINUTES:43200}
     wrongPasswordTtlMinutes: ${SF_APP_WRONG_PASSWORD_TTL_MINUTES:120}
     wrongPasswordBlock: ${SF_APP_WRONG_PASSWORD_BLOCK:10}
-    secureCookie: ${SF_APP_SECURE_COOKIE:true}
+    secureCookie: ${SF_APP_SECURE_COOKIE:false}
     mfa:
       crypto:
         password: ${SF_APP_MFA_TOTP_CRYPTO_PASSWORD}

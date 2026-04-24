@@ -9,6 +9,7 @@ import { filter, interval } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { PrimeNG } from 'primeng/config';
 
+import { FooterComponent } from './components/footer/footer.component';
 import { AuthService } from './services/auth.service';
 import { LangService } from './services/lang.service';
 import { TitleService } from './services/title.service';
@@ -18,12 +19,13 @@ import { updatePrimeI18n } from './util/prime-i18n';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonModule],
+  imports: [RouterOutlet, ButtonModule, FooterComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <div class="w-full min-h-screen flex router-wrapper-full">
+    <div class="w-full  flex flex-1 router-wrapper-full">
       <router-outlet />
     </div>
+    <app-footer></app-footer>
   `,
   styles: [],
 })

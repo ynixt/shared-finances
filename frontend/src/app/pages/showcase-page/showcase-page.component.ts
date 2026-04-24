@@ -4,11 +4,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { ButtonDirective, ButtonLabel } from 'primeng/button';
 
+import { GithubStarsComponent } from '../../components/github-stars/github-stars.component';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 
 @Component({
   selector: 'app-showcase-page',
-  imports: [RouterLink, ButtonDirective, ButtonLabel, TranslatePipe, NavbarComponent],
+  imports: [RouterLink, ButtonDirective, ButtonLabel, TranslatePipe, NavbarComponent, GithubStarsComponent],
   templateUrl: './showcase-page.component.html',
   styleUrl: './showcase-page.component.scss',
 })

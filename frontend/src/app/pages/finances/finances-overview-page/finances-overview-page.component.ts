@@ -17,7 +17,6 @@ import { EventForListDto } from '../../../models/generated/com/ynixt/sharedfinan
 import { ErrorMessageService } from '../../../services/error-message.service';
 import { DashboardFeedFilters, EMPTY_DASHBOARD_FEED_FILTERS } from '../components/dashboard-filters/dashboard-feed-filters.model';
 import { IndividualDashboardFiltersComponent } from '../components/dashboard-filters/individual-dashboard-filters.component';
-import { FinancesTitleBarComponent } from '../components/finances-title-bar/finances-title-bar.component';
 import { OverviewDashboardCardsComponent } from '../components/overview-dashboard-cards/overview-dashboard-cards.component';
 import { OverviewDashboardChartsComponent } from '../components/overview-dashboard-charts/overview-dashboard-charts.component';
 import {
@@ -37,7 +36,6 @@ import { UserActionEventService } from '../services/user-action-event.service';
 @Component({
   selector: 'app-finances-overview-page',
   imports: [
-    FinancesTitleBarComponent,
     TranslatePipe,
     ReactiveFormsModule,
     AdvancedDatePickerComponent,

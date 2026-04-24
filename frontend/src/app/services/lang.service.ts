@@ -23,6 +23,7 @@ export class LangService {
     'pt-BR': 'Português',
   };
   readonly languages: string[] = Object.keys(this.mapLanguagesNames);
+  readonly langStorageKey = 'sf-lang';
 
   private _currentLang = signal(environment.defaultLanguage);
 
@@ -69,6 +70,8 @@ export class LangService {
     if (user != null && sendToServer) {
       await lastValueFrom(this.httpClient.put(`/api/users/current/changeLanguage/${newLanguage}`, null).pipe(take(1)));
     }
+
+    localStorage.setItem(this.langStorageKey, newLanguage);
   }
 
   private getBestLangForBrowser(): string {
@@ -76,6 +79,10 @@ export class LangService {
 
     if (user != null) {
       return user.lang;
+    }
+
+    if (localStorage.getItem(this.langStorageKey) != null) {
+      return localStorage.getItem(this.langStorageKey) as string;
     }
 
     const browserLanguages = navigator?.languages ?? [];

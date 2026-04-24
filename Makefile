@@ -1,7 +1,7 @@
 include dev.env
 export
 
-API_URL ?= http://localhost:$(SF_APP_PORT)
+API_URL ?= http://localhost:$(SF_APP_API_PORT)
 SECRETS_DIR ?= secrets
 
 up:

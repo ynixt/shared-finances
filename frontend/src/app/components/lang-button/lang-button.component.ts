@@ -23,10 +23,12 @@ export class LangButtonComponent implements OnInit {
 
   async ngOnInit() {
     this.items = (await this.langService.getAllLanguages()).map(ln => ({
+      id: ln.value,
       label: ln.name,
       disabled: ln.current,
       command: () => {
         this.langService.changeLanguage(ln.value, true);
+        this.items = this.items.map(i => ({ ...i, disabled: ln.value === i.id }));
       },
     }));
   }

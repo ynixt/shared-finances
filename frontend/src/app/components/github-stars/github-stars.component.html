@@ -1,0 +1,16 @@
+@let stars = stars$ | async;
+
+<a [href]="repoHref" target="_blank" pButton size="small" severity="secondary" class="badge rounded-4xl glow">
+  <fa-icon [icon]="faGithub" size="xl" class="icon"></fa-icon>
+
+  <div class="ml-1 flex gap-1 justify-center">
+    <span>Stars</span>
+    @if (stars) {
+      <div style="min-width: 29px" class="flex justify-center">
+        <span class="font-extrabold"> {{ format(stars) }}</span>
+      </div>
+    } @else {
+      <p-skeleton width="29px" height="21px" borderRadius="8px" />
+    }
+  </div>
+</a>

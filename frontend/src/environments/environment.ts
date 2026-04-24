@@ -1,3 +1,5 @@
+import packageJson from '../../package.json';
+
 export const environment = {
   production: true,
   clientId: 'frontend',
@@ -6,4 +8,5 @@ export const environment = {
   singleSsePerBrowser: true,
   /** Cloudflare Turnstile site key (visible). Set at build/deploy time for production. */
   turnstileSiteKey: '0x4AAAAAADBd863_my4ChMXj',
+  version: packageJson.version,
 };

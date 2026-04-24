@@ -1,7 +1,7 @@
 <app-navbar></app-navbar>
 
 @if (loginForm && loginResponse?.mfaRequired != true) {
-  <form [formGroup]="loginForm" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
+  <form [formGroup]="loginForm" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12 px-4 md:px-0">
     <label class="flex flex-col gap-2">
       <span>{{ 'loginPage.email' | translate }}</span>
       <input pInputText formControlName="identifier" />

@@ -3,11 +3,11 @@ set -Eeuo pipefail
 
 # ── Variables ───────────────────────────────────────────────────────
 
-BACKEND_UPSTREAM_PORT="${BACKEND_UPSTREAM_PORT:-8081}"
-SF_APP_PORT="$BACKEND_UPSTREAM_PORT"
+SF_APP_PORT="${SF_APP_PORT:-80}"
+SF_APP_API_PORT="${SF_APP_API_PORT:-8081}"
 JAVA_OPTS="${JAVA_OPTS:-}"
 
-export BACKEND_UPSTREAM_PORT SF_APP_PORT
+export SF_APP_PORT SF_APP_API_PORT
 
 # ── Folders ──────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ mkdir -p /etc/nginx/conf.d /run/nginx
 # ── Helpers ──────────────────────────────────────────────
 
 apply_http_config() {
-  envsubst '${BACKEND_UPSTREAM_PORT}' \
+  envsubst '${SF_APP_PORT} ${SF_APP_API_PORT}' \
     < /etc/nginx/templates/shared-finances-http.conf.template \
     > /etc/nginx/conf.d/default.conf
 }
