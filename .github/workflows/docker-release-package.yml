@@ -31,6 +31,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Stamp frontend package version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: make stamp-frontend-version VERSION="${{ github.event.release.tag_name }}"
+
+      - name: Stamp backend version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: make stamp-backend-version VERSION="${{ github.event.release.tag_name }}"
+
       - name: Prepare frontend-only image metadata
         id: meta_frontend
         uses: docker/metadata-action@v5

@@ -32,8 +32,17 @@ jobs:
       - name: Prepare image tag
         id: prep
         run: |
-          echo "DATE_TAG=$(date +'%Y%m%d-%H%M%S')" >> "$GITHUB_ENV"
-          echo "SHA_TAG=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          DATE_TAG="$(date +'%Y%m%d-%H%M%S')"
+          SHA_TAG="${GITHUB_SHA::7}"
+          echo "DATE_TAG=$DATE_TAG" >> "$GITHUB_ENV"
+          echo "SHA_TAG=$SHA_TAG" >> "$GITHUB_ENV"
+          echo "BUILD_VERSION=main-$DATE_TAG-$SHA_TAG" >> "$GITHUB_ENV"
+
+      - name: Stamp frontend package version
+        run: make stamp-frontend-version VERSION="${{ env.BUILD_VERSION }}"
+
+      - name: Stamp backend version
+        run: make stamp-backend-version VERSION="${{ env.BUILD_VERSION }}"
 
       - name: Build and push main-only-frontend image
         uses: docker/build-push-action@v6
@@ -42,7 +51,7 @@ jobs:
           file: ./Dockerfile
           target: frontend-runtime
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-frontend-${{ env.DATE_TAG }}-${{ env.SHA_TAG }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-frontend-${{ env.BUILD_VERSION }}
 
       - name: Build and push main-only-backend image
         uses: docker/build-push-action@v6
@@ -51,7 +60,7 @@ jobs:
           file: ./Dockerfile
           target: backend-runtime
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-backend-${{ env.DATE_TAG }}-${{ env.SHA_TAG }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-backend-${{ env.BUILD_VERSION }}
 
       - name: Build and push main image
         uses: docker/build-push-action@v6
@@ -59,4 +68,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ env.DATE_TAG }}-${{ env.SHA_TAG }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ env.BUILD_VERSION }}

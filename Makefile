@@ -126,3 +126,35 @@ clean-secrets:
 	@echo "All files removed from $(SECRETS_DIR)/"
 
 # End: JWT area
+
+.PHONY: stamp-frontend-version stamp-backend-version stamp-version
+
+stamp-version: stamp-frontend-version stamp-backend-version
+
+stamp-frontend-version:
+	node -e '\
+	const fs = require("fs"); \
+	const version = process.argv[1]; \
+	if (!version) throw new Error("VERSION is required"); \
+	for (const file of ["frontend/package.json", "frontend/package-lock.json"]) { \
+	  const data = JSON.parse(fs.readFileSync(file, "utf8")); \
+	  data.version = version; \
+	  if (data.packages?.[""]) { \
+	    data.packages[""].version = version; \
+	  } \
+	  fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n"); \
+	}' "$(VERSION)"
+
+stamp-backend-version:
+	node -e '\
+	const fs = require("fs"); \
+	const version = process.argv[1]; \
+	if (!version) throw new Error("VERSION is required"); \
+	const file = "backend/build.gradle.kts"; \
+	const content = fs.readFileSync(file, "utf8"); \
+	const next = content.replace(/^version\s*=\s*"[^"]*"\s*$$/m, `version = "$${version}"`); \
+	if (next === content) { \
+	  throw new Error("Could not update version in backend/build.gradle.kts"); \
+	} \
+	fs.writeFileSync(file, next); \
+	' "$(VERSION)"
