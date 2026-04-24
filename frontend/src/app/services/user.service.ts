@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, Injector, WritableSignal, inject, signal } from '@angular/core';
 
 import { toObservable } from '@angular/core/rxjs-interop';
-import { combineLatest, filter, firstValueFrom, lastValueFrom, map, take } from 'rxjs';
+import { Observable, combineLatest, filter, firstValueFrom, lastValueFrom, map, startWith, take } from 'rxjs';
 
 import { ChangePasswordDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import {
@@ -23,12 +23,16 @@ export class UserService {
   private readonly http = inject(HttpClient);
   private readonly injector = inject(Injector);
 
-  private readonly user$ = toObservable(this.user, { injector: this.injector });
   private readonly loading$ = toObservable(this.loading, { injector: this.injector });
 
-  private readonly userWhenReady$ = combineLatest([this.user$, this.loading$]).pipe(
-    filter(([_, loading]) => loading === false),
-    map(([user]) => user),
+  readonly user$ = combineLatest([
+    toObservable(this.user, { injector: this.injector }).pipe(startWith(undefined)),
+    this.loading$.pipe(startWith(true)),
+  ]).pipe(map(([user, loading]) => (loading ? undefined : user)));
+
+  private readonly userWhenReady$ = this.user$.pipe(
+    filter(user => user !== undefined),
+    map(user => user),
   );
 
   async getUser(): Promise<UserResponseDto | null> {

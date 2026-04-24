@@ -1,48 +1,50 @@
-<div class="mt-8 bg-gray-600 pt-9">
-  <div class="mx-auto w-full max-w-[1166px] px-4 xl:px-0">
-    <div class="flex flex-col justify-between sm:px-[18px] md:flex-row md:px-10">
-      <div class="md:w-[316px]">
-        <div class="text-[18px] font-medium text-white">
-          <h1 class="text-white font-extrabold"><span class="text-primary">Shared</span> Finances</h1>
+@if (user() !== undefined) {
+  <div class="mt-8 bg-gray-600 pt-9">
+    <div class="mx-auto w-full max-w-[1166px] px-4 xl:px-0">
+      <div class="flex flex-col justify-between sm:px-[18px] md:flex-row md:px-10">
+        <div class="md:w-[316px]">
+          <div class="text-[18px] font-medium text-white">
+            <h1 class="text-white font-extrabold"><span class="text-primary">Shared</span> Finances</h1>
+          </div>
+          <p class="mt-[18px] text-[15px] font-normal text-white/[80%]">{{ 'footer.subtitle' | translate }}</p>
         </div>
-        <p class="mt-[18px] text-[15px] font-normal text-white/[80%]">{{ 'footer.subtitle' | translate }}</p>
-      </div>
 
-      <div class="mt-6 flex w-full flex-col justify-between text-white sm:flex-row md:mt-0 md:max-w-[341px]">
-        <div class="">
-          <p class="text-deutziawhite font-inter text-[18px] font-medium leading-normal"></p>
-          <ul>
-            <li class="mt-[15px]">
-              <a
-                class="text-deutziawhite hover:text-deutziawhite/80 font-inter text-[15px] font-normal hover:font-semibold"
-                href="https://github.com/ynixt/shared-finances"
-                >GitHub</a
-              >
-            </li>
-            <li class="mt-[15px]">
-              <a
-                class="text-deutziawhite hover:text-deutziawhite/80 font-inter text-[15px] font-normal hover:font-semibold"
-                href="https://github.com/ynixt/shared-finances/issues"
-                >{{ 'footer.actions.reportBug' | translate }}</a
-              >
-            </li>
-            <li class="mt-[15px]">
-              <a
-                class="text-deutziawhite hover:text-deutziawhite/80 font-inter text-[15px] font-normal hover:font-semibold"
-                href="https://github.com/sponsors/ynixt"
-                >{{ 'footer.actions.donate' | translate }}</a
-              >
-            </li>
-          </ul>
+        <div class="mt-6 flex w-full flex-col justify-between text-white sm:flex-row md:mt-0 md:max-w-[341px]">
+          <div class="">
+            <p class="text-deutziawhite font-inter text-[18px] font-medium leading-normal"></p>
+            <ul>
+              <li class="mt-[15px]">
+                <a
+                  class="text-deutziawhite hover:text-deutziawhite/80 font-inter text-[15px] font-normal hover:font-semibold"
+                  href="https://github.com/ynixt/shared-finances"
+                  >GitHub</a
+                >
+              </li>
+              <li class="mt-[15px]">
+                <a
+                  class="text-deutziawhite hover:text-deutziawhite/80 font-inter text-[15px] font-normal hover:font-semibold"
+                  href="https://github.com/ynixt/shared-finances/issues"
+                  >{{ 'footer.actions.reportBug' | translate }}</a
+                >
+              </li>
+              <li class="mt-[15px]">
+                <a
+                  class="text-deutziawhite hover:text-deutziawhite/80 font-inter text-[15px] font-normal hover:font-semibold"
+                  href="https://github.com/sponsors/ynixt"
+                  >{{ 'footer.actions.donate' | translate }}</a
+                >
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-    <hr class="mt-[30px] text-white" />
-    <div class="flex flex-col items-center justify-center pb-8 pt-[9px] md:py-8">
-      <p class="text-[10px] font-normal text-white md:text-[12px]">api-{{ backendVersion() }} | site-{{ frontendVersion() }}</p>
-      <p class="text-[10px] font-normal text-white md:text-[12px]">
-        {{ 'footer.madeWithLove' | translate }} <a class="text-primary" href="https://ynixt.com">Ynixt</a>
-      </p>
+      <hr class="mt-[30px] text-white" />
+      <div class="flex flex-col items-center justify-center pb-8 pt-[9px] md:py-8">
+        <p class="text-[10px] font-normal text-white md:text-[12px]">api-{{ backendVersion() }} | site-{{ frontendVersion() }}</p>
+        <p class="text-[10px] font-normal text-white md:text-[12px]">
+          {{ 'footer.madeWithLove' | translate }} <a class="text-primary" href="https://ynixt.com">Ynixt</a>
+        </p>
+      </div>
     </div>
   </div>
-</div>
+}

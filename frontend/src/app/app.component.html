@@ -1,0 +1,11 @@
+<div class="w-full flex flex-1 router-wrapper-full">
+  <router-outlet #mainOutlet="outlet" />
+</div>
+
+@if (mainOutlet.isActivated) {
+  <app-footer [user]="user()"></app-footer>
+} @else {
+  <div class="loading absolute top-0 left-0 flex justify-center items-center w-screen h-screen p-4">
+    <p-progressSpinner class="w-40 h-40"></p-progressSpinner>
+  </div>
+}
