@@ -51,7 +51,7 @@ jobs:
           file: ./Dockerfile
           target: frontend-runtime
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-frontend-${{ env.BUILD_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:only-frontend-${{ env.BUILD_VERSION }}
 
       - name: Build and push main-only-backend image
         uses: docker/build-push-action@v6
@@ -60,7 +60,7 @@ jobs:
           file: ./Dockerfile
           target: backend-runtime
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-only-backend-${{ env.BUILD_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:only-backend-${{ env.BUILD_VERSION }}
 
       - name: Build and push main image
         uses: docker/build-push-action@v6
@@ -68,4 +68,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ env.BUILD_VERSION }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_VERSION }}
