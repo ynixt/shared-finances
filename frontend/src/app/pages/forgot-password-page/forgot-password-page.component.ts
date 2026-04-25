@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
@@ -23,7 +22,6 @@ import { FinancesTitleBarComponent } from '../finances/components/finances-title
     InputText,
     Button,
     Toast,
-    RouterLink,
     TurnstileWidgetComponent,
     FinancesTitleBarComponent,
   ],
