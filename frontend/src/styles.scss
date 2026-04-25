@@ -15,8 +15,21 @@ app-root {
 }
 
 .p-menu-item-link-active {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-gray-400);
+
+  &:where(.dark-mode, .dark-mode *) {
+    background-color: var(--p-surface-600);
+  }
+
+  @media (width >= 80rem) {
+    background-color: var(--color-gray-100);
+
+    &:where(.dark-mode, .dark-mode *) {
+      background-color: var(--p-zinc-900);
+    }
+  }
 }
+
 
 .p-dataview {
   border: 0;
