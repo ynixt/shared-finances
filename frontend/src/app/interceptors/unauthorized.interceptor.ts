@@ -15,7 +15,7 @@ export const apiAuthInterceptor: HttpInterceptorFn = (req, next) => {
       const isUnauthorized = error.status === 401;
       const alreadyRetried = req.context.get(AUTH_RETRY_CONTEXT);
 
-      if (!isUnauthorized || !isEligibleForRefresh(req.url) || alreadyRetried) {
+      if (!isUnauthorized || !isEligibleForRefresh(req.url, req.method) || alreadyRetried) {
         return throwError(() => error);
       }
 
@@ -40,7 +40,7 @@ export const apiAuthInterceptor: HttpInterceptorFn = (req, next) => {
   );
 };
 
-function isEligibleForRefresh(url: string): boolean {
+function isEligibleForRefresh(url: string, method: string): boolean {
   if (!url.includes('/api')) {
     return false;
   }
@@ -53,7 +53,7 @@ function isEligibleForRefresh(url: string): boolean {
     return false;
   }
 
-  if (url.includes('/api/users/current')) {
+  if (url.includes('/api/users/current') && method === 'GET') {
     return false;
   }
 
