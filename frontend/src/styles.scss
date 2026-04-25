@@ -86,3 +86,15 @@ app-root {
     --p-card-shadow: 0 0.125rem 0.25rem rgba(255, 255, 255, 0.075);
   }
 }
+
+.p-toast {
+  @media (width < 80rem) {
+    max-width: 90vw;
+  }
+}
+
+.p-toast-top-right {
+  @media (width < 80rem) {
+    right: 10px !important;
+  }
+}
