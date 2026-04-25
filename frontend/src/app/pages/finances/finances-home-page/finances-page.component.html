@@ -6,7 +6,7 @@
     [class.mb-8]="!drawerOpen"
     [class.h-full]="drawerOpen"
   >
-    <app-advanced-menu [items]="items" [drawerOpen]="drawerOpen" />
+    <app-advanced-menu [items]="items" [(drawerOpen)]="drawerOpen" />
   </div>
 
   @if (drawerOpen) {

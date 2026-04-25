@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, Input, ViewEncapsulation } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewEncapsulation } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons';
@@ -37,6 +37,7 @@ import { AdvancedMenuItem } from '../advanced-menu.component';
 export class AdvancedMenuItemComponent {
   @Input() item!: AdvancedMenuItem;
   @Input() root = false;
+  @Output() itemClicked = new EventEmitter<AdvancedMenuItem>();
 
   collapsedIcon = faAngleDown;
   expandedIcon = faAngleUp;

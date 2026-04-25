@@ -1,5 +1,5 @@
 <div class="advanced-menu hidden lg:block" [class.!block]="drawerOpen">
   @for (item of items; track item.id ?? item) {
-    <app-advanced-menu-item [item]="item" [root]="true"></app-advanced-menu-item>
+    <app-advanced-menu-item [item]="item" [root]="true" (itemClicked)="itemClicked($event)"></app-advanced-menu-item>
   }
 </div>

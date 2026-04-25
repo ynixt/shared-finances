@@ -13,6 +13,7 @@
         routerLinkActive="advanced-menu-item-link-active"
         [routerLinkActiveOptions]="item.routerLinkActiveOptions"
         class="advanced-menu-item-link"
+        (click)="itemClicked.emit(item)"
       >
         @if (item.fa) {
           <fa-icon [icon]="item.fa" class="mr-4"></fa-icon>
@@ -57,7 +58,7 @@
       style="{{ item.itemsMaxHeight ? `max-height: ${item.itemsMaxHeight}; overflow-y: auto;` : '' }}"
     >
       @for (child of item.items; track child.id ?? child) {
-        <app-advanced-menu-item [item]="child"></app-advanced-menu-item>
+        <app-advanced-menu-item [item]="child" (itemClicked)="itemClicked.emit($event)"></app-advanced-menu-item>
       }
     </div>
   } @else if (item.itemsLoading) {
@@ -87,7 +88,7 @@
       @for (btn of item.rightButtons; track item.rightButtons) {
         @if (btn.command != null) {
           <p-button
-            (click)="$event.stopPropagation(); btn.command()"
+            (click)="$event.stopPropagation(); btn.command(); itemClicked.emit(item)"
             [rounded]="true"
             [text]="true"
             size="small"
@@ -107,7 +108,7 @@
             size="small"
             [pTooltip]="btn.tooltip"
             class="p-0 text-default-inverse lg:text-black"
-            (click)="$event.stopPropagation()"
+            (click)="$event.stopPropagation(); itemClicked.emit(item)"
           >
             <fa-icon [icon]="btn.fa"></fa-icon>
           </a>

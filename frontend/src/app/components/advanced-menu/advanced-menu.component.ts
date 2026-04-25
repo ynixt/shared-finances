@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IconDefinition } from '@fortawesome/angular-fontawesome';
 
 import { MenuItem } from 'primeng/api';
@@ -30,4 +30,10 @@ export type AdvancedMenuItem = {
 export class AdvancedMenuComponent {
   @Input() items: AdvancedMenuItem[] | undefined;
   @Input() drawerOpen = false;
+  @Output() drawerOpenChange = new EventEmitter();
+
+  itemClicked(item: AdvancedMenuItem) {
+    this.drawerOpen = false;
+    this.drawerOpenChange.emit(this.drawerOpen);
+  }
 }
