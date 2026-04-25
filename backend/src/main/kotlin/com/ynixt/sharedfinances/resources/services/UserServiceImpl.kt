@@ -110,9 +110,10 @@ class UserServiceImpl(
     ) {
         repository.changeLanguage(userId, newLang).awaitSingle().also {
             userActionEventService.sendUpdatedUser(
-                userId, repository
+                userId,
+                repository
                     .findById(userId)
-                    .awaitSingle()
+                    .awaitSingle(),
             )
         }
     }
