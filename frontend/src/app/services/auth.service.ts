@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
-import { lastValueFrom, take } from 'rxjs';
+import { Subject, lastValueFrom, take } from 'rxjs';
 
 import { authGuard } from '../guards/auth.guard';
 import {
@@ -23,6 +23,7 @@ import { UserService } from './user.service';
 @Injectable({ providedIn: 'root' })
 @UntilDestroy()
 export class AuthService {
+  onServerOffline$ = new Subject<void>();
   private firstUserLoad = true;
 
   constructor(
@@ -81,6 +82,13 @@ export class AuthService {
       const user = await this.getUserFromHttp();
       this.userService.changeUser(user);
     } catch (err) {
+      if (err instanceof HttpErrorResponse) {
+        if (err.status < 400 || err.status > 499) {
+          this.onServerOffline$.next();
+          return;
+        }
+      }
+
       this.userService.changeUser(null, err);
       const token = await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
       if (token != null) {

@@ -7,9 +7,11 @@ import { TranslateService } from '@ngx-translate/core';
 
 import { filter, interval } from 'rxjs';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { PrimeNG } from 'primeng/config';
 import { ProgressSpinner } from 'primeng/progressspinner';
+import { Toast } from 'primeng/toast';
 
 import { FooterComponent } from './components/footer/footer.component';
 import { UserResponseDto } from './models/generated/com/ynixt/sharedfinances/application/web/dto/user';
@@ -17,15 +19,17 @@ import { AuthService } from './services/auth.service';
 import { LangService } from './services/lang.service';
 import { TitleService } from './services/title.service';
 import { UserService } from './services/user.service';
+import { DEFAULT_ERROR_LIFE } from './util/error-util';
 import { i18nIsReady } from './util/i18n-util';
 import { updatePrimeI18n } from './util/prime-i18n';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonModule, FooterComponent, ProgressSpinner],
+  imports: [RouterOutlet, ButtonModule, FooterComponent, ProgressSpinner, Toast],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './app.component.html',
   styles: [],
+  providers: [MessageService],
 })
 @UntilDestroy()
 export class AppComponent {
@@ -41,6 +45,7 @@ export class AppComponent {
     private userService: UserService,
     private authService: AuthService,
     private langService: LangService,
+    private messageService: MessageService,
   ) {
     this.langService.init();
 
@@ -52,5 +57,14 @@ export class AppComponent {
     });
 
     this.userService.user$.pipe(untilDestroyed(this)).subscribe(u => this.user.set(u));
+    this.authService.onServerOffline$.pipe(untilDestroyed(this)).subscribe(() => {
+      this.messageService.add({
+        severity: 'error',
+        summary: this.translateService.instant('error.genericTitle'),
+        detail: this.translateService.instant('error.serverMessage'),
+        closable: false,
+        sticky: true,
+      });
+    });
   }
 }

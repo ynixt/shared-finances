@@ -41,6 +41,7 @@ general:
 error:
   genericTitle: Erro
   genericMessage: Um erro aconteceu
+  serverMessage: Por favor, tente novamente mais tarde.
 
 navbar:
   settings: Configurações
