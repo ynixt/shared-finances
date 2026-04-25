@@ -29,6 +29,7 @@ general:
   cancel: Cancel
   greetings: 'Hello, {{name}}'
   copy: Copy
+  copied: Copied!
   language: Language
   darkMode: Dark mode
   date: Date

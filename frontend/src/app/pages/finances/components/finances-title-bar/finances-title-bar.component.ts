@@ -31,6 +31,7 @@ export class FinancesTitleBarComponent {
   @Input() title!: string;
 
   @Input() closeRouterLink: string | undefined | string[] = undefined;
+  @Input() closeClick: (() => any) | undefined = undefined;
 
   @Output() deleteButtonClicked = new EventEmitter<void>();
 

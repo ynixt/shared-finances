@@ -97,3 +97,12 @@ app-root {
     right: 10px !important;
   }
 }
+
+.p-inputotp {
+  flex-wrap: wrap;
+  justify-content: center;
+
+  @media (width >= 80rem) {
+    justify-content: unset;
+  }
+}

@@ -241,7 +241,10 @@
         <div class="flex items-center gap-8 flex-col">
           <qrcode [qrdata]="enableMfaBeginResponse.otpauthUri" [width]="280" [errorCorrectionLevel]="'M'" [margin]="0"></qrcode>
 
-          <input type="text" pInputText readonly style="width: 280px" disabled [value]="enableMfaBeginResponse.secretBase32" />
+          <div class="flex gap-2">
+            <input fluid type="text" pInputText readonly style="width: 280px" disabled [value]="enableMfaBeginResponse.secretBase32" />
+            <p-button icon="pi pi-copy" type="button" aria-label="Copy" (click)="copyToClipboard(enableMfaBeginResponse.secretBase32)" />
+          </div>
 
           <p-input-otp
             formControlName="code"

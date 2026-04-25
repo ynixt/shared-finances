@@ -22,6 +22,7 @@ import { OpenAuthPreferencesService } from '../../services/open-auth-preferences
 import { TokenSyncService } from '../../services/token-sync.service';
 import { UserService } from '../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
+import { FinancesTitleBarComponent } from '../finances/components/finances-title-bar/finances-title-bar.component';
 
 @Component({
   selector: 'app-login-page',
@@ -36,6 +37,7 @@ import { DEFAULT_ERROR_LIFE } from '../../util/error-util';
     InputText,
     InputOtp,
     TurnstileWidgetComponent,
+    FinancesTitleBarComponent,
   ],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
@@ -153,6 +155,10 @@ export class LoginPageComponent implements OnInit {
       this.errorMessageService.handleError(err, this.messageService);
       throw err;
     }
+  }
+
+  backToLogin() {
+    this.loginResponse = undefined;
   }
 
   private async getFlow() {

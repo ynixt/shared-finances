@@ -21,6 +21,7 @@ import { ErrorMessageService } from '../../services/error-message.service';
 import { groupArrayBy } from '../../util/collection-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 import { promiseTimeout } from '../../util/timeout-util';
+import { FinancesTitleBarComponent } from '../finances/components/finances-title-bar/finances-title-bar.component';
 import { confirmPasswordValidator } from './confirm-password.validator';
 import { passwordValidator } from './password-validator';
 
@@ -41,6 +42,7 @@ import { passwordValidator } from './password-validator';
     CurrencySelectorComponent,
     TimeZoneSelectorComponent,
     TurnstileWidgetComponent,
+    FinancesTitleBarComponent,
   ],
   templateUrl: './registration-page.component.html',
   styleUrl: './registration-page.component.scss',

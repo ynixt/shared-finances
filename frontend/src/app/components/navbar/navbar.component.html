@@ -15,32 +15,34 @@
 
     <div class="mx-auto"></div>
 
-    <div class="menu gap-4 flex items-center justify-end">
-      @if (userService.loading()) {
-        <p-progress-spinner ariaLabel="loading" class="w-4 h-4" />
-      } @else if (user) {
-        <button
-          pButton
-          class="text-default-inverse hover:text-primary flex items-center justify-center p-0"
-          [text]="true"
-          [rounded]="true"
-          (click)="userMenu.toggle($event)"
-        >
-          <app-user-avatar [user]="user" [showTooltip]="false"></app-user-avatar>
-        </button>
-      } @else {
-        <a routerLink="/login" pButton class="text-default-inverse dark:text-default hover:text-primary" [text]="true" [rounded]="true">
-          <span pButtonLabel>{{ 'general.login' | translate }}</span>
-        </a>
+    @if (!drawerOpen) {
+      <div class="menu gap-4 flex items-center justify-end">
+        @if (userService.loading()) {
+          <p-progress-spinner ariaLabel="loading" class="w-4 h-4" />
+        } @else if (user) {
+          <button
+            pButton
+            class="text-default-inverse hover:text-primary flex items-center justify-center p-0"
+            [text]="true"
+            [rounded]="true"
+            (click)="userMenu.toggle($event)"
+          >
+            <app-user-avatar [user]="user" [showTooltip]="false"></app-user-avatar>
+          </button>
+        } @else {
+          <a routerLink="/login" pButton class="text-default-inverse dark:text-default hover:text-primary" [text]="true" [rounded]="true">
+            <span pButtonLabel>{{ 'general.login' | translate }}</span>
+          </a>
 
-        <a routerLink="/register" pButton [rounded]="true">
-          <span pButtonLabel>{{ 'general.register' | translate }}</span>
-        </a>
+          <a routerLink="/register" pButton [rounded]="true">
+            <span pButtonLabel>{{ 'general.register' | translate }}</span>
+          </a>
 
-        <app-dark-mode-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-dark-mode-button>
-        <app-lang-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-lang-button>
-      }
-    </div>
+          <app-dark-mode-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-dark-mode-button>
+          <app-lang-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-lang-button>
+        }
+      </div>
+    }
   </div>
 </div>
 

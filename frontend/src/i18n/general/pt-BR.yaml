@@ -29,6 +29,7 @@ general:
   cancel: Cancelar
   greetings: 'Olá, {{name}}'
   copy: Copiar
+  copied: Copiado!
   language: Idioma
   darkMode: Modo noturno
   date: Data

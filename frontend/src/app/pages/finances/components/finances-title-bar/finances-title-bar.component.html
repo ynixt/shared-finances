@@ -10,6 +10,16 @@
       </div>
     }
 
+    @if (closeClick != null) {
+      <div class="flex">
+        <a (click)="closeClick()" pButton [rounded]="true" [text]="true" severity="secondary" size="small">
+          <fa-icon [icon]="closeButtonIcon"></fa-icon>
+        </a>
+
+        <div class="separator"></div>
+      </div>
+    }
+
     <h2 class="text-2xl">{{ title }}</h2>
 
     @let buttons = rightButtons();

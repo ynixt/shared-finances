@@ -1,45 +1,51 @@
 <app-navbar></app-navbar>
 
-@if (loginForm && loginResponse?.mfaRequired != true) {
-  <form [formGroup]="loginForm" (ngSubmit)="submit()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12 px-4 md:px-0">
-    <label class="flex flex-col gap-2">
-      <span>{{ 'loginPage.email' | translate }}</span>
-      <input pInputText formControlName="identifier" />
-    </label>
+<div class="w-full max-w-md mx-auto mt-4 px-4 md:px-0">
+  @if (loginForm && loginResponse?.mfaRequired != true) {
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" class="flex flex-col gap-4">
+      <app-finances-title-bar [title]="'pageTitle.login' | translate" closeRouterLink=".."></app-finances-title-bar>
 
-    <label class="flex flex-col gap-2">
-      <span class="flex flex-wrap justify-between items-baseline gap-x-2 gap-y-1">
-        <span>{{ 'loginPage.password' | translate }}</span>
-        @if (openAuthPreferences.passwordRecoveryEnabled()) {
-          <a routerLink="/forgot-password" class="text-primary text-sm no-underline hover:underline shrink-0">
-            {{ 'loginPage.forgotPassword' | translate }}
-          </a>
-        }
-      </span>
-      <p-password fluid formControlName="password" [toggleMask]="true" [feedback]="false" />
-    </label>
+      <label class="flex flex-col gap-2">
+        <span>{{ 'loginPage.email' | translate }}</span>
+        <input pInputText formControlName="identifier" />
+      </label>
 
-    <app-turnstile-widget (resolved)="loginTurnstileToken = $event" />
+      <label class="flex flex-col gap-2">
+        <span class="flex flex-wrap justify-between items-baseline gap-x-2 gap-y-1">
+          <span>{{ 'loginPage.password' | translate }}</span>
+          @if (openAuthPreferences.passwordRecoveryEnabled()) {
+            <a routerLink="/forgot-password" class="text-primary text-sm no-underline hover:underline shrink-0">
+              {{ 'loginPage.forgotPassword' | translate }}
+            </a>
+          }
+        </span>
+        <p-password fluid formControlName="password" [toggleMask]="true" [feedback]="false" />
+      </label>
 
-    <button pButton type="submit" [loading]="loading" [disabled]="loginForm.invalid || !loginTurnstileToken">
-      {{ 'loginPage.login' | translate }}
-    </button>
-  </form>
-}
+      <app-turnstile-widget (resolved)="loginTurnstileToken = $event" />
 
-@if (loginResponse?.mfaRequired && mfaForm) {
-  <form [formGroup]="mfaForm" (ngSubmit)="submitMfa()" class="flex flex-col gap-4 w-full max-w-md mx-auto mt-12">
-    <label class="flex flex-col gap-2">
-      <span>{{ 'loginPage.2faCode' | translate }}</span>
-      <p-input-otp formControlName="code" [integerOnly]="true" [length]="6" [autofocus]="true" (keydown.enter)="submitMfa()" />
-    </label>
+      <button pButton type="submit" [loading]="loading" [disabled]="loginForm.invalid || !loginTurnstileToken">
+        {{ 'loginPage.login' | translate }}
+      </button>
+    </form>
+  }
 
-    <app-turnstile-widget (resolved)="mfaTurnstileToken = $event" />
+  @if (loginResponse?.mfaRequired && mfaForm) {
+    <form [formGroup]="mfaForm" (ngSubmit)="submitMfa()" class="flex flex-col gap-4">
+      <app-finances-title-bar [title]="'pageTitle.login' | translate" [closeClick]="backToLogin.bind(this)"></app-finances-title-bar>
 
-    <button pButton type="submit" [loading]="loading" [disabled]="mfaForm.invalid || !mfaTurnstileToken">
-      {{ 'loginPage.login' | translate }}
-    </button>
-  </form>
-}
+      <label class="flex flex-col gap-4">
+        <span>{{ 'loginPage.2faCode' | translate }}</span>
+        <p-input-otp formControlName="code" [integerOnly]="true" [length]="6" [autofocus]="true" (keydown.enter)="submitMfa()" />
+      </label>
+
+      <app-turnstile-widget (resolved)="mfaTurnstileToken = $event" />
+
+      <button pButton type="submit" [loading]="loading" [disabled]="mfaForm.invalid || !mfaTurnstileToken">
+        {{ 'loginPage.login' | translate }}
+      </button>
+    </form>
+  }
+</div>
 
 <p-toast />

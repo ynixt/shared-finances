@@ -325,6 +325,19 @@ export class UserSettingsComponent {
     });
   }
 
+  async copyToClipboard(token: string) {
+    try {
+      await navigator.clipboard.writeText(token);
+
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('general.copied'),
+        life: DEFAULT_SUCCESS_LIFE,
+      });
+    } catch (ex) {}
+  }
+
   private async deleteAccountAfterConfirm() {
     if (this.submitting) return;
 

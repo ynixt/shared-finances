@@ -1,145 +1,155 @@
 <app-navbar></app-navbar>
 
-<div class="flex justify-center overflow-hidden h-full p-4 md:p-0">
-  <div class="flex flex-col items-center">
-    @if (form) {
-      <form [formGroup]="form" (ngSubmit)="submit()">
-        <div class="grid md:grid-cols-2 gap-2 mb-10" formGroupName="name">
-          <div>
-            <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
-              >{{ 'general.firstName' | translate }}
-              <app-required-field-asterisk></app-required-field-asterisk>
-            </label>
-            <input pInputText id="firstName" type="text" [placeholder]="'general.firstName' | translate" fluid formControlName="first" />
+<div class="w-full max-w-lg mx-auto mt-4 px-4 md:px-0">
+  <app-finances-title-bar [title]="'pageTitle.register' | translate" closeRouterLink=".."></app-finances-title-bar>
+  <div class="flex justify-center overflow-hidden">
+    <div class="flex flex-col items-center">
+      @if (form) {
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="grid md:grid-cols-2 gap-2 mb-10" formGroupName="name">
+            <div>
+              <label for="firstName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
+                >{{ 'general.firstName' | translate }}
+                <app-required-field-asterisk></app-required-field-asterisk>
+              </label>
+              <input pInputText id="firstName" type="text" [placeholder]="'general.firstName' | translate" fluid formControlName="first" />
+            </div>
+
+            <div>
+              <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
+                >{{ 'general.lastName' | translate }}
+                <app-required-field-asterisk></app-required-field-asterisk>
+              </label>
+              <input pInputText id="lastName" type="text" [placeholder]="'general.lastName' | translate" fluid formControlName="last" />
+            </div>
           </div>
 
-          <div>
-            <label for="lastName" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
-              >{{ 'general.lastName' | translate }}
+          <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
+            >{{ 'general.email' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk>
+          </label>
+          <input
+            pInputText
+            id="email"
+            type="text"
+            [placeholder]="'general.email' | translate"
+            class="w-full mb-8"
+            formControlName="email"
+          />
+
+          <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+            >{{ 'general.password' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk>
+          </label>
+          <p-password
+            id="password"
+            formControlName="password"
+            [placeholder]="'general.password' | translate"
+            [toggleMask]="true"
+            styleClass="mb-8"
+            [fluid]="true"
+            [feedback]="true"
+            class="w-full mb-8"
+          ></p-password>
+
+          <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+            >{{ 'general.passwordConfirm' | translate }}
+            <app-required-field-asterisk></app-required-field-asterisk>
+          </label>
+          <p-password
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            [placeholder]="'general.passwordConfirm' | translate"
+            [toggleMask]="true"
+            styleClass="mb-8"
+            [fluid]="true"
+            [feedback]="false"
+            class="w-full mb-8"
+            [class.ng-invalid]="form.hasError('PasswordNoMatch')"
+          ></p-password>
+
+          <div class="w-full mb-8">
+            <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
+              >{{ 'general.language' | translate }}
               <app-required-field-asterisk></app-required-field-asterisk>
             </label>
-            <input pInputText id="lastName" type="text" [placeholder]="'general.lastName' | translate" fluid formControlName="last" />
+            <app-language-picker id="languagePicker" formControlName="language"></app-language-picker>
           </div>
-        </div>
 
-        <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2"
-          >{{ 'general.email' | translate }}
-          <app-required-field-asterisk></app-required-field-asterisk>
-        </label>
-        <input pInputText id="email" type="text" [placeholder]="'general.email' | translate" class="w-full mb-8" formControlName="email" />
-
-        <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-          >{{ 'general.password' | translate }}
-          <app-required-field-asterisk></app-required-field-asterisk>
-        </label>
-        <p-password
-          id="password"
-          formControlName="password"
-          [placeholder]="'general.password' | translate"
-          [toggleMask]="true"
-          styleClass="mb-8"
-          [fluid]="true"
-          [feedback]="true"
-          class="w-full mb-8"
-        ></p-password>
-
-        <label for="confirmPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-          >{{ 'general.passwordConfirm' | translate }}
-          <app-required-field-asterisk></app-required-field-asterisk>
-        </label>
-        <p-password
-          id="confirmPassword"
-          formControlName="confirmPassword"
-          [placeholder]="'general.passwordConfirm' | translate"
-          [toggleMask]="true"
-          styleClass="mb-8"
-          [fluid]="true"
-          [feedback]="false"
-          class="w-full mb-8"
-          [class.ng-invalid]="form.hasError('PasswordNoMatch')"
-        ></p-password>
-
-        <div class="w-full mb-8">
-          <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-            >{{ 'general.language' | translate }}
-            <app-required-field-asterisk></app-required-field-asterisk>
-          </label>
-          <app-language-picker id="languagePicker" formControlName="language"></app-language-picker>
-        </div>
-
-        <div class="w-full mb-8">
-          <label for="currencySelector" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">
-            {{ 'onboardingPage.defaultCurrency' | translate }}
-            <app-required-field-asterisk></app-required-field-asterisk>
-          </label>
-
-          <app-currency-selector id="currencySelector" formControlName="defaultCurrency"></app-currency-selector>
-        </div>
-
-        <div class="w-full mb-8">
-          <label for="timezoneSelector" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">
-            {{ 'onboardingPage.timezone' | translate }}
-            <app-required-field-asterisk></app-required-field-asterisk>
-          </label>
-
-          <app-time-zone-selector id="timezoneSelector" formControlName="tmz"></app-time-zone-selector>
-        </div>
-
-        <div class="w-full mb-6 space-y-4">
-          <label class="flex items-start gap-3 cursor-pointer text-default dark:text-surface-100">
-            <input
-              id="acceptTerms"
-              type="checkbox"
-              formControlName="acceptTerms"
-              class="mt-1.5 h-4 w-4 shrink-0 rounded border-surface-300 text-primary focus:ring-primary"
-            />
-            <span class="text-base leading-snug">
-              {{ 'registerPage.consent.termsLabel' | translate }}
-              <a routerLink="/legal/terms" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">{{
-                'registerPage.consent.termsLink' | translate
-              }}</a>
+          <div class="w-full mb-8">
+            <label for="currencySelector" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">
+              {{ 'onboardingPage.defaultCurrency' | translate }}
               <app-required-field-asterisk></app-required-field-asterisk>
-            </span>
-          </label>
+            </label>
 
-          <label class="flex items-start gap-3 cursor-pointer text-default dark:text-surface-100">
-            <input
-              id="acceptPrivacy"
-              type="checkbox"
-              formControlName="acceptPrivacy"
-              class="mt-1.5 h-4 w-4 shrink-0 rounded border-surface-300 text-primary focus:ring-primary"
-            />
-            <span class="text-base leading-snug">
-              {{ 'registerPage.consent.privacyLabel' | translate }}
-              <a routerLink="/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">{{
-                'registerPage.consent.privacyLink' | translate
-              }}</a>
+            <app-currency-selector id="currencySelector" formControlName="defaultCurrency"></app-currency-selector>
+          </div>
+
+          <div class="w-full mb-8">
+            <label for="timezoneSelector" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">
+              {{ 'onboardingPage.timezone' | translate }}
               <app-required-field-asterisk></app-required-field-asterisk>
-            </span>
-          </label>
-        </div>
+            </label>
 
-        <div class="w-full mb-8 flex flex-col gap-2">
-          <label for="gravatarOptIn" class="text-surface-900 dark:text-surface-0 font-medium text-lg">
-            {{ 'registerPage.gravatar.label' | translate }}
-          </label>
-          <p-toggleswitch formControlName="gravatarOptIn" inputId="gravatarOptIn" />
-          <p class="text-sm text-surface-600 dark:text-surface-300">{{ 'registerPage.gravatar.hint' | translate }}</p>
-        </div>
+            <app-time-zone-selector id="timezoneSelector" formControlName="tmz"></app-time-zone-selector>
+          </div>
 
-        <div class="w-full mb-8">
-          <app-turnstile-widget (resolved)="turnstileToken = $event" />
-        </div>
+          <div class="w-full mb-6 space-y-4">
+            <label class="flex items-start gap-3 cursor-pointer text-default dark:text-surface-100">
+              <input
+                id="acceptTerms"
+                type="checkbox"
+                formControlName="acceptTerms"
+                class="mt-1.5 h-4 w-4 shrink-0 rounded border-surface-300 text-primary focus:ring-primary"
+              />
+              <span class="text-base leading-snug">
+                {{ 'registerPage.consent.termsLabel' | translate }}
+                <a routerLink="/legal/terms" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">{{
+                  'registerPage.consent.termsLink' | translate
+                }}</a>
+                <app-required-field-asterisk></app-required-field-asterisk>
+              </span>
+            </label>
 
-        <p-button
-          [loading]="submitting"
-          [disabled]="form.invalid || !turnstileToken"
-          type="submit"
-          [label]="'registerPage.register' | translate"
-          styleClass="w-full mt-8 mb-4"
-        ></p-button>
-      </form>
-    }
+            <label class="flex items-start gap-3 cursor-pointer text-default dark:text-surface-100">
+              <input
+                id="acceptPrivacy"
+                type="checkbox"
+                formControlName="acceptPrivacy"
+                class="mt-1.5 h-4 w-4 shrink-0 rounded border-surface-300 text-primary focus:ring-primary"
+              />
+              <span class="text-base leading-snug">
+                {{ 'registerPage.consent.privacyLabel' | translate }}
+                <a routerLink="/legal/privacy" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium">{{
+                  'registerPage.consent.privacyLink' | translate
+                }}</a>
+                <app-required-field-asterisk></app-required-field-asterisk>
+              </span>
+            </label>
+          </div>
+
+          <div class="w-full mb-8 flex flex-col gap-2">
+            <label for="gravatarOptIn" class="text-surface-900 dark:text-surface-0 font-medium text-lg">
+              {{ 'registerPage.gravatar.label' | translate }}
+            </label>
+            <p-toggleswitch formControlName="gravatarOptIn" inputId="gravatarOptIn" />
+            <p class="text-sm text-surface-600 dark:text-surface-300">{{ 'registerPage.gravatar.hint' | translate }}</p>
+          </div>
+
+          <div class="w-full mb-8">
+            <app-turnstile-widget (resolved)="turnstileToken = $event" />
+          </div>
+
+          <p-button
+            [loading]="submitting"
+            [disabled]="form.invalid || !turnstileToken"
+            type="submit"
+            [label]="'registerPage.register' | translate"
+            styleClass="w-full mt-8 mb-4"
+          ></p-button>
+        </form>
+      }
+    </div>
   </div>
 </div>
 

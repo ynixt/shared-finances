@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
@@ -21,7 +21,10 @@ import { ErrorMessageService } from '../../services/error-message.service';
   providers: [MessageService],
 })
 export class PendingEmailConfirmationPageComponent implements OnInit {
+  readonly otpLength = 8;
+
   @ViewChild('turnstile') private turnstileWidget?: TurnstileWidgetComponent;
+  @ViewChild('otpInput') private otpInput?: InputOtp;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -29,6 +32,7 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
   private readonly authHttp = inject(AuthHttpService);
   private readonly messageService = inject(MessageService);
   private readonly errorMessageService = inject(ErrorMessageService);
+  private readonly translateService = inject(TranslateService);
 
   email = '';
   changeForm!: FormGroup;
@@ -93,7 +97,11 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
       this.startCooldown(ack.cooldownSeconds);
       this.resetTurnstile();
 
-      this.messageService.add({ severity: 'success', summary: 'OK', detail: 'Email sent' });
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('authFlows.pending.resent'),
+      });
     } catch (e) {
       this.errorMessageService.handleError(e, this.messageService);
     }
@@ -120,7 +128,7 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
     }
   }
 
-  handlePaste(event: ClipboardEvent) {
+  handleOtpPaste(event: ClipboardEvent) {
     event.preventDefault();
 
     const pasted = event.clipboardData?.getData('text') ?? '';
@@ -129,9 +137,75 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
 
     const sanitized = pasted.replace(/[\s\-]+/g, '').slice(0, 8);
 
+    this.changeOtpCode(sanitized);
+  }
+
+  private changeOtpCode(sanitized: string) {
     this.confirmForm.patchValue({
       code: sanitized,
     });
+
+    if (this.otpInput) {
+      const inputs: HTMLInputElement[] = this.otpInput.$el.querySelectorAll('input');
+
+      let i = 0;
+      inputs?.forEach(input => {
+        const letter: string | undefined = sanitized[i++];
+        input.value = letter ?? '';
+      });
+    }
+  }
+
+  protected handleInputOtp(event: Event) {
+    event.preventDefault();
+
+    const pasted = (event.target as HTMLInputElement).value ?? '';
+
+    if (!pasted) return;
+
+    const sanitized = this.sanitizeOtpInput(pasted);
+
+    this.changeOtpCode(sanitized);
+  }
+
+  private sanitizeOtpInput(input: string): string {
+    return input.replace(/[\s\-]+/g, '').slice(0, 8);
+  }
+
+  protected otpInputKeydown(event: KeyboardEvent, index: any, events: any, inputElement: HTMLInputElement, confirmCodeButton: Button) {
+    console.log(event);
+    if (!/^[a-zA-Z]$/.test(event.key) || event.ctrlKey || event.altKey || event.metaKey) {
+      events.keydown(event);
+      return;
+    }
+
+    event.preventDefault();
+
+    const current: string = (this.confirmForm.get('code')?.value ?? '').padStart(this.otpLength, ' ');
+    const sanitized = this.sanitizeOtpInput(event.key);
+    const newCode = (
+      current.substring(0, index - 1) +
+      sanitized +
+      current.substring(index - 1 + sanitized.length, current.length)
+    ).substring(0, this.otpLength);
+
+    this.changeOtpCode(newCode);
+
+    let next: Element | null | undefined = inputElement.nextElementSibling;
+
+    if (index == this.otpLength / 2) {
+      next = next?.nextElementSibling?.nextElementSibling;
+    }
+
+    if (next instanceof HTMLInputElement) {
+      next.focus();
+    }
+
+    if (index == this.otpLength) {
+      setTimeout(() => {
+        confirmCodeButton.el.nativeElement.focus();
+      }, 100);
+    }
   }
 
   private startCooldown(seconds: number): void {

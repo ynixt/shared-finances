@@ -7,8 +7,10 @@ authFlows:
     code: Verification code
     confirmCode: Confirm code
     resend: Resend email
+    resent: Email reenviado
     resendIn: Resend in {{seconds}}s
     newEmail: New email address
+    newEmailHint: Did you enter the wrong email address? Enter a new email address to receive a confirmation link.
     changeEmail: Update email and resend
   confirmEmail:
     title: Confirm your email
