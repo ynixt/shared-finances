@@ -106,7 +106,7 @@ export class LoginPageComponent implements OnInit {
   }
 
   async submit(): Promise<void> {
-    if (this.loginForm.invalid) {
+    if (this.loginForm.invalid || !this.loginTurnstileToken) {
       return;
     }
 
@@ -132,7 +132,7 @@ export class LoginPageComponent implements OnInit {
   }
 
   async submitMfa(): Promise<void> {
-    if (this.mfaForm.invalid || this.loginResponse?.mfaRequired != true || !this.loginResponse?.mfaChallengeId) {
+    if (this.mfaForm.invalid || this.loginResponse?.mfaRequired != true || !this.loginResponse?.mfaChallengeId || !this.mfaTurnstileToken) {
       return;
     }
 
@@ -146,6 +146,7 @@ export class LoginPageComponent implements OnInit {
       });
 
       await this.authService.waitForLoginSuccess();
+
       this.loginResponse = undefined;
     } catch (err) {
       this.loading = false;

@@ -21,7 +21,9 @@
 
     <app-turnstile-widget (resolved)="loginTurnstileToken = $event" />
 
-    <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>
+    <button pButton type="submit" [loading]="loading" [disabled]="loginForm.invalid || !loginTurnstileToken">
+      {{ 'loginPage.login' | translate }}
+    </button>
   </form>
 }
 
@@ -34,7 +36,9 @@
 
     <app-turnstile-widget (resolved)="mfaTurnstileToken = $event" />
 
-    <button pButton type="submit" [loading]="loading">{{ 'loginPage.login' | translate }}</button>
+    <button pButton type="submit" [loading]="loading" [disabled]="mfaForm.invalid || !mfaTurnstileToken">
+      {{ 'loginPage.login' | translate }}
+    </button>
   </form>
 }
 

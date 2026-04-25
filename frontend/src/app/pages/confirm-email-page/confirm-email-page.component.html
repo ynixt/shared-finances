@@ -9,7 +9,12 @@
     <p class="leading-relaxed">{{ 'authFlows.confirmEmail.intro' | translate }}</p>
     <div class="space-y-2">
       <app-turnstile-widget (resolved)="turnstileToken = $event" />
-      <p-button type="button" [disabled]="status === 'submitting'" [label]="'authFlows.confirmEmail.cta' | translate" (click)="confirm()" />
+      <p-button
+        type="button"
+        [disabled]="status === 'submitting' || !turnstileToken"
+        [label]="'authFlows.confirmEmail.cta' | translate"
+        (click)="confirm()"
+      />
     </div>
   }
   @if (status === 'ok') {

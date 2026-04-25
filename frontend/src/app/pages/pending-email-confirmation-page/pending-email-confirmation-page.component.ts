@@ -50,15 +50,17 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
   }
 
   async confirmByCode(): Promise<void> {
-    if (this.confirmForm.invalid || this.confirming) return;
+    if (this.confirmForm.invalid || this.confirming || !this.turnstileToken) return;
 
     const return_to = this.route.snapshot.queryParamMap.get('return_to');
     const code = String(this.confirmForm.value.code ?? '')
       .trim()
       .toUpperCase();
+
     if (!/^[A-Z0-9]{8}$/.test(code)) return;
 
     this.confirming = true;
+
     try {
       await this.authHttp.confirmEmail({
         token: code,
@@ -81,12 +83,16 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
 
   async resend(): Promise<void> {
     try {
+      if (!this.turnstileToken) return;
+
       const ack = await this.authHttp.resendConfirmationEmail({
         email: this.email,
-        turnstileToken: this.turnstileToken ?? undefined,
+        turnstileToken: this.turnstileToken,
       });
+
       this.startCooldown(ack.cooldownSeconds);
       this.resetTurnstile();
+
       this.messageService.add({ severity: 'success', summary: 'OK', detail: 'Email sent' });
     } catch (e) {
       this.errorMessageService.handleError(e, this.messageService);
@@ -94,16 +100,20 @@ export class PendingEmailConfirmationPageComponent implements OnInit {
   }
 
   async changeEmail(): Promise<void> {
-    if (this.changeForm.invalid) return;
+    if (this.changeForm.invalid || !this.turnstileToken) return;
+
     try {
       const ack = await this.authHttp.changePendingEmail({
         currentEmail: this.email,
         newEmail: this.changeForm.value.newEmail,
         turnstileToken: this.turnstileToken ?? undefined,
       });
+
       this.email = this.changeForm.value.newEmail;
+
       this.startCooldown(ack.cooldownSeconds);
       this.resetTurnstile();
+
       this.messageService.add({ severity: 'success', summary: 'OK', detail: 'Email updated' });
     } catch (e) {
       this.errorMessageService.handleError(e, this.messageService);

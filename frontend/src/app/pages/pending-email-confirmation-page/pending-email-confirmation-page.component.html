@@ -34,7 +34,7 @@
   <div class="space-y-2">
     <p-button
       type="button"
-      [disabled]="cooldownSeconds > 0"
+      [disabled]="cooldownSeconds > 0 || !turnstileToken"
       [label]="
         cooldownSeconds > 0
           ? ('authFlows.pending.resendIn' | translate: { seconds: cooldownSeconds })

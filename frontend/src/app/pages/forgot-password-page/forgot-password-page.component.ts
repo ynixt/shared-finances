@@ -32,12 +32,14 @@ export class ForgotPasswordPageComponent {
   submitted = false;
 
   async submit(): Promise<void> {
-    if (this.form.invalid) return;
+    if (this.form.invalid || !this.turnstileToken) return;
+
     try {
       await this.authHttp.forgotPassword({
         email: this.form.value.email,
         turnstileToken: this.turnstileToken ?? undefined,
       });
+
       this.submitted = true;
     } catch (e) {
       this.errorMessageService.handleError(e, this.messageService);

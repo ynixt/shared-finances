@@ -39,6 +39,7 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly transactionDeleted$: Observable<EventForListDto>;
   /** INSERT/UPDATE payload is {@link SimulationJobStatusEventDto}; DELETE payload is job id string. */
   readonly simulationJobAction$: Observable<UserActionEventDto>;
+  readonly onboardingCompleted$: Observable<void>;
   readonly resyncRequired$: Observable<void>;
 
   constructor(tokenStateService: TokenStateService, zone: NgZone, singleSseCoordinatorService: SingleSseCoordinatorService) {
@@ -117,5 +118,12 @@ export class UserActionEventService extends ActionEventService implements OnDest
 
     // --- Simulation jobs ---
     this.simulationJobAction$ = this.streamOf<UserActionEventDto>('SIMULATION_JOB').pipe(notGroupFilter);
+
+    // --- Onboarding ---
+    this.onboardingCompleted$ = this.streamOf<UserActionEventDto>('ONBOARDING').pipe(
+      notGroupFilter,
+      filter(e => e.type === 'UPDATE'),
+      map(() => {}),
+    );
   }
 }

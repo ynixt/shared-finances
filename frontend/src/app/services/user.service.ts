@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, Injector, WritableSignal, inject, signal } from '@angular/core';
+import { Injectable, Injector, Signal, computed, inject, signal } from '@angular/core';
 
 import { toObservable } from '@angular/core/rxjs-interop';
-import { Observable, combineLatest, filter, firstValueFrom, lastValueFrom, map, startWith, take } from 'rxjs';
+import { filter, lastValueFrom, map, take } from 'rxjs';
 
 import { ChangePasswordDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import {
@@ -17,18 +17,24 @@ import { UserMissingError } from '../pages/finances/errors/user-missing.error';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  readonly user = signal<UserResponseDto | null>(null);
-  readonly loading = signal(true);
-  readonly error: WritableSignal<any> = signal(null);
   private readonly http = inject(HttpClient);
   private readonly injector = inject(Injector);
 
-  private readonly loading$ = toObservable(this.loading, { injector: this.injector });
+  private readonly state = signal<{
+    user: UserResponseDto | null;
+    loading: boolean;
+    error: any;
+  }>({
+    user: null,
+    loading: true,
+    error: null,
+  });
 
-  readonly user$ = combineLatest([
-    toObservable(this.user, { injector: this.injector }).pipe(startWith(undefined)),
-    this.loading$.pipe(startWith(true)),
-  ]).pipe(map(([user, loading]) => (loading ? undefined : user)));
+  readonly error: Signal<any> = computed(() => this.state().error);
+  readonly loading = computed(() => this.state().loading);
+  readonly user = computed(() => this.state().user);
+
+  readonly user$ = toObservable(this.state).pipe(map(state => (state.loading ? undefined : state.user)));
 
   private readonly userWhenReady$ = this.user$.pipe(
     filter(user => user !== undefined),
@@ -36,13 +42,25 @@ export class UserService {
   );
 
   async getUser(): Promise<UserResponseDto | null> {
-    return firstValueFrom(this.userWhenReady$.pipe(take(1)));
+    return lastValueFrom(this.userWhenReady$.pipe(take(1)));
   }
 
-  changeUser(user: UserResponseDto | null, err?: any) {
-    this.user.set(user);
-    this.loading.set(false);
-    this.error.set(err);
+  changeUser(user: UserResponseDto | null, error?: any) {
+    this.state.set({
+      user,
+      loading: false,
+      error,
+    });
+  }
+
+  changeLoading(newLoading: boolean) {
+    const currentState = this.state();
+
+    this.state.set({
+      user: currentState.user,
+      loading: newLoading,
+      error: currentState.error,
+    });
   }
 
   async changePassword(changePasswordRequest: ChangePasswordDto): Promise<void> {

@@ -127,30 +127,30 @@ export class AuthService {
 
   async submitLogin(body: LoginDto): Promise<LoginResultDto> {
     try {
-      this.userService.loading.set(true);
+      this.userService.changeLoading(true);
       const response = await this.authHttpService.login(body);
       const mfaRequired = response.body?.mfaRequired ?? false;
 
       if (!mfaRequired) {
         await this.loginSuccess(response);
       } else {
-        this.userService.loading.set(false);
+        this.userService.changeLoading(false);
       }
 
       return response.body!!;
     } catch (err) {
-      this.userService.loading.set(false);
+      this.userService.changeLoading(false);
       throw err;
     }
   }
 
   async submitMfa(body: LoginMfaDto): Promise<void> {
     try {
-      this.userService.loading.set(true);
+      this.userService.changeLoading(true);
       const response = await this.authHttpService.mfa(body);
       await this.loginSuccess(response);
     } catch (err) {
-      this.userService.loading.set(false);
+      this.userService.changeLoading(false);
       throw err;
     }
   }

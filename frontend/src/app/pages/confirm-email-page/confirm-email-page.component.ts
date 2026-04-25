@@ -37,13 +37,16 @@ export class ConfirmEmailPageComponent implements OnInit {
   }
 
   async confirm(): Promise<void> {
-    if (!this.token || this.status === 'submitting') return;
+    if (!this.token || this.status === 'submitting' || !this.turnstileToken) return;
+
     this.status = 'submitting';
+
     try {
       await this.authHttp.confirmEmail({
         token: this.token,
         turnstileToken: this.turnstileToken ?? undefined,
       });
+
       this.status = 'ok';
     } catch (err) {
       this.status = 'error';

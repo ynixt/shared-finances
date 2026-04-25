@@ -39,6 +39,7 @@ class CategoryConceptServiceImpl(
         if (conceptId == null && normalizedCustomName == null) {
             throw InvalidCategoryConceptSelectionException("Either conceptId or customConceptName must be provided.")
         }
+
         if (conceptId != null && normalizedCustomName != null) {
             throw InvalidCategoryConceptSelectionException("conceptId and customConceptName cannot be provided together.")
         }

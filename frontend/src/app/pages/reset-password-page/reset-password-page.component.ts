@@ -45,7 +45,8 @@ export class ResetPasswordPageComponent implements OnInit {
   }
 
   async submit(): Promise<void> {
-    if (this.form.invalid || !this.token) return;
+    if (this.form.invalid || !this.token || !this.turnstileToken) return;
+
     try {
       await this.authHttp.resetPassword({
         token: this.token,

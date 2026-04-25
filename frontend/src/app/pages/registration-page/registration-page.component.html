@@ -133,7 +133,7 @@
 
         <p-button
           [loading]="submitting"
-          [disabled]="form.invalid"
+          [disabled]="form.invalid || !turnstileToken"
           type="submit"
           [label]="'registerPage.register' | translate"
           styleClass="w-full mt-8 mb-4"

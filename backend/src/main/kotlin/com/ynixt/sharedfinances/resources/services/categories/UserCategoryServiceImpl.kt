@@ -18,6 +18,7 @@ import kotlinx.coroutines.reactor.mono
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -93,6 +94,7 @@ class UserCategoryServiceImpl(
                 }
             }
 
+    @Transactional
     override suspend fun newCategory(
         userId: UUID,
         newCategoryRequest: NewCategoryRequest,
@@ -132,7 +134,6 @@ class UserCategoryServiceImpl(
                         )
                 }
         } catch (t: Throwable) {
-            categoryConceptService.cleanupOrphanedCustomConcept(conceptId)
             throw when {
                 databaseHelperService.isUniqueViolation(t, "idx_wallet_entry_category_user_id_name") ->
                     DuplicatedCategoryException(
@@ -165,6 +166,7 @@ class UserCategoryServiceImpl(
         if (existing.size == 1) {
             return existing.first()
         }
+
         if (existing.size > 1) {
             throw IllegalStateException("User $userId has ${existing.size} categories bound to DEBT_SF.")
         }
@@ -191,6 +193,12 @@ class UserCategoryServiceImpl(
                     .awaitSingle()
                     .singleOrNull()
                     ?: throw IllegalStateException("Unable to resolve DEBT_SF category after unique violation for user $userId.", t)
+            } else if (databaseHelperService.isUniqueViolation(t, "idx_wallet_entry_category_user_id_name")) {
+                throw DuplicatedCategoryException(
+                    userId = userId,
+                    groupId = null,
+                    cause = t,
+                )
             } else {
                 throw t
             }

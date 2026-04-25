@@ -85,7 +85,7 @@ export class WalletEntryTableComponent {
   readonly creditCardBillId = input<string | undefined | null>(undefined);
   readonly creditCardBillDate = input<dayjs.Dayjs | undefined>(undefined);
   readonly noWalletEntryFoundMessage = input<string | undefined>(undefined);
-  readonly user = this.userService.user.asReadonly();
+  readonly user = this.userService.user;
   scopeSelectionEntry: EventForListDto | null = null;
   readonly noWalletEntryFoundDynamicMessage = computed(() => {
     if (this.noWalletEntryFoundMessage() == null) {
