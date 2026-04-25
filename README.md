@@ -31,8 +31,7 @@ Easily manage your personal and family finances. Free and open source.
 - [x] Multilanguage support (for now only english and brazilian portuguese)
 - [x] Financial goals
 - [x] Simulation of a new expense can show if you can afford it
-- [x] Support of many currencies, including cryptocurrencies. (You can see the
-  list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
+- [x] Support of many currencies, including cryptocurrencies. (You can see the list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
 - [ ] PDF report (⌛ Planned)
 - [ ] Import transactions from xls/csv (⌛ Planned)
 - [ ] Email before due date (✖️ Not planned)
