@@ -15,10 +15,10 @@ data class RegisterDto(
     @field:Size(min = 6, max = 15, message = "apiErrors.registration.passwordSize")
     val password: String,
     @field:NotBlank(message = "apiErrors.registration.firstNameSize")
-    @field:Size(min = 1, max = 255, message = "apiErrors.registration.firstNameSize")
+    @field:Size(min = 1, max = 20, message = "apiErrors.registration.firstNameSize")
     val firstName: String,
     @field:NotBlank(message = "apiErrors.registration.lastNameSize")
-    @field:Size(min = 1, max = 255, message = "apiErrors.registration.lastNameSize")
+    @field:Size(min = 1, max = 20, message = "apiErrors.registration.lastNameSize")
     val lastName: String,
     @field:NotBlank(message = "apiErrors.generic.fieldInvalid")
     @field:Size(min = 1, max = 8, message = "apiErrors.generic.fieldInvalid")

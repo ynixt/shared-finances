@@ -3,6 +3,8 @@ import { Component, effect, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+
+
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
@@ -15,14 +17,13 @@ import { Password } from 'primeng/password';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 
+
+
 import { CurrencySelectorComponent } from '../../../components/currency-selector/currency-selector.component';
 import { LanguagePickerComponent } from '../../../components/language-picker/language-picker.component';
 import { TimeZoneSelectorComponent } from '../../../components/timezone-selector/time-zone-selector.component';
 import { UserAvatarEditorComponent } from '../../../components/user-avatar-editor/user-avatar-editor.component';
-import {
-  ConfirmMfaResponseDto,
-  EnableMfaResponseDto,
-} from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/auth/mfa';
+import { ConfirmMfaResponseDto, EnableMfaResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/auth/mfa';
 import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { AuthService } from '../../../services/auth.service';
 import { ErrorMessageService } from '../../../services/error-message.service';
@@ -31,6 +32,41 @@ import { DEFAULT_SUCCESS_LIFE } from '../../../util/success-util';
 import { passwordValidator } from '../../registration-page/password-validator';
 import { FinancesTitleBarComponent } from '../components/finances-title-bar/finances-title-bar.component';
 import { confirmPasswordValidator } from './confirm-password.validator';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Component({
   selector: 'app-user-settings',
@@ -71,8 +107,8 @@ export class UserSettingsComponent {
   generalForm = new FormGroup({
     email: new FormControl<string | undefined>(undefined, [Validators.required]),
     name: new FormGroup({
-      first: new FormControl<string | undefined>(undefined, [Validators.required, Validators.minLength(2)]),
-      last: new FormControl<string | undefined>(undefined, [Validators.required, Validators.minLength(2)]),
+      first: new FormControl<string | undefined>(undefined, [Validators.required, Validators.minLength(2), Validators.maxLength(20)]),
+      last: new FormControl<string | undefined>(undefined, [Validators.required, Validators.minLength(2), Validators.maxLength(20)]),
     }),
     language: new FormControl<string | undefined>(undefined, [Validators.required]),
     defaultCurrency: new FormControl<string | undefined>(undefined, [Validators.required]),

@@ -3,12 +3,16 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
+
+
 import { MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { InputText } from 'primeng/inputtext';
 import { Password } from 'primeng/password';
 import { Toast } from 'primeng/toast';
 import { ToggleSwitch } from 'primeng/toggleswitch';
+
+
 
 import { CurrencySelectorComponent } from '../../components/currency-selector/currency-selector.component';
 import { LanguagePickerComponent } from '../../components/language-picker/language-picker.component';
@@ -23,6 +27,70 @@ import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 import { promiseTimeout } from '../../util/timeout-util';
 import { confirmPasswordValidator } from './confirm-password.validator';
 import { passwordValidator } from './password-validator';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Component({
   selector: 'app-registration-page',
@@ -131,8 +199,8 @@ export class RegistrationPageComponent implements OnInit {
       {
         email: ['', [Validators.required, Validators.email]],
         name: this.fb.group({
-          first: ['', [Validators.required, Validators.minLength(2)]],
-          last: ['', [Validators.required, Validators.minLength(2)]],
+          first: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(20)]],
+          last: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(20)]],
         }),
         password: ['', [Validators.required, passwordValidator]],
         confirmPassword: ['', [Validators.required]],
