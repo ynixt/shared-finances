@@ -15,6 +15,26 @@ Easily manage your personal and family finances. Free and open source.
 > [!WARNING]  
 > This project was created with help of AI. I know this is a barrier for many people, so please be aware.
 
+# Features
+- [x] ‼️**Open Source**
+- [x] ‼️**Privacy**: we don't collect any data
+- [x] 2FA authentication
+- [x] Dark mode
+- [x] Bank accounts
+- [x] Credit cards
+- [x] Individual financial transactions
+- [x] Financial transactions of a group/family
+- [x] Recurrence financial transaction
+- [x] Financial transaction with installment purchase
+- [x] Dashboard and charts
+- [x] Multilanguage support (for now only english and brazilian portuguese)
+- [x] Financial goals
+- [x] Simulation of a new expense can show if you can afford it
+- [x] Support of many currencies, including cryptocurrencies. (You can see the list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
+- [ ] PDF report (⌛ Planned)
+- [ ] Import transactions from xls/csv (⌛ Planned)
+- [ ] Email before due date (✖️ Not planned)
+
 # Self Hosted
 
 You can self-host this project using docker compose.
@@ -183,6 +203,15 @@ This configuration parameters are common between **only Shared Finances** and **
 ### Shared Finances and their dependencies
 
 **Coming soon**
+
+# Screenshots
+
+## Desktop
+<img src="/frontend/public/images/screenshots/ss01.png" width="40%" height="40%">
+
+## Mobile
+<img src="/frontend/public/images/screenshots/ss-mobile01.png" width="15%" height="15%">
+<img src="/frontend/public/images/screenshots/ss-mobile02.png" width="15%" height="15%">
 
 # License
 
