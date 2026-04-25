@@ -35,7 +35,7 @@ populate-history:
 	QUOTES="$(QUOTES)" \
 	SF_APP_SERVICE_SECRET="$(SF_APP_SERVICE_SECRET)" \
 	API_URL="$(API_URL)" \
-	node utils/populate-history.js
+	node scripts/populate-history.js
 
 # Begin: JWT area
 
@@ -113,7 +113,7 @@ clean-secrets:
 stamp-version: stamp-frontend-version stamp-backend-version
 
 stamp-frontend-version:
-	node utils/stamp.js frontend "$(VERSION)"
+	node scripts/stamp.js frontend "$(VERSION)"
 
 stamp-backend-version:
-	node utils/stamp.js backend "$(VERSION)"
+	node scripts/stamp.js backend "$(VERSION)"
