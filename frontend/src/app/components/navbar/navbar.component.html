@@ -1,6 +1,6 @@
 @let user = userService.user();
 
-<div class="navbar py-4 bg-gray-700 text-white lg:mb-8">
+<div class="navbar py-4 bg-gray-700 dark:bg-surface-900 text-default-inverse dark:text-default lg:mb-8">
   <div class="container mx-auto flex items-center">
     @if (showDrawerMenu) {
       <button (click)="toggleDrawer()" pButton class="lg:hidden mr-4" severity="secondary">
@@ -21,7 +21,7 @@
       } @else if (user) {
         <button
           pButton
-          class="text-white hover:text-primary flex items-center justify-center p-0"
+          class="text-default-inverse hover:text-primary flex items-center justify-center p-0"
           [text]="true"
           [rounded]="true"
           (click)="userMenu.toggle($event)"
@@ -29,7 +29,7 @@
           <app-user-avatar [user]="user" [showTooltip]="false"></app-user-avatar>
         </button>
       } @else {
-        <a routerLink="/login" pButton class="text-white hover:text-primary" [text]="true" [rounded]="true">
+        <a routerLink="/login" pButton class="text-default-inverse dark:text-default hover:text-primary" [text]="true" [rounded]="true">
           <span pButtonLabel>{{ 'general.login' | translate }}</span>
         </a>
 
@@ -37,7 +37,8 @@
           <span pButtonLabel>{{ 'general.register' | translate }}</span>
         </a>
 
-        <app-lang-button buttonClass="text-white hover:text-primary"></app-lang-button>
+        <app-dark-mode-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-dark-mode-button>
+        <app-lang-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-lang-button>
       }
     </div>
   </div>
@@ -45,7 +46,7 @@
 
 <p-menu #userMenu [model]="items" [popup]="true">
   <ng-template #start>
-    <div class="flex px-4 pt-5 items-center gap-8">
+    <div class="flex px-4 pt-5 items-center gap-8 text-muted-color">
       <span class="mr-auto">{{
         'general.greetings'
           | translate

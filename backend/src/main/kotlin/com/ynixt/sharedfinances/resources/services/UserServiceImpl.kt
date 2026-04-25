@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.services.AccountDeletionService
 import com.ynixt.sharedfinances.domain.services.AvatarService
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.UserService
+import com.ynixt.sharedfinances.domain.services.actionevents.UserActionEventService
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.context.annotation.Lazy
@@ -34,6 +35,7 @@ class UserServiceImpl(
     private val authProperties: AuthProperties,
     private val clock: Clock,
     @Lazy private val accountDeletionService: AccountDeletionService,
+    private val userActionEventService: UserActionEventService,
 ) : EntityServiceImpl<UserEntity, UserEntity>(),
     UserService {
     @Transactional
@@ -106,7 +108,13 @@ class UserServiceImpl(
         userId: UUID,
         newLang: String,
     ) {
-        repository.changeLanguage(userId, newLang).awaitSingle()
+        repository.changeLanguage(userId, newLang).awaitSingle().also {
+            userActionEventService.sendUpdatedUser(
+                userId, repository
+                    .findById(userId)
+                    .awaitSingle()
+            )
+        }
     }
 
     override suspend fun updateUser(
@@ -124,6 +132,7 @@ class UserServiceImpl(
                 user.lang = updateUserDto.lang
                 user.defaultCurrency = updateUserDto.defaultCurrency
                 user.tmz = updateUserDto.tmz
+                user.darkMode = updateUserDto.darkMode
 
                 if (user.photoUrl != null && (updateUserDto.removeAvatar || updateUserDto.getFromGravatar)) {
                     avatarService.deletePhoto(userId)
@@ -147,7 +156,9 @@ class UserServiceImpl(
                         }
                 }
 
-                repository.save(user).awaitSingle()
+                repository.save(user).awaitSingle().also {
+                    userActionEventService.sendUpdatedUser(user.id!!, user)
+                }
             }
 
     override suspend fun deleteCurrentAccount(userId: UUID) {

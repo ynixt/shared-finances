@@ -15,7 +15,10 @@ import { Toast } from 'primeng/toast';
 
 import { FooterComponent } from './components/footer/footer.component';
 import { UserResponseDto } from './models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { ActionEventService } from './pages/finances/services/action-event.service';
+import { UserActionEventService } from './pages/finances/services/user-action-event.service';
 import { AuthService } from './services/auth.service';
+import { DarkModeService } from './services/dark-mode.service';
 import { LangService } from './services/lang.service';
 import { TitleService } from './services/title.service';
 import { UserService } from './services/user.service';
@@ -33,7 +36,7 @@ import { updatePrimeI18n } from './util/prime-i18n';
 })
 @UntilDestroy()
 export class AppComponent {
-  user = signal<UserResponseDto | undefined | null>(undefined);
+  private user: UserResponseDto | undefined | null;
 
   constructor(
     private primengConfig: PrimeNG,
@@ -46,17 +49,20 @@ export class AppComponent {
     private authService: AuthService,
     private langService: LangService,
     private messageService: MessageService,
+    private userActionEventService: UserActionEventService,
+    private darkModeService: DarkModeService,
   ) {
     this.langService.init();
 
-    updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
+    void updatePrimeI18n(this.primengConfig, this.translateService, this.httpClient);
 
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(async () => {
       await i18nIsReady(this.translateService);
       this.title.setTitle(this.titleService.getTitle(this.router.routerState.snapshot.root, this.router.url));
     });
 
-    this.userService.user$.pipe(untilDestroyed(this)).subscribe(u => this.user.set(u));
+    this.userService.user$.pipe(untilDestroyed(this)).subscribe(u => (this.user = u));
+
     this.authService.onServerOffline$.pipe(untilDestroyed(this)).subscribe(() => {
       this.messageService.add({
         severity: 'error',
@@ -65,6 +71,22 @@ export class AppComponent {
         closable: false,
         sticky: true,
       });
+    });
+
+    this.userActionEventService.userUpdated$.pipe(untilDestroyed(this)).subscribe(newData => {
+      const currentUser = this.user;
+
+      if (currentUser == null) return;
+
+      if (currentUser.darkMode != newData.darkMode) {
+        this.darkModeService.setDarkMode(newData.darkMode);
+      }
+
+      if (currentUser.lang != newData.lang) {
+        void this.langService.changeLanguage(newData.lang, false);
+      }
+
+      this.userService.changeUser(newData);
     });
   }
 }

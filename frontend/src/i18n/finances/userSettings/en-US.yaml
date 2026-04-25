@@ -17,6 +17,8 @@ financesPage:
     addPhoto: Add from file
     fromGravatar: Add from Gravatar
     avatar: Avatar
+    darkMode: Dark mode
+    darkModeDescription: Enable to use the dark interface theme.
     dangerArea: Danger area
     dangerAreaDescription: Permanently delete your account and remove your personal data from this service. This cannot be undone.
     deleteAccount: Delete my account

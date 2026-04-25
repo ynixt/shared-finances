@@ -25,28 +25,28 @@
           [titleKey]="'financesPage.transactionsPage.summary.balance' | translate"
           [value]="totalBalance == null ? undefined : (totalBalance | localCurrency: bankAccount.currency)"
           [faIcon]="balanceIcon"
-          [valueCssColorClass]="(totalBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+          [valueCssColorClass]="(totalBalance ?? 0) >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'"
         ></app-dashboard-card>
 
         <app-dashboard-card
           [titleKey]="'financesPage.transactionsPage.summary.totalPeriodRevenue' | translate"
           [value]="totalPeriodRevenue == null ? undefined : (totalPeriodRevenue | localCurrency: bankAccount.currency)"
           [faIcon]="revenueIcon"
-          [valueCssColorClass]="(totalPeriodRevenue ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+          [valueCssColorClass]="(totalPeriodRevenue ?? 0) >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'"
         >
         </app-dashboard-card>
         <app-dashboard-card
           [titleKey]="'financesPage.transactionsPage.summary.totalPeriodExpense' | translate"
           [value]="totalPeriodExpense == null ? undefined : (totalPeriodExpense | localCurrency: bankAccount.currency)"
           [faIcon]="expensesIcon"
-          [valueCssColorClass]="(totalPeriodExpense ?? 0) <= 0 ? 'text-green-700' : 'text-red-700'"
+          [valueCssColorClass]="(totalPeriodExpense ?? 0) <= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'"
         >
         </app-dashboard-card>
         <app-dashboard-card
           [titleKey]="'financesPage.transactionsPage.summary.totalPeriodBalance' | translate"
           [value]="totalPeriodBalance == null ? undefined : (totalPeriodBalance | localCurrency: bankAccount.currency)"
           [faIcon]="diffIcon"
-          [valueCssColorClass]="(totalPeriodBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+          [valueCssColorClass]="(totalPeriodBalance ?? 0) >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'"
         >
         </app-dashboard-card>
 
@@ -55,21 +55,27 @@
             [titleKey]="'financesPage.transactionsPage.summary.totalProjectedRevenue' | translate"
             [value]="totalProjectedRevenue == null ? undefined : (totalProjectedRevenue | localCurrency: bankAccount.currency)"
             [faIcon]="projectedIcon"
-            [valueCssColorClass]="(totalProjectedRevenue ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+            [valueCssColorClass]="
+              (totalProjectedRevenue ?? 0) >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+            "
           >
           </app-dashboard-card>
           <app-dashboard-card
             [titleKey]="'financesPage.transactionsPage.summary.totalProjectedExpense' | translate"
             [value]="totalProjectedExpense == null ? undefined : (totalProjectedExpense | localCurrency: bankAccount.currency)"
             [faIcon]="projectedIcon"
-            [valueCssColorClass]="(totalProjectedExpense ?? 0) <= 0 ? 'text-green-700' : 'text-red-700'"
+            [valueCssColorClass]="
+              (totalProjectedExpense ?? 0) <= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+            "
           >
           </app-dashboard-card>
           <app-dashboard-card
             [titleKey]="'financesPage.transactionsPage.summary.totalProjectedBalance' | translate"
             [value]="totalProjectedBalance == null ? undefined : (totalProjectedBalance | localCurrency: bankAccount.currency)"
             [faIcon]="projectedIcon"
-            [valueCssColorClass]="(totalProjectedBalance ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'"
+            [valueCssColorClass]="
+              (totalProjectedBalance ?? 0) >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+            "
           >
           </app-dashboard-card>
         }
@@ -85,7 +91,11 @@
                 : (totalBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
             "
             [faIcon]="projectedIcon"
-            [valueCssColorClass]="(totalBalance ?? 0) + (totalProjectedBalance ?? 0) > 0 ? 'text-green-700' : 'text-red-700'"
+            [valueCssColorClass]="
+              (totalBalance ?? 0) + (totalProjectedBalance ?? 0) > 0
+                ? 'text-green-700 dark:text-green-400'
+                : 'text-red-700 dark:text-red-400'
+            "
           >
           </app-dashboard-card>
           <app-dashboard-card
@@ -96,7 +106,11 @@
                 : (totalPeriodBalance + totalProjectedBalance | localCurrency: bankAccount.currency)
             "
             [faIcon]="projectedIcon"
-            [valueCssColorClass]="(totalPeriodBalance ?? 0) + (totalProjectedBalance ?? 0) > 0 ? 'text-green-700' : 'text-red-700'"
+            [valueCssColorClass]="
+              (totalPeriodBalance ?? 0) + (totalProjectedBalance ?? 0) > 0
+                ? 'text-green-700 dark:text-green-400'
+                : 'text-red-700 dark:text-red-400'
+            "
           >
           </app-dashboard-card>
         </div>

@@ -17,6 +17,7 @@ class UserEntity(
     var mfaEnabled: Boolean,
     var totpSecret: String?,
     var onboardingDone: Boolean,
+    var darkMode: Boolean = false,
     var termsAcceptedAt: OffsetDateTime? = null,
     var termsVersion: String? = null,
     var privacyAcceptedAt: OffsetDateTime? = null,

@@ -11,29 +11,37 @@
   </p-message>
 
   @if (canNewSimulation()) {
-    <section class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h2 class="text-base font-semibold text-slate-900">{{ 'financesPage.simulationJobs.form.title' | translate }}</h2>
+    <section class="mb-4 rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
+      <h2 class="text-base font-semibold dark:surface-400">{{ 'financesPage.simulationJobs.form.title' | translate }}</h2>
       <p class="mt-1 text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.hint' | translate }}</p>
 
       <form class="contents" novalidate [formGroup]="planningForm" (ngSubmit)="onAddExpenseSubmit($event)">
         <div class="mt-4 grid gap-3 md:grid-cols-4">
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.expenseAmount' | translate }}</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-surface-500">{{
+              'financesPage.simulationJobs.form.expenseAmount' | translate
+            }}</span>
             <p-input-number formControlName="amount" mode="currency" [currency]="planningForm.get('currency')!.value"></p-input-number>
           </label>
 
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.installments' | translate }}</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-surface-500">{{
+              'financesPage.simulationJobs.form.installments' | translate
+            }}</span>
             <p-input-number formControlName="installments" [min]="1" [max]="480"></p-input-number>
           </label>
 
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.firstPaymentDate' | translate }}</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-surface-500">{{
+              'financesPage.simulationJobs.form.firstPaymentDate' | translate
+            }}</span>
             <app-date-picker formControlName="firstPaymentDate"></app-date-picker>
           </label>
 
           <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.currency' | translate }}</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-surface-500">{{
+              'financesPage.simulationJobs.form.currency' | translate
+            }}</span>
             <app-currency-selector formControlName="currency"></app-currency-selector>
           </label>
         </div>
@@ -46,13 +54,15 @@
       </form>
 
       <div class="mt-3">
-        <p class="mb-2 text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.pendingExpenses' | translate }}</p>
+        <p class="mb-2 text-xs font-medium text-slate-700 dark:text-surface-500">
+          {{ 'financesPage.simulationJobs.form.pendingExpenses' | translate }}
+        </p>
         @if (expenses.length === 0) {
           <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.form.noExpenses' | translate }}</p>
         } @else {
           <div class="flex flex-wrap gap-2">
             @for (expense of expenses; track $index) {
-              <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
+              <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:text-surface-500">
                 {{ expense.amount | localCurrency: expense.currency }} · {{ expense.installments }}x ·
                 {{ expense.firstPaymentDate | localDate: 'shortDate' }}
                 <button
@@ -73,7 +83,9 @@
           <form class="contents" novalidate [formGroup]="simulationForm" (ngSubmit)="onSimulateSubmit($event)">
             <div class="mt-4 flex flex-wrap items-end gap-3">
               <label class="flex min-w-[10rem] flex-col gap-1">
-                <span class="text-xs font-medium text-slate-700">{{ 'financesPage.simulationJobs.form.horizonMonths' | translate }}</span>
+                <span class="text-xs font-medium text-slate-700 dark:text-surface-500">{{
+                  'financesPage.simulationJobs.form.horizonMonths' | translate
+                }}</span>
                 <p-input-number formControlName="horizonMonths" [min]="simulationHorizonMin" [max]="480"></p-input-number>
               </label>
               <button type="submit" pButton [loading]="creating" [disabled]="creating || simulationForm.invalid">
@@ -114,7 +126,7 @@
       {{ 'financesPage.simulationJobs.loadError' | translate }}
     </div>
   } @else if (jobs.length === 0) {
-    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+    <div class="rounded-xl border border-dashed border-slate-300 bg-white dark:bg-surface-900 p-8 text-center text-slate-500">
       {{ 'financesPage.simulationJobs.empty' | translate }}
     </div>
   } @else {
@@ -127,10 +139,10 @@
 
     <div class="space-y-3">
       @for (job of jobs; track job.id) {
-        <article class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <article class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
           <header class="flex flex-wrap items-center gap-3">
             <div class="mr-auto min-w-0">
-              <p class="truncate font-semibold text-slate-900">{{ job.id }}</p>
+              <p class="truncate font-semibold dark:surface-400">{{ job.id }}</p>
               <p class="text-xs text-slate-500">
                 {{ 'financesPage.simulationJobs.createdAt' | translate }}:
                 {{ job.createdAt != null ? (job.createdAt | localDate: 'short') : '—' }}
@@ -152,9 +164,9 @@
             }
           </header>
 
-          <section class="mt-3 grid gap-1 text-sm text-slate-700">
+          <section class="mt-3 grid gap-1 text-sm text-slate-700 dark:text-surface-500">
             @if (job.errorMessage) {
-              <p class="text-red-700">
+              <p class="text-red-700 dark:text-red-400">
                 <strong>{{ 'financesPage.simulationJobs.error' | translate }}:</strong>
                 {{ job.errorMessage }}
               </p>
@@ -163,9 +175,9 @@
 
           @let result = parsedResult(job);
           @if (result != null) {
-            <section class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <section class="mt-3 rounded-xl border border-slate-200 dark:border-surface-500 bg-slate-50 p-3">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <span class="text-xs font-semibold uppercase tracking-wide text-muted">
                   {{ 'financesPage.simulationJobs.outcome' | translate }}
                 </span>
                 <p-tag [value]="outcomeBandKey(result.outcomeBand) | translate" [severity]="outcomeBandSeverity(result.outcomeBand)" />
@@ -202,11 +214,11 @@
 
               @if (result.goalTrack != null) {
                 <div class="mt-3 grid gap-2 md:grid-cols-3">
-                  <div class="rounded-lg border border-slate-200 bg-white p-2">
+                  <div class="rounded-lg border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-2">
                     <p class="text-xs text-slate-500">
                       {{ 'financesPage.simulationJobs.goalTrack.sustainScheduled' | translate }}
                     </p>
-                    <p class="text-sm font-semibold text-slate-900">
+                    <p class="text-sm font-semibold dark:surface-400">
                       {{
                         (result.goalTrack.canSustainScheduledContributions
                           ? 'financesPage.simulationJobs.goalTrack.yes'
@@ -215,11 +227,11 @@
                       }}
                     </p>
                   </div>
-                  <div class="rounded-lg border border-slate-200 bg-white p-2">
+                  <div class="rounded-lg border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-2">
                     <p class="text-xs text-slate-500">
                       {{ 'financesPage.simulationJobs.goalTrack.sustainScheduledIfFreed' | translate }}
                     </p>
-                    <p class="text-sm font-semibold text-slate-900">
+                    <p class="text-sm font-semibold dark:surface-400">
                       {{
                         (result.goalTrack.canSustainScheduledContributionsIfAllocationsAreFreed
                           ? 'financesPage.simulationJobs.goalTrack.yes'
@@ -228,9 +240,9 @@
                       }}
                     </p>
                   </div>
-                  <div class="rounded-lg border border-slate-200 bg-white p-2">
+                  <div class="rounded-lg border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-2">
                     <p class="text-xs text-slate-500">{{ 'financesPage.simulationJobs.goalTrack.fitIfFreed' | translate }}</p>
-                    <p class="text-sm font-semibold text-slate-900">
+                    <p class="text-sm font-semibold dark:surface-400">
                       {{
                         (result.goalTrack.canFitIfAllocationsAreFreed
                           ? 'financesPage.simulationJobs.goalTrack.yes'
@@ -248,7 +260,7 @@
                 } @else {
                   <table class="min-w-full border-collapse text-xs">
                     <thead>
-                      <tr class="border-b border-slate-300 text-left text-slate-600">
+                      <tr class="border-b border-slate-300 text-left text-muted">
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.month' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.currency' | translate }}</th>
                         <th class="px-2 py-2">{{ 'financesPage.simulationJobs.timeline.opening' | translate }}</th>
@@ -266,7 +278,7 @@
                       @for (row of result.timeline; track row.month) {
                         @for (currency of currenciesForTimelineRow(row); track currency) {
                           @let point = currencyPoint(row, currency);
-                          <tr class="border-b border-slate-200" [class.bg-red-50]="point.closingBalance < 0">
+                          <tr class="border-b border-slate-200 dark:border-surface-500" [class.bg-red-50]="point.closingBalance < 0">
                             <td class="px-2 py-2">{{ row.month }}</td>
                             <td class="px-2 py-2">{{ currency }}</td>
                             <td class="px-2 py-2">{{ point.openingBalance | localCurrency: currency }}</td>
@@ -316,7 +328,7 @@
       <button pButton severity="secondary" [disabled]="!canGoPreviousPage || loading" (click)="previousPage()">
         {{ 'general.previous' | translate }}
       </button>
-      <span class="text-sm text-slate-600"> {{ jobsPage.number + 1 }} / {{ jobsPage.totalPages }} </span>
+      <span class="text-sm text-muted"> {{ jobsPage.number + 1 }} / {{ jobsPage.totalPages }} </span>
       <button pButton severity="secondary" [disabled]="!canGoNextPage || loading" (click)="nextPage()">
         {{ 'general.next' | translate }}
       </button>

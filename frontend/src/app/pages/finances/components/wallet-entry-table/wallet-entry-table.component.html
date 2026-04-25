@@ -1,6 +1,8 @@
-<div class="wallet-entry-table rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
+<div
+  class="wallet-entry-table rounded-xl border border-surface-200 dark:border-surface-600 dark:bg-surface-900 bg-white dark:bg-surface-900 p-4 shadow-sm"
+>
   @if (title() != undefined) {
-    <h3 class="mb-3 text-sm font-semibold text-surface-800">{{ title() | translate }}</h3>
+    <h3 class="mb-3 text-sm font-semibold text-default">{{ title() | translate }}</h3>
   }
 
   @if (page != null && !loading()) {
@@ -9,8 +11,11 @@
         <div class="grid grid-cols-12 gap-4 grid-nogutter">
           @for (item of items; track item; let first = $first) {
             <div class="col-span-12">
-              <div class="flex flex-col p-6 gap-4" [ngClass]="{ 'border-t border-surface-200 dark:border-surface-700': !first }">
-                <div class="flex flex-wrap gap-4 items-center text-gray-400 text-sm">
+              <div
+                class="flex flex-col p-6 gap-4"
+                [ngClass]="{ 'border-t border-surface-200 dark:border-surface-600 dark:border-surface-700': !first }"
+              >
+                <div class="flex flex-wrap gap-4 items-center text-muted text-sm">
                   <app-entry-type [entry]="item" class="table-item"></app-entry-type>
                   <app-entry-status [entry]="item" class="table-item"></app-entry-status>
 
@@ -37,25 +42,26 @@
                   @if (showDualTransferAmounts(item)) {
                     @let originEntry = getTransferOriginEntry(item);
                     @let targetEntry = getTransferTargetEntry(item);
-                    <span class="table-item text-red-700">
+                    <span class="table-item text-red-700 dark:text-red-400">
                       {{ getTransferOriginDisplayValue(item) | localCurrency: originEntry.walletItem.currency }}
                     </span>
                     <span class="table-item text-slate-500">-></span>
-                    <span class="table-item text-green-700">
+                    <span class="table-item text-green-700 dark:text-green-400">
                       {{ getTransferTargetDisplayValue(item) ?? 0 | localCurrency: targetEntry.walletItem.currency }}
                     </span>
                   } @else if (item.type === 'TRANSFER') {
                     @let originEntry = getTransferOriginEntry(item);
-                    <span class="table-item text-red-700">
+                    <span class="table-item text-red-700 dark:text-red-400">
                       {{ getTransferOriginDisplayValue(item) | localCurrency: originEntry.walletItem.currency }}
                     </span>
                   } @else {
                     @let wdId = walletItemId();
                     @let entry = wdId == null ? item.entries[0] : wdId == item.entries[0].walletItemId ? item.entries[0] : item.entries[1];
 
-                    <span class="table-item {{ entry.value >= 0 ? 'text-green-700' : 'text-red-700' }}">{{
-                      entry.value | localCurrency: item.currency
-                    }}</span>
+                    <span
+                      class="table-item {{ entry.value >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400' }}"
+                      >{{ entry.value | localCurrency: item.currency }}</span
+                    >
                   }
 
                   @if (canEdit(item)) {
@@ -117,7 +123,10 @@
         <div class="grid grid-cols-12 gap-4 grid-nogutter">
           @for (item of items; track item; let first = $first) {
             <div class="col-span-12">
-              <div class="flex flex-col p-6 gap-4" [ngClass]="{ 'border-t border-surface-200 dark:border-surface-700': !first }">
+              <div
+                class="flex flex-col p-6 gap-4"
+                [ngClass]="{ 'border-t border-surface-200 dark:border-surface-600 dark:border-surface-700': !first }"
+              >
                 <div class="flex flex-wrap gap-4 items-center">
                   <p-skeleton width="120px" height="20px"></p-skeleton>
                   <p-skeleton width="120px" height="20px"></p-skeleton>
@@ -145,9 +154,9 @@
 
 @if (scopeSelectionEntry != null) {
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-    <div class="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
-      <h3 class="text-lg font-semibold text-slate-900">{{ 'financesPage.transactionsPage.deleteScope.title' | translate }}</h3>
-      <p class="mt-2 text-sm text-slate-600">{{ 'financesPage.transactionsPage.deleteScope.description' | translate }}</p>
+    <div class="w-full max-w-xl rounded-2xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-5 shadow-xl">
+      <h3 class="text-lg font-semibold dark:surface-400">{{ 'financesPage.transactionsPage.deleteScope.title' | translate }}</h3>
+      <p class="mt-2 text-sm text-muted">{{ 'financesPage.transactionsPage.deleteScope.description' | translate }}</p>
 
       <div class="mt-4 flex flex-wrap justify-end gap-2">
         <button type="button" pButton severity="secondary" [outlined]="true" (click)="cancelScopeSelection()">

@@ -1,3 +1,19 @@
 @import 'tailwindcss';
 @plugin "tailwindcss-primeui";
-@custom-variant dark (&:where(.app-dark, .app-dark *));
+@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+
+@utility text-default {
+  color: var(--p-text-color);
+}
+
+@utility text-default-inverse {
+  color: var(--text-color-inverse);
+}
+
+@utility text-secondary {
+  color: var(--text-color-secondary);
+}
+
+@utility text-muted {
+  color: var(--p-text-muted-color);
+}

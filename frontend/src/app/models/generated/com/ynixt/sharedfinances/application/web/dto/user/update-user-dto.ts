@@ -2,6 +2,7 @@
 /* tslint-disable */
 
 export interface UpdateUserDto {
+  darkMode: boolean;
   defaultCurrency: string;
   email: string;
   firstName: string;

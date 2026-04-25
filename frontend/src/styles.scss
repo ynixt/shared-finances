@@ -58,3 +58,18 @@ app-root {
   display: flex;
   flex-direction: column;
 }
+
+:root {
+  --p-text-color: #000;
+  --text-color-inverse: #fff;
+  --text-color-secondary: #374151;
+
+  &:where(.dark-mode, .dark-mode *) {
+    --p-text-color: #e6e6e6;
+    --p-content-color: #e6e6e6;
+    --text-color-inverse: var(--p-zinc-400);
+    --text-color-secondary: #b3b3b3;
+    //--p-card-background: var(--p-surface-800);
+    --p-card-shadow: 0 0.125rem 0.25rem rgba(255, 255, 255, 0.075);
+  }
+}

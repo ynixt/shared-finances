@@ -13,25 +13,25 @@
 } @else {
   <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 flex flex-col gap-4">
     <div>
-      <label class="mb-1 block text-sm font-medium text-surface-700" for="g-name"
+      <label class="mb-1 block text-sm font-medium text-secondary" for="g-name"
         >{{ 'general.name' | translate }} <app-required-field-asterisk></app-required-field-asterisk
       ></label>
       <input pInputText id="g-name" formControlName="name" class="w-full" />
     </div>
     <div>
-      <label class="mb-1 block text-sm font-medium text-surface-700" for="g-desc">{{
+      <label class="mb-1 block text-sm font-medium text-secondary" for="g-desc">{{
         'financesPage.goalsPage.description' | translate
       }}</label>
       <input pInputText id="g-desc" formControlName="description" class="w-full" />
     </div>
     <div class="flex flex-col gap-1">
-      <label class="text-sm font-medium text-surface-700">{{ 'financesPage.goalsPage.columns.deadline' | translate }}</label>
+      <label class="text-sm font-medium text-secondary">{{ 'financesPage.goalsPage.columns.deadline' | translate }}</label>
       <app-date-picker formControlName="deadline" class="block w-full" />
     </div>
 
     <div class="space-y-2">
       <div class="flex items-center justify-between">
-        <span class="text-sm font-medium text-surface-700"
+        <span class="text-sm font-medium text-secondary"
           >{{ 'financesPage.goalsPage.targets' | translate }} <app-required-field-asterisk></app-required-field-asterisk
         ></span>
         <button pButton type="button" class="p-button-text p-button-sm" (click)="addTarget()" [label]="'general.new' | translate"></button>

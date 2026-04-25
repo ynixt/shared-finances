@@ -4,6 +4,7 @@ import { Observable, filter, map } from 'rxjs';
 
 import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
 import { CreditCardDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/creditCard';
 import { EventForListDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
@@ -23,6 +24,8 @@ export type GroupActionEventDto = UserActionEventDto & {
 @Injectable({ providedIn: 'root' })
 export class UserActionEventService extends ActionEventService implements OnDestroy {
   readonly groupEvents$: Observable<GroupActionEventDto>;
+
+  readonly userUpdated$: Observable<UserResponseDto>;
 
   readonly bankInserted$: Observable<BankAccountDto>;
   readonly bankUpdated$: Observable<BankAccountDto>;
@@ -52,6 +55,12 @@ export class UserActionEventService extends ActionEventService implements OnDest
         return { ...JSON.parse(msg.data as any as string), event: msg.event } as GroupActionEventDto;
       }),
       filter((e: GroupActionEventDto) => e.groupId != null),
+    );
+
+    // -- User --
+    this.userUpdated$ = this.streamOf<UserActionEventDto>('USER').pipe(
+      filter(e => e.type === 'UPDATE'),
+      map(e => e.data as UserResponseDto),
     );
 
     // --- Bank ---

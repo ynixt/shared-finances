@@ -15,6 +15,7 @@ import {
 } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { AuthHttpService } from './auth-http.service';
+import { DarkModeService } from './dark-mode.service';
 import { GuardInspector } from './guard-inspector.service';
 import { TokenStateService } from './token-state.service';
 import { TokenSyncService } from './token-sync.service';
@@ -35,6 +36,7 @@ export class AuthService {
     private activatedRoute: ActivatedRoute,
     private authHttpService: AuthHttpService,
     private tokenStateService: TokenStateService,
+    private darkModeService: DarkModeService,
   ) {
     this.tokenStateService.token$.pipe(untilDestroyed(this)).subscribe(token => {
       const currentUser = this.userService.user();
@@ -55,6 +57,7 @@ export class AuthService {
     });
 
     this.tokenSyncService.onLoginMessage.pipe(untilDestroyed(this)).subscribe(msg => {
+      this.darkModeService.syncFromUser(msg.user);
       this.userService.changeUser(msg.user);
       setTimeout(() => {
         this.tokenStateService.changeToken(msg.token);
@@ -80,6 +83,7 @@ export class AuthService {
   async loadUser() {
     try {
       const user = await this.getUserFromHttp();
+      this.darkModeService.syncFromUser(user);
       this.userService.changeUser(user);
     } catch (err) {
       if (err instanceof HttpErrorResponse) {

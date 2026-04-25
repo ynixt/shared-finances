@@ -2,7 +2,7 @@
 @let text = statusText();
 
 @if (icon != null || text != null) {
-  <div class="flex gap-2 items-center text-gray-400 text-sm">
+  <div class="flex gap-2 items-center text-muted text-sm">
     <fa-icon [class]="statusClassColor()" [icon]="icon"></fa-icon>
 
     @if (text != null) {

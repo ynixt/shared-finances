@@ -9,12 +9,12 @@
         @for (detail of selectedCard.details; track trackDetail($index, detail)) {
           <div class="space-y-1">
             <div
-              class="flex flex-wrap gap-2 items-center justify-between rounded-md bg-surface-50 px-3 py-2 dark:bg-surface-800"
+              class="flex flex-wrap gap-2 items-center justify-between rounded-md dark:bg-surface-900 px-3 py-2 dark:bg-surface-800"
               [class.ring-2]="detail.accountOverCommitted"
               [class.ring-amber-500]="detail.accountOverCommitted"
               [class.dark:ring-amber-400]="detail.accountOverCommitted"
             >
-              <span class="text-sm text-surface-700 dark:text-surface-100">{{ detailLabel(detail) | translate }}</span>
+              <span class="text-sm text-secondary dark:text-surface-100">{{ detailLabel(detail) | translate }}</span>
               <span class="text-xs text-surface-400">{{ detailSublabel(detail) | translate }}</span>
               <span class="text-sm font-semibold {{ detailValueCss(selectedCard, detail) }}">
                 {{ detail.value | localCurrency: currency() }}
@@ -23,11 +23,17 @@
             @if (detail.children.length) {
               @for (child of detail.children!; track $index) {
                 <div
-                  class="ml-4 flex flex-wrap gap-2 items-center justify-between rounded-md border-l-2 border-surface-200 bg-surface-50/80 py-2 pr-3 pl-4 dark:border-surface-600 dark:bg-surface-800/80"
+                  class="ml-4 flex flex-wrap gap-2 items-center justify-between rounded-md border-l-2 border-surface-200 dark:border-surface-600 dark:bg-surface-900/80 py-2 pr-3 pl-4 dark:border-surface-600 dark:bg-surface-800/80"
                 >
-                  <span class="text-sm text-surface-700 dark:text-surface-100">{{ detailLabel(child) | translate }}</span>
+                  <span class="text-sm text-secondary dark:text-surface-100">{{ detailLabel(child) | translate }}</span>
                   <span class="text-xs text-surface-400">{{ detailSublabel(child) | translate }}</span>
-                  <span class="text-sm font-semibold" [class.text-green-700]="child.value >= 0" [class.text-red-700]="child.value < 0">
+                  <span
+                    class="text-sm font-semibold"
+                    [class.text-green-700
+                    dark:text-green-400]="child.value >= 0"
+                    [class.text-red-700
+                    dark:text-red-400]="child.value < 0"
+                  >
                     {{ child.value | localCurrency: currency() }}
                   </span>
                 </div>

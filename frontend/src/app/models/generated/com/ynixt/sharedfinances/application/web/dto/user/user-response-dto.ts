@@ -2,6 +2,7 @@
 /* tslint-disable */
 
 export interface UserResponseDto {
+  darkMode: boolean;
   defaultCurrency: string;
   email: string;
   emailVerified: boolean;

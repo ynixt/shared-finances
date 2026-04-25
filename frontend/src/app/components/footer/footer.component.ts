@@ -1,7 +1,6 @@
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
-import { UserResponseDto } from '../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { VersionService } from '../../services/version.service';
 
 @Component({
@@ -12,8 +11,6 @@ import { VersionService } from '../../services/version.service';
 })
 export class FooterComponent {
   private readonly versionService = inject(VersionService);
-
-  user = input<UserResponseDto | undefined | null>(undefined);
 
   backendVersion = signal<string>('???');
   frontendVersion = signal<string>(this.versionService.frontendVersion);

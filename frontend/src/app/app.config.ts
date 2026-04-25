@@ -15,6 +15,7 @@ import { routes } from './app.routes';
 import { CustomTranslateYamlLoader } from './custom-translate-yaml-loader';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { apiAuthInterceptor } from './interceptors/unauthorized.interceptor';
+import { DarkModeService } from './services/dark-mode.service';
 import { OpenAuthPreferencesService } from './services/open-auth-preferences.service';
 
 const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateYamlLoader => new CustomTranslateYamlLoader();
@@ -29,6 +30,12 @@ export const appConfig: ApplicationConfig = {
       multi: true,
       useFactory: (openAuthPreferences: OpenAuthPreferencesService) => () => openAuthPreferences.load(),
       deps: [OpenAuthPreferencesService],
+    },
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      useFactory: (darkModeService: DarkModeService) => () => darkModeService.initialize(),
+      deps: [DarkModeService],
     },
     ConfirmationService,
     providePrimeNG({

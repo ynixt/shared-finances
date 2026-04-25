@@ -14,6 +14,7 @@ import { Panel } from 'primeng/panel';
 import { Password } from 'primeng/password';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 import { CurrencySelectorComponent } from '../../../components/currency-selector/currency-selector.component';
 import { LanguagePickerComponent } from '../../../components/language-picker/language-picker.component';
@@ -25,6 +26,7 @@ import {
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/auth/mfa';
 import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { AuthService } from '../../../services/auth.service';
+import { DarkModeService } from '../../../services/dark-mode.service';
 import { ErrorMessageService } from '../../../services/error-message.service';
 import { UserService } from '../../../services/user.service';
 import { DEFAULT_SUCCESS_LIFE } from '../../../util/success-util';
@@ -52,6 +54,7 @@ import { confirmPasswordValidator } from './confirm-password.validator';
     InputOtp,
     QRCodeComponent,
     ConfirmDialog,
+    ToggleSwitch,
   ],
   templateUrl: './user-settings.component.html',
   styleUrl: './user-settings.component.scss',
@@ -60,6 +63,7 @@ import { confirmPasswordValidator } from './confirm-password.validator';
 export class UserSettingsComponent {
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
+  private readonly darkModeService = inject(DarkModeService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly errorMessageService = inject(ErrorMessageService);
   private readonly messageService = inject(MessageService);
@@ -67,6 +71,7 @@ export class UserSettingsComponent {
 
   user: UserResponseDto | null = null;
   submitting = false;
+  darkModeSubmitting = false;
 
   generalForm = new FormGroup({
     email: new FormControl<string | undefined>(undefined, [Validators.required]),
@@ -77,6 +82,7 @@ export class UserSettingsComponent {
     language: new FormControl<string | undefined>(undefined, [Validators.required]),
     defaultCurrency: new FormControl<string | undefined>(undefined, [Validators.required]),
     tmz: new FormControl<string | undefined>(undefined, [Validators.required]),
+    darkMode: new FormControl<boolean>(false, { nonNullable: true }),
     photo: new FormControl<string | null>(null, []),
   });
 
@@ -116,6 +122,7 @@ export class UserSettingsComponent {
         this.generalForm.get('language')?.setValue(user.lang);
         this.generalForm.get('defaultCurrency')?.setValue(user.defaultCurrency);
         this.generalForm.get('tmz')?.setValue(user.tmz);
+        this.generalForm.get('darkMode')?.setValue(user.darkMode, { emitEvent: false });
         this.generalForm.get('photo')?.setValue(user.photoUrl != null ? user.photoUrl : null);
 
         const securityTwoStepCodeControl = this.securityTwoStepBeginForm.get('code');
@@ -144,7 +151,7 @@ export class UserSettingsComponent {
 
       const photo = photoUrl == null || getFromGravatar || photoAlreadyUploaded ? undefined : await this.blobUrlToFile(photoUrl);
 
-      await this.userService.updateCurrentUser(
+      const updatedUser = await this.userService.updateCurrentUser(
         {
           firstName: this.generalForm.get('name')!!.value.first!!,
           lastName: this.generalForm.get('name')!!.value.last!!,
@@ -152,11 +159,14 @@ export class UserSettingsComponent {
           email: this.generalForm.get('email')!!.value!!,
           tmz: this.generalForm.get('tmz')!!.value!!,
           lang: this.generalForm.get('language')!!.value!!,
+          darkMode: this.generalForm.get('darkMode')!!.value!!,
           getFromGravatar,
           removeAvatar,
         },
         photo,
       );
+
+      this.darkModeService.setDarkMode(updatedUser.darkMode);
 
       this.generalForm.reset();
 

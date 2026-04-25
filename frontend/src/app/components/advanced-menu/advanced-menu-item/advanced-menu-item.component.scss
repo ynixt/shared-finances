@@ -57,5 +57,13 @@
   .advanced-menu-item-link:hover,
   .p-panel-header:hover {
     background-color: var(--color-gray-100);
+
+    &:where(.dark-mode, .dark-mode *) {
+      background-color: var(--p-zinc-900);
+    }
+  }
+
+  &:where(.dark-mode, .dark-mode *) {
+    color: var(--p-text-color);
   }
 }

@@ -17,6 +17,8 @@ financesPage:
     addPhoto: Adicionar por arquivo
     fromGravatar: Adicionar do Gravatar
     avatar: Avatar
+    darkMode: Modo noturno
+    darkModeDescription: Ative para usar a interface no modo escuro.
     dangerArea: Área de perigo
     dangerAreaDescription: Excluir permanentemente sua conta e remover seus dados pessoais deste serviço. Esta ação não pode ser desfeita.
     deleteAccount: Excluir minha conta

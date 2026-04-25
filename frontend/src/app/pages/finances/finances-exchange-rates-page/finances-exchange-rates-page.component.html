@@ -1,17 +1,23 @@
 <app-finances-title-bar [title]="'financesPage.exchangeRatesPage.title' | translate"></app-finances-title-bar>
 
-<div class="mb-4 rounded-xl border border-surface-200 bg-white p-4">
+<div class="mb-4 rounded-xl border border-surface-200 dark:border-surface-600 bg-white dark:bg-surface-900 p-4">
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 items-end gap-3">
     <div class="flex flex-col gap-1">
-      <label class="text-sm text-gray-600" for="erf-base">{{ 'financesPage.exchangeRatesPage.filters.baseCurrency' | translate }}</label>
+      <label class="text-sm text-gray-600 text-default" for="erf-base">{{
+        'financesPage.exchangeRatesPage.filters.baseCurrency' | translate
+      }}</label>
       <app-currency-selector [(ngModel)]="filterBase" [showClear]="true"></app-currency-selector>
     </div>
     <div class="flex flex-col gap-1">
-      <label class="text-sm text-gray-600" for="erf-quote">{{ 'financesPage.exchangeRatesPage.filters.quoteCurrency' | translate }}</label>
+      <label class="text-sm text-gray-600 text-default" for="erf-quote">{{
+        'financesPage.exchangeRatesPage.filters.quoteCurrency' | translate
+      }}</label>
       <app-currency-selector [(ngModel)]="filterQuote" [showClear]="true"></app-currency-selector>
     </div>
     <div class="flex flex-col gap-1">
-      <label class="text-sm text-gray-600" for="erf-from">{{ 'financesPage.exchangeRatesPage.filters.quoteDateFrom' | translate }}</label>
+      <label class="text-sm text-gray-600 text-default" for="erf-from">{{
+        'financesPage.exchangeRatesPage.filters.quoteDateFrom' | translate
+      }}</label>
       <p-date-picker [showIcon]="true" [iconDisplay]="'input'" [(ngModel)]="filterDateFrom" />
     </div>
     <button type="button" pButton (click)="applyFilters()" [disabled]="loading" class="shrink-0">

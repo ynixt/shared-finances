@@ -113,15 +113,15 @@ export class OverviewDashboardCardsComponent {
 
   cardValueClass(card: OverviewDashboardCardDto): string {
     if (card.key === 'GOAL_COMMITTED') {
-      return card.value >= 0 ? 'text-surface-900 dark:text-surface-0' : 'text-red-700';
+      return card.value >= 0 ? 'text-surface-900 dark:text-surface-0' : 'text-red-700 dark:text-red-400';
     }
 
     const inverseColors = this.inverseColors(card.key);
 
     if (inverseColors) {
-      return card.value <= 0 ? 'text-green-700' : 'text-red-700';
+      return card.value <= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400';
     } else {
-      return card.value >= 0 ? 'text-green-700' : 'text-red-700';
+      return card.value >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400';
     }
   }
 
@@ -145,9 +145,9 @@ export class OverviewDashboardCardsComponent {
     const inverseColors = this.inverseColors(card.key);
 
     if (inverseColors) {
-      return detail.value <= 0 ? 'text-green-700' : 'text-red-700';
+      return detail.value <= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400';
     } else {
-      return detail.value >= 0 ? 'text-green-700' : 'text-red-700';
+      return detail.value >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400';
     }
   }
 

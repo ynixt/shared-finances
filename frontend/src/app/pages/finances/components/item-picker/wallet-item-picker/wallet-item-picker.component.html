@@ -5,7 +5,7 @@
 
       <div class="flex gap-1 flex-col">
         <span>{{ item[optionLabel] }}</span>
-        <div class="flex gap-2 items-center text-gray-400 text-xs">
+        <div class="flex gap-2 items-center text-muted text-xs">
           <span>{{ 'enums.walletItemType.' + item.type | translate }}</span>
           @if (item.user != null) {
             <fa-icon size="xs" [icon]="iconUser"></fa-icon>
@@ -19,7 +19,7 @@
   <ng-template let-item let-optionLabel="optionLabel" #selectedItem>
     <div class="flex gap-4">
       <span>{{ item[optionLabel] }}</span>
-      <div class="flex gap-2 items-center text-gray-400 text-xs">
+      <div class="flex gap-2 items-center text-muted text-xs">
         <span>{{ 'enums.walletItemType.' + item.type | translate }}</span>
         @if (item.user != null) {
           <fa-icon size="xs" [icon]="iconUser"></fa-icon>

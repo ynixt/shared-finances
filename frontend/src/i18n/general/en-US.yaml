@@ -30,6 +30,7 @@ general:
   greetings: 'Hello, {{name}}'
   copy: Copy
   language: Language
+  darkMode: Dark mode
   date: Date
   loading: Loading…
   view: View

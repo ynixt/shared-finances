@@ -30,8 +30,8 @@
   }
 
   <section class="mb-8">
-    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.targets' | translate }}</h3>
-    <ul class="list-inside list-disc text-surface-700">
+    <h3 class="mb-2 text-lg font-semibold text-default">{{ 'financesPage.goalsPage.targets' | translate }}</h3>
+    <ul class="list-inside list-disc text-secondary">
       @for (t of detail()!.targets; track t.currency) {
         <li>{{ t.currency }} — {{ t.targetAmount | localCurrency: t.currency }}</li>
       }
@@ -39,8 +39,8 @@
   </section>
 
   <section class="mb-8">
-    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.committed' | translate }}</h3>
-    <ul class="list-inside list-disc text-surface-700">
+    <h3 class="mb-2 text-lg font-semibold text-default">{{ 'financesPage.goalsPage.committed' | translate }}</h3>
+    <ul class="list-inside list-disc text-secondary">
       @for (e of detail()!.committedByCurrency | keyvalue; track e.key) {
         <li>{{ e.key }} — {{ e.value | localCurrency: e.key }}</li>
       }
@@ -49,11 +49,11 @@
 
   @if (commitmentChartViews().length > 0) {
     <section class="mb-8">
-      <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.commitmentChartTitle' | translate }}</h3>
+      <h3 class="mb-2 text-lg font-semibold text-default">{{ 'financesPage.goalsPage.commitmentChartTitle' | translate }}</h3>
       <div class="space-y-6">
         @for (view of commitmentChartViews(); track view.currency) {
-          <div class="rounded-xl border border-surface-200 bg-white p-4 shadow-sm">
-            <h4 class="mb-3 text-sm font-medium text-surface-700">{{ view.currency }}</h4>
+          <div class="rounded-xl border border-surface-200 dark:border-surface-600 bg-white dark:bg-surface-900 p-4 shadow-sm">
+            <h4 class="mb-3 text-sm font-medium text-secondary">{{ view.currency }}</h4>
             <div>
               <p-chart type="line" [data]="view.data" [options]="view.options"></p-chart>
             </div>
@@ -64,7 +64,7 @@
   }
 
   <section class="mb-8">
-    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.movements' | translate }}</h3>
+    <h3 class="mb-2 text-lg font-semibold text-default">{{ 'financesPage.goalsPage.movements' | translate }}</h3>
     <p-table
       [value]="movementPage().content"
       styleClass="p-datatable-sm"
@@ -107,7 +107,7 @@
   </section>
 
   <section class="mb-8">
-    <h3 class="mb-2 text-lg font-semibold text-surface-800">{{ 'financesPage.goalsPage.schedules' | translate }}</h3>
+    <h3 class="mb-2 text-lg font-semibold text-default">{{ 'financesPage.goalsPage.schedules' | translate }}</h3>
     <p-table
       [value]="schedulePage().content"
       styleClass="p-datatable-sm"

@@ -16,6 +16,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { AuthService } from '../../services/auth.service';
 import { BreakpointService } from '../../services/breakpoint.service';
 import { UserService } from '../../services/user.service';
+import { DarkModeButtonComponent } from '../dark-mode-button/dark-mode-button.component';
 import { LangButtonComponent } from '../lang-button/lang-button.component';
 import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
 
@@ -27,6 +28,7 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
     ButtonLabel,
     RouterLink,
     LangButtonComponent,
+    DarkModeButtonComponent,
     ProgressSpinner,
     Menu,
     FaIconComponent,

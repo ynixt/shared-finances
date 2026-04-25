@@ -1,7 +1,11 @@
 <div class="finances-page min-h-screen flex flex-col">
   <app-navbar class="z-50" [showDrawerMenu]="true" [(drawerOpen)]="drawerOpen"></app-navbar>
 
-  <div class="menu block lg:hidden w-full bg-gray-700 !text-white pb-4 z-50" [class.mb-8]="!drawerOpen" [class.h-full]="drawerOpen">
+  <div
+    class="menu block lg:hidden w-full bg-gray-700 !text-default-inverse pb-4 z-50"
+    [class.mb-8]="!drawerOpen"
+    [class.h-full]="drawerOpen"
+  >
     <app-advanced-menu [items]="items" [drawerOpen]="drawerOpen" />
   </div>
 

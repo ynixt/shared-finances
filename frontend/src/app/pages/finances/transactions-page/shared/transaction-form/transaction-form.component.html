@@ -2,7 +2,11 @@
   @if (showRecurringScopeHint()) {
     <div
       class="rounded-xl border px-3 py-2 text-sm"
-      [class]="isRecurringWithFuture() ? 'border-cyan-300 bg-cyan-50 text-cyan-800' : 'border-slate-200 bg-slate-50 text-slate-700'"
+      [class]="
+        isRecurringWithFuture()
+          ? 'border-cyan-300 bg-cyan-50 text-cyan-800'
+          : 'border-slate-200 dark:border-surface-500 bg-slate-50 text-slate-700 dark:text-surface-500'
+      "
     >
       @if (isRecurringWithFuture()) {
         {{ 'financesPage.transactionsPage.editScope.thisAndFutureHint' | translate }}
@@ -62,11 +66,11 @@
   </label>
 
   @if (!isTransfer) {
-    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
+    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 dark:border-surface-500 p-3">
       <div class="flex items-center justify-between gap-2">
         <div>
-          <h3 class="text-sm font-semibold text-slate-800">{{ 'financesPage.transactionsPage.originsTitle' | translate }}</h3>
-          <p class="text-xs text-slate-600">{{ 'financesPage.transactionsPage.originsHint' | translate }}</p>
+          <h3 class="text-sm font-semibold text-default">{{ 'financesPage.transactionsPage.originsTitle' | translate }}</h3>
+          <p class="text-xs text-muted">{{ 'financesPage.transactionsPage.originsHint' | translate }}</p>
         </div>
         <button type="button" pButton outlined class="p-button-sm" (click)="addExtraSourceLeg()">
           {{ 'financesPage.transactionsPage.addFundingSource' | translate }}
@@ -137,7 +141,7 @@
         </div>
 
         @if (form.errors?.['sourcePercentsSum']; as err) {
-          <p class="text-sm text-red-700">
+          <p class="text-sm text-red-700 dark:text-red-400">
             {{ 'financesPage.transactionsPage.sourcePercentsMustEqual100' | translate: { sum: err.sum } }}
           </p>
         }
@@ -158,11 +162,11 @@
   }
 
   @if (!isTransfer && selectedGroup != null) {
-    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
+    <section class="flex flex-col gap-3 rounded-xl border border-slate-200 dark:border-surface-500 p-3">
       <div class="flex items-center justify-between gap-2">
         <div>
-          <h3 class="text-sm font-semibold text-slate-800">{{ 'financesPage.transactionsPage.beneficiariesTitle' | translate }}</h3>
-          <p class="text-xs text-slate-600">{{ 'financesPage.transactionsPage.beneficiariesHint' | translate }}</p>
+          <h3 class="text-sm font-semibold text-default">{{ 'financesPage.transactionsPage.beneficiariesTitle' | translate }}</h3>
+          <p class="text-xs text-muted">{{ 'financesPage.transactionsPage.beneficiariesHint' | translate }}</p>
         </div>
         <button type="button" pButton outlined class="p-button-sm" (click)="addExtraBeneficiaryLeg()">
           {{ 'financesPage.transactionsPage.addBeneficiary' | translate }}
@@ -231,13 +235,13 @@
       </div>
 
       @if (form.errors?.['beneficiaryPercentsSum']; as err) {
-        <p class="text-sm text-red-700">
+        <p class="text-sm text-red-700 dark:text-red-400">
           {{ 'financesPage.transactionsPage.beneficiaryPercentsMustEqual100' | translate: { sum: err.sum } }}
         </p>
       }
 
       @if (form.errors?.['duplicateBeneficiaries']) {
-        <p class="text-sm text-red-700">
+        <p class="text-sm text-red-700 dark:text-red-400">
           {{ 'financesPage.transactionsPage.beneficiariesMustBeUnique' | translate }}
         </p>
       }
@@ -303,19 +307,21 @@
 
       @if (isTransfer && shouldShowTargetValueField && hasDifferentTransferCurrencies()) {
         <label class="flex flex-col gap-2 md:col-span-2">
-          <span class="text-slate-700">{{ 'financesPage.transactionsPage.transferExchangeRate' | translate }}</span>
+          <span class="text-slate-700 dark:text-surface-500">{{ 'financesPage.transactionsPage.transferExchangeRate' | translate }}</span>
           @if (transferQuoteLoading()) {
-            <span class="text-sm text-slate-600">{{ 'financesPage.transactionsPage.transferExchangeRateLoading' | translate }}</span>
+            <span class="text-sm text-muted">{{ 'financesPage.transactionsPage.transferExchangeRateLoading' | translate }}</span>
           } @else if (transferRateDisplay(); as tr) {
             <input pInputText class="w-full cursor-default bg-slate-50" readonly tabindex="-1" [value]="transferRateReadonlyLabel(tr)" />
             @if (selectedTransferDateIso() !== tr.quoteDate) {
-              <small class="text-slate-600">{{ transferRateNearestHint(tr) }}</small>
+              <small class="text-muted">{{ transferRateNearestHint(tr) }}</small>
             }
           }
         </label>
       }
     } @else if (shouldShowDeferredTargetHint) {
-      <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+      <div
+        class="rounded-xl border border-slate-200 dark:border-surface-500 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:text-surface-500"
+      >
         {{ 'financesPage.transactionsPage.targetValueDeferredHint' | translate }}
       </div>
     }

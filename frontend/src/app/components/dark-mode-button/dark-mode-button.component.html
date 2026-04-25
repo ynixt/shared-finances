@@ -1,0 +1,8 @@
+<p-button
+  (click)="toggleDarkMode()"
+  [icon]="darkModeService.isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+  [rounded]="rounded"
+  [text]="text"
+  [styleClass]="buttonClass"
+  [attr.aria-label]="'general.darkMode' | translate"
+/>

@@ -5,7 +5,7 @@
 } @else {
   <form [formGroup]="form" (ngSubmit)="save()" class="mt-6 flex max-w-md flex-col gap-4">
     <label class="flex flex-col gap-2">
-      <span class="text-sm font-medium text-surface-700">{{ 'financesPage.goalsPage.wallet' | translate }}</span>
+      <span class="text-sm font-medium text-secondary">{{ 'financesPage.goalsPage.wallet' | translate }}</span>
       <app-wallet-item-picker [group]="selectedGroupForPicker()" [onlyBankAccounts]="true" formControlName="walletItem" />
     </label>
     <p-inputNumber formControlName="amount" mode="currency" [currency]="amountCurrency()" class="w-full" />

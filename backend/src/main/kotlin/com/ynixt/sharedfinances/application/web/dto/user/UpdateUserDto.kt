@@ -26,4 +26,5 @@ data class UpdateUserDto(
     val tmz: String,
     val removeAvatar: Boolean = false,
     val getFromGravatar: Boolean = false,
+    val darkMode: Boolean = false,
 )

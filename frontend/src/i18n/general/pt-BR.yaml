@@ -30,6 +30,7 @@ general:
   greetings: 'Olá, {{name}}'
   copy: Copiar
   language: Idioma
+  darkMode: Modo noturno
   date: Data
   loading: Carregando…
   view: Ver

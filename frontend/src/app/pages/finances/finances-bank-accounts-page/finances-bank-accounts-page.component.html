@@ -19,58 +19,60 @@
       <div class="grid grid-cols-12 gap-4">
         @for (bankAccount of items; track bankAccount) {
           <div class="col-span-12 lg:col-span-6 2xl:col-span-4 p-2">
-            <p-card>
-              <ng-template #title>
-                <div class="flex gap-2 items-center">
-                  <span class="mr-auto truncate">{{ bankAccount.name }}</span>
-                  <div class="flex items-center">
-                    <a
-                      [routerLink]="['edit', bankAccount.id]"
-                      pButton
-                      [rounded]="true"
-                      [text]="true"
-                      severity="secondary"
-                      size="small"
-                      [pTooltip]="'general.edit' | translate"
-                      tooltipPosition="top"
-                    >
-                      <fa-icon [icon]="editFinanceIcon"></fa-icon>
-                    </a>
-                    <a
-                      [routerLink]="[bankAccount.id]"
-                      pButton
-                      [rounded]="true"
-                      [text]="true"
-                      severity="secondary"
-                      size="small"
-                      [pTooltip]="'general.open' | translate"
-                      tooltipPosition="top"
-                    >
-                      <fa-icon [icon]="openFinanceIcon"></fa-icon>
-                    </a>
+            <a [routerLink]="[bankAccount.id]">
+              <p-card>
+                <ng-template #title>
+                  <div class="flex gap-2 items-center">
+                    <span class="mr-auto truncate">{{ bankAccount.name }}</span>
+                    <div class="flex items-center">
+                      <a
+                        [routerLink]="['edit', bankAccount.id]"
+                        pButton
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        size="small"
+                        [pTooltip]="'general.edit' | translate"
+                        tooltipPosition="top"
+                      >
+                        <fa-icon [icon]="editFinanceIcon"></fa-icon>
+                      </a>
+                      <a
+                        [routerLink]="[bankAccount.id]"
+                        pButton
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        size="small"
+                        [pTooltip]="'general.open' | translate"
+                        tooltipPosition="top"
+                      >
+                        <fa-icon [icon]="openFinanceIcon"></fa-icon>
+                      </a>
+                    </div>
                   </div>
-                </div>
-              </ng-template>
-              <table class="w-full">
-                <tbody>
-                  <tr>
-                    <td>{{ 'financesPage.bankAccountsPage.currency' | translate }}</td>
-                    <td>{{ bankAccount.currency }}</td>
-                  </tr>
-                  <tr>
-                    <td>{{ 'financesPage.bankAccountsPage.balance' | translate }}</td>
-                    <td>{{ bankAccount.balance | localCurrency: bankAccount.currency }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </p-card>
+                </ng-template>
+                <table class="w-full">
+                  <tbody>
+                    <tr>
+                      <td>{{ 'financesPage.bankAccountsPage.currency' | translate }}</td>
+                      <td>{{ bankAccount.currency }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ 'financesPage.bankAccountsPage.balance' | translate }}</td>
+                      <td>{{ bankAccount.balance | localCurrency: bankAccount.currency }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </p-card>
+            </a>
           </div>
         }
       </div>
     </ng-template>
 
     <ng-template #emptymessage>
-      <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+      <div class="rounded-2xl border border-dashed border-slate-300 bg-white dark:bg-surface-900 p-8 text-center text-slate-500">
         {{ 'financesPage.bankAccountsPage.empty' | translate }}
       </div>
     </ng-template>

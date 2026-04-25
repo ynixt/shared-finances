@@ -18,6 +18,7 @@ class UserPrincipal(
     var emailVerified: Boolean,
     var mfaEnabled: Boolean,
     var onboardingDone: Boolean,
+    var darkMode: Boolean,
     val authorities: List<GrantedAuthority>,
 ) : Principal {
     constructor(user: UserEntity, authorities: List<GrantedAuthority>) : this(
@@ -32,6 +33,7 @@ class UserPrincipal(
         user.emailVerified,
         user.mfaEnabled,
         user.onboardingDone,
+        user.darkMode,
         authorities,
     )
 

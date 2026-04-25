@@ -6,6 +6,7 @@ enum class ActionEventCategory {
     CREDIT_CARD,
     BANK_ACCOUNT_ASSOCIATE,
     CREDIT_CARD_ASSOCIATE,
+    USER,
     USER_CATEGORY,
     GROUP_CATEGORY,
 
