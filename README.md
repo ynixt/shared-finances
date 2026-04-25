@@ -16,6 +16,7 @@ Easily manage your personal and family finances. Free and open source.
 > This project was created with help of AI. I know this is a barrier for many people, so please be aware.
 
 # Features
+
 - [x] ‼️**Open Source**
 - [x] ‼️**Privacy**: we don't collect any data
 - [x] 2FA authentication
@@ -30,7 +31,8 @@ Easily manage your personal and family finances. Free and open source.
 - [x] Multilanguage support (for now only english and brazilian portuguese)
 - [x] Financial goals
 - [x] Simulation of a new expense can show if you can afford it
-- [x] Support of many currencies, including cryptocurrencies. (You can see the list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
+- [x] Support of many currencies, including cryptocurrencies. (You can see the
+  list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
 - [ ] PDF report (⌛ Planned)
 - [ ] Import transactions from xls/csv (⌛ Planned)
 - [ ] Email before due date (✖️ Not planned)
@@ -102,6 +104,7 @@ This configuration parameters are common between **only Shared Finances** and **
 | `SF_APP_LEGAL_TERMS_VERSION`               | date (yyyy-mm-dd) |          | `2026-04-14`                                              |                                                             | Date of terms of use                                                                                                                                      |
 | `SF_APP_LEGAL_PRIVACY_VERSION`             | date (yyyy-mm-dd) |          | `2026-04-14`                                              |                                                             | Date of terms of privacy                                                                                                                                  |
 | `SF_APP_EXCHANGE_RATES_PROVIDER_URL`       | string            |          | `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@` |                                                             | Provider of exchange rates.<br>Note: for now only [fawazahmed0/exchange-api](https://github.com/fawazahmed0/exchange-api) is supported.                   |
+| `SF_APP_EXCHANGE_FETCH_DELAY_MS`           | number            |          | `1000`                                                    |                                                             | Time, in milisseconds, between extraction of exchange quotes                                                                                              |
 | `SF_APP_REFRESH_EXCHANGE_RATES_CRON`       | string (cron)     |          | `0 0 0/12 * * *`                                          |                                                             | Cron to get new exchange rates                                                                                                                            |
 | `SF_APP_MATERIALIZE_GOAL_CRON`             | string (cron)     |          | `0 0 0 * * *`                                             |                                                             | Cron to generate scheduled financial goals.                                                                                                               |
 | `SF_APP_GENERATE_ENTRY_CRON`               | string (cron)     |          | `0 0 0 * * *`                                             |                                                             | Cron to generate scheduled financial transactions.                                                                                                        |
@@ -207,11 +210,17 @@ This configuration parameters are common between **only Shared Finances** and **
 # Screenshots
 
 ## Desktop
-<img src="/frontend/public/images/screenshots/ss01.png" width="40%" height="40%">
+
+<img src="/frontend/public/images/screenshots/ss01.png" width="50%" height="50%">
 
 ## Mobile
-<img src="/frontend/public/images/screenshots/ss-mobile01.png" width="15%" height="15%">
-<img src="/frontend/public/images/screenshots/ss-mobile02.png" width="15%" height="15%">
+
+<img src="/frontend/public/images/screenshots/ss-mobile01.png" width="20%" height="20%">
+<img src="/frontend/public/images/screenshots/ss-mobile02.png" width="20%" height="20%">
+
+# Acknowledgments
+
+-  [fawazahmed0](https://github.com/fawazahmed0) for creating the [API to obtain exchange rates](https://github.com/fawazahmed0/exchange-api)
 
 # License
 

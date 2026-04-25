@@ -138,6 +138,7 @@ app:
     pathStyleAccessEnabled: ${SF_APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
   exchangeRates:
     providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
+    fetchDelayMs: ${SF_APP_EXCHANGE_FETCH_DELAY_MS:1000}
   jobs:
     refreshExchangeRates:
       cron: ${SF_APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * *}

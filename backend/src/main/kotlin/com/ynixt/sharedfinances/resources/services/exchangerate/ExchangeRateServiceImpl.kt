@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ClassPathResource
 import org.springframework.stereotype.Service
@@ -26,15 +27,13 @@ import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.readValue
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
 import java.time.Clock
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlin.math.absoluteValue
+import kotlin.time.Duration.Companion.milliseconds
 
 @Service
 class ExchangeRateServiceImpl(
@@ -46,9 +45,11 @@ class ExchangeRateServiceImpl(
     private val userRepository: UserRepository,
     private val clock: Clock,
     private val objectMapper: ObjectMapper,
-    @Value("\${app.exchangeRates.fetchDelayMs:500}")
+    @param:Value($$"${app.exchangeRates.fetchDelayMs}")
     private val fetchDelayMs: Long,
 ) : ExchangeRateService {
+    private val logger = LoggerFactory.getLogger(ExchangeRateService::class.java)
+
     private val fixedCurrencies: Set<String> by lazy {
         val json = ClassPathResource("currencies.json").inputStream.use { it.readAllBytes().decodeToString() }
         val map: Map<String, String> = objectMapper.readValue(json)
@@ -56,29 +57,7 @@ class ExchangeRateServiceImpl(
     }
 
     override suspend fun syncLatestQuotes(): Int {
-        // #region agent log
-        run {
-            val wd = Paths.get(System.getProperty("user.dir"))
-            val logPath =
-                if (wd.fileName.toString() == "backend") wd.parent.resolve("debug-e83397.log") else wd.resolve("debug-e83397.log")
-            val line =
-                """{"sessionId":"e83397","hypothesisId":"H1","location":"ExchangeRateServiceImpl.syncLatestQuotes","message":"sync start clock","data":{"localDate":"${LocalDate.now(
-                    clock,
-                )}","clockInstant":"${clock.instant()}"},"timestamp":${System.currentTimeMillis()}}"""
-            try {
-                Files.writeString(logPath, line + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-            } catch (_: Exception) {
-            }
-        }
-        // #endregion
-        val dynamicCurrencies =
-            (
-                walletItemRepository.findDistinctCurrencies().collectList().awaitSingle() +
-                    userRepository.findDistinctDefaultCurrencies().collectList().awaitSingle()
-            ).map { it.uppercase() }
-                .toSet()
-
-        val currencies = fixedCurrencies + dynamicCurrencies
+        val currencies = fixedCurrencies
 
         if (currencies.size < 2) return 0
 
@@ -90,26 +69,34 @@ class ExchangeRateServiceImpl(
             val quoteCurrencies = currencies - baseCurrency
 
             if (!isFirstFetch) {
-                delay(fetchDelayMs)
+                delay(fetchDelayMs.milliseconds)
             }
             isFirstFetch = false
 
             exchangeRateProvider
                 .fetchLatest(baseCurrency = baseCurrency, quoteCurrencies = quoteCurrencies)
                 .forEach { quote ->
-                    exchangeRateQuoteRepository
-                        .upsertDaily(
-                            id = UUID.randomUUID(),
-                            source = exchangeRateProvider.source,
-                            baseCurrency = quote.baseCurrency,
-                            quoteCurrency = quote.quoteCurrency,
-                            quoteDate = quote.quoteDate,
-                            rate = quote.rate,
-                            quotedAt = quote.quotedAt,
-                            fetchedAt = fetchedAt,
-                        ).awaitSingle()
+                    try {
+                        exchangeRateQuoteRepository
+                            .upsertDaily(
+                                id = UUID.randomUUID(),
+                                source = exchangeRateProvider.source,
+                                baseCurrency = quote.baseCurrency,
+                                quoteCurrency = quote.quoteCurrency,
+                                quoteDate = quote.quoteDate,
+                                rate = quote.rate,
+                                quotedAt = quote.quotedAt,
+                                fetchedAt = fetchedAt,
+                            ).awaitSingle()
 
-                    totalUpserts += 1
+                        totalUpserts += 1
+                    } catch (ex: Exception) {
+                        logger.error(
+                            "Error on upsert latest quote - " +
+                                "${quote.baseCurrency} - ${quote.quoteCurrency} - ${quote.quoteDate}: ${ex.message}",
+                            ex,
+                        )
+                    }
                 }
         }
 
@@ -138,26 +125,34 @@ class ExchangeRateServiceImpl(
             val quoteCurrencies = allCurrencies - baseCurrency
 
             if (!isFirstFetch) {
-                delay(fetchDelayMs)
+                delay(fetchDelayMs.milliseconds)
             }
             isFirstFetch = false
 
             exchangeRateProvider
                 .fetchForDate(baseCurrency = baseCurrency, quoteCurrencies = quoteCurrencies, date = date)
                 .forEach { quote ->
-                    exchangeRateQuoteRepository
-                        .upsertDaily(
-                            id = UUID.randomUUID(),
-                            source = exchangeRateProvider.source,
-                            baseCurrency = quote.baseCurrency,
-                            quoteCurrency = quote.quoteCurrency,
-                            quoteDate = quote.quoteDate,
-                            rate = quote.rate,
-                            quotedAt = quote.quotedAt,
-                            fetchedAt = fetchedAt,
-                        ).awaitSingle()
+                    try {
+                        exchangeRateQuoteRepository
+                            .upsertDaily(
+                                id = UUID.randomUUID(),
+                                source = exchangeRateProvider.source,
+                                baseCurrency = quote.baseCurrency,
+                                quoteCurrency = quote.quoteCurrency,
+                                quoteDate = quote.quoteDate,
+                                rate = quote.rate,
+                                quotedAt = quote.quotedAt,
+                                fetchedAt = fetchedAt,
+                            ).awaitSingle()
 
-                    totalUpserts += 1
+                        totalUpserts += 1
+                    } catch (ex: Exception) {
+                        logger.error(
+                            "Error on upsert quote for date - " +
+                                "${quote.baseCurrency} - ${quote.quoteCurrency} - ${quote.quoteDate}: ${ex.message}",
+                            ex,
+                        )
+                    }
                 }
         }
 
@@ -403,7 +398,7 @@ class ExchangeRateServiceImpl(
             before == null && after == null -> null
             before == null -> after
             after == null -> before
-            else -> chooseClosest(referenceDate, before = before!!, after = after!!)
+            else -> chooseClosest(referenceDate, before = before, after = after)
         }
     }
 
