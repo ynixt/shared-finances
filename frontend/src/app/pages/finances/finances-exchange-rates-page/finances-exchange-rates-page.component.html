@@ -31,7 +31,7 @@
     <p-progress-spinner />
   </div>
 } @else {
-  <div class="pt-4">
+  <div class="pt-4 w-screen md:w-full overflow-x-auto">
     <p-table [value]="quotes" [tableStyle]="{ width: '100%' }" [loading]="loading">
       <ng-template #header>
         <tr>
