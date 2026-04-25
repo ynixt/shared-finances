@@ -7,6 +7,7 @@ const {
     QUOTES,
     SF_APP_SERVICE_SECRET,
     API_URL = "",
+    DELAY_MS = "2000",
 } = process.env;
 
 const CURRENCIES_FROM_JSON = process.argv.includes("--currencies-from-json");
@@ -61,18 +62,22 @@ async function syncExchangeRates(date, quotesParams, currency) {
 
     const url = `${API_URL}/exchange-rates/sync?date=${date}${quotesParams}${currencyParam}`;
 
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            Authorization: SF_APP_SERVICE_SECRET,
-        },
-    });
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                Authorization: SF_APP_SERVICE_SECRET,
+            },
+        });
 
-    const body = await response.text();
+        const body = await response.text();
 
-    console.log(
-        `HTTP ${response.status} - ${body}`
-    );
+        console.log(
+            `HTTP ${response.status} - ${body}`
+        );
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 async function main() {
@@ -98,14 +103,14 @@ async function main() {
 
                 await syncExchangeRates(current, "", currency);
 
-                await sleep(2000);
+                await sleep(DELAY_MS);
             }
         } else {
             process.stdout.write(`Syncing ${current} ... `);
 
             await syncExchangeRates(current, quotesParams);
 
-            await sleep(2000);
+            await sleep(DELAY_MS);
         }
 
         current = addOneDay(current);
