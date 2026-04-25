@@ -140,7 +140,7 @@ app:
     providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
   jobs:
     refreshExchangeRates:
-      cron: ${SF_APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * 1}
+      cron: ${SF_APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * *}
     materializeGoal:
       cron: ${SF_APP_MATERIALIZE_GOAL_CRON:0 0 0 * * *}
     generateEntry:
