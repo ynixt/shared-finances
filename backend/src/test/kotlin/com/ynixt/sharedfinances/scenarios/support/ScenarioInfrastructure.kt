@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.scenarios.support
 
 import com.ynixt.sharedfinances.application.web.dto.GenerateEntryRecurrenceRequestDto
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
@@ -30,6 +31,7 @@ import com.ynixt.sharedfinances.domain.services.AvatarService
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
+import com.ynixt.sharedfinances.domain.services.actionevents.UserActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
 import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
@@ -194,6 +196,13 @@ internal class NoOpBankAccountActionEventService : BankAccountActionEventService
     override suspend fun sendDeletedBankAccount(
         userId: UUID,
         id: UUID,
+    ) {}
+}
+
+internal class NoOpUserActionEventService : UserActionEventService {
+    override suspend fun sendUpdatedUser(
+        userId: UUID,
+        user: UserEntity,
     ) {}
 }
 

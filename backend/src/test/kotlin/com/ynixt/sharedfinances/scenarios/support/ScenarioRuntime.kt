@@ -261,6 +261,7 @@ internal class ScenarioRuntime(
             authProperties = AuthProperties(),
             clock = clock,
             accountDeletionService = NoOpAccountDeletionService,
+            userActionEventService = NoOpUserActionEventService(),
         )
 
     val recurrenceOccurrenceSimulationService: RecurrenceOccurrenceSimulationService =
