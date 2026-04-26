@@ -13,6 +13,8 @@ import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRe
 import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
+import com.ynixt.sharedfinances.domain.services.walletentry.TransferQuoteRequest
+import com.ynixt.sharedfinances.domain.services.walletentry.TransferRateRequest
 import com.ynixt.sharedfinances.scenarios.support.ScenarioRuntime
 import com.ynixt.sharedfinances.scenarios.support.util.toBigDecimalSafe
 import java.math.BigDecimal
@@ -314,6 +316,48 @@ class WalletScenarioWhen internal constructor(
             ) { "Transfer was rejected due to insufficient permissions for selected group/origin/target" }
 
         context.lastWalletEventId = resolver.extractWalletEventId(created)
+    }
+
+    suspend fun suggestTransferTargetValue(
+        originValue: Number,
+        date: LocalDate,
+        originId: UUID,
+        targetId: UUID,
+        groupId: UUID? = null,
+    ) {
+        val userId = resolver.ensureUser()
+        context.lastTransferQuote =
+            runtime.walletEntryTransferQuoteService.quote(
+                userId = userId,
+                request =
+                    TransferQuoteRequest(
+                        groupId = groupId,
+                        originId = originId,
+                        targetId = targetId,
+                        date = date,
+                        originValue = originValue.toBigDecimalSafe(),
+                    ),
+            )
+    }
+
+    suspend fun resolveTransferExchangeRate(
+        date: LocalDate,
+        originId: UUID,
+        targetId: UUID,
+        groupId: UUID? = null,
+    ) {
+        val userId = resolver.ensureUser()
+        context.lastTransferRate =
+            runtime.walletEntryTransferQuoteService.transferRate(
+                userId = userId,
+                request =
+                    TransferRateRequest(
+                        groupId = groupId,
+                        originId = originId,
+                        targetId = targetId,
+                        date = date,
+                    ),
+            )
     }
 
     suspend fun payBill(

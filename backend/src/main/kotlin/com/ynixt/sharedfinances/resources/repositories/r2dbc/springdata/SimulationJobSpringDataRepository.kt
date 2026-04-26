@@ -10,16 +10,10 @@ import reactor.core.publisher.Mono
 import java.time.OffsetDateTime
 import java.util.UUID
 
-interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntity, String> {
-    fun findByIdAndOwnerUserId(
-        id: UUID,
-        ownerUserId: UUID,
-    ): Mono<SimulationJobEntity>
+interface SimulationJobRepository {
+    fun save(entity: SimulationJobEntity): Mono<SimulationJobEntity>
 
-    fun findByIdAndOwnerGroupId(
-        id: UUID,
-        ownerGroupId: UUID,
-    ): Mono<SimulationJobEntity>
+    fun findById(id: String): Mono<SimulationJobEntity>
 
     fun findAllByOwnerUserIdOrderByCreatedAtDescIdDesc(
         ownerUserId: UUID,
@@ -34,6 +28,62 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
     fun countByOwnerUserId(ownerUserId: UUID): Mono<Long>
 
     fun countByOwnerGroupId(ownerGroupId: UUID): Mono<Long>
+
+    fun cancelIfOwnedPending(
+        id: UUID,
+        ownerUserId: UUID,
+    ): Mono<Long>
+
+    fun cancelIfOwnedByGroupPending(
+        id: UUID,
+        ownerGroupId: UUID,
+    ): Mono<Long>
+
+    fun reconcileExpiredLeases(now: OffsetDateTime): Mono<Long>
+
+    fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long>
+
+    fun deletePersonalIfCreator(
+        id: UUID,
+        userId: UUID,
+    ): Mono<Long>
+
+    fun deleteGroupJob(
+        id: UUID,
+        groupId: UUID,
+    ): Mono<Long>
+
+    fun cancelAllPendingLinkedToUser(userId: UUID): Mono<Long>
+
+    fun deleteAllLinkedToUser(userId: UUID): Mono<Long>
+}
+
+interface SimulationJobSpringDataRepository :
+    R2dbcRepository<SimulationJobEntity, String>,
+    SimulationJobRepository {
+    fun findByIdAndOwnerUserId(
+        id: UUID,
+        ownerUserId: UUID,
+    ): Mono<SimulationJobEntity>
+
+    fun findByIdAndOwnerGroupId(
+        id: UUID,
+        ownerGroupId: UUID,
+    ): Mono<SimulationJobEntity>
+
+    override fun findAllByOwnerUserIdOrderByCreatedAtDescIdDesc(
+        ownerUserId: UUID,
+        pageable: Pageable,
+    ): Flux<SimulationJobEntity>
+
+    override fun findAllByOwnerGroupIdOrderByCreatedAtDescIdDesc(
+        ownerGroupId: UUID,
+        pageable: Pageable,
+    ): Flux<SimulationJobEntity>
+
+    override fun countByOwnerUserId(ownerUserId: UUID): Mono<Long>
+
+    override fun countByOwnerGroupId(ownerGroupId: UUID): Mono<Long>
 
     @Modifying
     @Query(
@@ -52,7 +102,7 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
             AND status IN ('QUEUED', 'RUNNING')
         """,
     )
-    fun cancelIfOwnedPending(
+    override fun cancelIfOwnedPending(
         id: UUID,
         ownerUserId: UUID,
     ): Mono<Long>
@@ -74,7 +124,7 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
             AND status IN ('QUEUED', 'RUNNING')
         """,
     )
-    fun cancelIfOwnedByGroupPending(
+    override fun cancelIfOwnedByGroupPending(
         id: UUID,
         ownerGroupId: UUID,
     ): Mono<Long>
@@ -95,11 +145,11 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
             AND lease_expires_at < :now
         """,
     )
-    fun reconcileExpiredLeases(now: OffsetDateTime): Mono<Long>
+    override fun reconcileExpiredLeases(now: OffsetDateTime): Mono<Long>
 
     @Modifying
     @Query("DELETE FROM simulation_job WHERE created_at < :threshold")
-    fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long>
+    override fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long>
 
     @Modifying
     @Query(
@@ -111,7 +161,7 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
           AND requested_by_user_id = :userId
         """,
     )
-    fun deletePersonalIfCreator(
+    override fun deletePersonalIfCreator(
         id: UUID,
         userId: UUID,
     ): Mono<Long>
@@ -125,7 +175,7 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
           AND owner_user_id IS NULL
         """,
     )
-    fun deleteGroupJob(
+    override fun deleteGroupJob(
         id: UUID,
         groupId: UUID,
     ): Mono<Long>
@@ -146,7 +196,7 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
             AND status IN ('QUEUED', 'RUNNING')
         """,
     )
-    fun cancelAllPendingLinkedToUser(userId: UUID): Mono<Long>
+    override fun cancelAllPendingLinkedToUser(userId: UUID): Mono<Long>
 
     @Modifying
     @Query(
@@ -155,5 +205,5 @@ interface SimulationJobSpringDataRepository : R2dbcRepository<SimulationJobEntit
         WHERE owner_user_id = :userId OR requested_by_user_id = :userId
         """,
     )
-    fun deleteAllLinkedToUser(userId: UUID): Mono<Long>
+    override fun deleteAllLinkedToUser(userId: UUID): Mono<Long>
 }

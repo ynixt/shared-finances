@@ -116,6 +116,46 @@ class WalletScenarioThen internal constructor(
             .isEqualByComparingTo(expected.toBigDecimalSafe())
     }
 
+    fun transferQuoteTargetValueShouldBe(expected: Number) {
+        val quote = requireNotNull(context.lastTransferQuote) { "Transfer quote was not requested yet" }
+
+        assertThat(quote.targetValue)
+            .describedAs("suggested transfer target value")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun transferRateShouldBe(expected: Number) {
+        val rate = requireNotNull(context.lastTransferRate) { "Transfer rate was not requested yet" }
+
+        assertThat(rate.rate)
+            .describedAs("transfer exchange rate")
+            .isEqualByComparingTo(expected.toBigDecimalSafe())
+    }
+
+    fun transferRateQuoteDateShouldBe(expected: LocalDate) {
+        val rate = requireNotNull(context.lastTransferRate) { "Transfer rate was not requested yet" }
+
+        assertThat(rate.quoteDate)
+            .describedAs("transfer quote date")
+            .isEqualTo(expected)
+    }
+
+    fun transferRateBaseCurrencyShouldBe(expected: String) {
+        val rate = requireNotNull(context.lastTransferRate) { "Transfer rate was not requested yet" }
+
+        assertThat(rate.baseCurrency)
+            .describedAs("transfer base currency")
+            .isEqualTo(expected)
+    }
+
+    fun transferRateQuoteCurrencyShouldBe(expected: String) {
+        val rate = requireNotNull(context.lastTransferRate) { "Transfer rate was not requested yet" }
+
+        assertThat(rate.quoteCurrency)
+            .describedAs("transfer quote currency")
+            .isEqualTo(expected)
+    }
+
     suspend fun recurrenceExecutionCountShouldBe(
         expected: Int,
         recurrenceConfigId: UUID? = null,

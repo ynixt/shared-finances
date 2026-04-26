@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import tools.jackson.databind.ObjectMapper
@@ -29,6 +30,7 @@ import java.util.UUID
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class CreditCardBillPaymentIntegrationTest : IntegrationTestContainers() {
     @Autowired
     private lateinit var webClient: WebTestClient
@@ -310,8 +312,16 @@ class CreditCardBillPaymentIntegrationTest : IntegrationTestContainers() {
                 mapOf(
                     "type" to "EXPENSE",
                     "groupId" to null,
-                    "originId" to creditCardId,
+                    "originId" to null,
                     "targetId" to null,
+                    "sources" to
+                        listOf(
+                            mapOf(
+                                "walletItemId" to creditCardId,
+                                "contributionPercent" to BigDecimal("100.00"),
+                                "billDate" to LocalDate.of(2026, 4, 1),
+                            ),
+                        ),
                     "name" to "Card purchase",
                     "categoryId" to null,
                     "date" to LocalDate.of(2026, 4, 5),

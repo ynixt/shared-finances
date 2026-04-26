@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.scenarios.support
 
 import com.ynixt.sharedfinances.application.web.dto.GenerateEntryRecurrenceRequestDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
@@ -14,14 +15,17 @@ import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.exceptions.http.ExchangeRateUnavailableException
 import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.mapper.CreditCardMapper
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
+import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
@@ -35,6 +39,9 @@ import com.ynixt.sharedfinances.domain.services.actionevents.UserActionEventServ
 import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEventService
 import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
+import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
+import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
+import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import kotlinx.coroutines.flow.Flow
@@ -44,14 +51,18 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.crypto.password.PasswordEncoder
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.ArrayDeque
 import java.util.UUID
+import kotlin.math.absoluteValue
 
 internal class MutableScenarioClock(
     private var date: LocalDate,
@@ -436,6 +447,163 @@ internal class ScenarioCreditCardBillMapper : CreditCardBillMapper {
             paid = entity.paid,
             value = entity.value,
         )
+}
+
+internal class ScenarioStoredExchangeRateService : ExchangeRateService {
+    private val quotes = mutableListOf<ExchangeRateQuoteEntity>()
+
+    fun storeQuote(
+        baseCurrency: String,
+        quoteCurrency: String,
+        quoteDate: LocalDate,
+        rate: BigDecimal,
+        source: String = "scenario-test",
+        quotedAt: OffsetDateTime = quoteDate.atStartOfDay().atOffset(ZoneOffset.UTC),
+        fetchedAt: OffsetDateTime = quotedAt,
+    ) {
+        val entity =
+            ExchangeRateQuoteEntity(
+                source = source,
+                baseCurrency = baseCurrency.uppercase(),
+                quoteCurrency = quoteCurrency.uppercase(),
+                quoteDate = quoteDate,
+                rate = rate,
+                quotedAt = quotedAt,
+                fetchedAt = fetchedAt,
+            ).also { quote ->
+                quote.id = UUID.randomUUID()
+            }
+        quotes.add(entity)
+    }
+
+    override suspend fun syncLatestQuotes(): Int = 0
+
+    override suspend fun syncQuotesForDate(
+        date: LocalDate,
+        baseCurrencies: Set<String>?,
+    ): Int = 0
+
+    override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity> {
+        val filtered =
+            quotes
+                .asSequence()
+                .filter { quote ->
+                    request.baseCurrency == null || quote.baseCurrency == request.baseCurrency.uppercase()
+                }.filter { quote ->
+                    request.quoteCurrency == null || quote.quoteCurrency == request.quoteCurrency.uppercase()
+                }.filter { quote ->
+                    request.quoteDateFrom == null || !quote.quoteDate.isBefore(request.quoteDateFrom)
+                }.filter { quote ->
+                    request.quoteDateTo == null || !quote.quoteDate.isAfter(request.quoteDateTo)
+                }.sortedWith(
+                    compareByDescending<ExchangeRateQuoteEntity> { it.quoteDate }
+                        .thenByDescending { it.quotedAt }
+                        .thenByDescending { it.id?.toString().orEmpty() },
+                ).toList()
+
+        return CursorPage(
+            items = filtered,
+            nextCursor = null,
+            hasNext = false,
+        )
+    }
+
+    override suspend fun getRate(
+        fromCurrency: String,
+        toCurrency: String,
+        referenceDate: LocalDate,
+    ): BigDecimal = resolveRate(fromCurrency, toCurrency, referenceDate).rate
+
+    override suspend fun resolveRate(
+        fromCurrency: String,
+        toCurrency: String,
+        referenceDate: LocalDate,
+    ): ResolvedExchangeRate {
+        val normalizedFrom = fromCurrency.uppercase()
+        val normalizedTo = toCurrency.uppercase()
+
+        if (normalizedFrom == normalizedTo) {
+            return ResolvedExchangeRate(rate = BigDecimal.ONE, quoteDate = referenceDate)
+        }
+
+        val selected =
+            selectQuote(normalizedFrom, normalizedTo, referenceDate)
+                ?: throw ExchangeRateUnavailableException(normalizedFrom, normalizedTo, referenceDate)
+
+        return ResolvedExchangeRate(
+            rate = selected.rate,
+            quoteDate = selected.quoteDate,
+        )
+    }
+
+    override suspend fun convert(
+        value: BigDecimal,
+        fromCurrency: String,
+        toCurrency: String,
+        referenceDate: LocalDate,
+    ): BigDecimal =
+        value
+            .multiply(getRate(fromCurrency, toCurrency, referenceDate))
+            .setScale(2, RoundingMode.HALF_UP)
+
+    override suspend fun convertBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, BigDecimal> {
+        val result = linkedMapOf<ConversionRequest, BigDecimal>()
+        requests.forEach { request ->
+            val rate =
+                getRate(
+                    fromCurrency = request.fromCurrency,
+                    toCurrency = request.toCurrency,
+                    referenceDate = request.referenceDate,
+                )
+            result[request] =
+                request.value
+                    .multiply(rate)
+                    .setScale(2, RoundingMode.HALF_UP)
+        }
+        return result
+    }
+
+    private fun selectQuote(
+        baseCurrency: String,
+        quoteCurrency: String,
+        referenceDate: LocalDate,
+    ): ExchangeRateQuoteEntity? {
+        val pairQuotes =
+            quotes
+                .asSequence()
+                .filter { quote ->
+                    quote.baseCurrency == baseCurrency && quote.quoteCurrency == quoteCurrency
+                }.sortedWith(
+                    compareBy<ExchangeRateQuoteEntity> { it.quoteDate }
+                        .thenBy { it.quotedAt }
+                        .thenBy { it.id?.toString().orEmpty() },
+                ).toList()
+
+        if (pairQuotes.isEmpty()) {
+            return null
+        }
+
+        val before = pairQuotes.lastOrNull { !it.quoteDate.isAfter(referenceDate) }
+        val after = pairQuotes.firstOrNull { !it.quoteDate.isBefore(referenceDate) }
+
+        return when {
+            before == null && after == null -> null
+            before == null -> after
+            after == null -> before
+            else -> chooseClosest(referenceDate = referenceDate, before = before, after = after)
+        }
+    }
+
+    private fun chooseClosest(
+        referenceDate: LocalDate,
+        before: ExchangeRateQuoteEntity,
+        after: ExchangeRateQuoteEntity,
+    ): ExchangeRateQuoteEntity {
+        val beforeDistance = ChronoUnit.DAYS.between(before.quoteDate, referenceDate).absoluteValue
+        val afterDistance = ChronoUnit.DAYS.between(referenceDate, after.quoteDate).absoluteValue
+
+        return if (beforeDistance <= afterDistance) before else after
+    }
 }
 
 internal fun nowOffset(): OffsetDateTime = OffsetDateTime.now()

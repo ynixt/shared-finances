@@ -40,7 +40,7 @@ class WalletScenarioDsl(
             initialDate = initialDate,
             groupService = groupService,
             groupDebtService = groupDebtService,
-            exchangeRateService = exchangeRateService ?: identityExchangeRateService(),
+            providedExchangeRateService = exchangeRateService ?: identityExchangeRateService(),
         )
     private val context = WalletScenarioContext()
     private val userSetupOps = UserScenarioSetupOps(runtime = runtime, context = context)

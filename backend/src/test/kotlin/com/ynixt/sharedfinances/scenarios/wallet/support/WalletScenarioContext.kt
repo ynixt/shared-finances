@@ -5,6 +5,8 @@ import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.dashboard.GroupOverviewDashboard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboard
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
+import com.ynixt.sharedfinances.domain.services.walletentry.TransferQuoteResult
+import com.ynixt.sharedfinances.domain.services.walletentry.TransferRateResult
 import com.ynixt.sharedfinances.scenarios.support.ScenarioContext
 import java.time.YearMonth
 import java.util.UUID
@@ -23,6 +25,8 @@ internal class WalletScenarioContext(
     var lastGroupOverview: GroupOverviewDashboard? = null,
     var lastGroupFeedRequest: GroupFeedRequest? = null,
     var lastGroupFeedPage: CursorPage<EventListResponse>? = null,
+    var lastTransferQuote: TransferQuoteResult? = null,
+    var lastTransferRate: TransferRateResult? = null,
 ) : ScenarioContext(
         currentUserId = currentUserId,
         currentCurrency = currentCurrency,

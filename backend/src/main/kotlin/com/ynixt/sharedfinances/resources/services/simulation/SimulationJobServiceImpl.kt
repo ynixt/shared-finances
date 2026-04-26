@@ -15,8 +15,8 @@ import com.ynixt.sharedfinances.domain.services.simulation.NewSimulationJobInput
 import com.ynixt.sharedfinances.domain.services.simulation.SimulationJobProcessor
 import com.ynixt.sharedfinances.domain.services.simulation.SimulationJobService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.SimulationJobDatabaseClientRepository
-import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.SimulationJobSpringDataRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.SimulationJobDispatchRepository
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.SimulationJobRepository
 import com.ynixt.sharedfinances.resources.services.events.NewEventGroupInfo
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -37,8 +37,8 @@ import java.util.UUID
 
 @Service
 class SimulationJobServiceImpl(
-    private val simulationJobRepository: SimulationJobSpringDataRepository,
-    private val simulationJobDatabaseClientRepository: SimulationJobDatabaseClientRepository,
+    private val simulationJobRepository: SimulationJobRepository,
+    private val simulationJobDatabaseClientRepository: SimulationJobDispatchRepository,
     private val simulationJobDispatchQueueProducer: SimulationJobDispatchQueueProducer,
     private val simulationJobProcessor: SimulationJobProcessor,
     private val groupPermissionService: GroupPermissionService,

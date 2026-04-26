@@ -9,6 +9,7 @@ import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteList
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
+import com.ynixt.sharedfinances.scenarios.support.ScenarioStoredExchangeRateService
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -193,6 +194,102 @@ class TransferScenarioDslTest {
             then {
                 balanceShouldBe(expected = originInitialBalance.subtract(originValue), bankAccountId = originBankAccountId)
                 balanceShouldBe(expected = targetInitialBalance.add(targetValue), bankAccountId = targetBankAccountId)
+            }
+        }
+    }
+
+    @Test
+    fun `should suggest transfer target value from stored quote`() {
+        val date = LocalDate.of(2026, 4, 10)
+        val exchangeRateService = ScenarioStoredExchangeRateService()
+
+        lateinit var originId: UUID
+        lateinit var targetId: UUID
+
+        walletScenario(initialDate = date, exchangeRateService = exchangeRateService) {
+            given {
+                user(defaultCurrency = "USD")
+                originId =
+                    bankAccount(
+                        name = "US Wallet",
+                        balance = BigDecimal.ZERO,
+                        currency = "USD",
+                    )
+                targetId =
+                    bankAccount(
+                        name = "BR Wallet",
+                        balance = BigDecimal.ZERO,
+                        currency = "BRL",
+                    )
+                exchangeRateQuote(
+                    baseCurrency = "USD",
+                    quoteCurrency = "BRL",
+                    quoteDate = date,
+                    rate = BigDecimal("5.40"),
+                    source = "scenario-test",
+                )
+            }
+
+            `when` {
+                suggestTransferTargetValue(
+                    originValue = BigDecimal("100.00"),
+                    date = date,
+                    originId = originId,
+                    targetId = targetId,
+                )
+            }
+
+            then {
+                transferQuoteTargetValueShouldBe(expected = BigDecimal("540.00"))
+            }
+        }
+    }
+
+    @Test
+    fun `should resolve transfer exchange rate from stored quote`() {
+        val date = LocalDate.of(2026, 4, 10)
+        val exchangeRateService = ScenarioStoredExchangeRateService()
+
+        lateinit var originId: UUID
+        lateinit var targetId: UUID
+
+        walletScenario(initialDate = date, exchangeRateService = exchangeRateService) {
+            given {
+                user(defaultCurrency = "USD")
+                originId =
+                    bankAccount(
+                        name = "US Wallet 2",
+                        balance = BigDecimal.ZERO,
+                        currency = "USD",
+                    )
+                targetId =
+                    bankAccount(
+                        name = "BR Wallet 2",
+                        balance = BigDecimal.ZERO,
+                        currency = "BRL",
+                    )
+                exchangeRateQuote(
+                    baseCurrency = "USD",
+                    quoteCurrency = "BRL",
+                    quoteDate = date,
+                    rate = BigDecimal("5.40"),
+                    source = "scenario-test",
+                )
+            }
+
+            `when` {
+                resolveTransferExchangeRate(
+                    date = date,
+                    originId = originId,
+                    targetId = targetId,
+                )
+            }
+
+            then {
+                transferRateShouldBe(expected = BigDecimal("5.4"))
+                transferRateQuoteDateShouldBe(expected = date)
+                transferRateBaseCurrencyShouldBe(expected = "USD")
+                transferRateQuoteCurrencyShouldBe(expected = "BRL")
             }
         }
     }

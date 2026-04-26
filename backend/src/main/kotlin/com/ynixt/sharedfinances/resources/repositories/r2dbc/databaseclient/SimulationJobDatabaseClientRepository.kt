@@ -12,11 +12,57 @@ data class UserLinkedSimulationJobDispatchScope(
     val ownerGroupId: UUID?,
 )
 
+interface SimulationJobDispatchRepository {
+    fun findDispatchScopesForPendingJobsLinkedToUser(userId: UUID): Flux<UserLinkedSimulationJobDispatchScope>
+
+    fun promoteOldestQueuedUserJobToRunning(
+        ownerUserId: UUID,
+        workerId: String,
+        now: OffsetDateTime,
+        leaseExpiresAt: OffsetDateTime,
+    ): Mono<UUID>
+
+    fun promoteOldestQueuedGroupJobToRunning(
+        ownerGroupId: UUID,
+        workerId: String,
+        now: OffsetDateTime,
+        leaseExpiresAt: OffsetDateTime,
+    ): Mono<UUID>
+
+    fun findOldestQueuedUserJobId(ownerUserId: UUID): Mono<UUID>
+
+    fun findOldestQueuedGroupJobId(ownerGroupId: UUID): Mono<UUID>
+
+    fun findUserOwnersReadyForDispatch(limit: Int): Flux<UUID>
+
+    fun findGroupOwnersReadyForDispatch(limit: Int): Flux<UUID>
+
+    fun renewLease(
+        jobId: UUID,
+        workerId: String,
+        leaseExpiresAt: OffsetDateTime,
+    ): Mono<Long>
+
+    fun markCompleted(
+        jobId: UUID,
+        workerId: String,
+        resultPayload: String?,
+        finishedAt: OffsetDateTime,
+    ): Mono<Long>
+
+    fun markFailed(
+        jobId: UUID,
+        workerId: String,
+        errorMessage: String,
+        finishedAt: OffsetDateTime,
+    ): Mono<Long>
+}
+
 @Repository
 class SimulationJobDatabaseClientRepository(
     private val dbClient: DatabaseClient,
-) {
-    fun findDispatchScopesForPendingJobsLinkedToUser(userId: UUID): Flux<UserLinkedSimulationJobDispatchScope> =
+) : SimulationJobDispatchRepository {
+    override fun findDispatchScopesForPendingJobsLinkedToUser(userId: UUID): Flux<UserLinkedSimulationJobDispatchScope> =
         dbClient
             .sql(
                 """
@@ -34,7 +80,7 @@ class SimulationJobDatabaseClientRepository(
                 )
             }.all()
 
-    fun promoteOldestQueuedUserJobToRunning(
+    override fun promoteOldestQueuedUserJobToRunning(
         ownerUserId: UUID,
         workerId: String,
         now: OffsetDateTime,
@@ -87,7 +133,7 @@ class SimulationJobDatabaseClientRepository(
             .map { row, _ -> row.get("id", UUID::class.java)!! }
             .one()
 
-    fun promoteOldestQueuedGroupJobToRunning(
+    override fun promoteOldestQueuedGroupJobToRunning(
         ownerGroupId: UUID,
         workerId: String,
         now: OffsetDateTime,
@@ -140,7 +186,7 @@ class SimulationJobDatabaseClientRepository(
             .map { row, _ -> row.get("id", UUID::class.java)!! }
             .one()
 
-    fun findOldestQueuedUserJobId(ownerUserId: UUID): Mono<UUID> =
+    override fun findOldestQueuedUserJobId(ownerUserId: UUID): Mono<UUID> =
         dbClient
             .sql(
                 """
@@ -156,7 +202,7 @@ class SimulationJobDatabaseClientRepository(
             .map { row, _ -> row.get("id", UUID::class.java)!! }
             .one()
 
-    fun findOldestQueuedGroupJobId(ownerGroupId: UUID): Mono<UUID> =
+    override fun findOldestQueuedGroupJobId(ownerGroupId: UUID): Mono<UUID> =
         dbClient
             .sql(
                 """
@@ -172,7 +218,7 @@ class SimulationJobDatabaseClientRepository(
             .map { row, _ -> row.get("id", UUID::class.java)!! }
             .one()
 
-    fun findUserOwnersReadyForDispatch(limit: Int): Flux<UUID> =
+    override fun findUserOwnersReadyForDispatch(limit: Int): Flux<UUID> =
         dbClient
             .sql(
                 """
@@ -198,7 +244,7 @@ class SimulationJobDatabaseClientRepository(
             .map { row, _ -> row.get("owner_user_id", UUID::class.java)!! }
             .all()
 
-    fun findGroupOwnersReadyForDispatch(limit: Int): Flux<UUID> =
+    override fun findGroupOwnersReadyForDispatch(limit: Int): Flux<UUID> =
         dbClient
             .sql(
                 """
@@ -224,7 +270,7 @@ class SimulationJobDatabaseClientRepository(
             .map { row, _ -> row.get("owner_group_id", UUID::class.java)!! }
             .all()
 
-    fun renewLease(
+    override fun renewLease(
         jobId: UUID,
         workerId: String,
         leaseExpiresAt: OffsetDateTime,
@@ -247,7 +293,7 @@ class SimulationJobDatabaseClientRepository(
             .fetch()
             .rowsUpdated()
 
-    fun markCompleted(
+    override fun markCompleted(
         jobId: UUID,
         workerId: String,
         resultPayload: String?,
@@ -286,7 +332,7 @@ class SimulationJobDatabaseClientRepository(
             spec.fetch().rowsUpdated()
         }
 
-    fun markFailed(
+    override fun markFailed(
         jobId: UUID,
         workerId: String,
         errorMessage: String,

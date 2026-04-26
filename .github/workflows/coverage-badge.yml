@@ -1,0 +1,82 @@
+name: Coverage Badge
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-coverage-badge:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Run tests and generate JaCoCo report
+        working-directory: backend
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon jacocoTestReport
+
+      - name: Generate Shields endpoint JSON from JaCoCo XML
+        shell: python
+        run: |
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report_path = Path("backend/build/reports/jacoco/test/jacocoTestReport.xml")
+          root = ET.parse(report_path).getroot()
+          line_counter = root.find("./counter[@type='LINE']")
+          if line_counter is None:
+            raise RuntimeError("LINE counter not found in JaCoCo report")
+
+          missed = int(line_counter.attrib["missed"])
+          covered = int(line_counter.attrib["covered"])
+          total = missed + covered
+          coverage = 0.0 if total == 0 else (covered / total) * 100.0
+
+          if coverage >= 90:
+            color = "brightgreen"
+          elif coverage >= 80:
+            color = "green"
+          elif coverage >= 70:
+            color = "yellowgreen"
+          elif coverage >= 60:
+            color = "yellow"
+          elif coverage >= 50:
+            color = "orange"
+          else:
+            color = "red"
+
+          badge = {
+            "schemaVersion": 1,
+            "label": "coverage",
+            "message": f"{coverage:.2f}%",
+            "color": color,
+          }
+
+          output = Path(".github/badges/jacoco-coverage.json")
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_text(json.dumps(badge, ensure_ascii=True), encoding="utf-8")
+
+      - name: Commit coverage badge data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(ci): update jacoco coverage badge"
+          file_pattern: .github/badges/jacoco-coverage.json

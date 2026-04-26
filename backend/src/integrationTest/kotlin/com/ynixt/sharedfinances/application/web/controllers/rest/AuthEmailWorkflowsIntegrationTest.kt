@@ -112,13 +112,14 @@ class AuthEmailWorkflowsIntegrationTest : IntegrationTestContainers() {
                         ),
                     ).awaitSingle()
             val userId = user.id!!
-            val rawToken =
-                emailVerificationTokenRedisRepository
-                    .issueToken(
-                        userId,
-                        email,
-                        Duration.ofMinutes(180),
-                    ).awaitSingle()
+            val rawToken = UUID.randomUUID().toString()
+            emailVerificationTokenRedisRepository
+                .issueToken(
+                    userId,
+                    email,
+                    rawToken,
+                    Duration.ofMinutes(180),
+                ).awaitSingle()
 
             webClient
                 .post()

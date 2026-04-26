@@ -34,6 +34,7 @@ import com.ynixt.sharedfinances.domain.services.walletentry.ScheduledExecutionMa
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryRemovalService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryTransferQuoteService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceOccurrenceSimulationService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
@@ -49,6 +50,7 @@ import com.ynixt.sharedfinances.resources.services.walletentry.ScheduledExecutio
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryCreateServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryEditServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryRemovalServiceImpl
+import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryTransferQuoteServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEventListServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.recurrence.RecurrenceOccurrenceSimulationServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.recurrence.RecurrenceServiceImpl
@@ -115,10 +117,11 @@ internal class ScenarioRuntime(
     initialDate: LocalDate,
     private val groupService: GroupService = NoOpGroupService(),
     private val groupDebtService: GroupDebtService = NoOpGroupDebtService,
-    private val exchangeRateService: ExchangeRateService = identityExchangeRateService(),
+    private val providedExchangeRateService: ExchangeRateService = identityExchangeRateService(),
 ) {
     val queueProducer = InMemoryGenerateEntryRecurrenceQueueProducer()
     val clock = MutableScenarioClock(initialDate)
+    val exchangeRateService: ExchangeRateService = providedExchangeRateService
 
     private val walletItemRepository = InMemoryWalletItemRepository()
     private val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
@@ -324,6 +327,13 @@ internal class ScenarioRuntime(
             clock = clock,
         )
 
+    val walletEntryTransferQuoteService: WalletEntryTransferQuoteService =
+        WalletEntryTransferQuoteServiceImpl(
+            walletItemService = walletItemService,
+            groupService = groupService,
+            exchangeRateService = exchangeRateService,
+        )
+
     val messageSource: MessageSource =
         object : MessageSource {
             override fun getMessage(
@@ -475,6 +485,25 @@ internal class ScenarioRuntime(
                 clock = clock,
             )
         }
+
+    fun storeExchangeRateQuote(
+        baseCurrency: String,
+        quoteCurrency: String,
+        quoteDate: LocalDate,
+        rate: BigDecimal,
+        source: String = "scenario-test",
+    ) {
+        val storedService =
+            exchangeRateService as? ScenarioStoredExchangeRateService
+                ?: error("Exchange rate service does not support quote storage in scenario runtime")
+        storedService.storeQuote(
+            baseCurrency = baseCurrency,
+            quoteCurrency = quoteCurrency,
+            quoteDate = quoteDate,
+            rate = rate,
+            source = source,
+        )
+    }
 }
 
 internal object NoOpGoalLedgerCommittedSummaryRepository : GoalLedgerCommittedSummaryRepository {

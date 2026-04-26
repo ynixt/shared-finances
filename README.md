@@ -1,6 +1,7 @@
 [![GitHub license](https://img.shields.io/github/license/ynixt/shared-finances)](https://github.com/ynixt/shared-finances/blob/master/LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/ynixt/shared-finances)](https://github.com/ynixt/shared-finances/releases/latest)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ynixt/shared-finances/docker-build-main.yml)](https://github.com/ynixt/shared-finances/actions/workflows/docker-build-main.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ynixt/shared-finances/main/.github/badges/jacoco-coverage.json)](#coverage-report)
 
 # Shared Finances
 

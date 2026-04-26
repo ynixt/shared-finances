@@ -88,4 +88,20 @@ internal class WalletScenarioSetupOps(
 
         context.lastBillId = requireNotNull(bill.id)
     }
+
+    fun storeExchangeRateQuote(
+        baseCurrency: String,
+        quoteCurrency: String,
+        quoteDate: LocalDate,
+        rate: Number,
+        source: String = "scenario-test",
+    ) {
+        runtime.storeExchangeRateQuote(
+            baseCurrency = baseCurrency,
+            quoteCurrency = quoteCurrency,
+            quoteDate = quoteDate,
+            rate = rate.toBigDecimalSafe(),
+            source = source,
+        )
+    }
 }

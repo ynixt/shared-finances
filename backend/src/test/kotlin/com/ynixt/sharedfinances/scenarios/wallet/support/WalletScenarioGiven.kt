@@ -66,4 +66,18 @@ class WalletScenarioGiven internal constructor(
         startValue = startValue,
         creditCardId = creditCardId,
     )
+
+    fun exchangeRateQuote(
+        baseCurrency: String,
+        quoteCurrency: String,
+        quoteDate: LocalDate,
+        rate: Number,
+        source: String = "scenario-test",
+    ) = walletSetupOps.storeExchangeRateQuote(
+        baseCurrency = baseCurrency,
+        quoteCurrency = quoteCurrency,
+        quoteDate = quoteDate,
+        rate = rate,
+        source = source,
+    )
 }

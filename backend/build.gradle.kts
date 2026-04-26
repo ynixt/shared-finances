@@ -1,5 +1,7 @@
 
 import io.github.ynixt.anothertypescriptgenerator.GenerateTypescriptInterfacesTask
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 
 plugins {
@@ -10,6 +12,7 @@ plugins {
     id("io.github.ynixt.another-typescript-generator") version "1.2.0"
     id("tech.mappie.plugin") version "2.3.0-2.3.1"
     id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
+    jacoco
 }
 
 group = "com.ynixt"
@@ -33,6 +36,10 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
+}
+
+jacoco {
+    toolVersion = "0.8.14"
 }
 
 sourceSets {
@@ -79,6 +86,60 @@ integrationTestTask.configure {
     if (integrationEnvFile != null) {
         environment(loadEnvFile(integrationEnvFile))
     }
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.named("test"))
+
+    executionData.setFrom(
+        fileTree(layout.buildDirectory.dir("jacoco")) {
+            include("test.exec", "test*.exec", "test.ec", "test*.ec")
+        },
+    )
+    classDirectories.setFrom(sourceSets.main.get().output)
+    sourceDirectories.setFrom(
+        sourceSets.main
+            .get()
+            .allSource.srcDirs,
+    )
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+    dependsOn(tasks.named("jacocoTestReport"))
+
+    executionData.setFrom(
+        fileTree(layout.buildDirectory.dir("jacoco")) {
+            include("test.exec", "test*.exec", "test.ec", "test*.ec")
+        },
+    )
+
+    classDirectories.setFrom(sourceSets.main.get().output)
+    sourceDirectories.setFrom(
+        sourceSets.main
+            .get()
+            .allSource.srcDirs,
+    )
+
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.30".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("jacocoTestCoverageVerification"))
+    dependsOn(integrationTestTask)
 }
 
 val integrationTestImplementation: Configuration by configurations.getting {
