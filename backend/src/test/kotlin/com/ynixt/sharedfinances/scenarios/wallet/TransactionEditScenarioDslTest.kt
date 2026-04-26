@@ -1033,6 +1033,67 @@ class TransactionEditScenarioDslTest {
     }
 
     @Test
+    fun `should keep unlimited recurring series when applying THIS_AND_FUTURE from first future occurrence`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today.plusDays(1)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = null,
+                    ),
+                )
+
+                editScheduled(
+                    occurrenceDate = firstOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = firstOccurrence,
+                            value = BigDecimal("2.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.RECURRING,
+                            periodicity = RecurrenceType.MONTHLY,
+                            periodicityQtyLimit = null,
+                        ),
+                )
+            }
+
+            then {
+                recurrenceSegmentsShouldBe(1)
+                recurrenceLimitShouldBe(null)
+                recurrenceSeriesQtyTotalShouldBe(null)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+            }
+
+            `when` {
+                advanceTimeToNextRecurrenceExecution()
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("998.00"), bankAccountId)
+            }
+        }
+    }
+
+    @Test
     fun `should allow changing recurring expense to revenue on THIS_AND_FUTURE edit`() {
         val today = LocalDate.of(2026, 1, 8)
         val firstOccurrence = today.plusDays(1)

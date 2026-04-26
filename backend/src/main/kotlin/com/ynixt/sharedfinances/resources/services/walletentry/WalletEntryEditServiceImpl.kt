@@ -199,7 +199,13 @@ class WalletEntryEditServiceImpl(
             alreadyExecuted = globalExecutedCount,
         )
 
-        val targetSeriesQtyTotal = requestedSeriesQtyTotal ?: selection.currentSeriesQtyTotal
+        val targetSeriesQtyTotal =
+            normalizeTargetSeriesQtyTotalForThisAndFuture(
+                selectedSegment = selectedSegment,
+                requestedSeriesQtyTotal = requestedSeriesQtyTotal,
+                currentSeriesQtyTotal = selection.currentSeriesQtyTotal,
+            )
+
         syncSeriesQtyTotal(
             config = selectedSegment,
             targetSeriesQtyTotal = targetSeriesQtyTotal,
@@ -1102,5 +1108,22 @@ class WalletEntryEditServiceImpl(
             qtyExecuted = config.qtyExecuted,
             qtyLimit = qtyLimit?.let { if (config.lastExecution == null) it - 1 else it },
         )
+    }
+
+    private fun normalizeTargetSeriesQtyTotalForThisAndFuture(
+        selectedSegment: RecurrenceEventEntity,
+        requestedSeriesQtyTotal: Int?,
+        currentSeriesQtyTotal: Int?,
+    ): Int? {
+        val isUnlimitedRecurringWithoutRequestedLimit =
+            selectedSegment.paymentType == PaymentType.RECURRING &&
+                selectedSegment.qtyLimit == null &&
+                requestedSeriesQtyTotal == null
+
+        if (isUnlimitedRecurringWithoutRequestedLimit) {
+            return null
+        }
+
+        return requestedSeriesQtyTotal ?: currentSeriesQtyTotal
     }
 }
