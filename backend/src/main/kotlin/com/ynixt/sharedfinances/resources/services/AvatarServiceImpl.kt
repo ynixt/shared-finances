@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.services
 
 import com.ynixt.sharedfinances.domain.exceptions.http.HeavyFileException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidFileTypeException
+import com.ynixt.sharedfinances.domain.repositories.AvatarPresignedUrlCacheRepository
 import com.ynixt.sharedfinances.domain.services.AvatarService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.reactor.awaitSingle
@@ -17,7 +18,6 @@ import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import java.awt.Image
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
@@ -26,7 +26,6 @@ import java.security.MessageDigest
 import java.time.Duration
 import java.util.Locale
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
 import javax.imageio.ImageIO
 
 private const val MAX_UPLOAD_BYTES = 2 * 1024 * 1024
@@ -37,6 +36,7 @@ class AvatarServiceImpl(
     webClientBuilder: WebClient.Builder,
     private val s3: S3AsyncClient,
     @param:Value("\${app.s3.bucket}") private val bucket: String,
+    private val avatarPresignedUrlCacheRepository: AvatarPresignedUrlCacheRepository,
 ) : AvatarService {
     private val gravatarClient: WebClient =
         webClientBuilder
@@ -72,6 +72,8 @@ class AvatarServiceImpl(
                 .build()
 
         val deleteResponse = s3.deleteObject(request).await()
+
+        avatarPresignedUrlCacheRepository.delete(userId).awaitSingle()
 
         return deleteResponse.sdkHttpResponse().isSuccessful
     }
@@ -119,6 +121,7 @@ class AvatarServiceImpl(
                 .build()
 
         s3.putObject(req, AsyncRequestBody.fromBytes(bytes)).await()
+        avatarPresignedUrlCacheRepository.delete(userId).awaitSingle()
 
         return getExternalUrl(userId)
     }
@@ -133,51 +136,43 @@ class AvatarServiceImpl(
             )
 
         val declaredLen = file.headers().contentLength
-        if (declaredLen > _root_ide_package_.com.ynixt.sharedfinances.resources.services.MAX_UPLOAD_BYTES) {
-            throw HeavyFileException(_root_ide_package_.com.ynixt.sharedfinances.resources.services.MAX_UPLOAD_BYTES)
+        if (declaredLen > MAX_UPLOAD_BYTES) {
+            throw HeavyFileException(MAX_UPLOAD_BYTES)
         }
 
-        return DataBufferUtils
-            .join(file.content())
-            .map { dataBuffer ->
-                try {
-                    val size = dataBuffer.readableByteCount()
-                    if (size > MAX_UPLOAD_BYTES) throw HeavyFileException(MAX_UPLOAD_BYTES)
-                    ByteArray(size).also { dataBuffer.read(it) }
-                } finally {
-                    DataBufferUtils.release(dataBuffer)
-                }
-            }.map { inputBytes ->
-                sniffImageFormat(inputBytes) ?: throw invalidImage
+        val sanitizedPngBytes =
+            DataBufferUtils
+                .join(file.content())
+                .map { dataBuffer ->
+                    try {
+                        val size = dataBuffer.readableByteCount()
+                        if (size > MAX_UPLOAD_BYTES) throw HeavyFileException(MAX_UPLOAD_BYTES)
+                        ByteArray(size).also { dataBuffer.read(it) }
+                    } finally {
+                        DataBufferUtils.release(dataBuffer)
+                    }
+                }.map { inputBytes ->
+                    sniffImageFormat(inputBytes) ?: throw invalidImage
 
-                val img = ImageIO.read(ByteArrayInputStream(inputBytes)) ?: throw invalidImage
+                    val img = ImageIO.read(ByteArrayInputStream(inputBytes)) ?: throw invalidImage
 
-                if (img.width <= 0 || img.height <= 0) throw IllegalArgumentException("Invalid image")
-                if (img.width > 4000 || img.height > 4000) throw IllegalArgumentException("Too big image")
+                    if (img.width <= 0 || img.height <= 0) throw IllegalArgumentException("Invalid image")
+                    if (img.width > 4000 || img.height > 4000) throw IllegalArgumentException("Too big image")
 
-                val resized = resizeToSquare(img, TARGET_SIZE)
+                    val resized = resizeToSquare(img, TARGET_SIZE)
 
-                val baos = ByteArrayOutputStream()
-                if (!ImageIO.write(resized, "png", baos)) {
-                    throw IllegalStateException("Failure to encode PNG image.")
-                }
-                baos.toByteArray()
-            }.flatMap { sanitizedPngBytes ->
-                val req =
-                    PutObjectRequest
-                        .builder()
-                        .bucket(bucket)
-                        .key(getObjectKey(userId))
-                        .contentType("image/png")
-                        .contentLength(sanitizedPngBytes.size.toLong())
-                        .build()
+                    val baos = ByteArrayOutputStream()
+                    if (!ImageIO.write(resized, "png", baos)) {
+                        throw IllegalStateException("Failure to encode PNG image.")
+                    }
+                    baos.toByteArray()
+                }.awaitSingle()
 
-                val future: CompletableFuture<PutObjectResponse> =
-                    s3.putObject(req, AsyncRequestBody.fromBytes(sanitizedPngBytes))
-
-                Mono.fromFuture(future)
-            }.thenReturn(getExternalUrl(userId))
-            .awaitSingle()
+        return upload(
+            userId = userId,
+            bytes = sanitizedPngBytes,
+            contentType = "image/png",
+        )
     }
 
     private fun md5Hex(value: String): String {

@@ -7,6 +7,6 @@ interface AvatarReadService {
     suspend fun getAvatar(
         ownerId: UUID,
         loggedUserId: UUID,
-        expiresIn: Duration = Duration.ofMinutes(2),
+        expiresIn: Duration = Duration.ofMinutes(5),
     ): String?
 }
