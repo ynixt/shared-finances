@@ -16,6 +16,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Run backend integration tests
+        working-directory: backend
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon integrationTest
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 

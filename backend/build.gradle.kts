@@ -139,7 +139,6 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
 
 tasks.named("check") {
     dependsOn(tasks.named("jacocoTestCoverageVerification"))
-    dependsOn(integrationTestTask)
 }
 
 val integrationTestImplementation: Configuration by configurations.getting {
