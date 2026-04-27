@@ -2429,4 +2429,425 @@ class TransactionEditScenarioDslTest {
             }
         }
     }
+
+    @Test
+    fun `should map available limit across one-off and installment edits with refund and series deletion`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val secondOccurrence = today.plusMonths(1)
+        val totalLimit = BigDecimal("1000.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = 20,
+                daysBetweenDueAndClosing = 10,
+                dueOnNextBusinessDay = false,
+            )
+        val billDate1 = expectedCardModel.getBestBill(today)
+        val billDate2 = expectedCardModel.getBestBill(secondOccurrence)
+
+        lateinit var creditCardId: UUID
+        lateinit var oneOffPurchaseId: UUID
+        lateinit var installmentRecurrenceConfigId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        currency = "BRL",
+                        dueDay = 20,
+                        daysBetweenDueAndClosing = 10,
+                        dueOnNextBusinessDay = false,
+                    )
+            }
+
+            `when` {
+                expense(
+                    value = BigDecimal("300.00"),
+                    originId = creditCardId,
+                    date = today,
+                    confirmed = true,
+                    billDate = billDate1,
+                )
+                oneOffPurchaseId = lastWalletEventId()
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("700.00"), creditCardId)
+            }
+
+            `when` {
+                editOneOff(
+                    walletEventId = oneOffPurchaseId,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = today,
+                            value = BigDecimal("200.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.UNIQUE,
+                            originBillDate = billDate1,
+                        ),
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("800.00"), creditCardId)
+            }
+
+            `when` {
+                installmentPurchase(
+                    total = BigDecimal("300.00"),
+                    installments = 3,
+                    originId = creditCardId,
+                    date = today,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("500.00"), creditCardId)
+            }
+
+            `when` {
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = secondOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 4,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = billDate2,
+                        ),
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("400.00"), creditCardId)
+            }
+
+            `when` {
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = secondOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 2,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = billDate2,
+                        ),
+                )
+                installmentRecurrenceConfigId = lastRecurrenceConfigId()
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("600.00"), creditCardId)
+            }
+
+            `when` {
+                revenue(
+                    value = BigDecimal("50.00"),
+                    originId = creditCardId,
+                    date = today,
+                    confirmed = true,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("650.00"), creditCardId)
+            }
+
+            `when` {
+                deleteScheduled(
+                    recurrenceConfigId = installmentRecurrenceConfigId,
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.ALL_SERIES,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("850.00"), creditCardId)
+            }
+        }
+    }
+
+    @Test
+    fun `should map available limit from 400 to 850 when shrinking installments refunding and deleting series`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val secondOccurrence = today.plusMonths(1)
+        val totalLimit = BigDecimal("1000.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = 20,
+                daysBetweenDueAndClosing = 10,
+                dueOnNextBusinessDay = false,
+            )
+        val billDate1 = expectedCardModel.getBestBill(today)
+        val billDate2 = expectedCardModel.getBestBill(secondOccurrence)
+
+        lateinit var creditCardId: UUID
+        lateinit var installmentRecurrenceConfigId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        currency = "BRL",
+                        dueDay = 20,
+                        daysBetweenDueAndClosing = 10,
+                        dueOnNextBusinessDay = false,
+                    )
+            }
+
+            `when` {
+                expense(
+                    value = BigDecimal("200.00"),
+                    originId = creditCardId,
+                    date = today,
+                    confirmed = true,
+                    billDate = billDate1,
+                )
+                installmentPurchase(
+                    total = BigDecimal("400.00"),
+                    installments = 4,
+                    originId = creditCardId,
+                    date = today,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("400.00"), creditCardId)
+            }
+
+            `when` {
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = secondOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 2,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = billDate2,
+                        ),
+                )
+                installmentRecurrenceConfigId = lastRecurrenceConfigId()
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("600.00"), creditCardId)
+            }
+
+            `when` {
+                revenue(
+                    value = BigDecimal("50.00"),
+                    originId = creditCardId,
+                    date = today,
+                    confirmed = true,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("650.00"), creditCardId)
+            }
+
+            `when` {
+                deleteScheduled(
+                    recurrenceConfigId = installmentRecurrenceConfigId,
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.ALL_SERIES,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("850.00"), creditCardId)
+            }
+        }
+    }
+
+    @Test
+    fun `should move installment purchase from credit card XX to credit card YY`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val secondOccurrence = today.plusMonths(1)
+        val xxLimit = BigDecimal("1000.00")
+        val yyLimit = BigDecimal("400.00")
+        val dueDay = 20
+        val daysBetweenDueAndClosing = 10
+        val dueOnNextBusinessDay = false
+        val expectedYyCardModel =
+            CreditCard(
+                name = "YY",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = yyLimit,
+                balance = yyLimit,
+                dueDay = dueDay,
+                daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+        val yyBillDateOnSecondOccurrence = expectedYyCardModel.getBestBill(secondOccurrence)
+
+        lateinit var cardXxId: UUID
+        lateinit var cardYyId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                cardXxId =
+                    creditCard(
+                        name = "XX",
+                        limit = xxLimit,
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+                cardYyId =
+                    creditCard(
+                        name = "YY",
+                        limit = yyLimit,
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                installmentPurchase(
+                    total = BigDecimal("300.00"),
+                    installments = 3,
+                    originId = cardXxId,
+                    date = today,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("700.00"), cardXxId)
+            }
+
+            `when` {
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = cardYyId,
+                            date = secondOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 3,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = yyBillDateOnSecondOccurrence,
+                        ),
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("1000.00"), cardXxId)
+                availableLimitShouldBe(BigDecimal("100.00"), cardYyId)
+            }
+        }
+    }
+
+    @Test
+    fun `should move installment purchase from credit card XX to bank account ZZ`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val secondOccurrence = today.plusMonths(1)
+        val xxLimit = BigDecimal("1000.00")
+
+        lateinit var cardXxId: UUID
+        lateinit var bankZzId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                cardXxId =
+                    creditCard(
+                        name = "XX",
+                        limit = xxLimit,
+                        currency = "BRL",
+                        dueDay = 20,
+                        daysBetweenDueAndClosing = 10,
+                        dueOnNextBusinessDay = false,
+                    )
+                bankZzId =
+                    bankAccount(
+                        name = "ZZ",
+                        balance = BigDecimal("2000.00"),
+                        currency = "BRL",
+                    )
+            }
+
+            `when` {
+                installmentPurchase(
+                    total = BigDecimal("300.00"),
+                    installments = 3,
+                    originId = cardXxId,
+                    date = today,
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("700.00"), cardXxId)
+            }
+
+            `when` {
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankZzId,
+                            date = secondOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 3,
+                            periodicity = RecurrenceType.MONTHLY,
+                        ),
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("1000.00"), cardXxId)
+                balanceShouldBe(BigDecimal("900.00"), bankZzId)
+            }
+        }
+    }
 }
