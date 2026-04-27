@@ -9,14 +9,21 @@
       closeRouterLink=".."
     ></app-finances-title-bar>
 
+    <!--  TODO
+  <app-advanced-date-picker class="mb-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />-->
+
     <div class="flex flex-col gap-4">
       <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
         <div class="mb-3 flex items-center justify-between gap-2">
-          <h3 class="text-lg font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.balancesTitle' | translate }}</h3>
+          <h3 class="text-xl font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.balancesTitle' | translate }}</h3>
           <span class="text-sm text-slate-500">{{ outstandingBalanceGridItems().length }}</span>
         </div>
 
-        @if (outstandingBalanceGridItems().length === 0) {
+        @if (workspaceLoading()) {
+          <div class="py-4 text-center">
+            <p-progress-spinner></p-progress-spinner>
+          </div>
+        } @else if (outstandingBalanceGridItems().length === 0) {
           <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyBalances' | translate }}</p>
         } @else {
           <div class="flex flex-col gap-4">
@@ -91,7 +98,7 @@
       </div>
 
       <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
-        <h3 class="mb-3 text-lg font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.historyTitle' | translate }}</h3>
+        <h3 class="mb-3 text-xl font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.historyTitle' | translate }}</h3>
 
         @if (historyGridItems().length === 0) {
           <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyHistory' | translate }}</p>
@@ -102,55 +109,75 @@
                 @for (item of items; track historyTrack(item); let first = $first) {
                   <div class="col-span-12">
                     <article
-                      class="flex flex-col gap-4 py-5"
+                      class="flex gap-2 py-5"
                       [ngClass]="{ 'border-t border-surface-200 dark:border-surface-600 dark:border-surface-700': !first }"
                     >
                       @let movement = item.movement;
 
-                      <div class="flex flex-wrap gap-4 items-center text-muted text-sm">
-                        <span class="table-item">{{ movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—' }}</span>
-                        <span class="table-item">{{ monthDate(movement.month) | localDate: 'MMM y' }}</span>
-                        <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
+                      <div class="flex flex-col gap-6">
+                        <div class="flex flex-col gap-2">
+                          <h3 class="font-semibold text-default text-lg">
+                            {{ memberName(movement.payerId) }} -> {{ memberName(movement.receiverId) }}
+                          </h3>
+
+                          <div class="flex flex-wrap gap-2 items-center text-muted text-xs">
+                            <span class="table-item">{{
+                              movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—'
+                            }}</span>
+                            <span class="table-item">{{ monthDate(movement.month) | localDate: 'MMM y' }}</span>
+                            <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
+                          </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                          <div class="flex flex-col gap-2">
+                            <span class="text-sm text-muted"
+                              >{{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
+                              {{ memberName(movement.createdByUserId) }}</span
+                            >
+                            <span class="text-sm text-muted"
+                              >{{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}:
+                              {{ sourceReferenceLabel(movement) }}</span
+                            >
+                            <span class="text-sm text-muted"
+                              >{{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}: {{ movement.note ?? '—' }}</span
+                            >
+                          </div>
+                        </div>
+
+                        @if (item.linkedWalletEventName != null) {
+                          <div class="flex flex-col gap-1">
+                            <span class="text-xs uppercase tracking-wide text-muted">{{
+                              'financesPage.groupsPage.debtsPage.linkedTransaction' | translate
+                            }}</span>
+                            <span class="table-item">{{ item.linkedWalletEventName }}</span>
+                          </div>
+                        }
+
+                        @if (item.linkedWalletEvent != null) {
+                          @if (item.linkedWalletEvent.installment != null) {
+                            <span class="table-item">{{
+                              'financesPage.transactionsPage.installmentValue'
+                                | translate
+                                  : {
+                                      installment: item.linkedWalletEvent.installment,
+                                      installments:
+                                        item.linkedWalletEvent?.recurrenceConfig?.qtyLimit ?? item.linkedWalletEvent.installment,
+                                    }
+                            }}</span>
+                          }
+
+                          <app-entry-description [event]="item.linkedWalletEvent" [showWalletOwner]="true"></app-entry-description>
+                        }
                       </div>
 
-                      @if (item.linkedWalletEventName != null) {
-                        <div class="flex flex-col gap-1">
-                          <span class="text-xs uppercase tracking-wide text-muted">{{
-                            'financesPage.groupsPage.debtsPage.linkedTransaction' | translate
-                          }}</span>
-                          <span class="table-item">{{ item.linkedWalletEventName }}</span>
-                        </div>
-                      }
-
-                      @if (item.linkedWalletEvent != null) {
-                        <app-entry-description [event]="item.linkedWalletEvent" [showWalletOwner]="true"></app-entry-description>
-                      }
-
-                      <div class="flex flex-wrap items-start justify-between gap-4">
-                        <div class="flex flex-col gap-2">
-                          <span class="font-semibold text-default"
-                            >{{ memberName(movement.payerId) }} -> {{ memberName(movement.receiverId) }}</span
-                          >
-                          <span class="text-sm text-muted"
-                            >{{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
-                            {{ memberName(movement.createdByUserId) }}</span
-                          >
-                          <span class="text-sm text-muted"
-                            >{{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}: {{ sourceReferenceLabel(movement) }}</span
-                          >
-                          <span class="text-sm text-muted"
-                            >{{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}: {{ movement.note ?? '—' }}</span
-                          >
-                        </div>
-
-                        <div class="flex flex-col items-end gap-2 ml-auto">
-                          <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
-                          @if (canMutate() && isAdjustableMovement(movement)) {
-                            <button type="button" pButton class="p-button-text p-button-sm" (click)="openAdjustmentPage(movement)">
-                              {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
-                            </button>
-                          }
-                        </div>
+                      <div class="flex flex-col items-end gap-2 ml-auto">
+                        <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
+                        @if (canMutate() && isAdjustableMovement(movement)) {
+                          <button type="button" pButton class="p-button-text p-button-sm" (click)="openAdjustmentPage(movement)">
+                            {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
+                          </button>
+                        }
                       </div>
                     </article>
                   </div>

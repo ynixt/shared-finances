@@ -23,6 +23,7 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
+import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.GroupMemberDebtDatabaseClientRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.GroupMemberDebtMovementSpringDataRepository
 import kotlinx.coroutines.reactor.awaitSingle
@@ -31,6 +32,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
+import java.time.LocalDate
 import java.time.YearMonth
 import java.util.UUID
 
@@ -41,6 +44,8 @@ class GroupDebtServiceImpl(
     private val debtDatabaseClientRepository: GroupMemberDebtDatabaseClientRepository,
     private val walletEventRepository: WalletEventRepository,
     private val walletEventListService: WalletEventListService,
+    private val recurrenceSimulationService: RecurrenceSimulationService,
+    private val clock: Clock,
 ) : GroupDebtService {
     companion object {
         private val ZERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
@@ -83,53 +88,43 @@ class GroupDebtServiceImpl(
     ): GroupDebtWorkspace {
         ensureReadAccess(userId, groupId)
 
-        val balances =
+        val rows =
             debtDatabaseClientRepository
                 .listMonthlyComposition(groupId)
                 .collectList()
                 .awaitSingle()
-                .groupBy { row -> Triple(row.payerId, row.receiverId, row.currency.uppercase()) }
-                .mapNotNull { (key, rows) ->
-                    val monthlyComposition =
-                        rows
-                            .sortedBy { it.month }
-                            .map { row ->
-                                GroupDebtMonthlyComposition(
-                                    month = row.month,
-                                    netAmount = row.netAmount.asMoney(),
-                                    chargeDelta = row.chargeDelta.asMoney(),
-                                    settlementDelta = row.settlementDelta.asMoney(),
-                                    manualAdjustmentDelta = row.manualAdjustmentDelta.asMoney(),
-                                )
-                            }.filter { row ->
-                                row.netAmount.compareTo(ZERO) != 0 ||
-                                    row.chargeDelta.compareTo(ZERO) != 0 ||
-                                    row.settlementDelta.compareTo(ZERO) != 0 ||
-                                    row.manualAdjustmentDelta.compareTo(ZERO) != 0
-                            }
 
-                    val outstanding =
-                        monthlyComposition
-                            .fold(ZERO) { acc, row -> acc.add(row.netAmount).asMoney() }
+        return GroupDebtWorkspace(balances = mapBalances(rows))
+    }
 
-                    if (outstanding.compareTo(ZERO) == 0) {
-                        null
-                    } else {
-                        GroupDebtPairBalance(
-                            payerId = key.first,
-                            receiverId = key.second,
-                            currency = key.third,
-                            outstandingAmount = outstanding,
-                            monthlyComposition = monthlyComposition,
-                        )
-                    }
-                }.sortedWith(
-                    compareBy<GroupDebtPairBalance> { it.payerId.toString() }
-                        .thenBy { it.receiverId.toString() }
-                        .thenBy { it.currency },
+    override suspend fun getWorkspaceForMonth(
+        userId: UUID,
+        groupId: UUID,
+        selectedMonth: YearMonth,
+    ): GroupDebtWorkspace {
+        ensureReadAccess(userId, groupId)
+
+        val currentMonth = YearMonth.from(LocalDate.now(clock))
+        val rowsForSelectedMonth =
+            debtDatabaseClientRepository
+                .listMonthlyComposition(groupId)
+                .collectList()
+                .awaitSingle()
+                .filter { row -> !row.month.isAfter(selectedMonth) }
+                .toMutableList()
+
+        if (!selectedMonth.isBefore(currentMonth)) {
+            rowsForSelectedMonth +=
+                loadProjectedMonthlyRows(
+                    userId = userId,
+                    groupId = groupId,
+                    selectedMonth = selectedMonth,
                 )
+        }
 
-        return GroupDebtWorkspace(balances = balances)
+        return GroupDebtWorkspace(
+            balances = mapBalances(rowsForSelectedMonth),
+        )
     }
 
     override suspend fun listHistory(
@@ -276,6 +271,109 @@ class GroupDebtServiceImpl(
                     )
             }
     }
+
+    private suspend fun loadProjectedMonthlyRows(
+        userId: UUID,
+        groupId: UUID,
+        selectedMonth: YearMonth,
+    ): List<GroupMemberDebtDatabaseClientRepository.DebtMonthlyCompositionRow> {
+        val today = LocalDate.now(clock)
+        val selectedMonthEnd = selectedMonth.atEndOfMonth()
+        if (selectedMonthEnd.isBefore(today)) {
+            return emptyList()
+        }
+
+        val projectedByPairAndCurrency = mutableMapOf<Triple<UUID, UUID, String>, BigDecimal>()
+        recurrenceSimulationService
+            .simulateGenerationWithFilters(
+                minimumEndExecution = today,
+                maximumNextExecution = selectedMonthEnd,
+                userId = userId,
+                walletItemId = null,
+                billDate = null,
+                groupIds = setOf(groupId),
+                userIds = emptySet(),
+                walletItemIds = emptySet(),
+                entryTypes = setOf(WalletEntryType.REVENUE, WalletEntryType.EXPENSE),
+                categoryConceptIds = emptySet(),
+                includeUncategorized = false,
+            ).asSequence()
+            .filter { event -> YearMonth.from(event.date) == selectedMonth }
+            .forEach { event ->
+                deriveProjectedDebtMovementsFromEvent(event).forEach { projected ->
+                    if (projected.amount.compareTo(ZERO) <= 0) {
+                        return@forEach
+                    }
+
+                    val key = Triple(projected.payerId, projected.receiverId, projected.currency.uppercase())
+                    projectedByPairAndCurrency[key] =
+                        projectedByPairAndCurrency
+                            .getOrDefault(key, ZERO)
+                            .add(projected.amount)
+                            .asMoney()
+                }
+            }
+
+        return projectedByPairAndCurrency.entries
+            .asSequence()
+            .filter { (_, amount) -> amount.compareTo(ZERO) > 0 }
+            .map { (key, amount) ->
+                GroupMemberDebtDatabaseClientRepository.DebtMonthlyCompositionRow(
+                    payerId = key.first,
+                    receiverId = key.second,
+                    currency = key.third,
+                    month = selectedMonth,
+                    netAmount = amount.asMoney(),
+                    chargeDelta = amount.asMoney(),
+                    settlementDelta = ZERO,
+                    manualAdjustmentDelta = ZERO,
+                )
+            }.toList()
+    }
+
+    private fun mapBalances(rows: List<GroupMemberDebtDatabaseClientRepository.DebtMonthlyCompositionRow>): List<GroupDebtPairBalance> =
+        rows
+            .groupBy { row -> Triple(row.payerId, row.receiverId, row.currency.uppercase()) }
+            .mapNotNull { (key, pairRows) ->
+                val monthlyComposition =
+                    pairRows
+                        .groupBy { row -> row.month }
+                        .map { (month, monthRows) ->
+                            GroupDebtMonthlyComposition(
+                                month = month,
+                                netAmount = monthRows.fold(ZERO) { acc, row -> acc.add(row.netAmount).asMoney() },
+                                chargeDelta = monthRows.fold(ZERO) { acc, row -> acc.add(row.chargeDelta).asMoney() },
+                                settlementDelta = monthRows.fold(ZERO) { acc, row -> acc.add(row.settlementDelta).asMoney() },
+                                manualAdjustmentDelta = monthRows.fold(ZERO) { acc, row -> acc.add(row.manualAdjustmentDelta).asMoney() },
+                            )
+                        }.sortedBy { month -> month.month }
+                        .filter { month ->
+                            month.netAmount.compareTo(ZERO) != 0 ||
+                                month.chargeDelta.compareTo(ZERO) != 0 ||
+                                month.settlementDelta.compareTo(ZERO) != 0 ||
+                                month.manualAdjustmentDelta.compareTo(ZERO) != 0
+                        }
+
+                val outstanding =
+                    monthlyComposition
+                        .fold(ZERO) { acc, row -> acc.add(row.netAmount).asMoney() }
+
+                if (outstanding.compareTo(ZERO) == 0) {
+                    null
+                } else {
+                    GroupDebtPairBalance(
+                        payerId = key.first,
+                        receiverId = key.second,
+                        currency = key.third,
+                        outstandingAmount = outstanding,
+                        monthlyComposition = monthlyComposition,
+                    )
+                }
+            }.sortedWith(
+                compareBy<GroupDebtPairBalance> { it.payerId.toString() }
+                    .thenBy { it.receiverId.toString() }
+                    .thenBy { it.currency },
+            )
 
     private suspend fun persistMovements(movements: List<GroupMemberDebtMovementEntity>): List<GroupMemberDebtMovementEntity> {
         if (movements.isEmpty()) {

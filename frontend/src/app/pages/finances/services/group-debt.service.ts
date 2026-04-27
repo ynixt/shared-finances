@@ -21,11 +21,12 @@ export class GroupDebtService {
     private userService: UserService,
   ) {}
 
-  async getWorkspace(groupId: string): Promise<GroupDebtWorkspaceDto> {
+  async getWorkspace(groupId: string, selectedMonth?: string): Promise<GroupDebtWorkspaceDto> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.http.get<GroupDebtWorkspaceDto>(`/api/groups/${groupId}/debts`).pipe(take(1)));
+      const params = selectedMonth == null ? '' : `?selectedMonth=${encodeURIComponent(selectedMonth)}`;
+      return lastValueFrom(this.http.get<GroupDebtWorkspaceDto>(`/api/groups/${groupId}/debts${params}`).pipe(take(1)));
     }
 
     throw new UserMissingError();

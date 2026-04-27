@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.application.web.dto.groups.debts.EditGroupDebtAd
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMovementDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtWorkspaceDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDebtDtoMapper
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupDebtAdjustmentException
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.time.Clock
+import java.time.YearMonth
 import java.util.UUID
 
 @RestController
@@ -29,17 +32,20 @@ import java.util.UUID
 class GroupDebtController(
     private val groupDebtService: GroupDebtService,
     private val groupDebtDtoMapper: GroupDebtDtoMapper,
+    private val clock: Clock,
 ) {
     @Operation(summary = "Get current group debt workspace")
     @GetMapping
     suspend fun getWorkspace(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
+        @RequestParam(required = false) selectedMonth: String?,
     ): GroupDebtWorkspaceDto =
         groupDebtDtoMapper.toWorkspaceDto(
-            groupDebtService.getWorkspace(
+            groupDebtService.getWorkspaceForMonth(
                 userId = principalToken.principal.id,
                 groupId = groupId,
+                selectedMonth = parseSelectedMonth(selectedMonth),
             ),
         )
 
@@ -111,4 +117,15 @@ class GroupDebtController(
                 input = groupDebtDtoMapper.fromEditAdjustmentRequestDto(body),
             ),
         )
+
+    private fun parseSelectedMonth(raw: String?): YearMonth {
+        if (raw.isNullOrBlank()) {
+            return YearMonth.now(clock)
+        }
+
+        return runCatching { YearMonth.parse(raw) }
+            .getOrElse {
+                throw InvalidGroupDebtAdjustmentException("Month must use yyyy-MM format")
+            }
+    }
 }

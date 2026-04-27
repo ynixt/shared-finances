@@ -8,6 +8,7 @@ import { DateRange } from '../components/wallet-entry-table/components/advanced-
 export type DateQueryParamMode = 'normal' | 'day_only';
 
 export const MONTH_QUERY_PARAM_FORMAT = 'MM-YYYY';
+export const MONTH_QUERY_PARAM_FORMAT_V2 = 'YYYY-MM';
 
 export const readDateRangeFromQueryParams = (queryParamMap: Pick<ParamMap, 'get'>, mode: DateQueryParamMode): DateRange | undefined => {
   const monthDate = parseMonthQueryParam(queryParamMap.get('date'));

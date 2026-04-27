@@ -18,6 +18,7 @@ import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardPieSlic
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardScope
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
+import com.ynixt.sharedfinances.resources.services.groups.deriveProjectedDebtMovementsFromEvent
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.Clock
@@ -170,7 +171,16 @@ internal class GroupOverviewBuilderService(
             )
 
         val sortedMembers = allMemberIds.map { it to resolveMemberName(it, memberNameById) }.sortedBy { (_, name) -> name.lowercase() }
-        val debtPairs = buildDebtPairs(userId, groupId, selectedMonth, targetCurrency, memberNameById)
+        val debtPairs =
+            buildDebtPairs(
+                actorUserId = userId,
+                groupId = groupId,
+                selectedMonth = selectedMonth,
+                currentMonth = currentMonth,
+                targetCurrency = targetCurrency,
+                memberNameById = memberNameById,
+                projectedEvents = projectedEvents,
+            )
 
         return GroupOverviewDashboard(
             selectedMonth = selectedMonth,
@@ -565,23 +575,26 @@ internal class GroupOverviewBuilderService(
         actorUserId: UUID,
         groupId: UUID,
         selectedMonth: YearMonth,
+        currentMonth: YearMonth,
         targetCurrency: String,
         memberNameById: Map<UUID, String>,
+        projectedEvents: List<EventListResponse>,
     ): List<GroupOverviewDebtPair> {
         val workspace = dataService.loadGroupDebtWorkspace(actorUserId = actorUserId, groupId = groupId)
-        if (workspace.balances.isEmpty()) {
-            return emptyList()
-        }
-
-        val directionalTotals = mutableMapOf<DirectionalDebtKey, BigDecimal>()
+        val isFutureSelection = selectedMonth.isAfter(currentMonth)
         val directionalByMonth = mutableMapOf<Pair<DirectionalDebtKey, YearMonth>, BigDecimal>()
 
         workspace.balances.forEach { balance ->
             val currency = balance.currency.uppercase()
             balance.monthlyComposition
                 .asSequence()
-                .filter { composition -> !composition.month.isAfter(selectedMonth) }
-                .forEach { composition ->
+                .filter { composition ->
+                    if (isFutureSelection) {
+                        composition.month == selectedMonth
+                    } else {
+                        !composition.month.isAfter(selectedMonth)
+                    }
+                }.forEach { composition ->
                     val signed = composition.netAmount.asMoney()
                     if (signed.compareTo(BigDecimal.ZERO) == 0) {
                         return@forEach
@@ -594,9 +607,6 @@ internal class GroupOverviewBuilderService(
                             DirectionalDebtKey(balance.receiverId, balance.payerId, currency) to signed.abs()
                         }
 
-                    directionalTotals[direction] =
-                        directionalTotals.getOrDefault(direction, BigDecimal.ZERO).add(amount).asMoney()
-
                     val monthKey = direction to composition.month
                     directionalByMonth[monthKey] =
                         directionalByMonth
@@ -604,6 +614,41 @@ internal class GroupOverviewBuilderService(
                             .add(amount)
                             .asMoney()
                 }
+        }
+
+        if (isFutureSelection) {
+            projectedEvents
+                .asSequence()
+                .filter { event -> YearMonth.from(event.date) == selectedMonth }
+                .forEach { event ->
+                    deriveProjectedDebtMovementsFromEvent(event).forEach { movement ->
+                        if (movement.amount.compareTo(BigDecimal.ZERO) <= 0) {
+                            return@forEach
+                        }
+
+                        val direction = DirectionalDebtKey(movement.payerId, movement.receiverId, movement.currency)
+                        val monthKey = direction to selectedMonth
+                        directionalByMonth[monthKey] =
+                            directionalByMonth
+                                .getOrDefault(monthKey, BigDecimal.ZERO)
+                                .add(movement.amount)
+                                .asMoney()
+                    }
+                }
+        }
+
+        if (directionalByMonth.isEmpty()) {
+            return emptyList()
+        }
+
+        val directionalTotals = mutableMapOf<DirectionalDebtKey, BigDecimal>()
+        directionalByMonth.forEach { (monthKey, amount) ->
+            val direction = monthKey.first
+            directionalTotals[direction] =
+                directionalTotals
+                    .getOrDefault(direction, BigDecimal.ZERO)
+                    .add(amount)
+                    .asMoney()
         }
 
         if (directionalTotals.isEmpty()) {
@@ -627,9 +672,15 @@ internal class GroupOverviewBuilderService(
 
                     val finalDirection = if (net.compareTo(BigDecimal.ZERO) > 0) forward else backward
                     val outstanding = net.abs().asMoney()
-                    val minimumMonth = canonical.minimumMonth(directionalByMonth)
+                    val monthsForDetails =
+                        if (isFutureSelection) {
+                            listOf(selectedMonth)
+                        } else {
+                            val minimumMonth = canonical.minimumMonth(directionalByMonth)
+                            buildMonthRange(minimumMonth, selectedMonth)
+                        }
                     val monthValues =
-                        buildMonthRange(minimumMonth, selectedMonth)
+                        monthsForDetails
                             .mapNotNull { month ->
                                 val monthForward = directionalByMonth.getOrDefault(forward to month, BigDecimal.ZERO).asMoney()
                                 val monthBackward = directionalByMonth.getOrDefault(backward to month, BigDecimal.ZERO).asMoney()

@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.scenarios.wallet
 
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyComposition
@@ -311,7 +312,7 @@ class GroupOverviewDashboardScenarioDslTest {
     }
 
     @Test
-    fun `group overview debt pairs should net opposite directions and accumulate unpaid months including future selected month`() {
+    fun `group overview debt pairs should use selected future month only and include simulated installment debt`() {
         val today = LocalDate.of(2026, 4, 10)
         val selectedMonth = YearMonth.of(2026, 6)
         val groupService = ScenarioGroupService()
@@ -407,19 +408,38 @@ class GroupOverviewDashboardScenarioDslTest {
                 )
 
                 switchUser(payerId)
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        groupId = selectedGroupId,
+                        originId = payerBankId,
+                        date = LocalDate.of(2026, 4, 15),
+                        value = BigDecimal("40.00"),
+                        name = "Future installment debt",
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 3,
+                        periodicity = RecurrenceType.MONTHLY,
+                        beneficiaries =
+                            listOf(
+                                NewWalletBeneficiaryLeg(userId = payerId, benefitPercent = BigDecimal("50.00")),
+                                NewWalletBeneficiaryLeg(userId = receiverId, benefitPercent = BigDecimal("50.00")),
+                            ),
+                    ),
+                )
                 fetchGroupOverview(groupId = selectedGroupId, selectedMonth = selectedMonth)
             }
 
             then {
                 groupOverviewDebtPairsSizeShouldBe(1)
-                groupOverviewDebtPairShouldBe(payerId = payerId, receiverId = receiverId, outstanding = 90)
-                groupOverviewDebtPairShouldNotExist(payerId = receiverId, receiverId = payerId)
+                groupOverviewDebtPairShouldBe(payerId = receiverId, receiverId = payerId, outstanding = 20)
+                groupOverviewDebtPairShouldNotExist(payerId = payerId, receiverId = receiverId)
                 groupOverviewDebtPairDetailLabelsShouldContain(
-                    payerId = payerId,
-                    receiverId = receiverId,
-                    expectedLabels = listOf("01-2026", "02-2026"),
+                    payerId = receiverId,
+                    receiverId = payerId,
+                    expectedLabels = listOf("06-2026"),
                 )
-                groupOverviewCardShouldBe(OverviewDashboardCardKey.GROUP_MEMBER_DEBTS, 90)
+                groupOverviewCardShouldBe(OverviewDashboardCardKey.GROUP_MEMBER_DEBTS, 20)
             }
         }
     }

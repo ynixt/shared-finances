@@ -28,6 +28,12 @@ interface GroupDebtService {
         groupId: UUID,
     ): GroupDebtWorkspace
 
+    suspend fun getWorkspaceForMonth(
+        userId: UUID,
+        groupId: UUID,
+        selectedMonth: YearMonth,
+    ): GroupDebtWorkspace = getWorkspace(userId = userId, groupId = groupId)
+
     suspend fun listHistory(
         userId: UUID,
         groupId: UUID,
