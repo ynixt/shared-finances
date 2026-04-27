@@ -602,6 +602,11 @@ class WalletScenarioWhen internal constructor(
 
     fun lastWalletEventId(): UUID = resolver.requireLastWalletEventId()
 
+    fun lastRecurrenceConfigId(): UUID =
+        requireNotNull(context.lastRecurrenceConfigId) {
+            "No recurrence config tracked in scenario"
+        }
+
     suspend fun runRecurrence() {
         runtime.recurrenceService.queueAllPendingOfExecution()
 
