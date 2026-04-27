@@ -19,8 +19,10 @@ import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairBalance
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
 import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
+import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEventListService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.GroupMemberDebtDatabaseClientRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.GroupMemberDebtMovementSpringDataRepository
 import kotlinx.coroutines.reactor.awaitSingle
@@ -37,6 +39,8 @@ class GroupDebtServiceImpl(
     private val groupPermissionService: GroupPermissionService,
     private val movementRepository: GroupMemberDebtMovementSpringDataRepository,
     private val debtDatabaseClientRepository: GroupMemberDebtDatabaseClientRepository,
+    private val walletEventRepository: WalletEventRepository,
+    private val walletEventListService: WalletEventListService,
 ) : GroupDebtService {
     companion object {
         private val ZERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
@@ -135,30 +139,18 @@ class GroupDebtServiceImpl(
     ): List<GroupDebtMovementLine> {
         ensureReadAccess(userId, groupId)
 
-        return debtDatabaseClientRepository
-            .listHistory(
-                groupId = groupId,
-                payerId = filter.payerId,
-                receiverId = filter.receiverId,
-                currency = filter.currency,
-            ).collectList()
-            .awaitSingle()
-            .map { row ->
-                GroupDebtMovementLine(
-                    id = row.id,
-                    payerId = row.payerId,
-                    receiverId = row.receiverId,
-                    month = row.month,
-                    currency = row.currency.uppercase(),
-                    deltaSigned = row.deltaSigned.asMoney(),
-                    reasonKind = GroupDebtMovementReasonKind.valueOf(row.reasonKind),
-                    createdByUserId = row.createdByUserId,
-                    note = row.note,
-                    sourceWalletEventId = row.sourceWalletEventId,
-                    sourceMovementId = row.sourceMovementId,
-                    createdAt = row.createdAt,
-                )
-            }
+        val history =
+            debtDatabaseClientRepository
+                .listHistory(
+                    groupId = groupId,
+                    payerId = filter.payerId,
+                    receiverId = filter.receiverId,
+                    currency = filter.currency,
+                ).collectList()
+                .awaitSingle()
+                .map { row -> row.toLine() }
+
+        return hydrateSourceWalletEvents(history)
     }
 
     override suspend fun getMovement(
@@ -168,10 +160,13 @@ class GroupDebtServiceImpl(
     ): GroupDebtMovementLine {
         ensureReadAccess(userId, groupId)
 
-        return movementRepository
-            .findByIdAndGroupId(movementId, groupId)
-            .awaitSingleOrNull()
-            ?.toLine() ?: throw GroupDebtMovementNotFoundException(movementId)
+        val movement =
+            movementRepository
+                .findByIdAndGroupId(movementId, groupId)
+                .awaitSingleOrNull()
+                ?.toLine() ?: throw GroupDebtMovementNotFoundException(movementId)
+
+        return hydrateSourceWalletEvents(listOf(movement)).first()
     }
 
     @Transactional
@@ -514,6 +509,50 @@ class GroupDebtServiceImpl(
             sourceMovementId = sourceMovementId,
             createdAt = createdAt,
         )
+
+    private fun GroupMemberDebtDatabaseClientRepository.DebtMovementHistoryRow.toLine(): GroupDebtMovementLine =
+        GroupDebtMovementLine(
+            id = id,
+            payerId = payerId,
+            receiverId = receiverId,
+            month = month,
+            currency = currency.uppercase(),
+            deltaSigned = deltaSigned.asMoney(),
+            reasonKind = GroupDebtMovementReasonKind.valueOf(reasonKind),
+            createdByUserId = createdByUserId,
+            note = note,
+            sourceWalletEventId = sourceWalletEventId,
+            sourceMovementId = sourceMovementId,
+            createdAt = createdAt,
+        )
+
+    private suspend fun hydrateSourceWalletEvents(movements: List<GroupDebtMovementLine>): List<GroupDebtMovementLine> {
+        val sourceWalletEventIds =
+            movements
+                .mapNotNull { it.sourceWalletEventId }
+                .toSet()
+
+        if (sourceWalletEventIds.isEmpty()) {
+            return movements
+        }
+
+        val sourceWalletEventsById =
+            walletEventListService
+                .convertEntityToEntryListResponse(
+                    walletEventRepository
+                        .findAllByIdIn(sourceWalletEventIds)
+                        .collectList()
+                        .awaitSingle(),
+                ).associateBy { it.id }
+
+        return movements.map { movement ->
+            movement.copy(
+                sourceWalletEvent =
+                    movement.sourceWalletEventId
+                        ?.let { sourceWalletEventsById[it] },
+            )
+        }
+    }
 
     private data class MutablePosition(
         val userId: UUID,

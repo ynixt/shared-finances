@@ -51,6 +51,19 @@ internal class InMemoryWalletEventRepository(
 
     override fun findById(id: UUID): Mono<WalletEventEntity> = Mono.justOrEmpty(data[id])
 
+    override fun findAllByIdIn(ids: Set<UUID>): Flux<WalletEventEntity> {
+        if (ids.isEmpty()) {
+            return Flux.empty()
+        }
+
+        return Flux.fromIterable(
+            data.values.filter { event ->
+                val eventId = event.id
+                eventId != null && ids.contains(eventId)
+            },
+        )
+    }
+
     override fun deleteById(id: UUID): Mono<Long> = Mono.just(if (data.remove(id) != null) 1L else 0L)
 
     override fun findOneByRecurrenceEventIdAndDate(

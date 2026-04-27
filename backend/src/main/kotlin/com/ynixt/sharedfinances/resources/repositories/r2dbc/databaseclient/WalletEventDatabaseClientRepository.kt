@@ -18,6 +18,47 @@ import java.util.UUID
 class WalletEventDatabaseClientRepository(
     private val dbClient: DatabaseClient,
 ) : DatabaseClientRepository() {
+    fun findAllByIdIn(eventIds: Set<UUID>): Flux<WalletEventEntity> {
+        if (eventIds.isEmpty()) {
+            return Flux.empty()
+        }
+
+        val fullSql = """
+            SELECT
+                we.*,
+                ${WalletEntryR2DBCMapping.createSelectForWalletEntry("wen", "entry_")},
+                ${WalletItemR2DBCMapping.createSelectForWalletItem("wi", "entry_wi_")}
+            FROM wallet_event we
+            JOIN wallet_entry wen ON wen.wallet_event_id = we.id
+            JOIN wallet_item wi ON wi.id = wen.wallet_item_id
+            WHERE we.id = ANY(:eventIds)
+            ORDER BY we.date DESC, we.id DESC, wen.value ASC
+        """
+
+        return dbClient
+            .sql(fullSql)
+            .bind("eventIds", eventIds.toTypedArray())
+            .map { row, _ ->
+                val event = WalletEventR2DBCMapping.walletEventFromRow(row, "")
+                val entry = WalletEntryR2DBCMapping.walletEntryFromRow(row, "entry_")
+                entry.walletItem = WalletItemR2DBCMapping.walletItemFromRow(row, "entry_wi_")
+                Pair(event, entry)
+            }.all()
+            .bufferUntilChanged { it.first.id!! }
+            .map { pairs ->
+                val event = pairs.first().first
+
+                event.entries =
+                    pairs.map { it.second }.also {
+                        it.forEach { entry ->
+                            entry.event = event
+                        }
+                    }
+
+                event
+            }
+    }
+
     fun findAll(
         scope: WalletTransactionQueryScope,
         limit: Int,

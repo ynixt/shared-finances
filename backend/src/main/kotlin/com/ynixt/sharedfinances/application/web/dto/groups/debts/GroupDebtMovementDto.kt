@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.application.web.dto.groups.debts
 
+import com.ynixt.sharedfinances.application.web.dto.walletentry.EventForListDto
 import com.ynixt.sharedfinances.domain.enums.GroupDebtMovementReasonKind
 import java.math.BigDecimal
 import java.time.OffsetDateTime
@@ -16,6 +17,7 @@ data class GroupDebtMovementDto(
     val createdByUserId: UUID,
     val note: String?,
     val sourceWalletEventId: UUID?,
+    val sourceWalletEvent: EventForListDto? = null,
     val sourceMovementId: UUID?,
     val createdAt: OffsetDateTime?,
 )

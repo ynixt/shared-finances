@@ -13,14 +13,15 @@
       <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h3 class="text-lg font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.balancesTitle' | translate }}</h3>
-          <span class="text-sm text-slate-500">{{ workspace()?.balances?.length ?? 0 }}</span>
+          <span class="text-sm text-slate-500">{{ outstandingBalanceGridItems().length }}</span>
         </div>
 
-        @if ((workspace()?.balances?.length ?? 0) === 0) {
+        @if (outstandingBalanceGridItems().length === 0) {
           <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyBalances' | translate }}</p>
         } @else {
           <div class="flex flex-col gap-4">
-            @for (pair of workspace()!.balances; track pair.payerId + pair.receiverId + pair.currency) {
+            @for (item of outstandingBalanceGridItems(); track outstandingBalanceTrack(item)) {
+              @let pair = item.pair;
               <article class="rounded-xl border border-slate-200 dark:border-surface-500 p-4">
                 <div class="mb-3 flex flex-wrap items-start justify-between gap-2">
                   <div>
@@ -39,26 +40,50 @@
                   </div>
                 </div>
 
-                <p-table [value]="pair.monthlyComposition" styleClass="p-datatable-sm">
-                  <ng-template #header>
-                    <tr>
-                      <th>{{ 'financesPage.groupsPage.debtsPage.month' | translate }}</th>
-                      <th>{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</th>
-                      <th>{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</th>
-                      <th>{{ 'financesPage.groupsPage.debtsPage.settlementDelta' | translate }}</th>
-                      <th>{{ 'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate }}</th>
-                    </tr>
-                  </ng-template>
-                  <ng-template #body let-row>
-                    <tr>
-                      <td>{{ monthDate(row.month) | localDate: 'MMM y' }}</td>
-                      <td>{{ row.netAmount | localCurrency: pair.currency }}</td>
-                      <td>{{ row.chargeDelta | localCurrency: pair.currency }}</td>
-                      <td>{{ row.settlementDelta | localCurrency: pair.currency }}</td>
-                      <td>{{ row.manualAdjustmentDelta | localCurrency: pair.currency }}</td>
-                    </tr>
-                  </ng-template>
-                </p-table>
+                @if (item.monthlyCompositionItems.length === 0) {
+                  <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyMonthlyComposition' | translate }}</p>
+                } @else {
+                  <p-data-view [value]="item.monthlyCompositionItems">
+                    <ng-template #list let-items>
+                      <div class="grid grid-cols-12 gap-3">
+                        @for (composition of items; track composition.id) {
+                          <article
+                            class="col-span-12 md:col-span-6 xl:col-span-4 rounded-lg border border-slate-200 dark:border-surface-600 p-3"
+                          >
+                            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
+                              {{ monthDate(composition.month) | localDate: 'MMM y' }}
+                            </p>
+
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                              <div class="flex flex-col gap-1">
+                                <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</span>
+                                <span class="font-medium">{{ composition.netAmount | localCurrency: composition.currency }}</span>
+                              </div>
+                              <div class="flex flex-col gap-1">
+                                <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</span>
+                                <span class="font-medium">{{ composition.chargeDelta | localCurrency: composition.currency }}</span>
+                              </div>
+                              <div class="flex flex-col gap-1">
+                                <span class="text-xs text-muted">{{
+                                  'financesPage.groupsPage.debtsPage.settlementDelta' | translate
+                                }}</span>
+                                <span class="font-medium">{{ composition.settlementDelta | localCurrency: composition.currency }}</span>
+                              </div>
+                              <div class="flex flex-col gap-1">
+                                <span class="text-xs text-muted">{{
+                                  'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate
+                                }}</span>
+                                <span class="font-medium">{{
+                                  composition.manualAdjustmentDelta | localCurrency: composition.currency
+                                }}</span>
+                              </div>
+                            </div>
+                          </article>
+                        }
+                      </div>
+                    </ng-template>
+                  </p-data-view>
+                }
               </article>
             }
           </div>
@@ -68,40 +93,72 @@
       <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
         <h3 class="mb-3 text-lg font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.historyTitle' | translate }}</h3>
 
-        <p-table [value]="history()" styleClass="p-datatable-sm">
-          <ng-template #header>
-            <tr>
-              <th>{{ 'financesPage.groupsPage.debtsPage.createdAtColumn' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.month' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.pair' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.reasonColumn' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.amountColumn' | translate }}</th>
-              <th>{{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}</th>
-              <th></th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-movement>
-            <tr>
-              <td>{{ movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—' }}</td>
-              <td>{{ monthDate(movement.month) | localDate: 'MMM y' }}</td>
-              <td>{{ memberName(movement.createdByUserId) }}</td>
-              <td>{{ memberName(movement.payerId) }} -> {{ memberName(movement.receiverId) }}</td>
-              <td>{{ sourceReferenceLabel(movement) }}</td>
-              <td>{{ reasonLabel(movement.reasonKind) | translate }}</td>
-              <td>{{ movement.deltaSigned | localCurrency: movement.currency }}</td>
-              <td>{{ movement.note ?? '—' }}</td>
-              <td class="text-end">
-                @if (canMutate() && isAdjustableMovement(movement)) {
-                  <button type="button" pButton class="p-button-text p-button-sm" (click)="openAdjustmentPage(movement)">
-                    {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
-                  </button>
+        @if (historyGridItems().length === 0) {
+          <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyHistory' | translate }}</p>
+        } @else {
+          <p-data-view [value]="historyGridItems()">
+            <ng-template #list let-items>
+              <div class="grid grid-cols-12 gap-4 grid-nogutter">
+                @for (item of items; track historyTrack(item); let first = $first) {
+                  <div class="col-span-12">
+                    <article
+                      class="flex flex-col gap-4 py-5"
+                      [ngClass]="{ 'border-t border-surface-200 dark:border-surface-600 dark:border-surface-700': !first }"
+                    >
+                      @let movement = item.movement;
+
+                      <div class="flex flex-wrap gap-4 items-center text-muted text-sm">
+                        <span class="table-item">{{ movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—' }}</span>
+                        <span class="table-item">{{ monthDate(movement.month) | localDate: 'MMM y' }}</span>
+                        <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
+                      </div>
+
+                      @if (item.linkedWalletEventName != null) {
+                        <div class="flex flex-col gap-1">
+                          <span class="text-xs uppercase tracking-wide text-muted">{{
+                            'financesPage.groupsPage.debtsPage.linkedTransaction' | translate
+                          }}</span>
+                          <span class="table-item">{{ item.linkedWalletEventName }}</span>
+                        </div>
+                      }
+
+                      @if (item.linkedWalletEvent != null) {
+                        <app-entry-description [event]="item.linkedWalletEvent" [showWalletOwner]="true"></app-entry-description>
+                      }
+
+                      <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex flex-col gap-2">
+                          <span class="font-semibold text-default"
+                            >{{ memberName(movement.payerId) }} -> {{ memberName(movement.receiverId) }}</span
+                          >
+                          <span class="text-sm text-muted"
+                            >{{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
+                            {{ memberName(movement.createdByUserId) }}</span
+                          >
+                          <span class="text-sm text-muted"
+                            >{{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}: {{ sourceReferenceLabel(movement) }}</span
+                          >
+                          <span class="text-sm text-muted"
+                            >{{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}: {{ movement.note ?? '—' }}</span
+                          >
+                        </div>
+
+                        <div class="flex flex-col items-end gap-2 ml-auto">
+                          <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
+                          @if (canMutate() && isAdjustableMovement(movement)) {
+                            <button type="button" pButton class="p-button-text p-button-sm" (click)="openAdjustmentPage(movement)">
+                              {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </article>
+                  </div>
                 }
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+              </div>
+            </ng-template>
+          </p-data-view>
+        }
       </div>
     </div>
   </div>

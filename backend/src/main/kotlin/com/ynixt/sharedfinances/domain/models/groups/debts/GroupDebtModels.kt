@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.models.groups.debts
 
 import com.ynixt.sharedfinances.domain.enums.GroupDebtMovementReasonKind
+import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import java.math.BigDecimal
 import java.time.OffsetDateTime
 import java.time.YearMonth
@@ -37,6 +38,7 @@ data class GroupDebtMovementLine(
     val createdByUserId: UUID,
     val note: String?,
     val sourceWalletEventId: UUID?,
+    val sourceWalletEvent: EventListResponse? = null,
     val sourceMovementId: UUID?,
     val createdAt: OffsetDateTime?,
 )

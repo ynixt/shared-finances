@@ -15,6 +15,8 @@ data class WalletEventCursorFindAll(
 interface WalletEventRepository {
     fun findById(id: UUID): Mono<WalletEventEntity>
 
+    fun findAllByIdIn(ids: Set<UUID>): Flux<WalletEventEntity>
+
     fun deleteById(id: UUID): Mono<Long>
 
     fun findOneByRecurrenceEventIdAndDate(

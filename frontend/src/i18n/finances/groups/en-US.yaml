@@ -62,7 +62,10 @@ financesPage:
       chargeDelta: Charge delta
       settlementDelta: Settlement delta
       adjustmentDelta: Adjustment delta
+      emptyMonthlyComposition: No monthly composition for this pair.
       historyTitle: Movement history
+      emptyHistory: No debt movement found.
+      linkedTransaction: Linked transaction
       createdAtColumn: Created at
       actorColumn: Actor
       pair: Pair

@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMoveme
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtPairBalanceDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtWorkspaceDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDebtDtoMapper
+import com.ynixt.sharedfinances.application.web.mapper.WalletEventDtoMapper
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupDebtAdjustmentException
 import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAdjustmentInput
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
@@ -16,7 +17,9 @@ import org.springframework.stereotype.Component
 import java.time.YearMonth
 
 @Component
-class GroupDebtDtoMapperImpl : GroupDebtDtoMapper {
+class GroupDebtDtoMapperImpl(
+    private val walletEventDtoMapper: WalletEventDtoMapper,
+) : GroupDebtDtoMapper {
     override fun toWorkspaceDto(from: GroupDebtWorkspace): GroupDebtWorkspaceDto =
         GroupDebtWorkspaceDto(
             balances =
@@ -52,6 +55,9 @@ class GroupDebtDtoMapperImpl : GroupDebtDtoMapper {
             createdByUserId = from.createdByUserId,
             note = from.note,
             sourceWalletEventId = from.sourceWalletEventId,
+            sourceWalletEvent =
+                from.sourceWalletEvent
+                    ?.let(walletEventDtoMapper::fromListResponseToListDto),
             sourceMovementId = from.sourceMovementId,
             createdAt = from.createdAt,
         )

@@ -20,6 +20,8 @@ class WalletEventRepositoryImpl(
 ) : WalletEventRepository {
     override fun findById(id: UUID): Mono<WalletEventEntity> = springDataRepository.findById(id.toString())
 
+    override fun findAllByIdIn(ids: Set<UUID>): Flux<WalletEventEntity> = dcRepository.findAllByIdIn(ids)
+
     override fun deleteById(id: UUID): Mono<Long> = springDataRepository.deleteById(id.toString()).thenReturn(1L)
 
     override fun findOneByRecurrenceEventIdAndDate(

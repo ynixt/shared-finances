@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -5,8 +6,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { DataView } from 'primeng/dataview';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { TableModule } from 'primeng/table';
 
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import {
@@ -19,8 +20,15 @@ import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
+import { EntryDescriptionComponent } from '../../components/wallet-entry-table/components/entry-description/entry-description.component';
 import { GroupDebtService } from '../../services/group-debt.service';
 import { GroupService } from '../../services/group.service';
+import {
+  GroupDebtHistoryGridItem,
+  GroupDebtOutstandingBalanceGridItem,
+  mapGroupDebtHistoryToGridItems,
+  mapOutstandingBalancesToGridItems,
+} from './group-debts-page.viewmodel';
 
 interface MemberOption {
   label: string;
@@ -29,7 +37,17 @@ interface MemberOption {
 
 @Component({
   selector: 'app-group-debts-page',
-  imports: [ButtonDirective, FinancesTitleBarComponent, LocalCurrencyPipe, LocalDatePipe, ProgressSpinner, TableModule, TranslatePipe],
+  imports: [
+    ButtonDirective,
+    DataView,
+    EntryDescriptionComponent,
+    FinancesTitleBarComponent,
+    LocalCurrencyPipe,
+    LocalDatePipe,
+    NgClass,
+    ProgressSpinner,
+    TranslatePipe,
+  ],
   templateUrl: './group-debts-page.component.html',
 })
 export class GroupDebtsPageComponent {
@@ -48,6 +66,10 @@ export class GroupDebtsPageComponent {
   readonly history = signal<GroupDebtMovementDto[]>([]);
   readonly loading = signal(true);
   readonly canMutate = computed(() => this.group()?.permissions?.includes('SEND_ENTRIES') === true);
+  readonly outstandingBalanceGridItems = computed<GroupDebtOutstandingBalanceGridItem[]>(() =>
+    mapOutstandingBalancesToGridItems(this.workspace()?.balances ?? []),
+  );
+  readonly historyGridItems = computed<GroupDebtHistoryGridItem[]>(() => mapGroupDebtHistoryToGridItems(this.history()));
 
   readonly memberOptions = computed<MemberOption[]>(() =>
     this.members().map(member => ({
@@ -112,6 +134,14 @@ export class GroupDebtsPageComponent {
     }
 
     return this.translateService.instant('financesPage.groupsPage.debtsPage.noSource');
+  }
+
+  historyTrack(item: GroupDebtHistoryGridItem): string {
+    return item.movement.id;
+  }
+
+  outstandingBalanceTrack(item: GroupDebtOutstandingBalanceGridItem): string {
+    return item.id;
   }
 
   openSettlementPage(pair: GroupDebtPairBalanceDto) {

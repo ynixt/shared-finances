@@ -62,7 +62,10 @@ financesPage:
       chargeDelta: Delta de cobrança
       settlementDelta: Delta de quitação
       adjustmentDelta: Delta de ajuste
+      emptyMonthlyComposition: Nenhuma composição mensal para este par.
       historyTitle: Histórico de movimentos
+      emptyHistory: Nenhum movimento de dívida encontrado.
+      linkedTransaction: Transação vinculada
       createdAtColumn: Criado em
       actorColumn: Autor
       pair: Par
