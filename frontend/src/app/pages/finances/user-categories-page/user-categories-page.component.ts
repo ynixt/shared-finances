@@ -41,16 +41,22 @@ export class UserCategoriesPageComponent {
     this.loading = true;
     this.currentPage = page;
 
-    this.categories = await this.categoriesService.getAllCategories(undefined, {
-      page,
-      size: this.pageSize,
-      sort: [
-        {
-          property: 'name',
-          direction: 'ASC',
-        },
-      ],
-    });
+    this.categories = await this.categoriesService.getAllCategories(
+      {
+        onlyRoot: true,
+        mountChildren: true,
+      },
+      {
+        page,
+        size: this.pageSize,
+        sort: [
+          {
+            property: 'name',
+            direction: 'ASC',
+          },
+        ],
+      },
+    );
 
     this.categoriesTree = this.categories.content.map(c => ({
       label: c.name,
