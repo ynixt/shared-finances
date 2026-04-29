@@ -100,16 +100,23 @@ export class GroupCategoriesPageComponent {
     this.loading = true;
     this.currentPage = page;
 
-    this.categories = await this.groupCategoriesService.getAllCategories(this.groupId, undefined, {
-      page,
-      size: this.pageSize,
-      sort: [
-        {
-          property: 'name',
-          direction: 'ASC',
-        },
-      ],
-    });
+    this.categories = await this.groupCategoriesService.getAllCategories(
+      this.groupId,
+      {
+        onlyRoot: true,
+        mountChildren: true,
+      },
+      {
+        page,
+        size: this.pageSize,
+        sort: [
+          {
+            property: 'name',
+            direction: 'ASC',
+          },
+        ],
+      },
+    );
 
     this.categoriesTree = this.categories.content.map(c => ({
       label: c.name,

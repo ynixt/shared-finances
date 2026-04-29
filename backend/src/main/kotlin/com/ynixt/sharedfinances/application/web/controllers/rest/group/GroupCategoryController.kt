@@ -38,8 +38,8 @@ class GroupCategoryController(
     suspend fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @PathVariable groupId: UUID,
-        @RequestParam onlyRoot: Boolean = true,
-        @RequestParam mountChildren: Boolean = true,
+        @RequestParam onlyRoot: Boolean = false,
+        @RequestParam mountChildren: Boolean = false,
         @RequestParam query: String? = null,
         pageable: Pageable,
     ): Page<CategoryDto> =

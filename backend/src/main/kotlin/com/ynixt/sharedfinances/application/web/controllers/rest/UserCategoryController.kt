@@ -40,8 +40,8 @@ class UserCategoryController(
     @GetMapping
     suspend fun findAll(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-        @RequestParam onlyRoot: Boolean = true,
-        @RequestParam mountChildren: Boolean = true,
+        @RequestParam onlyRoot: Boolean = false,
+        @RequestParam mountChildren: Boolean = false,
         @RequestParam query: String? = null,
         pageable: Pageable,
     ): Page<CategoryDto> =

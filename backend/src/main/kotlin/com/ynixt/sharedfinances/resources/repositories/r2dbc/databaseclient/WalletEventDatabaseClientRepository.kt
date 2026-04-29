@@ -195,22 +195,37 @@ class WalletEventDatabaseClientRepository(
         if (walletItemId != null) {
             sql += " AND wen.wallet_item_id = :walletItemId"
         }
+
         if (walletItemIds.isNotEmpty()) {
             sql += " AND wen.wallet_item_id = ANY(:walletItemIds)"
         }
+
         if (billId != null) {
             sql += " AND wen.bill_id = :billId"
         }
+
         if (entryTypes.isNotEmpty()) {
             sql += " AND CAST(we.type AS TEXT) = ANY(:entryTypes)"
         }
-        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
+
+        val categoryPredicate =
+            buildCategoryPredicateSql(
+                categoryConceptIds = categoryConceptIds,
+                includeUncategorized = includeUncategorized,
+            )
+
+        if (categoryPredicate.isNotBlank()) {
+            sql += " $categoryPredicate"
+        }
+
         if (minimumDate != null) {
             sql += " AND we.date >= :minimumDate"
         }
+
         if (maximumDate != null) {
             sql += " AND we.date <= :maximumDate"
         }
+
         if (cursor != null) {
             sql += " AND (we.date, we.id) < (:cursorDate, :cursorId)"
         }
@@ -242,24 +257,39 @@ class WalletEventDatabaseClientRepository(
             sql +=
                 " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.wallet_item_id = :walletItemId)"
         }
+
         if (walletItemIds.isNotEmpty()) {
             sql +=
                 " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.wallet_item_id = ANY(:walletItemIds))"
         }
+
         if (billId != null) {
             sql +=
                 " AND EXISTS (SELECT 1 FROM wallet_entry wen WHERE wen.wallet_event_id = we.id AND wen.bill_id = :billId)"
         }
+
         if (entryTypes.isNotEmpty()) {
             sql += " AND CAST(we.type AS TEXT) = ANY(:entryTypes)"
         }
-        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
+
+        val categoryPredicate =
+            buildCategoryPredicateSql(
+                categoryConceptIds = categoryConceptIds,
+                includeUncategorized = includeUncategorized,
+            )
+
+        if (categoryPredicate.isNotBlank()) {
+            sql += " $categoryPredicate"
+        }
+
         if (minimumDate != null) {
             sql += " AND we.date >= :minimumDate"
         }
+
         if (maximumDate != null) {
             sql += " AND we.date <= :maximumDate"
         }
+
         if (cursor != null) {
             sql += " AND (we.date, we.id) < (:cursorDate, :cursorId)"
         }
