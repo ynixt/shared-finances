@@ -213,7 +213,14 @@ class RecurrenceEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             sql += " AND re.type = ANY(:entryTypes)"
         }
-        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
+        val categoryPredicate =
+            buildCategoryPredicateSql(
+                categoryConceptIds = categoryConceptIds,
+                includeUncategorized = includeUncategorized,
+            )
+        if (categoryPredicate.isNotBlank()) {
+            sql += " $categoryPredicate"
+        }
 
         sql += " GROUP BY re.id, re.next_execution"
         sql += " ORDER BY $orderClause"
@@ -260,7 +267,14 @@ class RecurrenceEventDatabaseClientRepository(
         if (entryTypes.isNotEmpty()) {
             sql += " AND re.type = ANY(:entryTypes)"
         }
-        sql += buildCategoryPredicateSql(categoryConceptIds = categoryConceptIds, includeUncategorized = includeUncategorized)
+        val categoryPredicate =
+            buildCategoryPredicateSql(
+                categoryConceptIds = categoryConceptIds,
+                includeUncategorized = includeUncategorized,
+            )
+        if (categoryPredicate.isNotBlank()) {
+            sql += " $categoryPredicate"
+        }
 
         sql += " ORDER BY $orderClause"
         return sql
