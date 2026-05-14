@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest.group
 
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.CreateGroupDebtAdjustmentRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.EditGroupDebtAdjustmentRequestDto
+import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMonthlyDrilldownDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMovementDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtWorkspaceDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDebtDtoMapper
@@ -57,6 +58,7 @@ class GroupDebtController(
         @RequestParam(required = false) payerId: UUID?,
         @RequestParam(required = false) receiverId: UUID?,
         @RequestParam(required = false) currency: String?,
+        @RequestParam(required = false) selectedMonth: String?,
     ): List<GroupDebtMovementDto> =
         groupDebtService
             .listHistory(
@@ -67,8 +69,30 @@ class GroupDebtController(
                         payerId = payerId,
                         receiverId = receiverId,
                         currency = currency,
+                        selectedMonth = parseSelectedMonthOrNull(selectedMonth),
                     ),
             ).map(groupDebtDtoMapper::toMovementDto)
+
+    @Operation(summary = "Get monthly drilldown for a debt pair")
+    @GetMapping("/monthly-drilldown")
+    suspend fun getMonthlyDrilldown(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable groupId: UUID,
+        @RequestParam payerId: UUID,
+        @RequestParam receiverId: UUID,
+        @RequestParam currency: String,
+        @RequestParam selectedMonth: String,
+    ): GroupDebtMonthlyDrilldownDto =
+        groupDebtDtoMapper.toMonthlyDrilldownDto(
+            groupDebtService.getMonthlyDrilldown(
+                userId = principalToken.principal.id,
+                groupId = groupId,
+                payerId = payerId,
+                receiverId = receiverId,
+                currency = currency,
+                selectedMonth = parseSelectedMonth(selectedMonth),
+            ),
+        )
 
     @Operation(summary = "Get group debt movement by id")
     @GetMapping("/movements/{movementId}")
@@ -128,4 +152,9 @@ class GroupDebtController(
                 throw InvalidGroupDebtAdjustmentException("Month must use yyyy-MM format")
             }
     }
+
+    private fun parseSelectedMonthOrNull(raw: String?): YearMonth? =
+        raw
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::parseSelectedMonth)
 }

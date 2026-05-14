@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAdjustmentInput
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyDrilldown
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
@@ -41,6 +42,15 @@ internal object NoOpGroupDebtService : GroupDebtService {
         groupId: UUID,
         filter: GroupDebtHistoryFilter,
     ): List<GroupDebtMovementLine> = emptyList()
+
+    override suspend fun getMonthlyDrilldown(
+        userId: UUID,
+        groupId: UUID,
+        payerId: UUID,
+        receiverId: UUID,
+        currency: String,
+        selectedMonth: YearMonth,
+    ): GroupDebtMonthlyDrilldown = error("Not used in tests")
 
     override suspend fun getMovement(
         userId: UUID,

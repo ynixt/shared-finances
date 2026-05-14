@@ -9,10 +9,12 @@ import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
+import { Dialog } from 'primeng/dialog';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import {
+  GroupDebtMonthlyDrilldownDto,
   GroupDebtMovementDto,
   GroupDebtPairBalanceDto,
   GroupDebtWorkspaceDto,
@@ -47,6 +49,7 @@ interface MemberOption {
   imports: [
     ButtonDirective,
     DataView,
+    Dialog,
     EntryDescriptionComponent,
     FinancesTitleBarComponent,
     LocalCurrencyPipe,
@@ -76,6 +79,10 @@ export class GroupDebtsPageComponent {
   readonly history = signal<GroupDebtMovementDto[]>([]);
   readonly loading = signal(true);
   readonly workspaceLoading = signal(false);
+  readonly historyLoading = signal(false);
+  readonly drilldownVisible = signal(false);
+  readonly drilldownLoading = signal(false);
+  readonly monthlyDrilldown = signal<GroupDebtMonthlyDrilldownDto | undefined>(undefined);
   readonly dateControl = new FormControl<DateRange | undefined>(undefined);
   readonly canMutate = computed(() => this.group()?.permissions?.includes('SEND_ENTRIES') === true);
   readonly outstandingBalanceGridItems = computed<GroupDebtOutstandingBalanceGridItem[]>(() =>
@@ -107,16 +114,14 @@ export class GroupDebtsPageComponent {
     this.loading.set(true);
 
     try {
-      const [group, members, history] = await Promise.all([
+      const [group, members] = await Promise.all([
         this.groupService.getGroup(this.groupId),
         this.groupService.findAllMembers(this.groupId),
-        this.groupDebtService.listHistory(this.groupId),
       ]);
 
       this.group.set(group);
       this.members.set(members);
-      this.history.set(history);
-      await this.reloadWorkspace();
+      await this.reloadVisibleData();
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
     } finally {
@@ -130,11 +135,12 @@ export class GroupDebtsPageComponent {
     }
 
     if (syncUrl) {
-      void syncDateQueryParams(this.route, this.router, value, 'normal');
+      void syncDateQueryParams(this.route, this.router, value, 'day_only');
     }
 
     try {
-      await this.reloadWorkspace();
+      this.closeMonthlyDrilldown();
+      await this.reloadVisibleData();
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
     }
@@ -153,6 +159,14 @@ export class GroupDebtsPageComponent {
   }
 
   sourceReferenceLabel(movement: GroupDebtMovementDto): string {
+    if (movement.carriedOver) {
+      return this.translateService.instant('financesPage.groupsPage.debtsPage.carryoverSource');
+    }
+
+    if (movement.projected) {
+      return this.translateService.instant('financesPage.groupsPage.debtsPage.projectedSource');
+    }
+
     if (movement.sourceWalletEventId) {
       return this.translateService.instant('financesPage.groupsPage.debtsPage.sourceWalletEvent', {
         id: movement.sourceWalletEventId.slice(0, 8),
@@ -176,6 +190,10 @@ export class GroupDebtsPageComponent {
     return item.id;
   }
 
+  drilldownTrack(movement: GroupDebtMovementDto): string {
+    return movement.id;
+  }
+
   openSettlementPage(pair: GroupDebtPairBalanceDto) {
     void this.router.navigate(['/app/groups', this.groupId, 'debts', 'settlements', 'new'], {
       queryParams: {
@@ -186,31 +204,92 @@ export class GroupDebtsPageComponent {
     });
   }
 
+  async openMonthlyDrilldown(pair: GroupDebtPairBalanceDto) {
+    this.drilldownVisible.set(true);
+    this.drilldownLoading.set(true);
+    this.monthlyDrilldown.set(undefined);
+
+    try {
+      this.monthlyDrilldown.set(
+        await this.groupDebtService.getMonthlyDrilldown(this.groupId, {
+          payerId: pair.payerId,
+          receiverId: pair.receiverId,
+          currency: pair.currency,
+          selectedMonth: this.selectedMonth(),
+        }),
+      );
+    } catch (error) {
+      this.drilldownVisible.set(false);
+      this.errorMessageService.handleError(error, this.messageService);
+    } finally {
+      this.drilldownLoading.set(false);
+    }
+  }
+
+  closeMonthlyDrilldown() {
+    this.drilldownVisible.set(false);
+    this.drilldownLoading.set(false);
+    this.monthlyDrilldown.set(undefined);
+  }
+
   openAdjustmentPage(movement: GroupDebtMovementDto) {
     void this.router.navigate(['/app/groups', this.groupId, 'debts', 'adjustments', movement.id]);
   }
 
   isAdjustableMovement(movement: GroupDebtMovementDto): boolean {
-    return movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION;
+    return (
+      !movement.projected &&
+      !movement.carriedOver &&
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION
+    );
   }
 
   monthDate(month: string): Date {
     return this.yearMonthToDate(month);
   }
 
-  private async reloadWorkspace() {
+  transactionDate(movement: GroupDebtMovementDto): string | null | undefined {
+    return movement.transactionDate ?? movement.sourceWalletEvent?.date;
+  }
+
+  movementStateLabel(movement: GroupDebtMovementDto): string {
+    return movement.projected ? 'financesPage.groupsPage.debtsPage.projectedState' : 'financesPage.groupsPage.debtsPage.executedState';
+  }
+
+  drilldownHeader(): string {
+    const drilldown = this.monthlyDrilldown();
+
+    return this.translateService.instant('financesPage.groupsPage.debtsPage.drilldownTitle', {
+      payer: this.memberName(drilldown?.payerId ?? ''),
+      receiver: this.memberName(drilldown?.receiverId ?? ''),
+      month: drilldown?.month != null ? dayjs(`${drilldown.month}-01`).format('MMM YYYY') : '',
+    });
+  }
+
+  selectedMonth(): string {
+    return this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT_V2) ?? dayjs().format(MONTH_QUERY_PARAM_FORMAT_V2);
+  }
+
+  private async reloadVisibleData() {
     if (!this.groupId) {
       return;
     }
 
     this.workspaceLoading.set(true);
+    this.historyLoading.set(true);
 
     try {
-      this.workspace.set(
-        await this.groupDebtService.getWorkspace(this.groupId, this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT_V2)),
-      );
+      const selectedMonth = this.selectedMonth();
+      const [workspace, history] = await Promise.all([
+        this.groupDebtService.getWorkspace(this.groupId, selectedMonth),
+        this.groupDebtService.listHistory(this.groupId, { selectedMonth }),
+      ]);
+
+      this.workspace.set(workspace);
+      this.history.set(history);
     } finally {
       this.workspaceLoading.set(false);
+      this.historyLoading.set(false);
     }
   }
 

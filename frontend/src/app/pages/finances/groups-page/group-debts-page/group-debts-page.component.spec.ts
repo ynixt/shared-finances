@@ -16,7 +16,7 @@ describe('GroupDebtsPageComponent', () => {
     vi.restoreAllMocks();
   });
 
-  async function setup(monthQuery?: string) {
+  async function setup(dateQuery?: string) {
     const groupServiceMock = {
       getGroup: vi.fn().mockResolvedValue({ id: 'group-1', name: 'Group', permissions: ['SEND_ENTRIES'] }),
       findAllMembers: vi.fn().mockResolvedValue([]),
@@ -24,6 +24,19 @@ describe('GroupDebtsPageComponent', () => {
     const groupDebtServiceMock = {
       getWorkspace: vi.fn().mockResolvedValue({ balances: [] }),
       listHistory: vi.fn().mockResolvedValue([]),
+      getMonthlyDrilldown: vi
+        .fn()
+        .mockResolvedValue({
+          month: '2026-06',
+          payerId: 'payer-1',
+          receiverId: 'receiver-1',
+          currency: 'BRL',
+          netAmount: 0,
+          chargeDelta: 0,
+          settlementDelta: 0,
+          manualAdjustmentDelta: 0,
+          lines: [],
+        }),
     };
     const routerMock = {
       navigate: vi.fn().mockResolvedValue(true),
@@ -43,7 +56,7 @@ describe('GroupDebtsPageComponent', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ id: 'group-1' }),
-              queryParamMap: convertToParamMap(monthQuery == null ? {} : { month: monthQuery }),
+              queryParamMap: convertToParamMap(dateQuery == null ? {} : { date: dateQuery }),
             },
           },
         },
@@ -70,29 +83,83 @@ describe('GroupDebtsPageComponent', () => {
     };
   }
 
-  it('loads with current month selected by default', async () => {
+  it('loads current month workspace and history by default', async () => {
     const { component, groupDebtServiceMock } = await setup();
     const expectedMonth = dayjs(component.selectedMonth()).format('YYYY-MM');
 
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenCalledWith('group-1', expectedMonth);
+    expect(groupDebtServiceMock.listHistory).toHaveBeenCalledWith('group-1', { selectedMonth: expectedMonth });
     expect(expectedMonth).toBe(dayjs().format('YYYY-MM'));
   });
 
-  it('updates selected month and reloads debts when user changes month', async () => {
-    const { component, groupDebtServiceMock, routerMock } = await setup('2026-04');
+  it('reloads workspace and history when user changes month', async () => {
+    const { component, groupDebtServiceMock, routerMock } = await setup('04-2026');
 
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenCalledWith('group-1', '2026-04');
+    expect(groupDebtServiceMock.listHistory).toHaveBeenCalledWith('group-1', { selectedMonth: '2026-04' });
 
-    await component.onSelectedMonthChange(new Date(2026, 5, 20));
+    const nextRange = {
+      startDate: dayjs('2026-06-01'),
+      endDate: dayjs('2026-06-01'),
+      sameMonth: true,
+    };
+
+    component.dateControl.setValue(nextRange, { emitEvent: false });
+    await component.onSelectedMonthChange(nextRange, true);
 
     expect(routerMock.navigate).toHaveBeenCalledWith(
       [],
       expect.objectContaining({
-        queryParams: { month: '2026-06' },
+        queryParams: { date: '06-2026', startDate: null, endDate: null },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       }),
     );
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenLastCalledWith('group-1', '2026-06');
+    expect(groupDebtServiceMock.listHistory).toHaveBeenLastCalledWith('group-1', { selectedMonth: '2026-06' });
+  });
+
+  it('opens monthly drilldown with the selected month', async () => {
+    const { component, groupDebtServiceMock } = await setup('06-2026');
+
+    await component.openMonthlyDrilldown({
+      payerId: 'payer-1',
+      receiverId: 'receiver-1',
+      currency: 'BRL',
+      outstandingAmount: 10,
+      monthlyComposition: [],
+    });
+
+    expect(groupDebtServiceMock.getMonthlyDrilldown).toHaveBeenCalledWith('group-1', {
+      payerId: 'payer-1',
+      receiverId: 'receiver-1',
+      currency: 'BRL',
+      selectedMonth: '2026-06',
+    });
+  });
+
+  it('labels carried over lines as prior-month open balance', async () => {
+    const { component } = await setup('06-2026');
+
+    expect(
+      component.sourceReferenceLabel({
+        id: 'movement-1',
+        payerId: 'payer-1',
+        receiverId: 'receiver-1',
+        month: '2026-05',
+        transactionDate: null,
+        currency: 'BRL',
+        deltaSigned: 538.86,
+        reasonKind: 'BENEFICIARY_CHARGE',
+        createdByUserId: 'receiver-1',
+        carriedOver: true,
+        projected: false,
+        note: null,
+        sourceWalletEventId: null,
+        sourceWalletEvent: null,
+        sourceMovementId: null,
+        createdAt: null,
+      }),
+    ).toBe('financesPage.groupsPage.debtsPage.carryoverSource');
   });
 });

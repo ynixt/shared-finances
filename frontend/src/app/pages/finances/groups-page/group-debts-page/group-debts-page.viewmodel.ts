@@ -17,8 +17,8 @@ export interface GroupDebtMonthlyCompositionGridItem {
 
 export interface GroupDebtOutstandingBalanceGridItem {
   id: string;
-  monthlyCompositionItems: GroupDebtMonthlyCompositionGridItem[];
   pair: GroupDebtPairBalanceDto;
+  selectedMonthComposition: GroupDebtMonthlyCompositionGridItem | undefined;
 }
 
 export interface GroupDebtHistoryGridItem {
@@ -46,7 +46,7 @@ export function mapOutstandingBalancesToGridItems(balances: GroupDebtPairBalance
     return {
       id: pairId,
       pair,
-      monthlyCompositionItems: mapMonthlyCompositionToGridItems(pair.monthlyComposition, pair.currency, pairId),
+      selectedMonthComposition: mapMonthlyCompositionToGridItems(pair.monthlyComposition, pair.currency, pairId)[0],
     };
   });
 }

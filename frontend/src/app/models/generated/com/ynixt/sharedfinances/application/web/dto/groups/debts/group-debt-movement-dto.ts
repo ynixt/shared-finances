@@ -4,6 +4,7 @@ import { GroupDebtMovementReasonKind } from '../../../../../domain/enums/group-d
 import { EventForListDto } from '../../walletentry/event-for-list-dto';
 
 export interface GroupDebtMovementDto {
+  carriedOver: boolean;
   createdAt?: any | null;
   createdByUserId: string;
   currency: string;
@@ -12,9 +13,11 @@ export interface GroupDebtMovementDto {
   month: string;
   note?: string | null;
   payerId: string;
+  projected: boolean;
   reasonKind: GroupDebtMovementReasonKind;
   receiverId: string;
   sourceMovementId?: string | null;
   sourceWalletEvent?: EventForListDto | null;
   sourceWalletEventId?: string | null;
+  transactionDate?: string | null;
 }

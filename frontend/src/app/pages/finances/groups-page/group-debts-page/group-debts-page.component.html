@@ -9,11 +9,10 @@
       closeRouterLink=".."
     ></app-finances-title-bar>
 
-    <!--  TODO
-  <app-advanced-date-picker class="mb-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />-->
+    <app-advanced-date-picker class="mb-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />
 
     <div class="flex flex-col gap-4">
-      <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-surface-500 dark:bg-surface-900">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h3 class="text-xl font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.balancesTitle' | translate }}</h3>
           <span class="text-sm text-slate-500">{{ outstandingBalanceGridItems().length }}</span>
@@ -29,67 +28,51 @@
           <div class="flex flex-col gap-4">
             @for (item of outstandingBalanceGridItems(); track outstandingBalanceTrack(item)) {
               @let pair = item.pair;
-              <article class="rounded-xl border border-slate-200 dark:border-surface-500 p-4">
-                <div class="mb-3 flex flex-wrap items-start justify-between gap-2">
-                  <div>
+              @let composition = item.selectedMonthComposition;
+              <article class="rounded-xl border border-slate-200 p-4 dark:border-surface-600">
+                <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div class="flex flex-col gap-1">
                     <h4 class="font-semibold text-default">{{ pairLabel(pair) }}</h4>
-                    <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.outstanding' | translate }}</p>
+                    <span class="text-sm text-muted">{{ monthDate(selectedMonth()) | localDate: 'MMM y' }}</span>
                   </div>
+
                   <div class="text-right">
                     <div class="text-lg font-semibold dark:surface-400">{{ pair.outstandingAmount | localCurrency: pair.currency }}</div>
-                    @if (canMutate()) {
-                      <div class="mt-2 flex flex-wrap justify-end gap-2">
+                    <div class="mt-2 flex flex-wrap justify-end gap-2">
+                      <button type="button" pButton class="p-button-sm p-button-text" (click)="openMonthlyDrilldown(pair)">
+                        {{ 'financesPage.groupsPage.debtsPage.inspectAction' | translate }}
+                      </button>
+
+                      @if (canMutate() && pair.outstandingAmount !== 0) {
                         <button type="button" pButton class="p-button-sm" (click)="openSettlementPage(pair)">
                           {{ 'financesPage.groupsPage.debtsPage.settleAction' | translate }}
                         </button>
-                      </div>
-                    }
+                      }
+                    </div>
                   </div>
                 </div>
 
-                @if (item.monthlyCompositionItems.length === 0) {
+                @if (composition == null) {
                   <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyMonthlyComposition' | translate }}</p>
                 } @else {
-                  <p-data-view [value]="item.monthlyCompositionItems">
-                    <ng-template #list let-items>
-                      <div class="grid grid-cols-12 gap-3">
-                        @for (composition of items; track composition.id) {
-                          <article
-                            class="col-span-12 md:col-span-6 xl:col-span-4 rounded-lg border border-slate-200 dark:border-surface-600 p-3"
-                          >
-                            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-                              {{ monthDate(composition.month) | localDate: 'MMM y' }}
-                            </p>
-
-                            <div class="grid grid-cols-2 gap-3 text-sm">
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</span>
-                                <span class="font-medium">{{ composition.netAmount | localCurrency: composition.currency }}</span>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</span>
-                                <span class="font-medium">{{ composition.chargeDelta | localCurrency: composition.currency }}</span>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{
-                                  'financesPage.groupsPage.debtsPage.settlementDelta' | translate
-                                }}</span>
-                                <span class="font-medium">{{ composition.settlementDelta | localCurrency: composition.currency }}</span>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{
-                                  'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate
-                                }}</span>
-                                <span class="font-medium">{{
-                                  composition.manualAdjustmentDelta | localCurrency: composition.currency
-                                }}</span>
-                              </div>
-                            </div>
-                          </article>
-                        }
-                      </div>
-                    </ng-template>
-                  </p-data-view>
+                  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</span>
+                      <span class="font-medium">{{ composition.netAmount | localCurrency: composition.currency }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</span>
+                      <span class="font-medium">{{ composition.chargeDelta | localCurrency: composition.currency }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.settlementDelta' | translate }}</span>
+                      <span class="font-medium">{{ composition.settlementDelta | localCurrency: composition.currency }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate }}</span>
+                      <span class="font-medium">{{ composition.manualAdjustmentDelta | localCurrency: composition.currency }}</span>
+                    </div>
+                  </div>
                 }
               </article>
             }
@@ -97,10 +80,14 @@
         }
       </div>
 
-      <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-surface-500 dark:bg-surface-900">
         <h3 class="mb-3 text-xl font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.historyTitle' | translate }}</h3>
 
-        @if (historyGridItems().length === 0) {
+        @if (historyLoading()) {
+          <div class="py-4 text-center">
+            <p-progress-spinner></p-progress-spinner>
+          </div>
+        } @else if (historyGridItems().length === 0) {
           <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyHistory' | translate }}</p>
         } @else {
           <p-data-view [value]="historyGridItems()">
@@ -108,41 +95,46 @@
               <div class="grid grid-cols-12 gap-4 grid-nogutter">
                 @for (item of items; track historyTrack(item); let first = $first) {
                   <div class="col-span-12">
-                    <article
-                      class="flex gap-2 py-5"
-                      [ngClass]="{ 'border-t border-surface-200 dark:border-surface-600 dark:border-surface-700': !first }"
-                    >
+                    <article class="flex gap-3 py-5" [ngClass]="{ 'border-t border-surface-200 dark:border-surface-700': !first }">
                       @let movement = item.movement;
 
-                      <div class="flex flex-col gap-6">
+                      <div class="flex flex-1 flex-col gap-4">
                         <div class="flex flex-col gap-2">
-                          <h3 class="font-semibold text-default text-lg">
+                          <h3 class="text-lg font-semibold text-default">
                             {{ memberName(movement.payerId) }} -> {{ memberName(movement.receiverId) }}
                           </h3>
 
-                          <div class="flex flex-wrap gap-2 items-center text-muted text-xs">
-                            <span class="table-item">{{
-                              movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—'
-                            }}</span>
-                            <span class="table-item">{{ monthDate(movement.month) | localDate: 'MMM y' }}</span>
+                          <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+                            <span class="table-item">{{ movementStateLabel(movement) | translate }}</span>
                             <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
                           </div>
                         </div>
 
-                        <div class="flex flex-wrap items-start justify-between gap-2">
-                          <div class="flex flex-col gap-2">
-                            <span class="text-sm text-muted"
-                              >{{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
-                              {{ memberName(movement.createdByUserId) }}</span
-                            >
-                            <span class="text-sm text-muted"
-                              >{{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}:
-                              {{ sourceReferenceLabel(movement) }}</span
-                            >
-                            <span class="text-sm text-muted"
-                              >{{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}: {{ movement.note ?? '—' }}</span
-                            >
-                          </div>
+                        <div class="grid grid-cols-1 gap-2 text-sm text-muted md:grid-cols-2">
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.transactionDateColumn' | translate }}:
+                            {{ transactionDate(movement) ? (transactionDate(movement) | localDate: 'shortDate') : '—' }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.debtMonthColumn' | translate }}:
+                            {{ monthDate(movement.month) | localDate: 'MMM y' }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
+                            {{ movement.projected ? '—' : memberName(movement.createdByUserId) }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}:
+                            {{ sourceReferenceLabel(movement) }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}:
+                            {{ movement.note ?? '—' }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.createdAtColumn' | translate }}:
+                            {{ movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—' }}
+                          </span>
                         </div>
 
                         @if (item.linkedWalletEventName != null) {
@@ -171,10 +163,10 @@
                         }
                       </div>
 
-                      <div class="flex flex-col items-end gap-2 ml-auto">
+                      <div class="ml-auto flex flex-col items-end gap-2">
                         <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
                         @if (canMutate() && isAdjustableMovement(movement)) {
-                          <button type="button" pButton class="p-button-text p-button-sm" (click)="openAdjustmentPage(movement)">
+                          <button type="button" pButton class="p-button-sm p-button-text" (click)="openAdjustmentPage(movement)">
                             {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
                           </button>
                         }
@@ -189,4 +181,84 @@
       </div>
     </div>
   </div>
+
+  <p-dialog
+    [modal]="true"
+    [visible]="drilldownVisible()"
+    [style]="{ width: '48rem', maxWidth: '95vw' }"
+    (onHide)="closeMonthlyDrilldown()"
+    [header]="drilldownHeader()"
+  >
+    @if (drilldownLoading()) {
+      <div class="py-6 text-center">
+        <p-progress-spinner></p-progress-spinner>
+      </div>
+    } @else if (monthlyDrilldown() != null) {
+      @let drilldown = monthlyDrilldown()!;
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+            <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</span>
+            <span class="font-medium">{{ drilldown.netAmount | localCurrency: drilldown.currency }}</span>
+          </div>
+          <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+            <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</span>
+            <span class="font-medium">{{ drilldown.chargeDelta | localCurrency: drilldown.currency }}</span>
+          </div>
+          <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+            <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.settlementDelta' | translate }}</span>
+            <span class="font-medium">{{ drilldown.settlementDelta | localCurrency: drilldown.currency }}</span>
+          </div>
+          <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+            <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate }}</span>
+            <span class="font-medium">{{ drilldown.manualAdjustmentDelta | localCurrency: drilldown.currency }}</span>
+          </div>
+        </div>
+
+        @if (drilldown.lines.length === 0) {
+          <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyHistory' | translate }}</p>
+        } @else {
+          <div class="flex flex-col gap-3">
+            @for (movement of drilldown.lines; track drilldownTrack(movement)) {
+              <article class="rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+                      <span class="table-item">{{ movementStateLabel(movement) | translate }}</span>
+                      <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2 text-sm text-muted md:grid-cols-2">
+                      <span>
+                        {{ 'financesPage.groupsPage.debtsPage.transactionDateColumn' | translate }}:
+                        {{ transactionDate(movement) ? (transactionDate(movement) | localDate: 'shortDate') : '—' }}
+                      </span>
+                      <span>
+                        {{ 'financesPage.groupsPage.debtsPage.debtMonthColumn' | translate }}:
+                        {{ monthDate(movement.month) | localDate: 'MMM y' }}
+                      </span>
+                      <span>
+                        {{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}:
+                        {{ sourceReferenceLabel(movement) }}
+                      </span>
+                      <span>
+                        {{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}:
+                        {{ movement.note ?? '—' }}
+                      </span>
+                    </div>
+
+                    @if (movement.sourceWalletEvent?.name != null) {
+                      <span class="table-item">{{ movement.sourceWalletEvent?.name }}</span>
+                    }
+                  </div>
+
+                  <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </div>
+    }
+  </p-dialog>
 }

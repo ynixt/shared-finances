@@ -6,6 +6,7 @@ import { lastValueFrom, take } from 'rxjs';
 import {
   CreateGroupDebtAdjustmentRequestDto,
   EditGroupDebtAdjustmentRequestDto,
+  GroupDebtMonthlyDrilldownDto,
   GroupDebtMovementDto,
   GroupDebtWorkspaceDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/debts';
@@ -32,11 +33,64 @@ export class GroupDebtService {
     throw new UserMissingError();
   }
 
-  async listHistory(groupId: string): Promise<GroupDebtMovementDto[]> {
+  async listHistory(
+    groupId: string,
+    filter?: {
+      currency?: string;
+      payerId?: string;
+      receiverId?: string;
+      selectedMonth?: string;
+    },
+  ): Promise<GroupDebtMovementDto[]> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.http.get<GroupDebtMovementDto[]>(`/api/groups/${groupId}/debts/history`).pipe(take(1)));
+      const searchParams = new URLSearchParams();
+
+      if (filter?.payerId != null) {
+        searchParams.set('payerId', filter.payerId);
+      }
+      if (filter?.receiverId != null) {
+        searchParams.set('receiverId', filter.receiverId);
+      }
+      if (filter?.currency != null) {
+        searchParams.set('currency', filter.currency);
+      }
+      if (filter?.selectedMonth != null) {
+        searchParams.set('selectedMonth', filter.selectedMonth);
+      }
+
+      const params = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+      return lastValueFrom(this.http.get<GroupDebtMovementDto[]>(`/api/groups/${groupId}/debts/history${params}`).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async getMonthlyDrilldown(
+    groupId: string,
+    params: {
+      currency: string;
+      payerId: string;
+      receiverId: string;
+      selectedMonth: string;
+    },
+  ): Promise<GroupDebtMonthlyDrilldownDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      const searchParams = new URLSearchParams({
+        payerId: params.payerId,
+        receiverId: params.receiverId,
+        currency: params.currency,
+        selectedMonth: params.selectedMonth,
+      });
+
+      return lastValueFrom(
+        this.http
+          .get<GroupDebtMonthlyDrilldownDto>(`/api/groups/${groupId}/debts/monthly-drilldown?${searchParams.toString()}`)
+          .pipe(take(1)),
+      );
     }
 
     throw new UserMissingError();

@@ -56,16 +56,15 @@ class GroupMemberDebtDatabaseClientRepository(
         val sql =
             """
             SELECT
-                monthly.payer_id,
-                monthly.receiver_id,
-                monthly.currency,
-                monthly.month,
-                monthly.balance AS net_amount,
-                COALESCE(movement_agg.charge_delta, 0) AS charge_delta,
-                COALESCE(movement_agg.settlement_delta, 0) AS settlement_delta,
-                COALESCE(movement_agg.manual_adjustment_delta, 0) AS manual_adjustment_delta
-            FROM group_member_debt_monthly monthly
-            LEFT JOIN (
+                movement_agg.payer_id,
+                movement_agg.receiver_id,
+                movement_agg.currency,
+                movement_agg.month,
+                COALESCE(monthly.balance, 0) AS net_amount,
+                movement_agg.charge_delta,
+                movement_agg.settlement_delta,
+                movement_agg.manual_adjustment_delta
+            FROM (
                 SELECT
                     group_id,
                     payer_id,
@@ -97,13 +96,13 @@ class GroupMemberDebtDatabaseClientRepository(
                 WHERE group_id = :groupId
                 GROUP BY group_id, payer_id, receiver_id, currency, month
             ) movement_agg
-                ON movement_agg.group_id = monthly.group_id
-                AND movement_agg.payer_id = monthly.payer_id
-                AND movement_agg.receiver_id = monthly.receiver_id
-                AND movement_agg.currency = monthly.currency
-                AND movement_agg.month = monthly.month
-            WHERE monthly.group_id = :groupId
-            ORDER BY monthly.payer_id, monthly.receiver_id, monthly.currency, monthly.month
+            LEFT JOIN group_member_debt_monthly monthly
+                ON monthly.group_id = movement_agg.group_id
+                AND monthly.payer_id = movement_agg.payer_id
+                AND monthly.receiver_id = movement_agg.receiver_id
+                AND monthly.currency = movement_agg.currency
+                AND monthly.month = movement_agg.month
+            ORDER BY movement_agg.payer_id, movement_agg.receiver_id, movement_agg.currency, movement_agg.month
             """.trimIndent()
 
         return dbClient
@@ -128,6 +127,7 @@ class GroupMemberDebtDatabaseClientRepository(
         payerId: UUID?,
         receiverId: UUID?,
         currency: String?,
+        selectedMonth: YearMonth?,
     ): Flux<DebtMovementHistoryRow> {
         var sql =
             """
@@ -157,6 +157,9 @@ class GroupMemberDebtDatabaseClientRepository(
         if (!currency.isNullOrBlank()) {
             sql += " AND currency = :currency"
         }
+        if (selectedMonth != null) {
+            sql += " AND month = :selectedMonth"
+        }
 
         sql += " ORDER BY created_at ASC, id ASC"
 
@@ -169,6 +172,9 @@ class GroupMemberDebtDatabaseClientRepository(
         }
         if (!currency.isNullOrBlank()) {
             spec = spec.bind("currency", currency.uppercase())
+        }
+        if (selectedMonth != null) {
+            spec = spec.bind("selectedMonth", selectedMonth.atDay(1))
         }
 
         return spec
@@ -186,6 +192,41 @@ class GroupMemberDebtDatabaseClientRepository(
                     sourceWalletEventId = row.get("source_wallet_event_id", UUID::class.java),
                     sourceMovementId = row.get("source_movement_id", UUID::class.java),
                     createdAt = row.get("created_at", java.time.OffsetDateTime::class.java),
+                )
+            }.all()
+    }
+
+    fun listOpenBalancesForPair(
+        groupId: UUID,
+        payerId: UUID,
+        receiverId: UUID,
+        currency: String,
+    ): Flux<OpenDebtBalanceRow> {
+        val sql =
+            """
+            SELECT
+                month,
+                balance
+            FROM group_member_debt_monthly
+            WHERE
+                group_id = :groupId
+                AND payer_id = :payerId
+                AND receiver_id = :receiverId
+                AND currency = :currency
+                AND balance > 0
+            ORDER BY month ASC
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("groupId", groupId)
+            .bind("payerId", payerId)
+            .bind("receiverId", receiverId)
+            .bind("currency", currency.uppercase())
+            .map { row, _ ->
+                OpenDebtBalanceRow(
+                    month = YearMonth.from(row.get("month", LocalDate::class.java)!!),
+                    balance = row.get("balance", BigDecimal::class.java)!!,
                 )
             }.all()
     }
@@ -263,5 +304,10 @@ class GroupMemberDebtDatabaseClientRepository(
         val currency: String,
         val debtOutflow: BigDecimal,
         val debtInflow: BigDecimal,
+    )
+
+    data class OpenDebtBalanceRow(
+        val month: YearMonth,
+        val balance: BigDecimal,
     )
 }

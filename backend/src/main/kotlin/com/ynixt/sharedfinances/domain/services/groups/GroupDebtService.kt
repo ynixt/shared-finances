@@ -5,6 +5,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAdjustmentInput
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyDrilldown
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
@@ -39,6 +40,15 @@ interface GroupDebtService {
         groupId: UUID,
         filter: GroupDebtHistoryFilter = GroupDebtHistoryFilter(),
     ): List<GroupDebtMovementLine>
+
+    suspend fun getMonthlyDrilldown(
+        userId: UUID,
+        groupId: UUID,
+        payerId: UUID,
+        receiverId: UUID,
+        currency: String,
+        selectedMonth: YearMonth,
+    ): GroupDebtMonthlyDrilldown
 
     suspend fun getMovement(
         userId: UUID,
