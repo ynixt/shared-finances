@@ -1,6 +1,6 @@
 import { HTTP_INTERCEPTORS, HttpBackend, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { APP_INITIALIZER, ApplicationConfig, importProvidersFrom, inject, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { InMemoryCache } from '@apollo/client/core';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 
@@ -23,7 +23,12 @@ const httpLoaderFactory = (httpBackend: HttpBackend): CustomTranslateYamlLoader 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      withInMemoryScrolling({
+        scrollPositionRestoration: 'enabled',
+      }),
+    ),
     provideHttpClient(withInterceptorsFromDi(), withInterceptors([apiAuthInterceptor])),
     {
       provide: APP_INITIALIZER,
