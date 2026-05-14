@@ -33,7 +33,7 @@ import java.util.UUID
 
 class GroupDebtServiceImplMonthSelectionTest {
     @Test
-    fun `past month should return only the selected competence`() =
+    fun `past month should return only the selected competence`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -74,7 +74,7 @@ class GroupDebtServiceImplMonthSelectionTest {
 
             assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isZero()
             assertThat(workspace.balances).hasSize(1)
-            assertThat(workspace.balances.first().outstandingAmount).isEqualByComparingTo("45.00")
+            assertThat(workspace.balances.first().outstandingAmount).isEqualByComparingTo("145.00")
             assertThat(
                 workspace.balances
                     .first()
@@ -82,9 +82,10 @@ class GroupDebtServiceImplMonthSelectionTest {
                     .map { it.month },
             ).containsExactly(selectedMonth)
         }
+    }
 
     @Test
-    fun `settled past month should remain visible even when the selected competence net is zero`() =
+    fun `settled past month should remain visible even when the selected competence net is zero`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -119,9 +120,10 @@ class GroupDebtServiceImplMonthSelectionTest {
             assertThat(balance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("80.00")
             assertThat(balance.monthlyComposition.first().settlementDelta).isEqualByComparingTo("-80.00")
         }
+    }
 
     @Test
-    fun `current month should include projected recurring and installment movements only for the selected competence`() =
+    fun `current month should include projected recurring and installment movements only for the selected competence`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -151,19 +153,24 @@ class GroupDebtServiceImplMonthSelectionTest {
             val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
 
             assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isEqualTo(1)
-            assertThat(workspace.balances).hasSize(1)
-            val balance = workspace.balances.first()
-            assertThat(balance.payerId).isEqualTo(receiverId)
-            assertThat(balance.receiverId).isEqualTo(payerId)
-            assertThat(balance.outstandingAmount).isEqualByComparingTo("20.00")
-            assertThat(balance.monthlyComposition).hasSize(1)
-            assertThat(balance.monthlyComposition.first().month).isEqualTo(selectedMonth)
-            assertThat(balance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("20.00")
-            assertThat(balance.monthlyComposition.first().netAmount).isEqualByComparingTo("20.00")
+            assertThat(workspace.balances).hasSize(2)
+            val projectedBalance = workspace.balances.single { it.payerId == receiverId && it.receiverId == payerId }
+            val carryoverBalance = workspace.balances.single { it.payerId == payerId && it.receiverId == receiverId }
+            assertThat(projectedBalance.outstandingAmount).isEqualByComparingTo("20.00")
+            assertThat(projectedBalance.monthlyComposition).hasSize(1)
+            assertThat(projectedBalance.monthlyComposition.first().month).isEqualTo(selectedMonth)
+            assertThat(projectedBalance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("20.00")
+            assertThat(projectedBalance.monthlyComposition.first().netAmount).isEqualByComparingTo("20.00")
+            assertThat(carryoverBalance.outstandingAmount).isEqualByComparingTo("11.00")
+            assertThat(carryoverBalance.monthlyComposition).hasSize(1)
+            assertThat(carryoverBalance.monthlyComposition.first().month).isEqualTo(selectedMonth)
+            assertThat(carryoverBalance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("0.00")
+            assertThat(carryoverBalance.monthlyComposition.first().netAmount).isEqualByComparingTo("11.00")
         }
+    }
 
     @Test
-    fun `future month should use selected month persisted and projected values when there is no projected carryover`() =
+    fun `future month should use selected month persisted and projected values when there is no projected carryover`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -206,13 +213,14 @@ class GroupDebtServiceImplMonthSelectionTest {
             val balance = workspace.balances.first()
             assertThat(balance.payerId).isEqualTo(receiverId)
             assertThat(balance.receiverId).isEqualTo(payerId)
-            assertThat(balance.outstandingAmount).isEqualByComparingTo("50.00")
+            assertThat(balance.outstandingAmount).isEqualByComparingTo("80.00")
             assertThat(balance.monthlyComposition.map { it.month }).containsExactly(selectedMonth)
-            assertThat(balance.monthlyComposition.map { it.netAmount }).containsExactly(BigDecimal("50.00"))
+            assertThat(balance.monthlyComposition.map { it.netAmount }).containsExactly(BigDecimal("80.00"))
         }
+    }
 
     @Test
-    fun `future month should include projected carryover from intermediate competences`() =
+    fun `future month should include projected carryover from intermediate competences`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -257,9 +265,10 @@ class GroupDebtServiceImplMonthSelectionTest {
             assertThat(balance.monthlyComposition.single().netAmount).isEqualByComparingTo("578.86")
             assertThat(balance.monthlyComposition.single().chargeDelta).isEqualByComparingTo("20.00")
         }
+    }
 
     @Test
-    fun `future month should include unpaid balances carried from previous competences`() =
+    fun `future month should include unpaid balances carried from previous competences`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -293,9 +302,10 @@ class GroupDebtServiceImplMonthSelectionTest {
             assertThat(balance.monthlyComposition.single().netAmount).isEqualByComparingTo("538.86")
             assertThat(balance.monthlyComposition.single().chargeDelta).isEqualByComparingTo("0.00")
         }
+    }
 
     @Test
-    fun `future month should include projected credit card installment billed in the selected competence`() =
+    fun `future month should include projected credit card installment billed in the selected competence`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -335,6 +345,7 @@ class GroupDebtServiceImplMonthSelectionTest {
             assertThat(recurrenceSimulation.lastMinimumEndExecution).isEqualTo(YearMonth.of(2026, 4).atDay(1).minusMonths(1))
             assertThat(recurrenceSimulation.lastMaximumNextExecution).isEqualTo(selectedMonth.atEndOfMonth())
         }
+    }
 
     private fun createService(
         groupId: UUID,

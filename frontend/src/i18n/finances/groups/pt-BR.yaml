@@ -56,7 +56,7 @@ financesPage:
       emptyBalances: Nenhum saldo de dívida foi encontrado para este grupo.
       outstanding: Valor em aberto
       settleAction: Quitar
-      inspectAction: Detalhar mês
+      settleValueAction: Quitar valor
       adjustAction: Ajustar
       month: Mês
       netAmount: Valor líquido
@@ -66,8 +66,9 @@ financesPage:
       emptyMonthlyComposition: Nenhuma composição mensal para este par.
       historyTitle: Histórico de movimentos
       emptyHistory: Nenhum movimento de dívida encontrado.
-      drilldownTitle: '{{payer}} -> {{receiver}} • {{month}}'
-      linkedTransaction: Transação vinculada
+      noNetBalance: Sem saldo líquido no mês
+      pairSummaryOwes: deve
+      pairSummaryTo: para
       createdAtColumn: Criado em
       transactionDateColumn: Data da transação
       debtMonthColumn: Mês da dívida

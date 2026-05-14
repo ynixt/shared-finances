@@ -6,8 +6,8 @@ import { lastValueFrom, take } from 'rxjs';
 import {
   CreateGroupDebtAdjustmentRequestDto,
   EditGroupDebtAdjustmentRequestDto,
-  GroupDebtMonthlyDrilldownDto,
   GroupDebtMovementDto,
+  GroupDebtPairHistoryDto,
   GroupDebtWorkspaceDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/debts';
 import { UserService } from '../../../services/user.service';
@@ -67,30 +67,22 @@ export class GroupDebtService {
     throw new UserMissingError();
   }
 
-  async getMonthlyDrilldown(
+  async listPairHistory(
     groupId: string,
-    params: {
-      currency: string;
-      payerId: string;
-      receiverId: string;
+    filter?: {
       selectedMonth: string;
     },
-  ): Promise<GroupDebtMonthlyDrilldownDto> {
+  ): Promise<GroupDebtPairHistoryDto[]> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      const searchParams = new URLSearchParams({
-        payerId: params.payerId,
-        receiverId: params.receiverId,
-        currency: params.currency,
-        selectedMonth: params.selectedMonth,
-      });
+      const searchParams = new URLSearchParams();
+      if (filter?.selectedMonth != null) {
+        searchParams.set('selectedMonth', filter.selectedMonth);
+      }
 
-      return lastValueFrom(
-        this.http
-          .get<GroupDebtMonthlyDrilldownDto>(`/api/groups/${groupId}/debts/monthly-drilldown?${searchParams.toString()}`)
-          .pipe(take(1)),
-      );
+      const params = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+      return lastValueFrom(this.http.get<GroupDebtPairHistoryDto[]>(`/api/groups/${groupId}/debts/history/by-pair${params}`).pipe(take(1)));
     }
 
     throw new UserMissingError();

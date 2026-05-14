@@ -2,7 +2,7 @@
 
 @if (currentEvent != null) {
   <div class="flex flex-col gap-4 leading-none">
-    <div class="flex flex-wrap lg:flex-nowrap gap-2 h-full">
+    <div class="flex flex-wrap gap-2 h-full">
       <a [routerLink]="originLink()">
         <app-entry-chip
           [text]="currentEvent.entries[0].walletItem.name"
@@ -37,6 +37,10 @@
             "
           ></app-entry-chip>
         </a>
+      }
+
+      @if (showWalletOwner()) {
+        <div class="flex basis-full"></div>
       }
 
       @if (currentEvent.category != null) {

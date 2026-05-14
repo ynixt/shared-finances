@@ -132,6 +132,12 @@ class RecurrenceSimulationServiceImplTest {
             assertThat(beneficiary.benefitPercent).isEqualByComparingTo("100.00")
             assertThat(secondInstallment.installment).isEqualTo(2)
             assertThat(secondInstallment.entries.single().billDate).isEqualTo(LocalDate.of(2026, 6, 1))
+            assertThat(
+                secondInstallment.entries
+                    .single()
+                    .walletItem.user
+                    ?.id,
+            ).isEqualTo(gabrielId)
 
             val projected = deriveProjectedDebtMovementsFromEvent(secondInstallment).single()
             assertThat(projected.payerId).isEqualTo(deboraId)

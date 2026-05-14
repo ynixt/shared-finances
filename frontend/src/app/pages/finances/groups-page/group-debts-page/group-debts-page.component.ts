@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,15 +7,13 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { DataView } from 'primeng/dataview';
-import { Dialog } from 'primeng/dialog';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import {
-  GroupDebtMonthlyDrilldownDto,
   GroupDebtMovementDto,
   GroupDebtPairBalanceDto,
+  GroupDebtPairHistoryDto,
   GroupDebtWorkspaceDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/debts';
 import { GroupDebtMovementReasonKind__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
@@ -35,7 +32,8 @@ import { GroupService } from '../../services/group.service';
 import {
   GroupDebtHistoryGridItem,
   GroupDebtOutstandingBalanceGridItem,
-  mapGroupDebtHistoryToGridItems,
+  GroupDebtPairHistoryGridItem,
+  mapGroupDebtPairHistoryToGridItems,
   mapOutstandingBalancesToGridItems,
 } from './group-debts-page.viewmodel';
 
@@ -48,13 +46,10 @@ interface MemberOption {
   selector: 'app-group-debts-page',
   imports: [
     ButtonDirective,
-    DataView,
-    Dialog,
     EntryDescriptionComponent,
     FinancesTitleBarComponent,
     LocalCurrencyPipe,
     LocalDatePipe,
-    NgClass,
     ProgressSpinner,
     TranslatePipe,
     AdvancedDatePickerComponent,
@@ -76,19 +71,22 @@ export class GroupDebtsPageComponent {
   readonly group = signal<GroupWithRoleDto | undefined>(undefined);
   readonly members = signal<GroupUserDto[]>([]);
   readonly workspace = signal<GroupDebtWorkspaceDto | undefined>(undefined);
-  readonly history = signal<GroupDebtMovementDto[]>([]);
+  readonly pairHistory = signal<GroupDebtPairHistoryDto[]>([]);
   readonly loading = signal(true);
   readonly workspaceLoading = signal(false);
   readonly historyLoading = signal(false);
-  readonly drilldownVisible = signal(false);
-  readonly drilldownLoading = signal(false);
-  readonly monthlyDrilldown = signal<GroupDebtMonthlyDrilldownDto | undefined>(undefined);
   readonly dateControl = new FormControl<DateRange | undefined>(undefined);
   readonly canMutate = computed(() => this.group()?.permissions?.includes('SEND_ENTRIES') === true);
   readonly outstandingBalanceGridItems = computed<GroupDebtOutstandingBalanceGridItem[]>(() =>
     mapOutstandingBalancesToGridItems(this.workspace()?.balances ?? []),
   );
-  readonly historyGridItems = computed<GroupDebtHistoryGridItem[]>(() => mapGroupDebtHistoryToGridItems(this.history()));
+  readonly pairHistoryGridItems = computed<GroupDebtPairHistoryGridItem[]>(() =>
+    mapGroupDebtPairHistoryToGridItems(this.pairHistory(), {
+      resolveMemberName: userId => this.memberName(userId),
+      resolveLineName: (movement, linkedWalletEventName) => this.historyLineName(movement, linkedWalletEventName),
+      resolveTransactionDate: movement => this.transactionDate(movement),
+    }),
+  );
 
   readonly memberOptions = computed<MemberOption[]>(() =>
     this.members().map(member => ({
@@ -139,7 +137,6 @@ export class GroupDebtsPageComponent {
     }
 
     try {
-      this.closeMonthlyDrilldown();
       await this.reloadVisibleData();
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
@@ -182,16 +179,16 @@ export class GroupDebtsPageComponent {
     return this.translateService.instant('financesPage.groupsPage.debtsPage.noSource');
   }
 
-  historyTrack(item: GroupDebtHistoryGridItem): string {
+  historyBlockTrack(item: GroupDebtPairHistoryGridItem): string {
+    return item.id;
+  }
+
+  historyLineTrack(item: GroupDebtHistoryGridItem): string {
     return item.movement.id;
   }
 
   outstandingBalanceTrack(item: GroupDebtOutstandingBalanceGridItem): string {
     return item.id;
-  }
-
-  drilldownTrack(movement: GroupDebtMovementDto): string {
-    return movement.id;
   }
 
   openSettlementPage(pair: GroupDebtPairBalanceDto) {
@@ -204,32 +201,14 @@ export class GroupDebtsPageComponent {
     });
   }
 
-  async openMonthlyDrilldown(pair: GroupDebtPairBalanceDto) {
-    this.drilldownVisible.set(true);
-    this.drilldownLoading.set(true);
-    this.monthlyDrilldown.set(undefined);
-
-    try {
-      this.monthlyDrilldown.set(
-        await this.groupDebtService.getMonthlyDrilldown(this.groupId, {
-          payerId: pair.payerId,
-          receiverId: pair.receiverId,
-          currency: pair.currency,
-          selectedMonth: this.selectedMonth(),
-        }),
-      );
-    } catch (error) {
-      this.drilldownVisible.set(false);
-      this.errorMessageService.handleError(error, this.messageService);
-    } finally {
-      this.drilldownLoading.set(false);
-    }
-  }
-
-  closeMonthlyDrilldown() {
-    this.drilldownVisible.set(false);
-    this.drilldownLoading.set(false);
-    this.monthlyDrilldown.set(undefined);
+  openSettleValuePage(movement: GroupDebtMovementDto) {
+    void this.router.navigate(['/app/groups', this.groupId, 'debts', 'settlements', 'new'], {
+      queryParams: {
+        payerId: movement.payerId,
+        receiverId: movement.receiverId,
+        amount: Math.abs(movement.deltaSigned),
+      },
+    });
   }
 
   openAdjustmentPage(movement: GroupDebtMovementDto) {
@@ -241,6 +220,13 @@ export class GroupDebtsPageComponent {
       !movement.projected &&
       !movement.carriedOver &&
       movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION
+    );
+  }
+
+  isSettleValueMovement(movement: GroupDebtMovementDto): boolean {
+    return (
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT_REVERSAL
     );
   }
 
@@ -256,14 +242,16 @@ export class GroupDebtsPageComponent {
     return movement.projected ? 'financesPage.groupsPage.debtsPage.projectedState' : 'financesPage.groupsPage.debtsPage.executedState';
   }
 
-  drilldownHeader(): string {
-    const drilldown = this.monthlyDrilldown();
+  historyLineName(movement: GroupDebtMovementDto, linkedWalletEventName: string | undefined): string {
+    const normalizedNote = movement.note?.trim();
+    if (linkedWalletEventName != null) {
+      return linkedWalletEventName;
+    }
+    if (normalizedNote != null && normalizedNote.length > 0) {
+      return normalizedNote;
+    }
 
-    return this.translateService.instant('financesPage.groupsPage.debtsPage.drilldownTitle', {
-      payer: this.memberName(drilldown?.payerId ?? ''),
-      receiver: this.memberName(drilldown?.receiverId ?? ''),
-      month: drilldown?.month != null ? dayjs(`${drilldown.month}-01`).format('MMM YYYY') : '',
-    });
+    return `${this.memberName(movement.payerId)} -> ${this.memberName(movement.receiverId)}`;
   }
 
   selectedMonth(): string {
@@ -280,13 +268,13 @@ export class GroupDebtsPageComponent {
 
     try {
       const selectedMonth = this.selectedMonth();
-      const [workspace, history] = await Promise.all([
+      const [workspace, pairHistory] = await Promise.all([
         this.groupDebtService.getWorkspace(this.groupId, selectedMonth),
-        this.groupDebtService.listHistory(this.groupId, { selectedMonth }),
+        this.groupDebtService.listPairHistory(this.groupId, { selectedMonth }),
       ]);
 
       this.workspace.set(workspace);
-      this.history.set(history);
+      this.pairHistory.set(pairHistory);
     } finally {
       this.workspaceLoading.set(false);
       this.historyLoading.set(false);

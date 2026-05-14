@@ -545,7 +545,11 @@ class RecurrenceSimulationServiceImpl(
         val categoriesById = resolveCategoriesById(configs)
         val groupsById = resolveGroupsById(configs)
         val usersById = resolveUsersById(configs)
-        val walletItemsById = resolveWalletItemsById(configs)
+        val walletItemsById =
+            resolveWalletItemsById(
+                configs = configs,
+                usersById = usersById,
+            )
 
         return simulateGeneration(
             configs = configs,
@@ -692,7 +696,10 @@ class RecurrenceSimulationServiceImpl(
         return usersById + loaded
     }
 
-    private suspend fun resolveWalletItemsById(configs: List<RecurrenceEventEntity>): Map<UUID, WalletItem> {
+    private suspend fun resolveWalletItemsById(
+        configs: List<RecurrenceEventEntity>,
+        usersById: Map<UUID, UserEntity>,
+    ): Map<UUID, WalletItem> {
         val walletItemsById = linkedMapOf<UUID, WalletItem>()
 
         configs
@@ -720,6 +727,10 @@ class RecurrenceSimulationServiceImpl(
             .forEach { walletItem ->
                 walletItemsById[walletItem.id!!] = walletItem
             }
+
+        walletItemsById.values.forEach { walletItem ->
+            walletItem.user = usersById[walletItem.userId]
+        }
 
         return walletItemsById
     }

@@ -3,16 +3,16 @@ package com.ynixt.sharedfinances.application.web.mapper.impl
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.CreateGroupDebtAdjustmentRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.EditGroupDebtAdjustmentRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMonthlyCompositionDto
-import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMonthlyDrilldownDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMovementDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtPairBalanceDto
+import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtPairHistoryDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtWorkspaceDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDebtDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.WalletEventDtoMapper
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupDebtAdjustmentException
 import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAdjustmentInput
-import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyDrilldown
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairHistory
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
 import org.springframework.stereotype.Component
@@ -67,12 +67,14 @@ class GroupDebtDtoMapperImpl(
             createdAt = from.createdAt,
         )
 
-    override fun toMonthlyDrilldownDto(from: GroupDebtMonthlyDrilldown): GroupDebtMonthlyDrilldownDto =
-        GroupDebtMonthlyDrilldownDto(
-            payerId = from.payerId,
-            receiverId = from.receiverId,
+    override fun toPairHistoryDto(from: GroupDebtPairHistory): GroupDebtPairHistoryDto =
+        GroupDebtPairHistoryDto(
+            firstUserId = from.firstUserId,
+            secondUserId = from.secondUserId,
             currency = from.currency,
             month = from.month.toString(),
+            netPayerId = from.netPayerId,
+            netReceiverId = from.netReceiverId,
             netAmount = from.netAmount,
             chargeDelta = from.chargeDelta,
             settlementDelta = from.settlementDelta,

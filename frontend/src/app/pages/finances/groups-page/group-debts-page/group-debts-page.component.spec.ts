@@ -16,27 +16,27 @@ describe('GroupDebtsPageComponent', () => {
     vi.restoreAllMocks();
   });
 
-  async function setup(dateQuery?: string) {
+  async function setup(params?: {
+    dateQuery?: string;
+    members?: Array<{ user: { id: string; firstName: string; lastName: string } }>;
+    pairHistory?: any[];
+  }) {
     const groupServiceMock = {
       getGroup: vi.fn().mockResolvedValue({ id: 'group-1', name: 'Group', permissions: ['SEND_ENTRIES'] }),
-      findAllMembers: vi.fn().mockResolvedValue([]),
+      findAllMembers: vi
+        .fn()
+        .mockResolvedValue(
+          params?.members ?? [
+            { user: { id: 'a', firstName: 'Ana', lastName: 'Silva' } },
+            { user: { id: 'b', firstName: 'Bruno', lastName: 'Souza' } },
+            { user: { id: 'c', firstName: 'Carla', lastName: 'Melo' } },
+          ],
+        ),
     };
     const groupDebtServiceMock = {
       getWorkspace: vi.fn().mockResolvedValue({ balances: [] }),
       listHistory: vi.fn().mockResolvedValue([]),
-      getMonthlyDrilldown: vi
-        .fn()
-        .mockResolvedValue({
-          month: '2026-06',
-          payerId: 'payer-1',
-          receiverId: 'receiver-1',
-          currency: 'BRL',
-          netAmount: 0,
-          chargeDelta: 0,
-          settlementDelta: 0,
-          manualAdjustmentDelta: 0,
-          lines: [],
-        }),
+      listPairHistory: vi.fn().mockResolvedValue(params?.pairHistory ?? []),
     };
     const routerMock = {
       navigate: vi.fn().mockResolvedValue(true),
@@ -45,7 +45,13 @@ describe('GroupDebtsPageComponent', () => {
       handleError: vi.fn(),
     };
     const translateServiceMock = {
-      instant: vi.fn((key: string) => key),
+      instant: vi.fn((key: string, values?: Record<string, string>) => {
+        if (values?.['id'] != null) {
+          return `${key}:${values['id']}`;
+        }
+
+        return key;
+      }),
     };
 
     await TestBed.configureTestingModule({
@@ -56,7 +62,7 @@ describe('GroupDebtsPageComponent', () => {
           useValue: {
             snapshot: {
               paramMap: convertToParamMap({ id: 'group-1' }),
-              queryParamMap: convertToParamMap(dateQuery == null ? {} : { date: dateQuery }),
+              queryParamMap: convertToParamMap(params?.dateQuery == null ? {} : { date: params.dateQuery }),
             },
           },
         },
@@ -83,20 +89,20 @@ describe('GroupDebtsPageComponent', () => {
     };
   }
 
-  it('loads current month workspace and history by default', async () => {
+  it('loads current month workspace and pair history by default', async () => {
     const { component, groupDebtServiceMock } = await setup();
     const expectedMonth = dayjs(component.selectedMonth()).format('YYYY-MM');
 
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenCalledWith('group-1', expectedMonth);
-    expect(groupDebtServiceMock.listHistory).toHaveBeenCalledWith('group-1', { selectedMonth: expectedMonth });
+    expect(groupDebtServiceMock.listPairHistory).toHaveBeenCalledWith('group-1', { selectedMonth: expectedMonth });
     expect(expectedMonth).toBe(dayjs().format('YYYY-MM'));
   });
 
-  it('reloads workspace and history when user changes month', async () => {
-    const { component, groupDebtServiceMock, routerMock } = await setup('04-2026');
+  it('reloads workspace and pair history when user changes month', async () => {
+    const { component, groupDebtServiceMock, routerMock } = await setup({ dateQuery: '04-2026' });
 
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenCalledWith('group-1', '2026-04');
-    expect(groupDebtServiceMock.listHistory).toHaveBeenCalledWith('group-1', { selectedMonth: '2026-04' });
+    expect(groupDebtServiceMock.listPairHistory).toHaveBeenCalledWith('group-1', { selectedMonth: '2026-04' });
 
     const nextRange = {
       startDate: dayjs('2026-06-01'),
@@ -116,30 +122,136 @@ describe('GroupDebtsPageComponent', () => {
       }),
     );
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenLastCalledWith('group-1', '2026-06');
-    expect(groupDebtServiceMock.listHistory).toHaveBeenLastCalledWith('group-1', { selectedMonth: '2026-06' });
+    expect(groupDebtServiceMock.listPairHistory).toHaveBeenLastCalledWith('group-1', { selectedMonth: '2026-06' });
   });
 
-  it('opens monthly drilldown with the selected month', async () => {
-    const { component, groupDebtServiceMock } = await setup('06-2026');
-
-    await component.openMonthlyDrilldown({
-      payerId: 'payer-1',
-      receiverId: 'receiver-1',
-      currency: 'BRL',
-      outstandingAmount: 10,
-      monthlyComposition: [],
+  it('sorts pair blocks alphabetically and lines by transaction date desc then name asc', async () => {
+    const { component } = await setup({
+      pairHistory: [
+        {
+          firstUserId: 'c',
+          secondUserId: 'a',
+          currency: 'BRL',
+          month: '2026-06',
+          netPayerId: 'c',
+          netReceiverId: 'a',
+          netAmount: 10,
+          chargeDelta: 10,
+          settlementDelta: 0,
+          manualAdjustmentDelta: 0,
+          lines: [
+            {
+              id: 'line-2',
+              payerId: 'c',
+              receiverId: 'a',
+              month: '2026-06',
+              transactionDate: '2026-06-10',
+              currency: 'BRL',
+              deltaSigned: 10,
+              reasonKind: 'BENEFICIARY_CHARGE',
+              createdByUserId: 'c',
+              carriedOver: false,
+              projected: false,
+              note: 'Beta',
+              sourceWalletEventId: null,
+              sourceWalletEvent: null,
+              sourceMovementId: null,
+              createdAt: null,
+            },
+            {
+              id: 'line-1',
+              payerId: 'c',
+              receiverId: 'a',
+              month: '2026-06',
+              transactionDate: '2026-06-10',
+              currency: 'BRL',
+              deltaSigned: 5,
+              reasonKind: 'BENEFICIARY_CHARGE',
+              createdByUserId: 'c',
+              carriedOver: false,
+              projected: false,
+              note: 'Alpha',
+              sourceWalletEventId: null,
+              sourceWalletEvent: null,
+              sourceMovementId: null,
+              createdAt: null,
+            },
+          ],
+        },
+        {
+          firstUserId: 'b',
+          secondUserId: 'a',
+          currency: 'BRL',
+          month: '2026-06',
+          netPayerId: 'b',
+          netReceiverId: 'a',
+          netAmount: 15,
+          chargeDelta: 15,
+          settlementDelta: 0,
+          manualAdjustmentDelta: 0,
+          lines: [
+            {
+              id: 'line-3',
+              payerId: 'b',
+              receiverId: 'a',
+              month: '2026-06',
+              transactionDate: '2026-06-11',
+              currency: 'BRL',
+              deltaSigned: 15,
+              reasonKind: 'BENEFICIARY_CHARGE',
+              createdByUserId: 'b',
+              carriedOver: false,
+              projected: false,
+              note: null,
+              sourceWalletEventId: null,
+              sourceWalletEvent: { date: '2026-06-11', name: 'Compra', recurrenceConfig: null, installment: null },
+              sourceMovementId: null,
+              createdAt: null,
+            },
+          ],
+        },
+      ],
     });
 
-    expect(groupDebtServiceMock.getMonthlyDrilldown).toHaveBeenCalledWith('group-1', {
+    const items = component.pairHistoryGridItems();
+
+    expect(items.map(item => item.pairLabel)).toEqual(['Ana Silva / Bruno Souza', 'Ana Silva / Carla Melo']);
+    expect(items[1].lines.map(line => line.displayName)).toEqual(['Alpha', 'Beta']);
+  });
+
+  it('opens settle value page with absolute amount from the line', async () => {
+    const { component, routerMock } = await setup();
+
+    component.openSettleValuePage({
+      id: 'movement-1',
       payerId: 'payer-1',
       receiverId: 'receiver-1',
+      month: '2026-06',
+      transactionDate: '2026-06-10',
       currency: 'BRL',
-      selectedMonth: '2026-06',
+      deltaSigned: -12.5,
+      reasonKind: 'MANUAL_ADJUSTMENT',
+      createdByUserId: 'payer-1',
+      carriedOver: false,
+      projected: false,
+      note: null,
+      sourceWalletEventId: null,
+      sourceWalletEvent: null,
+      sourceMovementId: null,
+      createdAt: null,
+    });
+
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/app/groups', 'group-1', 'debts', 'settlements', 'new'], {
+      queryParams: {
+        payerId: 'payer-1',
+        receiverId: 'receiver-1',
+        amount: 12.5,
+      },
     });
   });
 
   it('labels carried over lines as prior-month open balance', async () => {
-    const { component } = await setup('06-2026');
+    const { component } = await setup({ dateQuery: '06-2026' });
 
     expect(
       component.sourceReferenceLabel({

@@ -42,7 +42,7 @@
       <form [formGroup]="adjustmentForm" class="mt-4 flex flex-col gap-3" (ngSubmit)="submit()">
         <label class="flex flex-col gap-2">
           <span>{{ 'financesPage.groupsPage.debtsPage.amount' | translate }}</span>
-          <p-input-number formControlName="amountDelta" [showButtons]="true" fluid></p-input-number>
+          <p-input-number formControlName="amountDelta" mode="currency" [currency]="movement.currency" fluid></p-input-number>
           <small class="text-xs text-slate-500">{{ 'financesPage.groupsPage.debtsPage.amountHint' | translate }}</small>
         </label>
 

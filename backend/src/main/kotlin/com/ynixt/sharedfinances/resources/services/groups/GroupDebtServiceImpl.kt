@@ -16,9 +16,9 @@ import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAd
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyComposition
-import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyDrilldown
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairBalance
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairHistory
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
 import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
@@ -156,14 +156,11 @@ class GroupDebtServiceImpl(
         return sortHistoryLines(hydratedHistory + projectedHistory)
     }
 
-    override suspend fun getMonthlyDrilldown(
+    override suspend fun listPairHistory(
         userId: UUID,
         groupId: UUID,
-        payerId: UUID,
-        receiverId: UUID,
-        currency: String,
         selectedMonth: YearMonth,
-    ): GroupDebtMonthlyDrilldown {
+    ): List<GroupDebtPairHistory> {
         ensureReadAccess(userId, groupId)
 
         val rows =
@@ -173,47 +170,123 @@ class GroupDebtServiceImpl(
                 selectedMonth = selectedMonth,
                 persistedRows = loadPersistedMonthlyCompositionRows(groupId),
             )
-        val selectedPairBalance =
-            mapBalances(rows = rows, includeZeroBalances = true)
-                .firstOrNull { balance ->
-                    balance.payerId == payerId &&
-                        balance.receiverId == receiverId &&
-                        balance.currency.equals(currency, ignoreCase = true)
-                }
-        val selectedMonthComposition = selectedPairBalance?.monthlyComposition?.firstOrNull()
-        val lines =
+        val directionalBalances = mapBalances(rows = rows, includeZeroBalances = true)
+        val historyLines =
             listHistory(
                 userId = userId,
                 groupId = groupId,
-                filter =
-                    GroupDebtHistoryFilter(
-                        payerId = payerId,
-                        receiverId = receiverId,
-                        currency = currency,
-                        selectedMonth = selectedMonth,
-                    ),
+                filter = GroupDebtHistoryFilter(selectedMonth = selectedMonth),
             )
-        val carryoverLines =
-            loadCarriedOverOpenBalanceLines(
-                userId = userId,
-                groupId = groupId,
-                payerId = payerId,
-                receiverId = receiverId,
-                currency = currency,
-                selectedMonth = selectedMonth,
-            )
+        val historyByDirection =
+            historyLines.groupBy { line ->
+                DirectionalDebtKey(
+                    payerId = line.payerId,
+                    receiverId = line.receiverId,
+                    currency = line.currency.uppercase(),
+                )
+            }
+        val balancesByDirection =
+            directionalBalances.associateBy { balance ->
+                DirectionalDebtKey(
+                    payerId = balance.payerId,
+                    receiverId = balance.receiverId,
+                    currency = balance.currency.uppercase(),
+                )
+            }
 
-        return GroupDebtMonthlyDrilldown(
-            payerId = payerId,
-            receiverId = receiverId,
-            currency = currency.uppercase(),
-            month = selectedMonth,
-            netAmount = selectedMonthComposition?.netAmount ?: ZERO,
-            chargeDelta = selectedMonthComposition?.chargeDelta ?: ZERO,
-            settlementDelta = selectedMonthComposition?.settlementDelta ?: ZERO,
-            manualAdjustmentDelta = selectedMonthComposition?.manualAdjustmentDelta ?: ZERO,
-            lines = sortHistoryLines(lines + carryoverLines),
-        )
+        val canonicalKeys =
+            (
+                directionalBalances.map { balance ->
+                    canonicalDebtKeyFor(balance.payerId, balance.receiverId, balance.currency)
+                } +
+                    historyByDirection.keys.map { key ->
+                        canonicalDebtKeyFor(key.payerId, key.receiverId, key.currency)
+                    }
+            ).toSet()
+
+        return canonicalKeys
+            .mapNotNull { canonicalKey ->
+                val forward = DirectionalDebtKey(canonicalKey.firstUserId, canonicalKey.secondUserId, canonicalKey.currency)
+                val backward = DirectionalDebtKey(canonicalKey.secondUserId, canonicalKey.firstUserId, canonicalKey.currency)
+                val forwardBalance = balancesByDirection[forward]
+                val backwardBalance = balancesByDirection[backward]
+                val lines =
+                    sortHistoryLines(
+                        directionalLinesForPair(
+                            userId = userId,
+                            groupId = groupId,
+                            selectedMonth = selectedMonth,
+                            direction = forward,
+                            historyByDirection = historyByDirection,
+                        ) +
+                            directionalLinesForPair(
+                                userId = userId,
+                                groupId = groupId,
+                                selectedMonth = selectedMonth,
+                                direction = backward,
+                                historyByDirection = historyByDirection,
+                            ),
+                    )
+
+                if (forwardBalance == null && backwardBalance == null && lines.isEmpty()) {
+                    return@mapNotNull null
+                }
+
+                val forwardComposition = forwardBalance?.monthlyComposition?.firstOrNull()
+                val backwardComposition = backwardBalance?.monthlyComposition?.firstOrNull()
+                val forwardOutstanding = forwardBalance?.outstandingAmount ?: ZERO
+                val backwardOutstanding = backwardBalance?.outstandingAmount ?: ZERO
+                val netSigned = forwardOutstanding.subtract(backwardOutstanding).asMoney()
+                val directionMultiplier =
+                    when {
+                        netSigned.compareTo(ZERO) > 0 -> BigDecimal.ONE
+                        netSigned.compareTo(ZERO) < 0 -> BigDecimal.ONE.negate()
+                        else -> BigDecimal.ONE
+                    }
+
+                GroupDebtPairHistory(
+                    firstUserId = canonicalKey.firstUserId,
+                    secondUserId = canonicalKey.secondUserId,
+                    currency = canonicalKey.currency,
+                    month = selectedMonth,
+                    netPayerId =
+                        when {
+                            netSigned.compareTo(ZERO) > 0 -> forward.payerId
+                            netSigned.compareTo(ZERO) < 0 -> backward.payerId
+                            else -> null
+                        },
+                    netReceiverId =
+                        when {
+                            netSigned.compareTo(ZERO) > 0 -> forward.receiverId
+                            netSigned.compareTo(ZERO) < 0 -> backward.receiverId
+                            else -> null
+                        },
+                    netAmount = netSigned.abs().asMoney(),
+                    chargeDelta =
+                        netDirectionalAmount(
+                            forwardAmount = forwardComposition?.chargeDelta ?: ZERO,
+                            backwardAmount = backwardComposition?.chargeDelta ?: ZERO,
+                            directionMultiplier = directionMultiplier,
+                        ),
+                    settlementDelta =
+                        netDirectionalAmount(
+                            forwardAmount = forwardComposition?.settlementDelta ?: ZERO,
+                            backwardAmount = backwardComposition?.settlementDelta ?: ZERO,
+                            directionMultiplier = directionMultiplier,
+                        ),
+                    manualAdjustmentDelta =
+                        netDirectionalAmount(
+                            forwardAmount = forwardComposition?.manualAdjustmentDelta ?: ZERO,
+                            backwardAmount = backwardComposition?.manualAdjustmentDelta ?: ZERO,
+                            directionMultiplier = directionMultiplier,
+                        ),
+                    lines = lines,
+                )
+            }.sortedWith(
+                compareBy<GroupDebtPairHistory> { it.firstUserId.toString() }
+                    .thenBy { it.secondUserId.toString() }
+                    .thenBy { it.currency },
+            )
     }
 
     override suspend fun getMovement(
@@ -613,6 +686,23 @@ class GroupDebtServiceImpl(
     private fun shouldIncludeProjectedForMonth(selectedMonth: YearMonth): Boolean =
         !selectedMonth.isBefore(YearMonth.from(LocalDate.now(clock)))
 
+    private suspend fun directionalLinesForPair(
+        userId: UUID,
+        groupId: UUID,
+        selectedMonth: YearMonth,
+        direction: DirectionalDebtKey,
+        historyByDirection: Map<DirectionalDebtKey, List<GroupDebtMovementLine>>,
+    ): List<GroupDebtMovementLine> =
+        historyByDirection[direction].orEmpty() +
+            loadCarriedOverOpenBalanceLines(
+                userId = userId,
+                groupId = groupId,
+                payerId = direction.payerId,
+                receiverId = direction.receiverId,
+                currency = direction.currency,
+                selectedMonth = selectedMonth,
+            )
+
     private suspend fun loadCarriedOverOpenBalanceLines(
         userId: UUID,
         groupId: UUID,
@@ -664,14 +754,14 @@ class GroupDebtServiceImpl(
                         acc.add(line.deltaSigned).asMoney()
                     }
 
+                val tempId = "carryover-grouped|${first.payerId}|${first.receiverId}|${first.currency.uppercase()}|$month|$total|${
+                    monthLines.any {
+                        it.projected
+                    }
+                }"
+
                 GroupDebtMovementLine(
-                    id =
-                        UUID.nameUUIDFromBytes(
-                            "carryover-grouped|${first.payerId}|${first.receiverId}|${first.currency.uppercase()}|$month|$total|${monthLines.any {
-                                it.projected
-                            }}"
-                                .toByteArray(),
-                        ),
+                    id = UUID.nameUUIDFromBytes(tempId.toByteArray()),
                     payerId = first.payerId,
                     receiverId = first.receiverId,
                     month = month,
@@ -691,6 +781,23 @@ class GroupDebtServiceImpl(
             }
 
     private fun projectedSimulationStartDate(fromMonth: YearMonth): LocalDate = fromMonth.atDay(1).minusMonths(1)
+
+    private fun canonicalDebtKeyFor(
+        userA: UUID,
+        userB: UUID,
+        currency: String,
+    ): CanonicalDebtKey =
+        if (userA.toString() <= userB.toString()) {
+            CanonicalDebtKey(firstUserId = userA, secondUserId = userB, currency = currency.uppercase())
+        } else {
+            CanonicalDebtKey(firstUserId = userB, secondUserId = userA, currency = currency.uppercase())
+        }
+
+    private fun netDirectionalAmount(
+        forwardAmount: BigDecimal,
+        backwardAmount: BigDecimal,
+        directionMultiplier: BigDecimal,
+    ): BigDecimal = forwardAmount.subtract(backwardAmount).multiply(directionMultiplier).asMoney()
 
     private fun sortHistoryLines(movements: List<GroupDebtMovementLine>): List<GroupDebtMovementLine> =
         movements.sortedWith(
@@ -713,6 +820,18 @@ class GroupDebtServiceImpl(
             }
         }
     }
+
+    private data class DirectionalDebtKey(
+        val payerId: UUID,
+        val receiverId: UUID,
+        val currency: String,
+    )
+
+    private data class CanonicalDebtKey(
+        val firstUserId: UUID,
+        val secondUserId: UUID,
+        val currency: String,
+    )
 
     private suspend fun deriveMovements(
         actorUserId: UUID,

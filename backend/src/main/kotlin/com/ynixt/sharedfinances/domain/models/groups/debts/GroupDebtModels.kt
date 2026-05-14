@@ -73,11 +73,13 @@ data class GroupDebtMonthlyCashFlow(
     val debtInflow: BigDecimal,
 )
 
-data class GroupDebtMonthlyDrilldown(
-    val payerId: UUID,
-    val receiverId: UUID,
+data class GroupDebtPairHistory(
+    val firstUserId: UUID,
+    val secondUserId: UUID,
     val currency: String,
     val month: YearMonth,
+    val netPayerId: UUID?,
+    val netReceiverId: UUID?,
     val netAmount: BigDecimal,
     val chargeDelta: BigDecimal,
     val settlementDelta: BigDecimal,

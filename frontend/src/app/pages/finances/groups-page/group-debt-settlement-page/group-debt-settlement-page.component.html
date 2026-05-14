@@ -41,31 +41,26 @@
         <div class="grid gap-2 md:grid-cols-2">
           <label class="flex flex-col gap-2">
             <span>{{ 'financesPage.groupsPage.debtsPage.originWallet' | translate }}</span>
-            <p-select
-              [options]="bankAccountOptionsForUser(settlementForm.get('payerId')?.value)"
-              optionLabel="label"
-              optionValue="id"
-              formControlName="originId"
-              appendTo="body"
-            ></p-select>
+            <app-wallet-item-picker [optionsGetter]="loadOriginWalletOptions.bind(this)" formControlName="origin"></app-wallet-item-picker>
           </label>
 
           <label class="flex flex-col gap-2">
             <span>{{ 'financesPage.groupsPage.debtsPage.targetWallet' | translate }}</span>
-            <p-select
-              [options]="bankAccountOptionsForUser(settlementForm.get('receiverId')?.value)"
-              optionLabel="label"
-              optionValue="id"
-              formControlName="targetId"
-              appendTo="body"
-            ></p-select>
+            <app-wallet-item-picker [optionsGetter]="loadTargetWalletOptions.bind(this)" formControlName="target"></app-wallet-item-picker>
           </label>
         </div>
 
         <div class="grid gap-2 md:grid-cols-2">
           <label class="flex flex-col gap-2">
             <span>{{ 'financesPage.groupsPage.debtsPage.amount' | translate }}</span>
-            <p-input-number formControlName="amount" [min]="0.01" [showButtons]="true" fluid></p-input-number>
+            <p-input-number
+              formControlName="amount"
+              mode="currency"
+              [currency]="amountCurrency()"
+              [min]="0.01"
+              [showButtons]="true"
+              fluid
+            ></p-input-number>
           </label>
 
           <label class="flex flex-col gap-2">

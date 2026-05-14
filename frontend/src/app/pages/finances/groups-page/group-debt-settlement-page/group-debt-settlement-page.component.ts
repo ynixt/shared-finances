@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { faBuildingColumns, faCreditCard } from '@fortawesome/free-solid-svg-icons';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { MessageService } from 'primeng/api';
@@ -11,10 +12,16 @@ import { Select } from 'primeng/select';
 
 import { DatePickerComponent } from '../../../../components/date-picker/date-picker.component';
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import { UserResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { WalletItemSearchResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
 import { ErrorMessageService } from '../../../../services/error-message.service';
+import { UserService } from '../../../../services/user.service';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
+import {
+  WalletItemPickerComponent,
+  WalletItemSearchResponseDtoWithIcon,
+} from '../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
 import { GroupWalletItemService } from '../../services/group-wallet-item.service';
 import { GroupService } from '../../services/group.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
@@ -23,11 +30,6 @@ import { buildDebtSettlementEntry } from '../group-debts-page/group-debts-page.h
 interface MemberOption {
   label: string;
   userId: string;
-}
-
-interface WalletOption {
-  id: string;
-  label: string;
 }
 
 @Component({
@@ -41,6 +43,7 @@ interface WalletOption {
     ReactiveFormsModule,
     Select,
     TranslatePipe,
+    WalletItemPickerComponent,
   ],
   templateUrl: './group-debt-settlement-page.component.html',
 })
@@ -54,6 +57,7 @@ export class GroupDebtSettlementPageComponent {
   private readonly messageService = inject(MessageService);
   private readonly errorMessageService = inject(ErrorMessageService);
   private readonly translateService = inject(TranslateService);
+  private readonly userService = inject(UserService);
 
   readonly groupId = this.route.snapshot.paramMap.get('id') ?? '';
 
@@ -71,21 +75,25 @@ export class GroupDebtSettlementPageComponent {
     })),
   );
 
+  currentUser: UserResponseDto | undefined | null;
+
   readonly settlementForm = this.formBuilder.group({
     payerId: [undefined as string | undefined, [Validators.required]],
     receiverId: [undefined as string | undefined, [Validators.required]],
-    originId: [undefined as string | undefined, [Validators.required]],
-    targetId: [undefined as string | undefined, [Validators.required]],
+    origin: [undefined as WalletItemSearchResponseDtoWithIcon | undefined, [Validators.required]],
+    target: [undefined as WalletItemSearchResponseDtoWithIcon | undefined, [Validators.required]],
     amount: [undefined as number | undefined, [Validators.required, Validators.min(0.01)]],
     date: [new Date(), [Validators.required]],
   });
 
   constructor() {
+    this.userService.getUser().then(u => (this.currentUser = u));
+
     this.settlementForm.get('payerId')?.valueChanges.subscribe(() => {
-      this.settlementForm.patchValue({ originId: undefined }, { emitEvent: false });
+      this.settlementForm.patchValue({ origin: undefined }, { emitEvent: false });
     });
     this.settlementForm.get('receiverId')?.valueChanges.subscribe(() => {
-      this.settlementForm.patchValue({ targetId: undefined }, { emitEvent: false });
+      this.settlementForm.patchValue({ target: undefined }, { emitEvent: false });
     });
 
     if (this.groupId) {
@@ -96,17 +104,16 @@ export class GroupDebtSettlementPageComponent {
     }
   }
 
-  bankAccountOptionsForUser(userId?: string | null): WalletOption[] {
-    if (!userId) {
-      return [];
-    }
+  amountCurrency(): string {
+    return this.settlementForm.get('origin')?.value?.currency ?? this.currentUser?.defaultCurrency ?? 'USD';
+  }
 
-    return this.bankAccounts()
-      .filter(item => item.user?.id === userId)
-      .map(item => ({
-        id: item.id,
-        label: `${item.name} • ${item.currency}`,
-      }));
+  async loadOriginWalletOptions(page = 0, query?: string): Promise<WalletItemSearchResponseDtoWithIcon[]> {
+    return this.filterWalletOptionsForUser(this.settlementForm.get('payerId')?.value, query);
+  }
+
+  async loadTargetWalletOptions(page = 0, query?: string): Promise<WalletItemSearchResponseDtoWithIcon[]> {
+    return this.filterWalletOptionsForUser(this.settlementForm.get('receiverId')?.value, query);
   }
 
   async submit() {
@@ -124,8 +131,8 @@ export class GroupDebtSettlementPageComponent {
           date: raw.date!,
           groupId: this.groupId,
           name: this.translateService.instant('financesPage.groupsPage.debtsPage.settlementEntryName'),
-          originId: raw.originId!,
-          targetId: raw.targetId!,
+          originId: raw.origin!.id,
+          targetId: raw.target!.id,
         }),
       );
 
@@ -175,5 +182,28 @@ export class GroupDebtSettlementPageComponent {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private filterWalletOptionsForUser(userId?: string | null, query?: string): WalletItemSearchResponseDtoWithIcon[] {
+    if (!userId) {
+      return [];
+    }
+
+    const normalizedQuery = query?.trim().toLowerCase();
+
+    return this.bankAccounts()
+      .filter(item => item.user?.id === userId)
+      .filter(item => {
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        const searchText = `${item.name} ${item.currency} ${item.type}`.toLowerCase();
+        return searchText.includes(normalizedQuery);
+      })
+      .map(item => ({
+        ...item,
+        icon: item.type === 'CREDIT_CARD' ? faCreditCard : faBuildingColumns,
+      }));
   }
 }

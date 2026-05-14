@@ -56,6 +56,7 @@ financesPage:
       emptyBalances: No debt balances were found for this group.
       outstanding: Outstanding amount
       settleAction: Settle
+      settleValueAction: Settle value
       adjustAction: Adjust
       month: Month
       netAmount: Net amount
@@ -65,7 +66,9 @@ financesPage:
       emptyMonthlyComposition: No monthly composition for this pair.
       historyTitle: Movement history
       emptyHistory: No debt movement found.
-      linkedTransaction: Linked transaction
+      noNetBalance: No net balance in the month
+      pairSummaryOwes: owes
+      pairSummaryTo: to
       createdAtColumn: Created at
       actorColumn: Actor
       pair: Pair

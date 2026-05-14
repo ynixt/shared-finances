@@ -24,7 +24,9 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
+import org.springframework.r2dbc.core.DatabaseClient
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
@@ -36,7 +38,7 @@ import java.util.UUID
 
 class GroupDebtServiceImplHistoryAndDrilldownTest {
     @Test
-    fun `history should filter by debt month and append selected-month projected rows`() =
+    fun `history should filter by debt month and append selected-month projected rows`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -60,8 +62,8 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
                         ),
                     projectedEvents =
                         listOf(
-                            projectedExpenseEvent(date = selectedMonth.atDay(20), payerId = payerId, receiverId = receiverId),
-                            projectedExpenseEvent(date = selectedMonth.plusMonths(1).atDay(5), payerId = payerId, receiverId = receiverId),
+                            projectedExpenseEvent(date = selectedMonth.atDay(20), payerId = receiverId, receiverId = payerId),
+                            projectedExpenseEvent(date = selectedMonth.plusMonths(1).atDay(5), payerId = receiverId, receiverId = payerId),
                         ),
                 )
 
@@ -83,15 +85,16 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
             assertThat(history.count { it.projected }).isEqualTo(1)
             assertThat(history.first { it.projected }.transactionDate).isEqualTo(selectedMonth.atDay(20))
         }
+    }
 
     @Test
-    fun `monthly drilldown should mix executed manual settlement and projected contributors`() =
+    fun `pair history should net opposite directions and keep original lines`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
             val payerId = UUID.randomUUID()
             val receiverId = UUID.randomUUID()
-            val selectedMonth = YearMonth.of(2026, 4)
+            val selectedMonth = YearMonth.of(2026, 5)
 
             val service =
                 createService(
@@ -102,10 +105,15 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
                                 payerId = payerId,
                                 receiverId = receiverId,
                                 month = selectedMonth,
-                                netAmount = BigDecimal("15.00"),
+                                netAmount = BigDecimal("50.00"),
                                 chargeDelta = BigDecimal("50.00"),
-                                settlementDelta = BigDecimal("-30.00"),
-                                manualAdjustmentDelta = BigDecimal("-5.00"),
+                            ),
+                            compositionRow(
+                                payerId = receiverId,
+                                receiverId = payerId,
+                                month = selectedMonth,
+                                netAmount = BigDecimal("10.00"),
+                                chargeDelta = BigDecimal("10.00"),
                             ),
                         ),
                     historyRows =
@@ -118,52 +126,31 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
                                 reasonKind = GroupDebtMovementReasonKind.BENEFICIARY_CHARGE,
                             ),
                             historyRow(
-                                payerId = payerId,
-                                receiverId = receiverId,
+                                payerId = receiverId,
+                                receiverId = payerId,
                                 month = selectedMonth,
-                                deltaSigned = BigDecimal("-30.00"),
-                                reasonKind = GroupDebtMovementReasonKind.DEBT_SETTLEMENT,
-                            ),
-                            historyRow(
-                                payerId = payerId,
-                                receiverId = receiverId,
-                                month = selectedMonth,
-                                deltaSigned = BigDecimal("-5.00"),
-                                reasonKind = GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT,
+                                deltaSigned = BigDecimal("10.00"),
+                                reasonKind = GroupDebtMovementReasonKind.BENEFICIARY_CHARGE,
                             ),
                         ),
-                    projectedEvents =
-                        listOf(
-                            projectedExpenseEvent(date = selectedMonth.atDay(20), payerId = payerId, receiverId = receiverId),
-                        ),
+                    projectedEvents = emptyList(),
                 )
 
-            val drilldown =
-                service.getMonthlyDrilldown(
-                    userId = userId,
-                    groupId = groupId,
-                    payerId = payerId,
-                    receiverId = receiverId,
-                    currency = "BRL",
-                    selectedMonth = selectedMonth,
-                )
+            val history = service.listPairHistory(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+            val pair = history.single()
 
-            assertThat(drilldown.netAmount).isEqualByComparingTo("35.00")
-            assertThat(drilldown.chargeDelta).isEqualByComparingTo("70.00")
-            assertThat(drilldown.settlementDelta).isEqualByComparingTo("-30.00")
-            assertThat(drilldown.manualAdjustmentDelta).isEqualByComparingTo("-5.00")
-            assertThat(drilldown.lines).hasSize(4)
-            assertThat(drilldown.lines.count { it.projected }).isEqualTo(1)
-            assertThat(drilldown.lines.map { it.reasonKind })
-                .contains(
-                    GroupDebtMovementReasonKind.BENEFICIARY_CHARGE,
-                    GroupDebtMovementReasonKind.DEBT_SETTLEMENT,
-                    GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT,
-                )
+            assertThat(pair.netPayerId).isEqualTo(payerId)
+            assertThat(pair.netReceiverId).isEqualTo(receiverId)
+            assertThat(pair.netAmount).isEqualByComparingTo("40.00")
+            assertThat(pair.chargeDelta).isEqualByComparingTo("40.00")
+            assertThat(pair.lines).hasSize(2)
+            assertThat(pair.lines.map { it.payerId to it.receiverId })
+                .containsExactlyInAnyOrder(payerId to receiverId, receiverId to payerId)
         }
+    }
 
     @Test
-    fun `history and drilldown should include projected credit card installments by bill month`() =
+    fun `pair history should include projected credit card installments by bill month`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -188,41 +175,22 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
                         ),
                 )
 
-            val history =
-                service.listHistory(
-                    userId = userId,
-                    groupId = groupId,
-                    filter =
-                        GroupDebtHistoryFilter(
-                            payerId = receiverId,
-                            receiverId = payerId,
-                            currency = "BRL",
-                            selectedMonth = selectedMonth,
-                        ),
-                )
-            val drilldown =
-                service.getMonthlyDrilldown(
-                    userId = userId,
-                    groupId = groupId,
-                    payerId = receiverId,
-                    receiverId = payerId,
-                    currency = "BRL",
-                    selectedMonth = selectedMonth,
-                )
+            val history = service.listPairHistory(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+            val pair = history.single()
+            val line = pair.lines.single()
 
-            assertThat(history).hasSize(1)
-            assertThat(history.single().projected).isTrue()
-            assertThat(history.single().month).isEqualTo(selectedMonth)
-            assertThat(history.single().transactionDate).isEqualTo(projectedDate)
-            assertThat(drilldown.netAmount).isEqualByComparingTo("20.00")
-            assertThat(drilldown.chargeDelta).isEqualByComparingTo("20.00")
-            assertThat(drilldown.lines).hasSize(1)
-            assertThat(drilldown.lines.single().transactionDate).isEqualTo(projectedDate)
-            assertThat(drilldown.lines.single().month).isEqualTo(selectedMonth)
+            assertThat(pair.netPayerId).isEqualTo(receiverId)
+            assertThat(pair.netReceiverId).isEqualTo(payerId)
+            assertThat(pair.netAmount).isEqualByComparingTo("20.00")
+            assertThat(pair.chargeDelta).isEqualByComparingTo("20.00")
+            assertThat(line.projected).isTrue()
+            assertThat(line.transactionDate).isEqualTo(projectedDate)
+            assertThat(line.month).isEqualTo(selectedMonth)
         }
+    }
 
     @Test
-    fun `monthly drilldown should include carried over unpaid balances from previous months`() =
+    fun `pair history should include carried over unpaid balances from previous months`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -247,133 +215,19 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
                     projectedEvents = emptyList(),
                 )
 
-            val drilldown =
-                service.getMonthlyDrilldown(
-                    userId = userId,
-                    groupId = groupId,
-                    payerId = payerId,
-                    receiverId = receiverId,
-                    currency = "BRL",
-                    selectedMonth = selectedMonth,
-                )
+            val history = service.listPairHistory(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+            val pair = history.single()
+            val line = pair.lines.single()
 
-            assertThat(drilldown.netAmount).isEqualByComparingTo("538.86")
-            assertThat(drilldown.lines).hasSize(1)
-            assertThat(drilldown.lines.single().carriedOver).isTrue()
-            assertThat(drilldown.lines.single().projected).isFalse()
-            assertThat(drilldown.lines.single().month).isEqualTo(selectedMonth.minusMonths(1))
-            assertThat(drilldown.lines.single().deltaSigned).isEqualByComparingTo("538.86")
+            assertThat(pair.netPayerId).isEqualTo(payerId)
+            assertThat(pair.netReceiverId).isEqualTo(receiverId)
+            assertThat(pair.netAmount).isEqualByComparingTo("538.86")
+            assertThat(line.carriedOver).isTrue()
+            assertThat(line.projected).isFalse()
+            assertThat(line.month).isEqualTo(selectedMonth.minusMonths(1))
+            assertThat(line.deltaSigned).isEqualByComparingTo("538.86")
         }
-
-    @Test
-    fun `monthly drilldown should group carryover debts from the same previous month into a single line`() =
-        runBlocking {
-            val groupId = UUID.randomUUID()
-            val userId = UUID.randomUUID()
-            val payerId = UUID.randomUUID()
-            val receiverId = UUID.randomUUID()
-            val selectedMonth = YearMonth.of(2026, 6)
-            val previousMonth = selectedMonth.minusMonths(1)
-
-            val service =
-                createService(
-                    groupId = groupId,
-                    compositionRows =
-                        listOf(
-                            compositionRow(
-                                payerId = payerId,
-                                receiverId = receiverId,
-                                month = previousMonth,
-                                netAmount = BigDecimal("100.00"),
-                                chargeDelta = BigDecimal("100.00"),
-                            ),
-                            compositionRow(
-                                payerId = payerId,
-                                receiverId = receiverId,
-                                month = previousMonth,
-                                netAmount = BigDecimal("38.86"),
-                                chargeDelta = BigDecimal("38.86"),
-                            ),
-                        ),
-                    historyRows = emptyList(),
-                    projectedEvents = emptyList(),
-                )
-
-            val drilldown =
-                service.getMonthlyDrilldown(
-                    userId = userId,
-                    groupId = groupId,
-                    payerId = payerId,
-                    receiverId = receiverId,
-                    currency = "BRL",
-                    selectedMonth = selectedMonth,
-                )
-
-            assertThat(drilldown.netAmount).isEqualByComparingTo("138.86")
-            assertThat(drilldown.lines).hasSize(1)
-            assertThat(drilldown.lines.single().carriedOver).isTrue()
-            assertThat(drilldown.lines.single().month).isEqualTo(previousMonth)
-            assertThat(drilldown.lines.single().deltaSigned).isEqualByComparingTo("138.86")
-        }
-
-    @Test
-    fun `monthly drilldown should include projected carryover from intermediate future months`() =
-        runBlocking {
-            val groupId = UUID.randomUUID()
-            val userId = UUID.randomUUID()
-            val payerId = UUID.randomUUID()
-            val receiverId = UUID.randomUUID()
-            val selectedMonth = YearMonth.of(2026, 8)
-
-            val service =
-                createService(
-                    groupId = groupId,
-                    compositionRows =
-                        listOf(
-                            compositionRow(
-                                payerId = receiverId,
-                                receiverId = payerId,
-                                month = YearMonth.of(2026, 5),
-                                netAmount = BigDecimal("538.86"),
-                                chargeDelta = BigDecimal("538.86"),
-                            ),
-                        ),
-                    historyRows = emptyList(),
-                    projectedEvents =
-                        listOf(
-                            projectedExpenseEvent(date = selectedMonth.minusMonths(2).atDay(5), payerId = payerId, receiverId = receiverId),
-                            projectedExpenseEvent(date = selectedMonth.atDay(5), payerId = payerId, receiverId = receiverId),
-                        ),
-                )
-
-            val drilldown =
-                service.getMonthlyDrilldown(
-                    userId = userId,
-                    groupId = groupId,
-                    payerId = receiverId,
-                    receiverId = payerId,
-                    currency = "BRL",
-                    selectedMonth = selectedMonth,
-                )
-
-            assertThat(drilldown.netAmount).isEqualByComparingTo("578.86")
-            assertThat(drilldown.chargeDelta).isEqualByComparingTo("20.00")
-            assertThat(drilldown.lines).hasSize(3)
-            assertThat(drilldown.lines.count { it.carriedOver }).isEqualTo(2)
-            assertThat(
-                drilldown.lines
-                    .filter { it.carriedOver }
-                    .map { it.month },
-            ).containsExactly(YearMonth.of(2026, 5), YearMonth.of(2026, 6))
-            assertThat(
-                drilldown.lines
-                    .first { it.month == YearMonth.of(2026, 6) },
-            ).matches { it.carriedOver && it.projected && it.deltaSigned.compareTo(BigDecimal("20.00")) == 0 }
-            assertThat(
-                drilldown.lines
-                    .first { it.month == selectedMonth },
-            ).matches { !it.carriedOver && it.projected && it.deltaSigned.compareTo(BigDecimal("20.00")) == 0 }
-        }
+    }
 
     private fun createService(
         groupId: UUID,
@@ -381,20 +235,29 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
         historyRows: List<GroupMemberDebtDatabaseClientRepository.DebtMovementHistoryRow>,
         projectedEvents: List<EventListResponse>,
     ): GroupDebtServiceImpl {
-        val debtDatabaseClientRepository = Mockito.mock(GroupMemberDebtDatabaseClientRepository::class.java)
-        Mockito
-            .`when`(debtDatabaseClientRepository.listMonthlyComposition(groupId))
-            .thenReturn(Flux.fromIterable(compositionRows))
-        Mockito
-            .`when`(
-                debtDatabaseClientRepository.listHistory(
-                    Mockito.eq(groupId),
-                    Mockito.any(),
-                    Mockito.any(),
-                    Mockito.any(),
-                    Mockito.any(),
-                ),
-            ).thenReturn(Flux.fromIterable(historyRows))
+        val expectedGroupId = groupId
+        val debtDatabaseClientRepository =
+            object : GroupMemberDebtDatabaseClientRepository(Mockito.mock(DatabaseClient::class.java)) {
+                override fun listMonthlyComposition(groupId: UUID): Flux<DebtMonthlyCompositionRow> {
+                    require(groupId == expectedGroupId)
+                    return Flux.fromIterable(compositionRows)
+                }
+
+                override fun listHistory(
+                    groupId: UUID,
+                    payerId: UUID?,
+                    receiverId: UUID?,
+                    currency: String?,
+                    selectedMonth: YearMonth?,
+                ): Flux<DebtMovementHistoryRow> {
+                    require(groupId == expectedGroupId)
+                    return Flux.fromIterable(historyRows)
+                }
+
+                override fun upsertMonthlyDelta(
+                    movement: com.ynixt.sharedfinances.domain.entities.groups.GroupMemberDebtMovementEntity,
+                ): Mono<Void> = Mono.empty()
+            }
 
         return GroupDebtServiceImpl(
             groupPermissionService = AllowAllGroupPermissionService,
