@@ -26,7 +26,9 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceOccurrenceSimulationService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceSimulationService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -46,6 +48,7 @@ class RecurrenceSimulationServiceImpl(
     private val recurrenceService: RecurrenceService,
     private val recurrenceOccurrenceSimulationService: RecurrenceOccurrenceSimulationService,
     private val recurrenceSeriesRepository: RecurrenceSeriesRepository,
+    private val recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     private val clock: Clock,
 ) : RecurrenceSimulationService {
     private val defaultSort = Sort.by(Sort.Direction.DESC, "nextExecution", "id")
@@ -503,13 +506,7 @@ class RecurrenceSimulationServiceImpl(
         )
     }
 
-    private fun fixStartDate(startDate: LocalDate?): LocalDate? =
-        LocalDate
-            .now(clock)
-            .plusDays(1)
-            .let { minimum ->
-                if (startDate == null || startDate.isBefore(minimum)) minimum else startDate
-            }
+    private fun fixStartDate(startDate: LocalDate?): LocalDate? = startDate ?: LocalDate.now(clock).plusDays(1)
 
     private suspend fun simulateBill(
         walletItem: WalletItem,
@@ -543,11 +540,16 @@ class RecurrenceSimulationServiceImpl(
         }
 
         hydrateSeriesTotals(configs)
+        hydrateBeneficiaries(configs)
 
         val categoriesById = resolveCategoriesById(configs)
         val groupsById = resolveGroupsById(configs)
         val usersById = resolveUsersById(configs)
-        val walletItemsById = resolveWalletItemsById(configs)
+        val walletItemsById =
+            resolveWalletItemsById(
+                configs = configs,
+                usersById = usersById,
+            )
 
         return simulateGeneration(
             configs = configs,
@@ -592,6 +594,30 @@ class RecurrenceSimulationServiceImpl(
             if (config.seriesQtyTotal == null) {
                 config.seriesQtyTotal = seriesById[config.seriesId]?.qtyTotal
             }
+        }
+    }
+
+    private suspend fun hydrateBeneficiaries(configs: List<RecurrenceEventEntity>) {
+        if (configs.isEmpty()) {
+            return
+        }
+
+        val configIds = configs.mapNotNull { it.id }.toSet()
+        if (configIds.isEmpty()) {
+            return
+        }
+
+        val beneficiariesByEventId =
+            configIds.associateWith { recurrenceConfigId ->
+                recurrenceEventBeneficiaryRepository
+                    .findAllByWalletEventId(recurrenceConfigId)
+                    .asFlow()
+                    .toList()
+            }
+
+        configs.forEach { config ->
+            val configId = config.id ?: return@forEach
+            config.beneficiaries = beneficiariesByEventId[configId].orEmpty()
         }
     }
 
@@ -670,7 +696,10 @@ class RecurrenceSimulationServiceImpl(
         return usersById + loaded
     }
 
-    private suspend fun resolveWalletItemsById(configs: List<RecurrenceEventEntity>): Map<UUID, WalletItem> {
+    private suspend fun resolveWalletItemsById(
+        configs: List<RecurrenceEventEntity>,
+        usersById: Map<UUID, UserEntity>,
+    ): Map<UUID, WalletItem> {
         val walletItemsById = linkedMapOf<UUID, WalletItem>()
 
         configs
@@ -698,6 +727,10 @@ class RecurrenceSimulationServiceImpl(
             .forEach { walletItem ->
                 walletItemsById[walletItem.id!!] = walletItem
             }
+
+        walletItemsById.values.forEach { walletItem ->
+            walletItem.user = usersById[walletItem.userId]
+        }
 
         return walletItemsById
     }

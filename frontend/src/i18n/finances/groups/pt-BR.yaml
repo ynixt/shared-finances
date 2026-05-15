@@ -52,10 +52,11 @@ financesPage:
       title: 'Dívidas do grupo: {{name}}'
       adjustmentPageTitle: 'Ajuste de dívida: {{name}}'
       settlementPageTitle: 'Quitação de dívida: {{name}}'
-      balancesTitle: Saldos em aberto
+      balancesTitle: Saldos
       emptyBalances: Nenhum saldo de dívida foi encontrado para este grupo.
       outstanding: Valor em aberto
       settleAction: Quitar
+      settleValueAction: Quitar valor
       adjustAction: Ajustar
       month: Mês
       netAmount: Valor líquido
@@ -65,14 +66,20 @@ financesPage:
       emptyMonthlyComposition: Nenhuma composição mensal para este par.
       historyTitle: Histórico de movimentos
       emptyHistory: Nenhum movimento de dívida encontrado.
-      linkedTransaction: Transação vinculada
+      noNetBalance: Sem saldo líquido no mês
+      pairSummaryOwes: deve
+      pairSummaryTo: para
       createdAtColumn: Criado em
+      transactionDateColumn: Data da transação
+      debtMonthColumn: Mês da dívida
       actorColumn: Autor
       pair: Par
       sourceColumn: Origem
       reasonColumn: Motivo
       amountColumn: Valor
       noteColumn: Observação
+      executedState: Executado
+      projectedState: Projetado
       adjustmentFormTitle: Ajuste manual
       editCompensationHint: Editar um ajuste existente preserva o movimento original e adiciona um delta de compensação.
       payer: Devedor
@@ -92,6 +99,8 @@ financesPage:
       settlementSaved: Transferência de quitação salva com sucesso.
       settlementEntryName: Quitação de dívida
       noSource: Sem referência de origem
+      carryoverSource: Saldo em aberto de mês anterior
+      projectedSource: Projeção recorrente
       sourceWalletEvent: 'Evento da carteira {{id}}'
       sourceMovement: 'Movimento {{id}}'
       reason:

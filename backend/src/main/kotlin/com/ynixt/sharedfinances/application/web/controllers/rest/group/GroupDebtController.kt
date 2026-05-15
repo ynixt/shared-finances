@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest.group
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.CreateGroupDebtAdjustmentRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.EditGroupDebtAdjustmentRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtMovementDto
+import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtPairHistoryDto
 import com.ynixt.sharedfinances.application.web.dto.groups.debts.GroupDebtWorkspaceDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDebtDtoMapper
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupDebtAdjustmentException
@@ -57,6 +58,7 @@ class GroupDebtController(
         @RequestParam(required = false) payerId: UUID?,
         @RequestParam(required = false) receiverId: UUID?,
         @RequestParam(required = false) currency: String?,
+        @RequestParam(required = false) selectedMonth: String?,
     ): List<GroupDebtMovementDto> =
         groupDebtService
             .listHistory(
@@ -67,8 +69,23 @@ class GroupDebtController(
                         payerId = payerId,
                         receiverId = receiverId,
                         currency = currency,
+                        selectedMonth = parseSelectedMonthOrNull(selectedMonth),
                     ),
             ).map(groupDebtDtoMapper::toMovementDto)
+
+    @Operation(summary = "Get monthly group debt history grouped by pair")
+    @GetMapping("/history/by-pair")
+    suspend fun getPairHistory(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable groupId: UUID,
+        @RequestParam(required = false) selectedMonth: String?,
+    ): List<GroupDebtPairHistoryDto> =
+        groupDebtService
+            .listPairHistory(
+                userId = principalToken.principal.id,
+                groupId = groupId,
+                selectedMonth = parseSelectedMonth(selectedMonth),
+            ).map(groupDebtDtoMapper::toPairHistoryDto)
 
     @Operation(summary = "Get group debt movement by id")
     @GetMapping("/movements/{movementId}")
@@ -128,4 +145,9 @@ class GroupDebtController(
                 throw InvalidGroupDebtAdjustmentException("Month must use yyyy-MM format")
             }
     }
+
+    private fun parseSelectedMonthOrNull(raw: String?): YearMonth? =
+        raw
+            ?.takeIf { it.isNotBlank() }
+            ?.let(::parseSelectedMonth)
 }

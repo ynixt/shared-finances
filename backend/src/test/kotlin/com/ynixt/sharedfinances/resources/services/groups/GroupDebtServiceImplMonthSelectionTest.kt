@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCatego
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
 import com.ynixt.sharedfinances.domain.models.walletentry.EntrySumResult
@@ -32,7 +33,7 @@ import java.util.UUID
 
 class GroupDebtServiceImplMonthSelectionTest {
     @Test
-    fun `past month should ignore projected debt movements`() =
+    fun `past month should return only the selected competence`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -50,14 +51,20 @@ class GroupDebtServiceImplMonthSelectionTest {
                             compositionRow(
                                 payerId = payerId,
                                 receiverId = receiverId,
-                                month = YearMonth.of(2026, 1),
-                                amount = BigDecimal("100.00"),
+                                month = selectedMonth.minusMonths(1),
+                                netAmount = BigDecimal("100.00"),
                             ),
                             compositionRow(
                                 payerId = payerId,
                                 receiverId = receiverId,
-                                month = YearMonth.of(2026, 3),
-                                amount = BigDecimal("30.00"),
+                                month = selectedMonth,
+                                netAmount = BigDecimal("45.00"),
+                            ),
+                            compositionRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = selectedMonth.plusMonths(1),
+                                netAmount = BigDecimal("30.00"),
                             ),
                         ),
                     recurrenceSimulationService = recurrenceSimulation,
@@ -67,17 +74,56 @@ class GroupDebtServiceImplMonthSelectionTest {
 
             assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isZero()
             assertThat(workspace.balances).hasSize(1)
-            assertThat(workspace.balances.first().outstandingAmount).isEqualByComparingTo("100.00")
+            assertThat(workspace.balances.first().outstandingAmount).isEqualByComparingTo("145.00")
             assertThat(
                 workspace.balances
                     .first()
                     .monthlyComposition
                     .map { it.month },
-            ).containsExactly(YearMonth.of(2026, 1))
+            ).containsExactly(selectedMonth)
         }
+    }
 
     @Test
-    fun `current month should include projected recurring and installment movements`() =
+    fun `settled past month should remain visible even when the selected competence net is zero`() {
+        runBlocking {
+            val groupId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val payerId = UUID.randomUUID()
+            val receiverId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 3)
+
+            val service =
+                createService(
+                    groupId = groupId,
+                    rows =
+                        listOf(
+                            compositionRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = selectedMonth,
+                                netAmount = BigDecimal.ZERO,
+                                chargeDelta = BigDecimal("80.00"),
+                                settlementDelta = BigDecimal("-80.00"),
+                            ),
+                        ),
+                    recurrenceSimulationService = RecordingRecurrenceSimulationService(events = emptyList()),
+                )
+
+            val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+
+            assertThat(workspace.balances).hasSize(1)
+            val balance = workspace.balances.first()
+            assertThat(balance.outstandingAmount).isEqualByComparingTo("0.00")
+            assertThat(balance.monthlyComposition).hasSize(1)
+            assertThat(balance.monthlyComposition.first().month).isEqualTo(selectedMonth)
+            assertThat(balance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("80.00")
+            assertThat(balance.monthlyComposition.first().settlementDelta).isEqualByComparingTo("-80.00")
+        }
+    }
+
+    @Test
+    fun `current month should include projected recurring and installment movements only for the selected competence`() {
         runBlocking {
             val groupId = UUID.randomUUID()
             val userId = UUID.randomUUID()
@@ -88,6 +134,196 @@ class GroupDebtServiceImplMonthSelectionTest {
             val recurrenceSimulation =
                 RecordingRecurrenceSimulationService(
                     events = listOf(projectedExpenseEvent(selectedMonth.atDay(20), payerId, receiverId)),
+                )
+            val service =
+                createService(
+                    groupId = groupId,
+                    rows =
+                        listOf(
+                            compositionRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = selectedMonth.minusMonths(1),
+                                netAmount = BigDecimal("11.00"),
+                            ),
+                        ),
+                    recurrenceSimulationService = recurrenceSimulation,
+                )
+
+            val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+
+            assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isEqualTo(1)
+            assertThat(workspace.balances).hasSize(2)
+            val projectedBalance = workspace.balances.single { it.payerId == receiverId && it.receiverId == payerId }
+            val carryoverBalance = workspace.balances.single { it.payerId == payerId && it.receiverId == receiverId }
+            assertThat(projectedBalance.outstandingAmount).isEqualByComparingTo("20.00")
+            assertThat(projectedBalance.monthlyComposition).hasSize(1)
+            assertThat(projectedBalance.monthlyComposition.first().month).isEqualTo(selectedMonth)
+            assertThat(projectedBalance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("20.00")
+            assertThat(projectedBalance.monthlyComposition.first().netAmount).isEqualByComparingTo("20.00")
+            assertThat(carryoverBalance.outstandingAmount).isEqualByComparingTo("11.00")
+            assertThat(carryoverBalance.monthlyComposition).hasSize(1)
+            assertThat(carryoverBalance.monthlyComposition.first().month).isEqualTo(selectedMonth)
+            assertThat(carryoverBalance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("0.00")
+            assertThat(carryoverBalance.monthlyComposition.first().netAmount).isEqualByComparingTo("11.00")
+        }
+    }
+
+    @Test
+    fun `future month should use selected month persisted and projected values when there is no projected carryover`() {
+        runBlocking {
+            val groupId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val payerId = UUID.randomUUID()
+            val receiverId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 6)
+
+            val recurrenceSimulation =
+                RecordingRecurrenceSimulationService(
+                    events =
+                        listOf(
+                            projectedExpenseEvent(selectedMonth.atDay(5), payerId, receiverId),
+                        ),
+                )
+            val service =
+                createService(
+                    groupId = groupId,
+                    rows =
+                        listOf(
+                            compositionRow(
+                                payerId = receiverId,
+                                receiverId = payerId,
+                                month = selectedMonth.minusMonths(1),
+                                netAmount = BigDecimal("30.00"),
+                            ),
+                            compositionRow(
+                                payerId = receiverId,
+                                receiverId = payerId,
+                                month = selectedMonth,
+                                netAmount = BigDecimal("30.00"),
+                            ),
+                        ),
+                    recurrenceSimulationService = recurrenceSimulation,
+                )
+
+            val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+
+            assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isEqualTo(1)
+            assertThat(workspace.balances).hasSize(1)
+            val balance = workspace.balances.first()
+            assertThat(balance.payerId).isEqualTo(receiverId)
+            assertThat(balance.receiverId).isEqualTo(payerId)
+            assertThat(balance.outstandingAmount).isEqualByComparingTo("80.00")
+            assertThat(balance.monthlyComposition.map { it.month }).containsExactly(selectedMonth)
+            assertThat(balance.monthlyComposition.map { it.netAmount }).containsExactly(BigDecimal("80.00"))
+        }
+    }
+
+    @Test
+    fun `future month should include projected carryover from intermediate competences`() {
+        runBlocking {
+            val groupId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val payerId = UUID.randomUUID()
+            val receiverId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 8)
+
+            val recurrenceSimulation =
+                RecordingRecurrenceSimulationService(
+                    events =
+                        listOf(
+                            projectedExpenseEvent(selectedMonth.minusMonths(2).atDay(5), payerId, receiverId),
+                            projectedExpenseEvent(selectedMonth.atDay(5), payerId, receiverId),
+                        ),
+                )
+            val service =
+                createService(
+                    groupId = groupId,
+                    rows =
+                        listOf(
+                            compositionRow(
+                                payerId = receiverId,
+                                receiverId = payerId,
+                                month = YearMonth.of(2026, 5),
+                                netAmount = BigDecimal("538.86"),
+                                chargeDelta = BigDecimal("538.86"),
+                            ),
+                        ),
+                    recurrenceSimulationService = recurrenceSimulation,
+                )
+
+            val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+
+            assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isEqualTo(1)
+            assertThat(workspace.balances).hasSize(1)
+            val balance = workspace.balances.first()
+            assertThat(balance.payerId).isEqualTo(receiverId)
+            assertThat(balance.receiverId).isEqualTo(payerId)
+            assertThat(balance.outstandingAmount).isEqualByComparingTo("578.86")
+            assertThat(balance.monthlyComposition).hasSize(1)
+            assertThat(balance.monthlyComposition.single().month).isEqualTo(selectedMonth)
+            assertThat(balance.monthlyComposition.single().netAmount).isEqualByComparingTo("578.86")
+            assertThat(balance.monthlyComposition.single().chargeDelta).isEqualByComparingTo("20.00")
+        }
+    }
+
+    @Test
+    fun `future month should include unpaid balances carried from previous competences`() {
+        runBlocking {
+            val groupId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val payerId = UUID.randomUUID()
+            val receiverId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 6)
+
+            val service =
+                createService(
+                    groupId = groupId,
+                    rows =
+                        listOf(
+                            compositionRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = selectedMonth.minusMonths(1),
+                                netAmount = BigDecimal("538.86"),
+                                chargeDelta = BigDecimal("538.86"),
+                            ),
+                        ),
+                    recurrenceSimulationService = RecordingRecurrenceSimulationService(events = emptyList()),
+                )
+
+            val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+
+            assertThat(workspace.balances).hasSize(1)
+            val balance = workspace.balances.first()
+            assertThat(balance.outstandingAmount).isEqualByComparingTo("538.86")
+            assertThat(balance.monthlyComposition).hasSize(1)
+            assertThat(balance.monthlyComposition.single().month).isEqualTo(selectedMonth)
+            assertThat(balance.monthlyComposition.single().netAmount).isEqualByComparingTo("538.86")
+            assertThat(balance.monthlyComposition.single().chargeDelta).isEqualByComparingTo("0.00")
+        }
+    }
+
+    @Test
+    fun `future month should include projected credit card installment billed in the selected competence`() {
+        runBlocking {
+            val groupId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val payerId = UUID.randomUUID()
+            val receiverId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 6)
+
+            val recurrenceSimulation =
+                RecordingRecurrenceSimulationService(
+                    events =
+                        listOf(
+                            projectedCreditCardExpenseEvent(
+                                date = selectedMonth.minusMonths(1).atDay(25),
+                                billDate = selectedMonth.atDay(1),
+                                payerId = payerId,
+                                receiverId = receiverId,
+                            ),
+                        ),
                 )
             val service =
                 createService(
@@ -104,57 +340,12 @@ class GroupDebtServiceImplMonthSelectionTest {
             assertThat(balance.payerId).isEqualTo(receiverId)
             assertThat(balance.receiverId).isEqualTo(payerId)
             assertThat(balance.outstandingAmount).isEqualByComparingTo("20.00")
-            assertThat(balance.monthlyComposition).hasSize(1)
-            assertThat(balance.monthlyComposition.first().month).isEqualTo(selectedMonth)
-            assertThat(balance.monthlyComposition.first().chargeDelta).isEqualByComparingTo("20.00")
-            assertThat(balance.monthlyComposition.first().netAmount).isEqualByComparingTo("20.00")
+            assertThat(balance.monthlyComposition.map { it.month }).containsExactly(selectedMonth)
+            assertThat(balance.monthlyComposition.map { it.chargeDelta }).containsExactly(BigDecimal("20.00"))
+            assertThat(recurrenceSimulation.lastMinimumEndExecution).isEqualTo(YearMonth.of(2026, 4).atDay(1).minusMonths(1))
+            assertThat(recurrenceSimulation.lastMaximumNextExecution).isEqualTo(selectedMonth.atEndOfMonth())
         }
-
-    @Test
-    fun `future month should combine persisted values until selected month with selected month projected movement`() =
-        runBlocking {
-            val groupId = UUID.randomUUID()
-            val userId = UUID.randomUUID()
-            val payerId = UUID.randomUUID()
-            val receiverId = UUID.randomUUID()
-            val selectedMonth = YearMonth.of(2026, 6)
-
-            val recurrenceSimulation =
-                RecordingRecurrenceSimulationService(
-                    events =
-                        listOf(
-                            projectedExpenseEvent(selectedMonth.minusMonths(1).atDay(5), payerId, receiverId),
-                            projectedExpenseEvent(selectedMonth.atDay(5), payerId, receiverId),
-                        ),
-                )
-            val service =
-                createService(
-                    groupId = groupId,
-                    rows =
-                        listOf(
-                            compositionRow(
-                                payerId = receiverId,
-                                receiverId = payerId,
-                                month = YearMonth.of(2026, 5),
-                                amount = BigDecimal("30.00"),
-                            ),
-                        ),
-                    recurrenceSimulationService = recurrenceSimulation,
-                )
-
-            val workspace = service.getWorkspaceForMonth(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
-
-            assertThat(recurrenceSimulation.simulateGenerationWithFiltersCalls).isEqualTo(1)
-            assertThat(workspace.balances).hasSize(1)
-            val balance = workspace.balances.first()
-            assertThat(balance.payerId).isEqualTo(receiverId)
-            assertThat(balance.receiverId).isEqualTo(payerId)
-            assertThat(balance.outstandingAmount).isEqualByComparingTo("50.00")
-            assertThat(balance.monthlyComposition.map { it.month })
-                .containsExactly(YearMonth.of(2026, 5), selectedMonth)
-            assertThat(balance.monthlyComposition.map { it.netAmount })
-                .containsExactly(BigDecimal("30.00"), BigDecimal("20.00"))
-        }
+    }
 
     private fun createService(
         groupId: UUID,
@@ -181,16 +372,19 @@ class GroupDebtServiceImplMonthSelectionTest {
         payerId: UUID,
         receiverId: UUID,
         month: YearMonth,
-        amount: BigDecimal,
+        netAmount: BigDecimal,
+        chargeDelta: BigDecimal = netAmount,
+        settlementDelta: BigDecimal = BigDecimal.ZERO,
+        manualAdjustmentDelta: BigDecimal = BigDecimal.ZERO,
     ) = GroupMemberDebtDatabaseClientRepository.DebtMonthlyCompositionRow(
         payerId = payerId,
         receiverId = receiverId,
         currency = "BRL",
         month = month,
-        netAmount = amount,
-        chargeDelta = amount,
-        settlementDelta = BigDecimal.ZERO,
-        manualAdjustmentDelta = BigDecimal.ZERO,
+        netAmount = netAmount,
+        chargeDelta = chargeDelta,
+        settlementDelta = settlementDelta,
+        manualAdjustmentDelta = manualAdjustmentDelta,
     )
 
     private fun projectedExpenseEvent(
@@ -233,6 +427,47 @@ class GroupDebtServiceImplMonthSelectionTest {
         )
     }
 
+    private fun projectedCreditCardExpenseEvent(
+        date: LocalDate,
+        billDate: LocalDate,
+        payerId: UUID,
+        receiverId: UUID,
+    ): EventListResponse {
+        val payerWallet = creditCard(ownerId = payerId)
+
+        return EventListResponse(
+            id = null,
+            type = WalletEntryType.EXPENSE,
+            name = "Projected installment expense",
+            category = null,
+            user = null,
+            group = null,
+            tags = null,
+            observations = null,
+            date = date,
+            confirmed = true,
+            installment = 2,
+            recurrenceConfigId = null,
+            recurrenceConfig = null,
+            currency = "BRL",
+            beneficiaries =
+                listOf(
+                    EventListResponse.BeneficiaryResponse(userId = payerId, benefitPercent = BigDecimal("50.00")),
+                    EventListResponse.BeneficiaryResponse(userId = receiverId, benefitPercent = BigDecimal("50.00")),
+                ),
+            entries =
+                listOf(
+                    EventListResponse.EntryResponse(
+                        value = BigDecimal("-40.00"),
+                        walletItem = payerWallet,
+                        walletItemId = requireNotNull(payerWallet.id),
+                        billDate = billDate,
+                        billId = null,
+                    ),
+                ),
+        )
+    }
+
     private fun wallet(ownerId: UUID): WalletItem =
         object : WalletItem(
             name = "Wallet",
@@ -243,6 +478,20 @@ class GroupDebtServiceImplMonthSelectionTest {
             showOnDashboard = true,
         ) {
             override val type = com.ynixt.sharedfinances.domain.enums.WalletItemType.BANK_ACCOUNT
+        }.also { wallet ->
+            wallet.id = UUID.randomUUID()
+        }
+
+    private fun creditCard(ownerId: UUID): WalletItem =
+        object : WalletItem(
+            name = "Credit card",
+            enabled = true,
+            userId = ownerId,
+            currency = "BRL",
+            balance = BigDecimal.ZERO,
+            showOnDashboard = true,
+        ) {
+            override val type = WalletItemType.CREDIT_CARD
         }.also { wallet ->
             wallet.id = UUID.randomUUID()
         }
@@ -263,6 +512,8 @@ class GroupDebtServiceImplMonthSelectionTest {
         private val events: List<EventListResponse>,
     ) : RecurrenceSimulationService {
         var simulateGenerationWithFiltersCalls: Int = 0
+        var lastMinimumEndExecution: LocalDate? = null
+        var lastMaximumNextExecution: LocalDate? = null
 
         override suspend fun getFutureValuesOfWalletItem(
             walletItemId: UUID,
@@ -305,6 +556,8 @@ class GroupDebtServiceImplMonthSelectionTest {
             includeUncategorized: Boolean,
         ): List<EventListResponse> {
             simulateGenerationWithFiltersCalls += 1
+            lastMinimumEndExecution = minimumEndExecution
+            lastMaximumNextExecution = maximumNextExecution
             return events
         }
 

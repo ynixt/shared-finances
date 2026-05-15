@@ -7,6 +7,7 @@ import {
   CreateGroupDebtAdjustmentRequestDto,
   EditGroupDebtAdjustmentRequestDto,
   GroupDebtMovementDto,
+  GroupDebtPairHistoryDto,
   GroupDebtWorkspaceDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/debts';
 import { UserService } from '../../../services/user.service';
@@ -32,11 +33,56 @@ export class GroupDebtService {
     throw new UserMissingError();
   }
 
-  async listHistory(groupId: string): Promise<GroupDebtMovementDto[]> {
+  async listHistory(
+    groupId: string,
+    filter?: {
+      currency?: string;
+      payerId?: string;
+      receiverId?: string;
+      selectedMonth?: string;
+    },
+  ): Promise<GroupDebtMovementDto[]> {
     const user = await this.userService.getUser();
 
     if (user != null) {
-      return lastValueFrom(this.http.get<GroupDebtMovementDto[]>(`/api/groups/${groupId}/debts/history`).pipe(take(1)));
+      const searchParams = new URLSearchParams();
+
+      if (filter?.payerId != null) {
+        searchParams.set('payerId', filter.payerId);
+      }
+      if (filter?.receiverId != null) {
+        searchParams.set('receiverId', filter.receiverId);
+      }
+      if (filter?.currency != null) {
+        searchParams.set('currency', filter.currency);
+      }
+      if (filter?.selectedMonth != null) {
+        searchParams.set('selectedMonth', filter.selectedMonth);
+      }
+
+      const params = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+      return lastValueFrom(this.http.get<GroupDebtMovementDto[]>(`/api/groups/${groupId}/debts/history${params}`).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async listPairHistory(
+    groupId: string,
+    filter?: {
+      selectedMonth: string;
+    },
+  ): Promise<GroupDebtPairHistoryDto[]> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      const searchParams = new URLSearchParams();
+      if (filter?.selectedMonth != null) {
+        searchParams.set('selectedMonth', filter.selectedMonth);
+      }
+
+      const params = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+      return lastValueFrom(this.http.get<GroupDebtPairHistoryDto[]>(`/api/groups/${groupId}/debts/history/by-pair${params}`).pipe(take(1)));
     }
 
     throw new UserMissingError();

@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAd
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairHistory
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
@@ -41,6 +42,12 @@ internal object NoOpGroupDebtService : GroupDebtService {
         groupId: UUID,
         filter: GroupDebtHistoryFilter,
     ): List<GroupDebtMovementLine> = emptyList()
+
+    override suspend fun listPairHistory(
+        userId: UUID,
+        groupId: UUID,
+        selectedMonth: YearMonth,
+    ): List<GroupDebtPairHistory> = emptyList()
 
     override suspend fun getMovement(
         userId: UUID,

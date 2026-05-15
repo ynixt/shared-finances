@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.models.groups.debts.EditGroupDebtManualAd
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMonthlyCashFlow
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtMovementLine
+import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtPairHistory
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtWorkspace
 import com.ynixt.sharedfinances.domain.models.groups.debts.NewGroupDebtManualAdjustmentInput
 import java.time.YearMonth
@@ -39,6 +40,12 @@ interface GroupDebtService {
         groupId: UUID,
         filter: GroupDebtHistoryFilter = GroupDebtHistoryFilter(),
     ): List<GroupDebtMovementLine>
+
+    suspend fun listPairHistory(
+        userId: UUID,
+        groupId: UUID,
+        selectedMonth: YearMonth,
+    ): List<GroupDebtPairHistory>
 
     suspend fun getMovement(
         userId: UUID,

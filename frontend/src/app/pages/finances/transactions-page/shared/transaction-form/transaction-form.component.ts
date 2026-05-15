@@ -275,7 +275,7 @@ export class TransactionFormComponent {
         value: [undefined, [Validators.required, Validators.min(0.01)]],
         targetValue: [undefined, [Validators.min(0.01)]],
         date: [new Date(), [Validators.required]],
-        confirmed: [false, [Validators.required]],
+        confirmed: [true, [Validators.required]],
         observations: [undefined, [Validators.maxLength(512)]],
         paymentType: [PaymentType__Obj.UNIQUE, [Validators.required]],
         transferPurpose: [TransferPurpose__Obj.GENERAL, [Validators.required]],

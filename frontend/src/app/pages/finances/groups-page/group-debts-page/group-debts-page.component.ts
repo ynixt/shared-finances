@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,13 +7,13 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import dayjs from 'dayjs';
 import { MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { DataView } from 'primeng/dataview';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import {
   GroupDebtMovementDto,
   GroupDebtPairBalanceDto,
+  GroupDebtPairHistoryDto,
   GroupDebtWorkspaceDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/debts';
 import { GroupDebtMovementReasonKind__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
@@ -33,7 +32,8 @@ import { GroupService } from '../../services/group.service';
 import {
   GroupDebtHistoryGridItem,
   GroupDebtOutstandingBalanceGridItem,
-  mapGroupDebtHistoryToGridItems,
+  GroupDebtPairHistoryGridItem,
+  mapGroupDebtPairHistoryToGridItems,
   mapOutstandingBalancesToGridItems,
 } from './group-debts-page.viewmodel';
 
@@ -46,12 +46,10 @@ interface MemberOption {
   selector: 'app-group-debts-page',
   imports: [
     ButtonDirective,
-    DataView,
     EntryDescriptionComponent,
     FinancesTitleBarComponent,
     LocalCurrencyPipe,
     LocalDatePipe,
-    NgClass,
     ProgressSpinner,
     TranslatePipe,
     AdvancedDatePickerComponent,
@@ -73,15 +71,22 @@ export class GroupDebtsPageComponent {
   readonly group = signal<GroupWithRoleDto | undefined>(undefined);
   readonly members = signal<GroupUserDto[]>([]);
   readonly workspace = signal<GroupDebtWorkspaceDto | undefined>(undefined);
-  readonly history = signal<GroupDebtMovementDto[]>([]);
+  readonly pairHistory = signal<GroupDebtPairHistoryDto[]>([]);
   readonly loading = signal(true);
   readonly workspaceLoading = signal(false);
+  readonly historyLoading = signal(false);
   readonly dateControl = new FormControl<DateRange | undefined>(undefined);
   readonly canMutate = computed(() => this.group()?.permissions?.includes('SEND_ENTRIES') === true);
   readonly outstandingBalanceGridItems = computed<GroupDebtOutstandingBalanceGridItem[]>(() =>
     mapOutstandingBalancesToGridItems(this.workspace()?.balances ?? []),
   );
-  readonly historyGridItems = computed<GroupDebtHistoryGridItem[]>(() => mapGroupDebtHistoryToGridItems(this.history()));
+  readonly pairHistoryGridItems = computed<GroupDebtPairHistoryGridItem[]>(() =>
+    mapGroupDebtPairHistoryToGridItems(this.pairHistory(), {
+      resolveMemberName: userId => this.memberName(userId),
+      resolveLineName: (movement, linkedWalletEventName) => this.historyLineName(movement, linkedWalletEventName),
+      resolveTransactionDate: movement => this.transactionDate(movement),
+    }),
+  );
 
   readonly memberOptions = computed<MemberOption[]>(() =>
     this.members().map(member => ({
@@ -107,16 +112,14 @@ export class GroupDebtsPageComponent {
     this.loading.set(true);
 
     try {
-      const [group, members, history] = await Promise.all([
+      const [group, members] = await Promise.all([
         this.groupService.getGroup(this.groupId),
         this.groupService.findAllMembers(this.groupId),
-        this.groupDebtService.listHistory(this.groupId),
       ]);
 
       this.group.set(group);
       this.members.set(members);
-      this.history.set(history);
-      await this.reloadWorkspace();
+      await this.reloadVisibleData();
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
     } finally {
@@ -130,11 +133,11 @@ export class GroupDebtsPageComponent {
     }
 
     if (syncUrl) {
-      void syncDateQueryParams(this.route, this.router, value, 'normal');
+      void syncDateQueryParams(this.route, this.router, value, 'day_only');
     }
 
     try {
-      await this.reloadWorkspace();
+      await this.reloadVisibleData();
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
     }
@@ -153,6 +156,14 @@ export class GroupDebtsPageComponent {
   }
 
   sourceReferenceLabel(movement: GroupDebtMovementDto): string {
+    if (movement.carriedOver) {
+      return this.translateService.instant('financesPage.groupsPage.debtsPage.carryoverSource');
+    }
+
+    if (movement.projected) {
+      return this.translateService.instant('financesPage.groupsPage.debtsPage.projectedSource');
+    }
+
     if (movement.sourceWalletEventId) {
       return this.translateService.instant('financesPage.groupsPage.debtsPage.sourceWalletEvent', {
         id: movement.sourceWalletEventId.slice(0, 8),
@@ -168,7 +179,11 @@ export class GroupDebtsPageComponent {
     return this.translateService.instant('financesPage.groupsPage.debtsPage.noSource');
   }
 
-  historyTrack(item: GroupDebtHistoryGridItem): string {
+  historyBlockTrack(item: GroupDebtPairHistoryGridItem): string {
+    return item.id;
+  }
+
+  historyLineTrack(item: GroupDebtHistoryGridItem): string {
     return item.movement.id;
   }
 
@@ -186,31 +201,83 @@ export class GroupDebtsPageComponent {
     });
   }
 
+  openSettleValuePage(movement: GroupDebtMovementDto) {
+    void this.router.navigate(['/app/groups', this.groupId, 'debts', 'settlements', 'new'], {
+      queryParams: {
+        payerId: movement.payerId,
+        receiverId: movement.receiverId,
+        amount: Math.abs(movement.deltaSigned),
+      },
+    });
+  }
+
   openAdjustmentPage(movement: GroupDebtMovementDto) {
     void this.router.navigate(['/app/groups', this.groupId, 'debts', 'adjustments', movement.id]);
   }
 
   isAdjustableMovement(movement: GroupDebtMovementDto): boolean {
-    return movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION;
+    return (
+      !movement.projected &&
+      !movement.carriedOver &&
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION
+    );
+  }
+
+  isSettleValueMovement(movement: GroupDebtMovementDto): boolean {
+    return (
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT_REVERSAL
+    );
   }
 
   monthDate(month: string): Date {
     return this.yearMonthToDate(month);
   }
 
-  private async reloadWorkspace() {
+  transactionDate(movement: GroupDebtMovementDto): string | null | undefined {
+    return movement.transactionDate ?? movement.sourceWalletEvent?.date;
+  }
+
+  movementStateLabel(movement: GroupDebtMovementDto): string {
+    return movement.projected ? 'financesPage.groupsPage.debtsPage.projectedState' : 'financesPage.groupsPage.debtsPage.executedState';
+  }
+
+  historyLineName(movement: GroupDebtMovementDto, linkedWalletEventName: string | undefined): string {
+    const normalizedNote = movement.note?.trim();
+    if (linkedWalletEventName != null) {
+      return linkedWalletEventName;
+    }
+    if (normalizedNote != null && normalizedNote.length > 0) {
+      return normalizedNote;
+    }
+
+    return `${this.memberName(movement.payerId)} -> ${this.memberName(movement.receiverId)}`;
+  }
+
+  selectedMonth(): string {
+    return this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT_V2) ?? dayjs().format(MONTH_QUERY_PARAM_FORMAT_V2);
+  }
+
+  private async reloadVisibleData() {
     if (!this.groupId) {
       return;
     }
 
     this.workspaceLoading.set(true);
+    this.historyLoading.set(true);
 
     try {
-      this.workspace.set(
-        await this.groupDebtService.getWorkspace(this.groupId, this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT_V2)),
-      );
+      const selectedMonth = this.selectedMonth();
+      const [workspace, pairHistory] = await Promise.all([
+        this.groupDebtService.getWorkspace(this.groupId, selectedMonth),
+        this.groupDebtService.listPairHistory(this.groupId, { selectedMonth }),
+      ]);
+
+      this.workspace.set(workspace);
+      this.pairHistory.set(pairHistory);
     } finally {
       this.workspaceLoading.set(false);
+      this.historyLoading.set(false);
     }
   }
 

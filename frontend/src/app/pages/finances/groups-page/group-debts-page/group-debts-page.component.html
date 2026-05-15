@@ -9,11 +9,10 @@
       closeRouterLink=".."
     ></app-finances-title-bar>
 
-    <!--  TODO
-  <app-advanced-date-picker class="mb-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />-->
+    <app-advanced-date-picker class="mb-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />
 
     <div class="flex flex-col gap-4">
-      <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-surface-500 dark:bg-surface-900">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h3 class="text-xl font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.balancesTitle' | translate }}</h3>
           <span class="text-sm text-slate-500">{{ outstandingBalanceGridItems().length }}</span>
@@ -29,67 +28,46 @@
           <div class="flex flex-col gap-4">
             @for (item of outstandingBalanceGridItems(); track outstandingBalanceTrack(item)) {
               @let pair = item.pair;
-              <article class="rounded-xl border border-slate-200 dark:border-surface-500 p-4">
-                <div class="mb-3 flex flex-wrap items-start justify-between gap-2">
-                  <div>
+              @let composition = item.selectedMonthComposition;
+              <article class="rounded-xl p-4">
+                <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div class="flex flex-col gap-1">
                     <h4 class="font-semibold text-default">{{ pairLabel(pair) }}</h4>
-                    <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.outstanding' | translate }}</p>
                   </div>
+
                   <div class="text-right">
                     <div class="text-lg font-semibold dark:surface-400">{{ pair.outstandingAmount | localCurrency: pair.currency }}</div>
-                    @if (canMutate()) {
-                      <div class="mt-2 flex flex-wrap justify-end gap-2">
+                    <div class="mt-2 flex flex-wrap justify-end gap-2">
+                      @if (canMutate() && pair.outstandingAmount !== 0) {
                         <button type="button" pButton class="p-button-sm" (click)="openSettlementPage(pair)">
                           {{ 'financesPage.groupsPage.debtsPage.settleAction' | translate }}
                         </button>
-                      </div>
-                    }
+                      }
+                    </div>
                   </div>
                 </div>
 
-                @if (item.monthlyCompositionItems.length === 0) {
+                @if (composition == null) {
                   <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyMonthlyComposition' | translate }}</p>
                 } @else {
-                  <p-data-view [value]="item.monthlyCompositionItems">
-                    <ng-template #list let-items>
-                      <div class="grid grid-cols-12 gap-3">
-                        @for (composition of items; track composition.id) {
-                          <article
-                            class="col-span-12 md:col-span-6 xl:col-span-4 rounded-lg border border-slate-200 dark:border-surface-600 p-3"
-                          >
-                            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-                              {{ monthDate(composition.month) | localDate: 'MMM y' }}
-                            </p>
-
-                            <div class="grid grid-cols-2 gap-3 text-sm">
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</span>
-                                <span class="font-medium">{{ composition.netAmount | localCurrency: composition.currency }}</span>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</span>
-                                <span class="font-medium">{{ composition.chargeDelta | localCurrency: composition.currency }}</span>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{
-                                  'financesPage.groupsPage.debtsPage.settlementDelta' | translate
-                                }}</span>
-                                <span class="font-medium">{{ composition.settlementDelta | localCurrency: composition.currency }}</span>
-                              </div>
-                              <div class="flex flex-col gap-1">
-                                <span class="text-xs text-muted">{{
-                                  'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate
-                                }}</span>
-                                <span class="font-medium">{{
-                                  composition.manualAdjustmentDelta | localCurrency: composition.currency
-                                }}</span>
-                              </div>
-                            </div>
-                          </article>
-                        }
-                      </div>
-                    </ng-template>
-                  </p-data-view>
+                  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.netAmount' | translate }}</span>
+                      <span class="font-medium">{{ composition.netAmount | localCurrency: composition.currency }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.chargeDelta' | translate }}</span>
+                      <span class="font-medium">{{ composition.chargeDelta | localCurrency: composition.currency }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.settlementDelta' | translate }}</span>
+                      <span class="font-medium">{{ composition.settlementDelta | localCurrency: composition.currency }}</span>
+                    </div>
+                    <div class="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <span class="text-xs text-muted">{{ 'financesPage.groupsPage.debtsPage.adjustmentDelta' | translate }}</span>
+                      <span class="font-medium">{{ composition.manualAdjustmentDelta | localCurrency: composition.currency }}</span>
+                    </div>
+                  </div>
                 }
               </article>
             }
@@ -97,94 +75,126 @@
         }
       </div>
 
-      <div class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
+      <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-surface-500 dark:bg-surface-900">
         <h3 class="mb-3 text-xl font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.historyTitle' | translate }}</h3>
 
-        @if (historyGridItems().length === 0) {
+        @if (historyLoading()) {
+          <div class="py-4 text-center">
+            <p-progress-spinner></p-progress-spinner>
+          </div>
+        } @else if (pairHistoryGridItems().length === 0) {
           <p class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.emptyHistory' | translate }}</p>
         } @else {
-          <p-data-view [value]="historyGridItems()">
-            <ng-template #list let-items>
-              <div class="grid grid-cols-12 gap-4 grid-nogutter">
-                @for (item of items; track historyTrack(item); let first = $first) {
-                  <div class="col-span-12">
-                    <article
-                      class="flex gap-2 py-5"
-                      [ngClass]="{ 'border-t border-surface-200 dark:border-surface-600 dark:border-surface-700': !first }"
-                    >
-                      @let movement = item.movement;
+          <div class="flex flex-col gap-5">
+            @for (item of pairHistoryGridItems(); track historyBlockTrack(item)) {
+              <article class="p-4">
+                <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+                  <div class="flex flex-col gap-1">
+                    <h4 class="font-semibold text-default">{{ item.pairLabel }}</h4>
+                    @if (item.netPayerId != null && item.netReceiverId != null) {
+                      <span class="text-sm text-muted">
+                        {{ memberName(item.netPayerId!) }}
+                        {{ 'financesPage.groupsPage.debtsPage.pairSummaryOwes' | translate }}
+                        {{ item.netAmount | localCurrency: item.currency }}
+                        {{ 'financesPage.groupsPage.debtsPage.pairSummaryTo' | translate }}
+                        {{ memberName(item.netReceiverId!) }}
+                      </span>
+                    } @else {
+                      <span class="text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.noNetBalance' | translate }}</span>
+                    }
+                  </div>
 
-                      <div class="flex flex-col gap-6">
-                        <div class="flex flex-col gap-2">
-                          <h3 class="font-semibold text-default text-lg">
-                            {{ memberName(movement.payerId) }} -> {{ memberName(movement.receiverId) }}
-                          </h3>
+                  <span class="text-sm text-muted">{{ monthDate(item.month) | localDate: 'MMM y' }}</span>
+                </div>
 
-                          <div class="flex flex-wrap gap-2 items-center text-muted text-xs">
-                            <span class="table-item">{{
-                              movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—'
-                            }}</span>
-                            <span class="table-item">{{ monthDate(movement.month) | localDate: 'MMM y' }}</span>
-                            <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
+                <div class="mt-4 flex flex-col gap-3">
+                  @for (line of item.lines; track historyLineTrack(line)) {
+                    @let movement = line.movement;
+                    <article class="rounded-lg border border-slate-200 p-3 dark:border-surface-600">
+                      <div class="flex flex-1 flex-col gap-4">
+                        <div class="flex flex-col lg:flex-row gap-4">
+                          <div class="flex flex-col gap-2 flex-1">
+                            <h5 class="text-base font-semibold text-default">{{ line.displayName }}</h5>
+
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+                              <span class="table-item">{{ line.directionalLabel }}</span>
+                            </div>
+
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-muted">
+                              <span class="table-item">{{ movementStateLabel(movement) | translate }}</span>
+                              <span class="table-item">-</span>
+                              <span class="table-item">{{ reasonLabel(movement.reasonKind) | translate }}</span>
+                            </div>
+                          </div>
+
+                          <div class="flex">
+                            <div class="lg:ml-auto flex flex-col lg:items-end gap-2">
+                              <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
+
+                              <div class="flex gap-2">
+                                @if (canMutate() && isAdjustableMovement(movement)) {
+                                  <button type="button" pButton class="p-button-sm p-button-text" (click)="openAdjustmentPage(movement)">
+                                    {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
+                                  </button>
+                                }
+                                @if (canMutate() && isSettleValueMovement(movement)) {
+                                  <button type="button" pButton class="p-button-sm p-button-text" (click)="openSettleValuePage(movement)">
+                                    {{ 'financesPage.groupsPage.debtsPage.settleValueAction' | translate }}
+                                  </button>
+                                }
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        <div class="flex flex-wrap items-start justify-between gap-2">
-                          <div class="flex flex-col gap-2">
-                            <span class="text-sm text-muted"
-                              >{{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
-                              {{ memberName(movement.createdByUserId) }}</span
-                            >
-                            <span class="text-sm text-muted"
-                              >{{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}:
-                              {{ sourceReferenceLabel(movement) }}</span
-                            >
-                            <span class="text-sm text-muted"
-                              >{{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}: {{ movement.note ?? '—' }}</span
-                            >
-                          </div>
+                        <div class="grid grid-cols-1 gap-2 text-sm text-muted md:grid-cols-2">
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.transactionDateColumn' | translate }}:
+                            {{ transactionDate(movement) ? (transactionDate(movement) | localDate: 'shortDate') : '—' }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.debtMonthColumn' | translate }}:
+                            {{ monthDate(movement.month) | localDate: 'MMM y' }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.actorColumn' | translate }}:
+                            {{ movement.projected ? '—' : memberName(movement.createdByUserId) }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.sourceColumn' | translate }}:
+                            {{ sourceReferenceLabel(movement) }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.noteColumn' | translate }}:
+                            {{ movement.note }}
+                          </span>
+                          <span>
+                            {{ 'financesPage.groupsPage.debtsPage.createdAtColumn' | translate }}:
+                            {{ movement.createdAt != null ? (movement.createdAt | localDate: 'short') : '—' }}
+                          </span>
                         </div>
 
-                        @if (item.linkedWalletEventName != null) {
-                          <div class="flex flex-col gap-1">
-                            <span class="text-xs uppercase tracking-wide text-muted">{{
-                              'financesPage.groupsPage.debtsPage.linkedTransaction' | translate
-                            }}</span>
-                            <span class="table-item">{{ item.linkedWalletEventName }}</span>
-                          </div>
-                        }
-
-                        @if (item.linkedWalletEvent != null) {
-                          @if (item.linkedWalletEvent.installment != null) {
+                        @if (line.linkedWalletEvent != null) {
+                          @if (line.linkedWalletEvent.installment != null) {
                             <span class="table-item">{{
                               'financesPage.transactionsPage.installmentValue'
                                 | translate
                                   : {
-                                      installment: item.linkedWalletEvent.installment,
-                                      installments:
-                                        item.linkedWalletEvent?.recurrenceConfig?.qtyLimit ?? item.linkedWalletEvent.installment,
+                                      installment: line.linkedWalletEvent.installment,
+                                      installments: line.linkedWalletEvent.recurrenceConfig?.qtyLimit ?? line.linkedWalletEvent.installment,
                                     }
                             }}</span>
                           }
 
-                          <app-entry-description [event]="item.linkedWalletEvent" [showWalletOwner]="true"></app-entry-description>
-                        }
-                      </div>
-
-                      <div class="flex flex-col items-end gap-2 ml-auto">
-                        <span class="text-lg font-semibold">{{ movement.deltaSigned | localCurrency: movement.currency }}</span>
-                        @if (canMutate() && isAdjustableMovement(movement)) {
-                          <button type="button" pButton class="p-button-text p-button-sm" (click)="openAdjustmentPage(movement)">
-                            {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
-                          </button>
+                          <app-entry-description [event]="line.linkedWalletEvent" [showWalletOwner]="true"></app-entry-description>
                         }
                       </div>
                     </article>
-                  </div>
-                }
-              </div>
-            </ng-template>
-          </p-data-view>
+                  }
+                </div>
+              </article>
+            }
+          </div>
         }
       </div>
     </div>

@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.YearMonth
 import java.util.UUID
 
 class GroupDebtProjectionSupport
@@ -13,10 +14,12 @@ internal data class ProjectedDebtMovement(
     val receiverId: UUID,
     val currency: String,
     val amount: BigDecimal,
+    val month: YearMonth,
 )
 
 internal fun deriveProjectedDebtMovementsFromEvent(event: EventListResponse): List<ProjectedDebtMovement> {
     val beneficiaries = event.beneficiaries.takeIf { it.isNotEmpty() } ?: return emptyList()
+    val debtMonth = deriveProjectedDebtMonth(event)
     val totalMagnitude =
         event.entries
             .fold(BigDecimal.ZERO) { acc, entry -> acc.add(entry.value).asMoney() }
@@ -97,6 +100,7 @@ internal fun deriveProjectedDebtMovementsFromEvent(event: EventListResponse): Li
                     receiverId = creditor.userId,
                     currency = currency,
                     amount = amount,
+                    month = debtMonth,
                 ),
             )
         }
@@ -113,6 +117,12 @@ internal fun deriveProjectedDebtMovementsFromEvent(event: EventListResponse): Li
 
     return result
 }
+
+private fun deriveProjectedDebtMonth(event: EventListResponse): YearMonth =
+    event.entries
+        .asSequence()
+        .mapNotNull { entry -> entry.billDate?.let(YearMonth::from) }
+        .firstOrNull() ?: YearMonth.from(event.date)
 
 private data class MutableDebtPosition(
     val userId: UUID,

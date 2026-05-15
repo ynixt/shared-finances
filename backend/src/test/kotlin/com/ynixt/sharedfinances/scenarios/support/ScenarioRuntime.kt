@@ -283,6 +283,7 @@ internal class ScenarioRuntime(
             recurrenceService = recurrenceService,
             recurrenceOccurrenceSimulationService = recurrenceOccurrenceSimulationService,
             recurrenceSeriesRepository = recurrenceSeriesRepository,
+            recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             clock = clock,
         )
 

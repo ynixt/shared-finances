@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.domain.models.groups.debts
 import com.ynixt.sharedfinances.domain.enums.GroupDebtMovementReasonKind
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.YearMonth
 import java.util.UUID
@@ -32,10 +33,13 @@ data class GroupDebtMovementLine(
     val payerId: UUID,
     val receiverId: UUID,
     val month: YearMonth,
+    val transactionDate: LocalDate?,
     val currency: String,
     val deltaSigned: BigDecimal,
     val reasonKind: GroupDebtMovementReasonKind,
     val createdByUserId: UUID,
+    val carriedOver: Boolean = false,
+    val projected: Boolean = false,
     val note: String?,
     val sourceWalletEventId: UUID?,
     val sourceWalletEvent: EventListResponse? = null,
@@ -61,9 +65,24 @@ data class GroupDebtHistoryFilter(
     val payerId: UUID? = null,
     val receiverId: UUID? = null,
     val currency: String? = null,
+    val selectedMonth: YearMonth? = null,
 )
 
 data class GroupDebtMonthlyCashFlow(
     val debtOutflow: BigDecimal,
     val debtInflow: BigDecimal,
+)
+
+data class GroupDebtPairHistory(
+    val firstUserId: UUID,
+    val secondUserId: UUID,
+    val currency: String,
+    val month: YearMonth,
+    val netPayerId: UUID?,
+    val netReceiverId: UUID?,
+    val netAmount: BigDecimal,
+    val chargeDelta: BigDecimal,
+    val settlementDelta: BigDecimal,
+    val manualAdjustmentDelta: BigDecimal,
+    val lines: List<GroupDebtMovementLine>,
 )

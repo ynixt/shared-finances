@@ -2,6 +2,7 @@ import {
   GroupDebtMonthlyCompositionDto,
   GroupDebtMovementDto,
   GroupDebtPairBalanceDto,
+  GroupDebtPairHistoryDto,
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/debts';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 
@@ -17,26 +18,93 @@ export interface GroupDebtMonthlyCompositionGridItem {
 
 export interface GroupDebtOutstandingBalanceGridItem {
   id: string;
-  monthlyCompositionItems: GroupDebtMonthlyCompositionGridItem[];
   pair: GroupDebtPairBalanceDto;
+  selectedMonthComposition: GroupDebtMonthlyCompositionGridItem | undefined;
 }
 
 export interface GroupDebtHistoryGridItem {
+  directionalLabel: string;
+  displayName: string;
   linkedWalletEvent: EventForListDto | undefined;
   linkedWalletEventName: string | undefined;
   movement: GroupDebtMovementDto;
 }
 
-export function mapGroupDebtHistoryToGridItems(history: GroupDebtMovementDto[]): GroupDebtHistoryGridItem[] {
-  return history.map(movement => {
-    const linkedWalletEvent = movement.sourceWalletEvent ?? undefined;
+export interface GroupDebtPairHistoryGridItem {
+  chargeDelta: number;
+  currency: string;
+  firstUserId: string;
+  id: string;
+  lines: GroupDebtHistoryGridItem[];
+  manualAdjustmentDelta: number;
+  month: string;
+  netAmount: number;
+  netPayerId?: string | null;
+  netReceiverId?: string | null;
+  pairLabel: string;
+  secondUserId: string;
+  settlementDelta: number;
+}
 
-    return {
-      movement,
-      linkedWalletEvent,
-      linkedWalletEventName: resolveLinkedWalletEventName(linkedWalletEvent),
-    };
-  });
+export function mapGroupDebtPairHistoryToGridItems(
+  history: GroupDebtPairHistoryDto[],
+  options: {
+    resolveMemberName: (userId: string) => string;
+    resolveLineName: (movement: GroupDebtMovementDto, linkedWalletEventName: string | undefined) => string;
+    resolveTransactionDate: (movement: GroupDebtMovementDto) => string | null | undefined;
+  },
+): GroupDebtPairHistoryGridItem[] {
+  return history
+    .map(item => {
+      const pairNames = [options.resolveMemberName(item.firstUserId), options.resolveMemberName(item.secondUserId)].sort((left, right) =>
+        left.localeCompare(right),
+      );
+      const lines = item.lines.map(movement => {
+        const linkedWalletEvent = movement.sourceWalletEvent ?? undefined;
+        const linkedWalletEventName = resolveLinkedWalletEventName(linkedWalletEvent);
+
+        return {
+          movement,
+          linkedWalletEvent,
+          linkedWalletEventName,
+          directionalLabel: `${options.resolveMemberName(movement.payerId)} -> ${options.resolveMemberName(movement.receiverId)}`,
+          displayName: options.resolveLineName(movement, linkedWalletEventName),
+        };
+      });
+
+      lines.sort((left, right) => {
+        const leftDate = options.resolveTransactionDate(left.movement) ?? '';
+        const rightDate = options.resolveTransactionDate(right.movement) ?? '';
+        const dateComparison = rightDate.localeCompare(leftDate);
+        if (dateComparison !== 0) {
+          return dateComparison;
+        }
+
+        const nameComparison = left.displayName.localeCompare(right.displayName);
+        if (nameComparison !== 0) {
+          return nameComparison;
+        }
+
+        return left.movement.id.localeCompare(right.movement.id);
+      });
+
+      return {
+        id: `${item.firstUserId}-${item.secondUserId}-${item.currency}-${item.month}`,
+        firstUserId: item.firstUserId,
+        secondUserId: item.secondUserId,
+        pairLabel: pairNames.join(' -> '),
+        currency: item.currency,
+        month: item.month,
+        netPayerId: item.netPayerId,
+        netReceiverId: item.netReceiverId,
+        netAmount: item.netAmount,
+        chargeDelta: item.chargeDelta,
+        settlementDelta: item.settlementDelta,
+        manualAdjustmentDelta: item.manualAdjustmentDelta,
+        lines,
+      };
+    })
+    .sort((left, right) => left.pairLabel.localeCompare(right.pairLabel));
 }
 
 export function mapOutstandingBalancesToGridItems(balances: GroupDebtPairBalanceDto[]): GroupDebtOutstandingBalanceGridItem[] {
@@ -46,7 +114,7 @@ export function mapOutstandingBalancesToGridItems(balances: GroupDebtPairBalance
     return {
       id: pairId,
       pair,
-      monthlyCompositionItems: mapMonthlyCompositionToGridItems(pair.monthlyComposition, pair.currency, pairId),
+      selectedMonthComposition: mapMonthlyCompositionToGridItems(pair.monthlyComposition, pair.currency, pairId)[0],
     };
   });
 }
