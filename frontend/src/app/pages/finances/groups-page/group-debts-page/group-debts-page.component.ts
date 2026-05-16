@@ -26,7 +26,7 @@ import {
   DateRange,
 } from '../../components/wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 import { EntryDescriptionComponent } from '../../components/wallet-entry-table/components/entry-description/entry-description.component';
-import { MONTH_QUERY_PARAM_FORMAT_V2, readDateRangeFromQueryParams, syncDateQueryParams } from '../../services/date-query-params.util';
+import { MONTH_QUERY_PARAM_FORMAT, readDateRangeFromQueryParams, syncDateQueryParams } from '../../services/date-query-params.util';
 import { GroupDebtService } from '../../services/group-debt.service';
 import { GroupService } from '../../services/group.service';
 import {
@@ -255,7 +255,7 @@ export class GroupDebtsPageComponent {
   }
 
   selectedMonth(): string {
-    return this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT_V2) ?? dayjs().format(MONTH_QUERY_PARAM_FORMAT_V2);
+    return this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT) ?? dayjs().format(MONTH_QUERY_PARAM_FORMAT);
   }
 
   private async reloadVisibleData() {
