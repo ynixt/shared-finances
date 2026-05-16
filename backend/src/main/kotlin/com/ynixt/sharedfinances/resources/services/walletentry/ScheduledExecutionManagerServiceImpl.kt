@@ -13,6 +13,7 @@ import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 @Service
@@ -40,15 +41,16 @@ class ScheduledExecutionManagerServiceImpl(
         }
 
         val filter = request.filterWithDefault
+        val selectedMonth = parseSelectedMonth(request.selectedMonth)
         val generated =
             if (filter == ScheduledExecutionFilter.ALL || filter == ScheduledExecutionFilter.ALREADY_GENERATED) {
-                listGenerated(userId = userId, groupId = groupId)
+                listGenerated(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
             } else {
                 emptyList()
             }
         val futures =
             if (filter == ScheduledExecutionFilter.ALL || filter == ScheduledExecutionFilter.FUTURE) {
-                listFutures(userId = userId, groupId = groupId)
+                listFutures(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
             } else {
                 emptyList()
             }
@@ -62,7 +64,10 @@ class ScheduledExecutionManagerServiceImpl(
     private suspend fun listGenerated(
         userId: UUID,
         groupId: UUID?,
+        selectedMonth: YearMonth,
     ): List<EventListResponse> {
+        val startDate = selectedMonth.atDay(1)
+        val endDate = selectedMonth.atEndOfMonth()
         val events =
             walletEventRepository
                 .findAll(
@@ -74,8 +79,8 @@ class ScheduledExecutionManagerServiceImpl(
                         },
                     limit = maxGeneratedItems,
                     walletItemId = null,
-                    minimumDate = null,
-                    maximumDate = null,
+                    minimumDate = startDate,
+                    maximumDate = endDate,
                     billId = null,
                     cursor = null,
                 ).collectList()
@@ -88,13 +93,23 @@ class ScheduledExecutionManagerServiceImpl(
     private suspend fun listFutures(
         userId: UUID,
         groupId: UUID?,
+        selectedMonth: YearMonth,
     ): List<EventListResponse> =
-        recurrenceSimulationService.simulateGeneration(
-            minimumEndExecution = LocalDate.now(clock).plusDays(1),
-            maximumNextExecution = null,
-            userId = if (groupId == null) userId else null,
-            groupIds = if (groupId == null) emptySet() else setOfNotNull(groupId),
-            walletItemId = null,
-            billDate = null,
-        )
+        if (selectedMonth.isBefore(YearMonth.from(LocalDate.now(clock)))) {
+            emptyList()
+        } else {
+            recurrenceSimulationService.simulateGeneration(
+                minimumEndExecution = maxOf(LocalDate.now(clock).plusDays(1), selectedMonth.atDay(1)),
+                maximumNextExecution = selectedMonth.atEndOfMonth(),
+                userId = if (groupId == null) userId else null,
+                groupIds = if (groupId == null) emptySet() else setOfNotNull(groupId),
+                walletItemId = null,
+                billDate = null,
+            )
+        }
+
+    private fun parseSelectedMonth(value: String?): YearMonth =
+        value
+            ?.let { raw -> runCatching { YearMonth.parse(raw) }.getOrNull() }
+            ?: YearMonth.now(clock)
 }

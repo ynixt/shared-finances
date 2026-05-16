@@ -6,6 +6,7 @@ import java.util.UUID
 data class ScheduledExecutionManagerRequest(
     val groupId: UUID?,
     val filter: ScheduledExecutionFilter? = null,
+    val selectedMonth: String? = null,
 ) {
     val filterWithDefault: ScheduledExecutionFilter = filter ?: ScheduledExecutionFilter.FUTURE
 }

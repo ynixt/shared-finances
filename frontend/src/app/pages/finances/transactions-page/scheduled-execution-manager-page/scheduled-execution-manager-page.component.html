@@ -1,6 +1,8 @@
 <div class="finances-page flex flex-col gap-5">
   <app-finances-title-bar [title]="'financesPage.scheduleManager.title' | translate"></app-finances-title-bar>
 
+  <app-advanced-date-picker class="mb-8" [formControl]="dateControl" selectionMode="single" viewMode="month" />
+
   <div class="rounded-2xl border border-slate-200 dark:border-surface-500 p-4">
     <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-surface-500">{{
       'financesPage.scheduleManager.filterLabel' | translate

@@ -1,7 +1,7 @@
 import { NgClass } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -29,9 +29,14 @@ import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { ONLY_DATE_FORMAT } from '../../../../util/date-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
+import {
+  AdvancedDatePickerComponent,
+  DateRange,
+} from '../../components/wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 import { EntryDescriptionComponent } from '../../components/wallet-entry-table/components/entry-description/entry-description.component';
 import { EntryStatusComponent } from '../../components/wallet-entry-table/components/entry-status/entry-status.component';
 import { EntryTypeComponent } from '../../components/wallet-entry-table/components/entry-type/entry-type.component';
+import { readDateRangeFromQueryParams, syncDateQueryParams } from '../../services/date-query-params.util';
 import { UserActionEventService } from '../../services/user-action-event.service';
 import { WalletEntryService } from '../../services/wallet-entry.service';
 
@@ -58,6 +63,8 @@ type FilterOption = {
     EntryStatusComponent,
     EntryTypeComponent,
     RouterLink,
+    AdvancedDatePickerComponent,
+    ReactiveFormsModule,
   ],
   templateUrl: './scheduled-execution-manager-page.component.html',
   styleUrl: './scheduled-execution-manager-page.component.scss',
@@ -66,6 +73,8 @@ type FilterOption = {
 export class ScheduledExecutionManagerPageComponent implements OnInit {
   readonly ScheduledExecutionFilter = ScheduledExecutionFilter__Obj;
 
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly walletEntryService = inject(WalletEntryService);
   private readonly userActionEventService = inject(UserActionEventService);
   private readonly errorMessageService = inject(ErrorMessageService);
@@ -74,6 +83,7 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
 
   readonly loading = signal(false);
   readonly deleting = signal(false);
+  readonly dateControl = new FormControl<DateRange | undefined>(undefined);
   selectedFilter: ScheduledExecutionFilter = ScheduledExecutionFilter__Obj.FUTURE;
   readonly entries = signal<EventForListDto[]>([]);
   readonly skeletons = Array.from({ length: 10 }, (_, i) => i + 1);
@@ -85,6 +95,21 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
     { label: 'financesPage.scheduleManager.filters.alreadyGenerated', value: ScheduledExecutionFilter__Obj.ALREADY_GENERATED },
   ];
 
+  constructor() {
+    const currentMonth = dayjs().startOf('month');
+    const defaultRange: DateRange = {
+      startDate: currentMonth,
+      endDate: currentMonth,
+      sameMonth: true,
+    };
+
+    this.dateControl.setValue(readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'day_only') ?? defaultRange, {
+      emitEvent: false,
+    });
+
+    this.dateControl.valueChanges.pipe(untilDestroyed(this)).subscribe(date => void this.onSelectedMonthChange(date ?? undefined, true));
+  }
+
   async ngOnInit() {
     await this.loadEntries();
 
@@ -95,6 +120,19 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
   }
 
   async onFilterChange() {
+    this.deletingEntry.set(null);
+    await this.loadEntries();
+  }
+
+  async onSelectedMonthChange(value: DateRange | undefined, syncUrl: boolean) {
+    if (value == null) {
+      return;
+    }
+
+    if (syncUrl) {
+      await syncDateQueryParams(this.route, this.router, value, 'day_only');
+    }
+
     this.deletingEntry.set(null);
     await this.loadEntries();
   }
@@ -161,6 +199,7 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
       this.entries.set(
         await this.walletEntryService.listScheduledExecutions({
           filter: this.selectedFilter,
+          selectedMonth: this.selectedMonth(),
         }),
       );
     } catch (error) {
@@ -265,6 +304,10 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
 
   private isUnique(entry: EventForListDto): boolean {
     return entry.recurrenceConfig?.paymentType === 'UNIQUE';
+  }
+
+  private selectedMonth(): string {
+    return dayjs(this.dateControl.value?.startDate ?? dayjs()).format('YYYY-MM');
   }
 
   protected readonly editTransactionButtonIcon = faPenToSquare;

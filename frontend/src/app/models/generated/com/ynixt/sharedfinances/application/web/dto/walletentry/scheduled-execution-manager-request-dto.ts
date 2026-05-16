@@ -5,4 +5,5 @@ import { ScheduledExecutionFilter } from '../../../../domain/enums/scheduled-exe
 export interface ScheduledExecutionManagerRequestDto {
   filter?: ScheduledExecutionFilter | null;
   groupId?: string | null;
+  selectedMonth?: string | null;
 }

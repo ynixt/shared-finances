@@ -6,4 +6,5 @@ import java.util.UUID
 data class ScheduledExecutionManagerRequestDto(
     val groupId: UUID?,
     val filter: ScheduledExecutionFilter? = null,
+    val selectedMonth: String? = null,
 )
