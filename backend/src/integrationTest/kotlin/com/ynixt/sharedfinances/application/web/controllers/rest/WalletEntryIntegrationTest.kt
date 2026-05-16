@@ -244,22 +244,26 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
             )
 
             val creditCard = getCreditCard(accessToken, creditCardId)
-            val scheduled = listScheduled(accessToken, ScheduledExecutionFilter.ALL)
+            val scheduledApril = listScheduled(accessToken, ScheduledExecutionFilter.ALL, selectedMonth = "2026-04")
+            val scheduledMay = listScheduled(accessToken, ScheduledExecutionFilter.ALL, selectedMonth = "2026-05")
             val generatedAfterEdit =
                 getGeneratedWalletEntryByDate(
                     accessToken = accessToken,
                     walletItemId = creditCardId,
                     date = LocalDate.of(2026, 4, 22),
                 )
-            val nextScheduled = scheduled.single { it.id == null }
+            val generatedFirstInstallment = scheduledApril.single()
+            val nextScheduled = scheduledMay.single { it.id == null }
 
             assertThat(creditCard.balance).isEqualByComparingTo(BigDecimal("500.00"))
             assertThat(generatedAfterEdit.id).isEqualTo(createdEvent.id)
             assertThat(generatedAfterEdit.entries.single().billDate).isEqualTo(LocalDate.of(2026, 5, 1))
+            assertThat(generatedFirstInstallment.date).isEqualTo(LocalDate.of(2026, 4, 22))
+            assertThat(generatedFirstInstallment.id).isEqualTo(createdEvent.id)
             assertThat(nextScheduled.date).isEqualTo(LocalDate.of(2026, 5, 22))
             assertThat(nextScheduled.entries.single().billDate).isEqualTo(LocalDate.of(2026, 6, 1))
-            assertThat(scheduled.map { it.date })
-                .containsExactly(LocalDate.of(2026, 4, 22), LocalDate.of(2026, 5, 22))
+            assertThat(scheduledApril.map { it.date }).containsExactly(LocalDate.of(2026, 4, 22))
+            assertThat(scheduledMay.map { it.date }).containsExactly(LocalDate.of(2026, 5, 22))
         }
     }
 
@@ -341,21 +345,25 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
             )
 
             val creditCard = getCreditCard(accessToken, creditCardId)
-            val scheduled = listScheduled(accessToken, ScheduledExecutionFilter.ALL)
+            val scheduledApril = listScheduled(accessToken, ScheduledExecutionFilter.ALL, selectedMonth = "2026-04")
+            val scheduledMay = listScheduled(accessToken, ScheduledExecutionFilter.ALL, selectedMonth = "2026-05")
             val generatedAfterEdit =
                 getGeneratedWalletEntryByDate(
                     accessToken = accessToken,
                     walletItemId = creditCardId,
                     date = LocalDate.of(2026, 4, 22),
                 )
-            val nextScheduled = scheduled.single { it.id == null }
+            val generatedFirstInstallment = scheduledApril.single()
+            val nextScheduled = scheduledMay.single { it.id == null }
 
             assertThat(creditCard.balance).isEqualByComparingTo(BigDecimal("500.00"))
             assertThat(generatedAfterEdit.entries.single().billDate).isEqualTo(LocalDate.of(2026, 5, 1))
+            assertThat(generatedFirstInstallment.date).isEqualTo(LocalDate.of(2026, 4, 22))
+            assertThat(generatedFirstInstallment.id).isNotNull()
             assertThat(nextScheduled.date).isEqualTo(LocalDate.of(2026, 5, 22))
             assertThat(nextScheduled.entries.single().billDate).isEqualTo(LocalDate.of(2026, 6, 1))
-            assertThat(scheduled.map { it.date })
-                .containsExactly(LocalDate.of(2026, 4, 22), LocalDate.of(2026, 5, 22))
+            assertThat(scheduledApril.map { it.date }).containsExactly(LocalDate.of(2026, 4, 22))
+            assertThat(scheduledMay.map { it.date }).containsExactly(LocalDate.of(2026, 5, 22))
         }
     }
 
@@ -997,6 +1005,7 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
     private fun listScheduled(
         accessToken: String,
         filter: ScheduledExecutionFilter,
+        selectedMonth: String? = null,
     ): List<EventForListDto> {
         val response =
             webClient
@@ -1008,6 +1017,7 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
                     ScheduledExecutionManagerRequestDto(
                         groupId = null,
                         filter = filter,
+                        selectedMonth = selectedMonth,
                     ),
                 ).exchange()
                 .expectStatus()
