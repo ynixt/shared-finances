@@ -15,6 +15,7 @@ import {
 } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/dashboard';
 import { LocalCurrencyPipeService } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipeService } from '../../../../pipes/local-date.pipe';
+import { parseYearMonth } from '../../../../util/date-util';
 import { capitalize } from '../../../../util/string-util';
 import { DateRange } from '../wallet-entry-table/components/advanced-date-picker/advanced-date-picker.component';
 
@@ -272,10 +273,10 @@ export class OverviewDashboardChartsComponent {
   }
 
   private monthLabel(month: string): string {
-    const [m, y] = month.split('-');
-    if (m == null || y == null) return month;
+    const parsedMonth = parseYearMonth(month);
+    if (parsedMonth == null) return month;
 
-    return capitalize(this.localDatePipeService.transform(dayjs(`${y}-${m}-01`), 'MMM yy').replace('.', ''));
+    return capitalize(this.localDatePipeService.transform(parsedMonth, 'MMM yy').replace('.', ''));
   }
 
   private formatCurrency(value: unknown): string {

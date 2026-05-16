@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component
 import tech.mappie.api.ObjectMappie
 import tech.mappie.api.builtin.collections.IterableToListMapper
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 
 @Component
 class OverviewDashboardDtoMapperImpl : OverviewDashboardDtoMapper {
@@ -84,8 +83,6 @@ class OverviewDashboardDtoMapperImpl : OverviewDashboardDtoMapper {
     }
 
     companion object {
-        private val monthFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-yyyy")
-
-        private fun formatMonth(month: YearMonth): String = month.format(monthFormatter)
+        private fun formatMonth(month: YearMonth): String = month.toString()
     }
 }

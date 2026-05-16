@@ -24,7 +24,6 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Service
@@ -763,7 +762,7 @@ internal class GroupOverviewBuilderService(
                                     OverviewDashboardDetail(
                                         sourceId = null,
                                         sourceType = OverviewDashboardDetailSourceType.FORMULA,
-                                        label = monthRaw.month.format(monthFormatter),
+                                        label = monthRaw.month.toString(),
                                         value = value,
                                     )
                                 }
@@ -1103,8 +1102,4 @@ internal class GroupOverviewBuilderService(
         val memberId: UUID,
         val value: BigDecimal,
     )
-
-    companion object {
-        private val monthFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-yyyy")
-    }
 }

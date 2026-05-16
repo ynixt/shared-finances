@@ -1,4 +1,7 @@
+import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
+import { getTestBed } from '@angular/core/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -10,6 +13,12 @@ import { ErrorMessageService } from '../../../../services/error-message.service'
 import { GroupDebtService } from '../../services/group-debt.service';
 import { GroupService } from '../../services/group.service';
 import { GroupDebtsPageComponent } from './group-debts-page.component';
+
+const testEnv = globalThis as typeof globalThis & { __angularTestEnvInit?: boolean };
+if (testEnv.__angularTestEnvInit !== true) {
+  getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+  testEnv.__angularTestEnvInit = true;
+}
 
 describe('GroupDebtsPageComponent', () => {
   beforeEach(() => {
@@ -99,7 +108,7 @@ describe('GroupDebtsPageComponent', () => {
   });
 
   it('reloads workspace and pair history when user changes month', async () => {
-    const { component, groupDebtServiceMock, routerMock } = await setup({ dateQuery: '04-2026' });
+    const { component, groupDebtServiceMock, routerMock } = await setup({ dateQuery: '2026-04' });
 
     expect(groupDebtServiceMock.getWorkspace).toHaveBeenCalledWith('group-1', '2026-04');
     expect(groupDebtServiceMock.listPairHistory).toHaveBeenCalledWith('group-1', { selectedMonth: '2026-04' });
@@ -116,7 +125,7 @@ describe('GroupDebtsPageComponent', () => {
     expect(routerMock.navigate).toHaveBeenCalledWith(
       [],
       expect.objectContaining({
-        queryParams: { date: '06-2026', startDate: null, endDate: null },
+        queryParams: { date: '2026-06', startDate: null, endDate: null },
         queryParamsHandling: 'merge',
         replaceUrl: true,
       }),
@@ -251,7 +260,7 @@ describe('GroupDebtsPageComponent', () => {
   });
 
   it('labels carried over lines as prior-month open balance', async () => {
-    const { component } = await setup({ dateQuery: '06-2026' });
+    const { component } = await setup({ dateQuery: '2026-06' });
 
     expect(
       component.sourceReferenceLabel({

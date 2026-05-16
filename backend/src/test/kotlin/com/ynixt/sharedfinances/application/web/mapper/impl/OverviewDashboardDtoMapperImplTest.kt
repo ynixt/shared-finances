@@ -128,6 +128,7 @@ class OverviewDashboardDtoMapperImplTest {
 
         val dto = mapper.toDto(overview)
 
+        assertThat(dto.selectedMonth).isEqualTo("2026-04")
         assertThat(dto.cards.map { it.key }).containsExactly("BALANCE", "GOAL_COMMITTED", "GOAL_FREE_BALANCE")
         assertThat(dto.cards[1].details).singleElement().satisfies({ parent ->
             assertThat(parent.sourceId).isEqualTo(accountId)
@@ -162,6 +163,7 @@ class OverviewDashboardDtoMapperImplTest {
             })
         })
         assertThat(dto.charts.balance).singleElement().satisfies({ point ->
+            assertThat(point.month).isEqualTo("2026-04")
             assertThat(point.value).isEqualByComparingTo("1000.00")
             assertThat(point.executedValue).isEqualByComparingTo("1000.00")
             assertThat(point.projectedValue).isEqualByComparingTo("0.00")

@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Clock
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.util.UUID
 
 @RestController
@@ -30,8 +28,6 @@ class GroupOverviewDashboardController(
     private val groupService: GroupService,
     private val clock: Clock,
 ) {
-    private val monthFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-yyyy")
-
     @Operation(summary = "Get group overview dashboard")
     @GetMapping("/overview")
     suspend fun getOverview(
@@ -58,10 +54,7 @@ class GroupOverviewDashboardController(
             return YearMonth.now(clock)
         }
 
-        return try {
-            YearMonth.parse(value, monthFormatter)
-        } catch (_: DateTimeParseException) {
-            throw InvalidOverviewMonthException(value)
-        }
+        return runCatching { YearMonth.parse(value) }
+            .getOrElse { throw InvalidOverviewMonthException(value) }
     }
 }

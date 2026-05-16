@@ -437,7 +437,7 @@ class GroupOverviewDashboardScenarioDslTest {
                 groupOverviewDebtPairDetailLabelsShouldContain(
                     payerId = receiverId,
                     receiverId = payerId,
-                    expectedLabels = listOf("06-2026"),
+                    expectedLabels = listOf("2026-06"),
                 )
                 groupOverviewCardShouldBe(OverviewDashboardCardKey.GROUP_MEMBER_DEBTS, 20)
             }

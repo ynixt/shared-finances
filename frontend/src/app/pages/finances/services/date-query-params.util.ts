@@ -7,8 +7,8 @@ import { DateRange } from '../components/wallet-entry-table/components/advanced-
 
 export type DateQueryParamMode = 'normal' | 'day_only';
 
-export const MONTH_QUERY_PARAM_FORMAT = 'MM-YYYY';
-export const MONTH_QUERY_PARAM_FORMAT_V2 = 'YYYY-MM';
+export const MONTH_QUERY_PARAM_FORMAT = 'YYYY-MM';
+export const MONTH_QUERY_PARAM_FORMAT_V2 = MONTH_QUERY_PARAM_FORMAT;
 
 export const readDateRangeFromQueryParams = (queryParamMap: Pick<ParamMap, 'get'>, mode: DateQueryParamMode): DateRange | undefined => {
   const monthDate = parseMonthQueryParam(queryParamMap.get('date'));
@@ -110,21 +110,26 @@ const buildDateQueryParams = (dateRange: DateRange | undefined, mode: DateQueryP
 const parseMonthQueryParam = (value: string | null) => {
   if (value == null) return undefined;
 
-  const [month, year] = value.split('-');
+  const normalizedValue = value.trim();
 
-  if (month == null || year == null || !/^\d{2}$/.test(month) || !/^\d{4}$/.test(year)) {
-    return undefined;
+  if (/^\d{4}-\d{2}$/.test(normalizedValue)) {
+    const parsedDate = dayjs(`${normalizedValue}-01`);
+    return parsedDate.isValid() ? parsedDate : undefined;
   }
 
-  const parsedMonth = Number(month);
+  if (/^\d{2}-\d{4}$/.test(normalizedValue)) {
+    const [month, year] = normalizedValue.split('-');
+    const parsedMonth = Number(month);
 
-  if (parsedMonth < 1 || parsedMonth > 12) {
-    return undefined;
+    if (parsedMonth < 1 || parsedMonth > 12) {
+      return undefined;
+    }
+
+    const parsedDate = dayjs(`${year}-${month}-01`);
+    return parsedDate.isValid() ? parsedDate : undefined;
   }
 
-  const parsedDate = dayjs(`${year}-${month}-01`);
-
-  return parsedDate.isValid() ? parsedDate : undefined;
+  return undefined;
 };
 
 const parseOnlyDate = (value: string | null) => {
