@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
-import { Subject, lastValueFrom, take } from 'rxjs';
+import { Subject, combineLatest, lastValueFrom, take } from 'rxjs';
 
 import { authGuard } from '../guards/auth.guard';
 import {
@@ -14,6 +14,7 @@ import {
   RegisterResultDto,
 } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/auth';
 import { UserResponseDto } from '../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
+import { getTokenExpirationEpochMs } from '../util/jwt-token.util';
 import { AuthHttpService } from './auth-http.service';
 import { DarkModeService } from './dark-mode.service';
 import { GuardInspector } from './guard-inspector.service';
@@ -24,8 +25,14 @@ import { UserService } from './user.service';
 @Injectable({ providedIn: 'root' })
 @UntilDestroy()
 export class AuthService {
+  private static readonly tokenRefreshSkewMs = 60_000;
+  private static readonly minimumRefreshDelayMs = 5_000;
+  private static readonly fallbackRefreshDelayMs = 5 * 60_000;
+
   onServerOffline$ = new Subject<void>();
   private firstUserLoad = true;
+  private scheduledRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private refreshInFlight: Promise<string | null> | null = null;
 
   constructor(
     private router: Router,
@@ -78,6 +85,12 @@ export class AuthService {
     this.tokenSyncService.newTokenMessage.pipe(untilDestroyed(this)).subscribe(msg => {
       this.tokenStateService.changeToken(msg.token);
     });
+
+    combineLatest([this.tokenStateService.token$, this.tokenSyncService.isLeader$])
+      .pipe(untilDestroyed(this))
+      .subscribe(([token, isLeader]) => {
+        this.updateScheduledRefresh(token, isLeader);
+      });
   }
 
   async loadUser() {
@@ -107,14 +120,30 @@ export class AuthService {
     }
   }
 
-  private async changeTokenAndSync(token: string | undefined | null) {
+  private async changeTokenAndSync(
+    token: string | undefined | null,
+    args?: {
+      sync?: boolean;
+      reloadUser?: boolean;
+    },
+  ) {
+    const sync = args?.sync ?? true;
+    const reloadUser = args?.reloadUser ?? false;
+
     this.tokenStateService.changeToken(token);
 
     if (token != null) {
-      await this.loadUser();
-      this.tokenSyncService.postTokenUpdatedMessage(token);
+      if (reloadUser) {
+        await this.loadUser();
+      }
+
+      if (sync) {
+        await this.tokenSyncService.postTokenUpdatedMessage(token);
+      }
     } else {
-      this.tokenSyncService.postLogoutMessage();
+      if (sync) {
+        await this.tokenSyncService.postLogoutMessage();
+      }
     }
   }
 
@@ -176,6 +205,7 @@ export class AuthService {
 
     args.sync = args.sync ?? true;
     args.callHttpLogout = args.callHttpLogout ?? true;
+    this.clearScheduledRefresh();
 
     const token = await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
 
@@ -218,10 +248,26 @@ export class AuthService {
   }
 
   private async refreshJwt(): Promise<string | null> {
+    if (this.refreshInFlight != null) {
+      return this.refreshInFlight;
+    }
+
+    this.clearScheduledRefresh();
+
+    this.refreshInFlight = this.performRefreshJwt();
+
+    try {
+      return await this.refreshInFlight;
+    } finally {
+      this.refreshInFlight = null;
+    }
+  }
+
+  private async performRefreshJwt(): Promise<string | null> {
     try {
       const response = await this.authHttpService.refreshJwt();
       const token = this.getTokenFromHeaders(response.headers);
-      await this.changeTokenAndSync(token);
+      await this.changeTokenAndSync(token, { reloadUser: false, sync: true });
     } catch (err) {
       await this.logout({
         sync: true,
@@ -236,7 +282,7 @@ export class AuthService {
 
   private async loginSuccess(response: HttpResponse<any>) {
     const token = this.getTokenFromHeaders(response.headers);
-    await this.changeTokenAndSync(token);
+    await this.changeTokenAndSync(token, { reloadUser: true, sync: true });
   }
 
   private getTokenFromHeaders(headers: HttpHeaders): string | null {
@@ -286,5 +332,48 @@ export class AuthService {
     }
 
     return rawReturnTo;
+  }
+
+  private updateScheduledRefresh(token: string | null | undefined, isLeader: boolean): void {
+    this.clearScheduledRefresh();
+
+    if (!token || !isLeader) {
+      return;
+    }
+
+    const tokenExpirationEpochMs = getTokenExpirationEpochMs(token);
+    const refreshAtEpochMs =
+      tokenExpirationEpochMs == null
+        ? Date.now() + AuthService.fallbackRefreshDelayMs
+        : tokenExpirationEpochMs - AuthService.tokenRefreshSkewMs;
+
+    const delayMs = Math.max(refreshAtEpochMs - Date.now(), AuthService.minimumRefreshDelayMs);
+
+    this.scheduledRefreshTimer = setTimeout(() => {
+      void this.refreshSessionProactively();
+    }, delayMs);
+  }
+
+  private clearScheduledRefresh(): void {
+    if (this.scheduledRefreshTimer == null) {
+      return;
+    }
+
+    clearTimeout(this.scheduledRefreshTimer);
+    this.scheduledRefreshTimer = null;
+  }
+
+  private async refreshSessionProactively(): Promise<void> {
+    const token = await lastValueFrom(this.tokenStateService.token$.pipe(take(1)));
+
+    if (token == null || !this.tokenSyncService.isLeaderSnapshot()) {
+      return;
+    }
+
+    try {
+      await this.refreshJwt();
+    } catch (error) {
+      console.warn('[auth] proactive token refresh failed', error);
+    }
   }
 }

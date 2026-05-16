@@ -1,22 +1,6 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 
-import {
-  EMPTY,
-  Observable,
-  Subject,
-  defer,
-  distinctUntilChanged,
-  filter,
-  from,
-  lastValueFrom,
-  map,
-  merge,
-  pairwise,
-  share,
-  switchMap,
-  take,
-  tap,
-} from 'rxjs';
+import { EMPTY, Observable, Subject, distinctUntilChanged, filter, map, merge, share, switchMap, tap } from 'rxjs';
 
 import { createEventSource } from 'eventsource-client';
 
@@ -29,8 +13,6 @@ type Wire = { id?: string; event?: string; data: string };
 
 @Injectable()
 export abstract class ActionEventService implements OnDestroy {
-  private readonly destroy$ = new Subject<void>();
-
   protected readonly wire$: Observable<Wire>;
   protected readonly resyncRequiredSignal$: Observable<void>;
 
@@ -40,38 +22,39 @@ export abstract class ActionEventService implements OnDestroy {
     private sseCoordinator: SingleSseCoordinatorService,
     private sseUrl: string,
   ) {
-    const sseConnection$ = defer(() =>
-      from(lastValueFrom(this.tokenStateService.token$.pipe(take(1)))).pipe(
-        switchMap(token => {
-          if (!token) throw new Error('Missing token');
+    const sseConnection$ = this.tokenStateService.token$.pipe(
+      distinctUntilChanged(),
+      switchMap(token => {
+        if (!token) {
+          return EMPTY;
+        }
 
-          return new Observable<Wire>(subscriber => {
-            const es = createEventSource({
-              url: this.sseUrl,
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-              onDisconnect: () => {
-                console.log(`sse: disconnected ${this.sseUrl}`);
-              },
-              onConnect: () => {
-                console.log(`sse: connected ${this.sseUrl}`);
-              },
-              onScheduleReconnect: info => {
-                console.log(`sse: reconnecting ${this.sseUrl} - ${JSON.stringify(info)}`);
-              },
-              onMessage: ({ id, event, data }) => {
-                this.zone.run(() => subscriber.next({ id, event, data }));
-              },
-            });
-
-            return () => {
-              console.log(`sse: closing ${this.sseUrl}`);
-              es.close();
-            };
+        return new Observable<Wire>(subscriber => {
+          const es = createEventSource({
+            url: this.sseUrl,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            onDisconnect: () => {
+              console.log(`sse: disconnected ${this.sseUrl}`);
+            },
+            onConnect: () => {
+              console.log(`sse: connected ${this.sseUrl}`);
+            },
+            onScheduleReconnect: info => {
+              console.log(`sse: reconnecting ${this.sseUrl} - ${JSON.stringify(info)}`);
+            },
+            onMessage: ({ id, event, data }) => {
+              this.zone.run(() => subscriber.next({ id, event, data }));
+            },
           });
-        }),
-      ),
+
+          return () => {
+            console.log(`sse: closing ${this.sseUrl}`);
+            es.close();
+          };
+        });
+      }),
     );
 
     const singleSseEnabled = environment.singleSsePerBrowser === true && this.sseCoordinator.isSupported;
@@ -143,7 +126,6 @@ export abstract class ActionEventService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    return;
   }
 }
