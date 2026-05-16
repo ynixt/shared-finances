@@ -1,7 +1,7 @@
 import { NgClass } from '@angular/common';
-import { Component, Signal, computed, effect, inject, input } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faDollarSign, faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
@@ -17,7 +17,6 @@ import { TableModule } from 'primeng/table';
 
 import { InfinitePaginatorComponent } from '../../../../components/infinite-paginator/infinite-paginator.component';
 import { CursorPage } from '../../../../models/cursor-pagination';
-import { UserResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { ScheduledEditScope, WalletEntryType } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
@@ -63,6 +62,7 @@ export class WalletEntryTableComponent {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly translateService = inject(TranslateService);
   private readonly userService = inject(UserService);
+  private readonly router = inject(Router);
 
   readonly pageSize = 30;
   readonly pages: Map<number, CursorPage<EventForListDto>> = new Map();
@@ -70,7 +70,7 @@ export class WalletEntryTableComponent {
   currentPageNumber = 0;
   page: CursorPage<EventForListDto> | undefined;
 
-  readonly title = input<string | undefined>('financesPage.overviewPage.feed.title');
+  readonly headerTitle = input<string | undefined>('financesPage.overviewPage.feed.title');
   readonly loading = input<boolean>(false);
   readonly dateRange = input<DateRange | undefined>(undefined);
   readonly groupIds = input<string[] | undefined>(undefined);
@@ -305,11 +305,15 @@ export class WalletEntryTableComponent {
   }
 
   editQueryParams(entry: EventForListDto): { [key: string]: any } | undefined {
+    const params: any = {
+      returnTo: this.router.url,
+    };
+
     if (entry.recurrenceConfigId != null && entry.id == null) {
-      return { withFuture: true };
+      params.withFuture = true;
     }
 
-    return undefined;
+    return Object.keys(params).length === 0 ? undefined : params;
   }
 
   startDelete(entry: EventForListDto) {

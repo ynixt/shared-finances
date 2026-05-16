@@ -35,6 +35,7 @@ export class EditTransactionPageComponent {
   private readonly errorMessageService = inject(ErrorMessageService);
   private readonly translateService = inject(TranslateService);
 
+  readonly returnToUrl = signal<string | undefined>(undefined);
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly entry = signal<EventForListDto | null>(null);
@@ -44,6 +45,7 @@ export class EditTransactionPageComponent {
   constructor() {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(() => {
       this.syncScopeFromQuery();
+      this.syncReturnToUrlFromQuery();
       void this.loadEntry();
     });
 
@@ -88,6 +90,20 @@ export class EditTransactionPageComponent {
     this.withFuture.set(this.route.snapshot.queryParamMap.get('withFuture') === 'true');
   }
 
+  private syncReturnToUrlFromQuery() {
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo');
+
+    this.returnToUrl.set(returnTo == null ? undefined : returnTo);
+  }
+
+  closeRouterLink(): string {
+    if (this.returnToUrl() != null) {
+      return this.returnToUrl()!!;
+    } else {
+      return '..';
+    }
+  }
+
   private async loadEntry() {
     const entryId = this.route.snapshot.paramMap.get('id');
     if (entryId == null) {
@@ -120,7 +136,9 @@ export class EditTransactionPageComponent {
       life: DEFAULT_ERROR_LIFE,
     });
 
-    if (request.groupId == null) {
+    if (this.returnToUrl() != null) {
+      await this.router.navigateByUrl(this.returnToUrl()!!);
+    } else if (request.groupId == null) {
       await this.router.navigate(['/app']);
     } else {
       await this.router.navigate(['/app', 'groups', request.groupId]);
