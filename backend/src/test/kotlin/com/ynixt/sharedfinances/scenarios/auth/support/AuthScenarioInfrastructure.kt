@@ -14,6 +14,7 @@ import com.ynixt.sharedfinances.scenarios.support.MutableScenarioClock
 import com.ynixt.sharedfinances.scenarios.support.NoOpAvatarService
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupWalletItemRepository
 import com.ynixt.sharedfinances.scenarios.support.ScenarioPasswordEncoder
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
@@ -49,7 +50,12 @@ internal class AuthScenarioInfrastructure(
     val userRepository = InMemoryUserRepository()
     val walletItemRepository = InMemoryWalletItemRepository()
     val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
-    val recurrenceEventRepository = InMemoryRecurrenceEventRepository(walletItemRepository)
+    val recurrenceEntryRepository = InMemoryRecurrenceEntryRepository()
+    val recurrenceEventRepository =
+        InMemoryRecurrenceEventRepository(
+            walletItemRepository = walletItemRepository,
+            recurrenceEntryRepository = recurrenceEntryRepository,
+        )
     val groupStore = InMemoryAccountDeletionGroupStore()
     val groupWalletItemRepository = NoOpGroupWalletItemRepository()
     val simulationJobService = RecordingComplianceSimulationJobService()

@@ -23,6 +23,7 @@ import { TextareaComponent } from '../../../../../components/textarea/textarea.c
 import { GroupWithRoleDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserResponseDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { NewEntryDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
+import { RecurrenceEventDto } from '../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry/recurrence-event-dto';
 import {
   PaymentType,
   PaymentType__Obj,
@@ -92,6 +93,7 @@ export class TransactionFormComponent {
   readonly withFuture = input(false);
   readonly showRecurringScopeHint = computed(() => this.mode() === 'edit' && this.initialEntry()?.recurrenceConfigId != null);
   readonly isRecurringWithFuture = computed(() => this.showRecurringScopeHint() && this.withFuture());
+  readonly scopedRecurrenceMinQty = computed(() => (this.showRecurringScopeHint() && !this.withFuture() ? 1 : 2));
 
   readonly formSubmitted = output<NewEntryDto>();
 
@@ -380,6 +382,28 @@ export class TransactionFormComponent {
 
       this.form.updateValueAndValidity({ emitEvent: false });
       void this.hydrateBeneficiariesFromMembers(entryKey, entry.group?.id ?? undefined, hydration.beneficiaryLegs);
+    });
+
+    effect(() => {
+      const entry = this.initialEntry();
+      const recurrence = entry?.recurrenceConfig;
+      if (this.mode() !== 'edit' || recurrence == null || entry?.recurrenceConfigId == null) {
+        return;
+      }
+
+      const scopedQtyLimit = this.resolveScopedQtyLimit(recurrence);
+      if (recurrence.paymentType === PaymentType__Obj.RECURRING) {
+        this.form.get('periodicityQtyLimit')?.setValue(scopedQtyLimit);
+      }
+      if (recurrence.paymentType === PaymentType__Obj.INSTALLMENTS) {
+        this.installmentsControl.setValue(scopedQtyLimit);
+      }
+    });
+
+    effect(() => {
+      const minQty = this.scopedRecurrenceMinQty();
+      this.installmentsControl.setValidators([Validators.min(minQty), Validators.max(720)]);
+      this.installmentsControl.updateValueAndValidity({ emitEvent: false });
     });
 
     this.groupControl.valueChanges.pipe(untilDestroyed(this)).subscribe(() => {
@@ -843,6 +867,14 @@ export class TransactionFormComponent {
 
     return this.requireFieldsIf(targetValueControl, shouldShowTargetValue);
   };
+
+  private resolveScopedQtyLimit(recurrence: RecurrenceEventDto): number | undefined {
+    if (this.withFuture()) {
+      return recurrence.seriesQtyLimit ?? undefined;
+    }
+
+    return recurrence.segmentQtyLimit ?? recurrence.qtyLimit ?? undefined;
+  }
 
   private requiredOnlyIfInstallment = (group: NewTransactionForm): ValidationErrors | null => {
     const paymentType = group.get('paymentType')?.value;

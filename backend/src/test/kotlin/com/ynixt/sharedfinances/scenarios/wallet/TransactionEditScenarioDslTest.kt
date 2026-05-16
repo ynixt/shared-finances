@@ -7,11 +7,13 @@ import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidPastScheduledExecutionEditException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimitException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidWalletSourceSplitException
 import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
 import org.assertj.core.api.Assertions.assertThat
@@ -1253,6 +1255,788 @@ class TransactionEditScenarioDslTest {
     }
 
     @Test
+    fun `scheduled manager should list scheduled entries in ascending date order`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today.plusDays(1)
+        val secondOccurrence = firstOccurrence.plusMonths(1)
+        val thirdOccurrence = secondOccurrence.plusMonths(1)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = 3,
+                    ),
+                )
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.ONLY_THIS,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = secondOccurrence,
+                            value = BigDecimal("50.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.RECURRING,
+                            periodicity = RecurrenceType.MONTHLY,
+                            periodicityQtyLimit = 3,
+                        ),
+                )
+            }
+
+            then {
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
+                )
+            }
+
+            `when` {
+                advanceTime(firstOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should immediately generate edited scheduled occurrence moved to today`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today.plusDays(2)
+        val secondOccurrence = firstOccurrence.plusMonths(1)
+        val thirdOccurrence = secondOccurrence.plusMonths(1)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = 3,
+                    ),
+                )
+                clearPublishedEvents()
+                editScheduled(
+                    occurrenceDate = firstOccurrence,
+                    scope = ScheduledEditScope.ONLY_THIS,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = today,
+                            value = BigDecimal("40.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.RECURRING,
+                            periodicity = RecurrenceType.MONTHLY,
+                            periodicityQtyLimit = 3,
+                        ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("960.00"), bankAccountId)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(today, secondOccurrence),
+                )
+                lastPublishedWalletEventShouldConvert(ActionEventType.UPDATE)
+            }
+        }
+    }
+
+    @Test
+    fun `should reschedule only selected scheduled occurrence when edited to another future date`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today.plusDays(2)
+        val movedOccurrence = today.plusDays(5)
+        val secondOccurrence = firstOccurrence.plusMonths(1)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = 2,
+                    ),
+                )
+                clearPublishedEvents()
+                editScheduled(
+                    occurrenceDate = firstOccurrence,
+                    scope = ScheduledEditScope.ONLY_THIS,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = movedOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.RECURRING,
+                            periodicity = RecurrenceType.MONTHLY,
+                            periodicityQtyLimit = 2,
+                        ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("1000.00"), bankAccountId)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedDates = listOf(movedOccurrence, secondOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should immediately generate installment occurrence and recalculate future installments on THIS_AND_FUTURE edit to today`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today.plusDays(3)
+        val secondOccurrence = today.plusMonths(1)
+        val thirdOccurrence = today.plusMonths(2)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 3,
+                        periodicity = RecurrenceType.MONTHLY,
+                    ),
+                )
+                clearPublishedEvents()
+                editScheduled(
+                    occurrenceDate = firstOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = today,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 3,
+                            periodicity = RecurrenceType.MONTHLY,
+                        ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("900.00"), bankAccountId)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(today, secondOccurrence),
+                )
+                scheduledInstallmentsShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedInstallments = listOf(2),
+                    expectedTotal = 3,
+                )
+                lastPublishedWalletEventShouldConvert(ActionEventType.UPDATE)
+            }
+
+            `when` {
+                advanceTime(secondOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("800.00"), bankAccountId)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(today, secondOccurrence, thirdOccurrence),
+                )
+                scheduledInstallmentsShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedInstallments = listOf(3),
+                    expectedTotal = 3,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should immediately generate recurring occurrence and recalculate future recurrences on THIS_AND_FUTURE edit to today`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today.plusDays(4)
+        val secondOccurrence = today.plusWeeks(1)
+        val thirdOccurrence = today.plusWeeks(2)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("40.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.WEEKLY,
+                        periodicityQtyLimit = 3,
+                    ),
+                )
+                clearPublishedEvents()
+                editScheduled(
+                    occurrenceDate = firstOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = today,
+                            value = BigDecimal("40.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.RECURRING,
+                            periodicity = RecurrenceType.WEEKLY,
+                            periodicityQtyLimit = 3,
+                        ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("960.00"), bankAccountId)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(today, secondOccurrence),
+                )
+                lastPublishedWalletEventShouldConvert(ActionEventType.UPDATE)
+            }
+
+            `when` {
+                advanceTime(secondOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("920.00"), bankAccountId)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(today, secondOccurrence, thirdOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should backfill retroactive installment purchase up to today and keep later installments scheduled`() {
+        val today = LocalDate.of(2026, 4, 14)
+        val firstOccurrence = LocalDate.of(2026, 2, 14)
+        val secondOccurrence = LocalDate.of(2026, 3, 14)
+        val thirdOccurrence = LocalDate.of(2026, 4, 14)
+        val fourthOccurrence = LocalDate.of(2026, 5, 14)
+        val fifthOccurrence = LocalDate.of(2026, 6, 14)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 5,
+                        periodicity = RecurrenceType.MONTHLY,
+                    ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("700.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(3)
+                recurrenceLimitShouldBe(5)
+                recurrenceSeriesQtyTotalShouldBe(5)
+                recurrenceNextExecutionShouldBe(fourthOccurrence)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 3)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALREADY_GENERATED,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
+                )
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence, fourthOccurrence),
+                )
+                scheduledInstallmentsShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedInstallments = listOf(4),
+                    expectedTotal = 5,
+                )
+            }
+
+            `when` {
+                advanceTime(fourthOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("600.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(4)
+                recurrenceNextExecutionShouldBe(fifthOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence, fourthOccurrence, fifthOccurrence),
+                )
+                scheduledInstallmentsShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedInstallments = listOf(5),
+                    expectedTotal = 5,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should backfill retroactive unlimited recurring expense up to today and keep next recurrence scheduled`() {
+        val today = LocalDate.of(2026, 4, 14)
+        val firstOccurrence = LocalDate.of(2026, 2, 14)
+        val secondOccurrence = LocalDate.of(2026, 3, 14)
+        val thirdOccurrence = LocalDate.of(2026, 4, 14)
+        val fourthOccurrence = LocalDate.of(2026, 5, 14)
+        val fifthOccurrence = LocalDate.of(2026, 6, 14)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("40.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = null,
+                    ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("880.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(3)
+                recurrenceLimitShouldBe(null)
+                recurrenceSeriesQtyTotalShouldBe(3)
+                recurrenceNextExecutionShouldBe(fourthOccurrence)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 3)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALREADY_GENERATED,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
+                )
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence, fourthOccurrence),
+                )
+            }
+
+            `when` {
+                advanceTime(fourthOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("840.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(4)
+                recurrenceLimitShouldBe(null)
+                recurrenceSeriesQtyTotalShouldBe(4)
+                recurrenceNextExecutionShouldBe(fifthOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence, fourthOccurrence, fifthOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should allow moving next scheduled recurring execution to a date after previous generated execution`() {
+        val today = LocalDate.of(2026, 2, 10)
+        val firstOccurrence = today
+        val secondOccurrence = today.plusMonths(1)
+        val thirdOccurrence = today.plusMonths(2)
+        val allowedPastDate = firstOccurrence.plusDays(1)
+        val inspectionDate = secondOccurrence.plusDays(10)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("50.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = 3,
+                    ),
+                )
+                advanceTime(inspectionDate)
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.ONLY_THIS,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = allowedPastDate,
+                            value = BigDecimal("50.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.RECURRING,
+                            periodicity = RecurrenceType.MONTHLY,
+                            periodicityQtyLimit = 3,
+                        ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("900.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(1)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 2)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, allowedPastDate, thirdOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should reject moving next scheduled recurring execution to the same date as previous generated execution`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today
+        val secondOccurrence = today.plusMonths(1)
+        val thirdOccurrence = today.plusMonths(2)
+        val forbiddenDate = firstOccurrence
+        lateinit var bankAccountId: UUID
+
+        val error =
+            assertThrows<InvalidPastScheduledExecutionEditException> {
+                walletScenario(initialDate = today) {
+                    given {
+                        user(defaultCurrency = "BRL")
+                        bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+                    }
+
+                    `when` {
+                        createEntry(
+                            NewEntryRequest(
+                                type = WalletEntryType.EXPENSE,
+                                originId = bankAccountId,
+                                date = firstOccurrence,
+                                value = BigDecimal("50.00"),
+                                confirmed = true,
+                                paymentType = PaymentType.RECURRING,
+                                periodicity = RecurrenceType.MONTHLY,
+                                periodicityQtyLimit = null,
+                            ),
+                        )
+                        advanceTime(secondOccurrence)
+                        runRecurrence()
+                        editScheduled(
+                            occurrenceDate = thirdOccurrence,
+                            scope = ScheduledEditScope.ONLY_THIS,
+                            newEntryRequest =
+                                NewEntryRequest(
+                                    type = WalletEntryType.EXPENSE,
+                                    originId = bankAccountId,
+                                    date = forbiddenDate,
+                                    value = BigDecimal("50.00"),
+                                    confirmed = true,
+                                    paymentType = PaymentType.RECURRING,
+                                    periodicity = RecurrenceType.MONTHLY,
+                                    periodicityQtyLimit = null,
+                                ),
+                        )
+                    }
+                }
+            }
+
+        assertThat(error.message)
+            .isEqualTo("The next scheduled execution cannot be moved to the same day as or before the previous generated execution.")
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("50.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.RECURRING,
+                        periodicity = RecurrenceType.MONTHLY,
+                        periodicityQtyLimit = null,
+                    ),
+                )
+                advanceTime(secondOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("900.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(2)
+                recurrenceNextExecutionShouldBe(thirdOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should allow moving next scheduled installment execution to a date after previous generated execution`() {
+        val today = LocalDate.of(2026, 2, 10)
+        val firstOccurrence = today
+        val secondOccurrence = today.plusMonths(1)
+        val thirdOccurrence = today.plusMonths(2)
+        val allowedPastDate = firstOccurrence.plusDays(1)
+        val inspectionDate = secondOccurrence.plusDays(10)
+        lateinit var bankAccountId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 3,
+                        periodicity = RecurrenceType.MONTHLY,
+                    ),
+                )
+                advanceTime(inspectionDate)
+                editScheduled(
+                    occurrenceDate = secondOccurrence,
+                    scope = ScheduledEditScope.ONLY_THIS,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = bankAccountId,
+                            date = allowedPastDate,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 3,
+                            periodicity = RecurrenceType.MONTHLY,
+                        ),
+                )
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("800.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(1)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 2)
+                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, allowedPastDate, thirdOccurrence),
+                )
+                scheduledInstallmentsShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedInstallments = listOf(3),
+                    expectedTotal = 3,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should reject moving next scheduled installment execution to the same date as previous generated execution`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val firstOccurrence = today
+        val secondOccurrence = today.plusMonths(1)
+        val thirdOccurrence = today.plusMonths(2)
+        val forbiddenDate = firstOccurrence
+        lateinit var bankAccountId: UUID
+
+        val error =
+            assertThrows<InvalidPastScheduledExecutionEditException> {
+                walletScenario(initialDate = today) {
+                    given {
+                        user(defaultCurrency = "BRL")
+                        bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+                    }
+
+                    `when` {
+                        createEntry(
+                            NewEntryRequest(
+                                type = WalletEntryType.EXPENSE,
+                                originId = bankAccountId,
+                                date = firstOccurrence,
+                                value = BigDecimal("100.00"),
+                                confirmed = true,
+                                paymentType = PaymentType.INSTALLMENTS,
+                                installments = 5,
+                                periodicity = RecurrenceType.MONTHLY,
+                            ),
+                        )
+                        advanceTime(secondOccurrence)
+                        runRecurrence()
+                        editScheduled(
+                            occurrenceDate = thirdOccurrence,
+                            scope = ScheduledEditScope.ONLY_THIS,
+                            newEntryRequest =
+                                NewEntryRequest(
+                                    type = WalletEntryType.EXPENSE,
+                                    originId = bankAccountId,
+                                    date = forbiddenDate,
+                                    value = BigDecimal("100.00"),
+                                    confirmed = true,
+                                    paymentType = PaymentType.INSTALLMENTS,
+                                    installments = 5,
+                                    periodicity = RecurrenceType.MONTHLY,
+                                ),
+                        )
+                    }
+                }
+            }
+
+        assertThat(error.message)
+            .isEqualTo("The next scheduled execution cannot be moved to the same day as or before the previous generated execution.")
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccountId = bankAccount(balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = bankAccountId,
+                        date = firstOccurrence,
+                        value = BigDecimal("100.00"),
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 5,
+                        periodicity = RecurrenceType.MONTHLY,
+                    ),
+                )
+                advanceTime(secondOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                balanceShouldBe(BigDecimal("800.00"), bankAccountId)
+                recurrenceExecutionCountShouldBe(2)
+                recurrenceNextExecutionShouldBe(thirdOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
+                )
+                scheduledInstallmentsShouldBe(
+                    filter = ScheduledExecutionFilter.FUTURE,
+                    expectedInstallments = listOf(3),
+                    expectedTotal = 5,
+                )
+            }
+        }
+    }
+
+    @Test
     fun `should keep global installment numbering on THIS_AND_FUTURE split`() {
         val today = LocalDate.of(2026, 1, 8)
         val secondOccurrence = today.plusMonths(1)
@@ -2314,6 +3098,532 @@ class TransactionEditScenarioDslTest {
             then {
                 billShouldNotExist(billDate = secondAutoBillDate, creditCardId = creditCardId)
                 billValueShouldBe(BigDecimal("-80.00"), billDate = secondManualBillDate, creditCardId = creditCardId)
+            }
+        }
+    }
+
+    @Test
+    fun `should recalculate future installment dates and bills on THIS_AND_FUTURE edit`() {
+        val today = LocalDate.of(2026, 3, 15)
+        val dueDay = 20
+        val daysBetweenDueAndClosing = 10
+        val dueOnNextBusinessDay = false
+        val totalLimit = BigDecimal("3000.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = dueDay,
+                daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+
+        val firstOccurrence = LocalDate.of(2026, 5, 14)
+        val movedOccurrence = LocalDate.of(2026, 4, 20)
+        val secondRecalculatedOccurrence = movedOccurrence.plusMonths(1)
+        val thirdRecalculatedOccurrence = movedOccurrence.plusMonths(2)
+        val movedBillDate1 = expectedCardModel.getBestBill(movedOccurrence)
+        val movedBillDate2 = expectedCardModel.getBestBill(secondRecalculatedOccurrence)
+        val movedBillDate3 = expectedCardModel.getBestBill(thirdRecalculatedOccurrence)
+        val originalBillDate1 = expectedCardModel.getBestBill(firstOccurrence)
+
+        lateinit var creditCardId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                installmentPurchase(
+                    total = BigDecimal("400.00"),
+                    installments = 4,
+                    originId = creditCardId,
+                    date = firstOccurrence,
+                )
+
+                editScheduled(
+                    occurrenceDate = firstOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = movedOccurrence,
+                            value = BigDecimal("100.00"),
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 4,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = movedBillDate1,
+                        ),
+                )
+            }
+
+            then {
+                recurrenceNextExecutionShouldBe(movedOccurrence)
+            }
+
+            `when` {
+                advanceTime(movedOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                recurrenceNextExecutionShouldBe(secondRecalculatedOccurrence)
+                billValueShouldBe(BigDecimal("-100.00"), billDate = movedBillDate1, creditCardId = creditCardId)
+            }
+
+            `when` {
+                advanceTime(secondRecalculatedOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                recurrenceNextExecutionShouldBe(thirdRecalculatedOccurrence)
+                billValueShouldBe(BigDecimal("-100.00"), billDate = movedBillDate2, creditCardId = creditCardId)
+            }
+
+            `when` {
+                advanceTime(thirdRecalculatedOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                billValueShouldBe(BigDecimal("-100.00"), billDate = movedBillDate3, creditCardId = creditCardId)
+            }
+        }
+    }
+
+    @Test
+    fun `should keep intermediate credit card installment bill when moving next scheduled installment to past with THIS_AND_FUTURE`() {
+        val creationDate = LocalDate.of(2026, 4, 10)
+        val today = LocalDate.of(2026, 5, 14)
+        val dueDay = 20
+        val daysBetweenDueAndClosing = 10
+        val dueOnNextBusinessDay = false
+        val totalLimit = BigDecimal("3000.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = dueDay,
+                daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+
+        val originalOccurrence = LocalDate.of(2026, 5, 14)
+        val movedOccurrence = LocalDate.of(2026, 4, 14)
+        val nextRecalculatedOccurrence = LocalDate.of(2026, 5, 14)
+        val followingOccurrence = LocalDate.of(2026, 6, 14)
+        val movedBillDate = expectedCardModel.getBestBill(movedOccurrence)
+        val nextBillDate = expectedCardModel.getBestBill(nextRecalculatedOccurrence)
+        val installmentValue = BigDecimal("160.00")
+
+        lateinit var creditCardId: UUID
+
+        walletScenario(initialDate = creationDate) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                installmentPurchase(
+                    total = BigDecimal("800.00"),
+                    installments = 5,
+                    originId = creditCardId,
+                    date = originalOccurrence,
+                )
+                advanceTime(today)
+                editScheduled(
+                    occurrenceDate = originalOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = movedOccurrence,
+                            value = installmentValue,
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 5,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = movedBillDate,
+                        ),
+                )
+            }
+
+            then {
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = movedBillDate, creditCardId = creditCardId)
+                recurrenceNextExecutionShouldBe(nextRecalculatedOccurrence)
+            }
+
+            `when` {
+                runRecurrence()
+            }
+
+            then {
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = nextBillDate, creditCardId = creditCardId)
+                recurrenceNextExecutionShouldBe(followingOccurrence)
+            }
+        }
+    }
+
+    @Test
+    fun `should reanchor generated installment and preserve limit on past THIS_AND_FUTURE edit`() {
+        val today = LocalDate.of(2026, 5, 14)
+        val dueDay = 1
+        val daysBetweenDueAndClosing = 10
+        val dueOnNextBusinessDay = false
+        val totalLimit = BigDecimal("3000.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = dueDay,
+                daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+
+        val originalOccurrence = today
+        val movedOccurrence = LocalDate.of(2026, 4, 22)
+        val nextRecalculatedOccurrence = LocalDate.of(2026, 5, 22)
+        val followingOccurrence = LocalDate.of(2026, 6, 22)
+        val movedBillDate = expectedCardModel.getBestBill(movedOccurrence)
+        val juneBillDate = expectedCardModel.getBestBill(nextRecalculatedOccurrence)
+        val installmentValue = BigDecimal("160.00")
+
+        lateinit var creditCardId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                installmentPurchase(
+                    total = BigDecimal("800.00"),
+                    installments = 5,
+                    originId = creditCardId,
+                    date = originalOccurrence,
+                )
+                editScheduled(
+                    occurrenceDate = originalOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            originId = creditCardId,
+                            date = movedOccurrence,
+                            value = installmentValue,
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 5,
+                            periodicity = RecurrenceType.MONTHLY,
+                            originBillDate = movedBillDate,
+                        ),
+                )
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("2200.00"), creditCardId)
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = movedBillDate, creditCardId = creditCardId)
+                recurrenceNextExecutionShouldBe(nextRecalculatedOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(movedOccurrence, nextRecalculatedOccurrence),
+                )
+            }
+
+            `when` {
+                advanceTime(nextRecalculatedOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("2200.00"), creditCardId)
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = juneBillDate, creditCardId = creditCardId)
+                recurrenceNextExecutionShouldBe(followingOccurrence)
+            }
+        }
+    }
+
+    @Test
+    fun `should keep limit and monthly sequence when moving generated first credit card installment with THIS_AND_FUTURE`() {
+        val today = LocalDate.of(2026, 5, 15)
+        val dueDay = 1
+        val daysBetweenDueAndClosing = 2
+        val dueOnNextBusinessDay = false
+        val totalLimit = BigDecimal("1000.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = dueDay,
+                daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+
+        val originalOccurrence = today
+        val movedOccurrence = LocalDate.of(2026, 4, 22)
+        val recalculatedSecondOccurrence = LocalDate.of(2026, 5, 22)
+        val recalculatedThirdOccurrence = LocalDate.of(2026, 6, 22)
+        val originalBillDate = expectedCardModel.getBestBill(originalOccurrence)
+        val movedBillDate = expectedCardModel.getBestBill(movedOccurrence)
+        val secondOccurrenceBillDate = expectedCardModel.getBestBill(recalculatedSecondOccurrence)
+        val installmentValue = BigDecimal("100.00")
+
+        lateinit var creditCardId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        date = originalOccurrence,
+                        value = installmentValue,
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 5,
+                        periodicity = RecurrenceType.MONTHLY,
+                        sources =
+                            listOf(
+                                NewWalletSourceLeg(
+                                    walletItemId = creditCardId,
+                                    contributionPercent = BigDecimal("100.00"),
+                                    billDate = originalBillDate,
+                                ),
+                            ),
+                    ),
+                )
+                editScheduled(
+                    occurrenceDate = originalOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            date = movedOccurrence,
+                            value = installmentValue,
+                            confirmed = true,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 5,
+                            periodicity = RecurrenceType.MONTHLY,
+                            sources =
+                                listOf(
+                                    NewWalletSourceLeg(
+                                        walletItemId = creditCardId,
+                                        contributionPercent = BigDecimal("100.00"),
+                                        billDate = movedBillDate,
+                                    ),
+                                ),
+                        ),
+                )
+                fetchFirstScheduledExecution(ScheduledExecutionFilter.FUTURE)
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("500.00"), creditCardId)
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = movedBillDate, creditCardId = creditCardId)
+                recurrenceNextExecutionShouldBe(recalculatedSecondOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(movedOccurrence, recalculatedSecondOccurrence),
+                )
+                fetchedScheduledWalletEventShouldExist()
+                fetchedScheduledWalletEventDateShouldBe(recalculatedSecondOccurrence)
+                fetchedScheduledWalletEventInstallmentShouldBe(2)
+                fetchedScheduledWalletEventEntryBillDateShouldBe(secondOccurrenceBillDate)
+            }
+
+            `when` {
+                advanceTime(recalculatedSecondOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("500.00"), creditCardId)
+                recurrenceNextExecutionShouldBe(recalculatedThirdOccurrence)
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = secondOccurrenceBillDate, creditCardId = creditCardId)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(movedOccurrence, recalculatedSecondOccurrence, recalculatedThirdOccurrence),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `should keep limit and monthly sequence when moving future first credit card installment with THIS_AND_FUTURE`() {
+        val today = LocalDate.of(2026, 5, 15)
+        val originalOccurrence = LocalDate.of(2026, 5, 16)
+        val movedOccurrence = LocalDate.of(2026, 4, 22)
+        val recalculatedSecondOccurrence = LocalDate.of(2026, 5, 22)
+        val recalculatedThirdOccurrence = LocalDate.of(2026, 6, 22)
+        val dueDay = 1
+        val daysBetweenDueAndClosing = 2
+        val dueOnNextBusinessDay = false
+        val totalLimit = BigDecimal("1000.00")
+        val installmentValue = BigDecimal("100.00")
+        val expectedCardModel =
+            CreditCard(
+                name = "Expected Card",
+                enabled = true,
+                userId = UUID.randomUUID(),
+                currency = "BRL",
+                totalLimit = totalLimit,
+                balance = totalLimit,
+                dueDay = dueDay,
+                daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                dueOnNextBusinessDay = dueOnNextBusinessDay,
+            )
+        val originalBillDate = expectedCardModel.getBestBill(originalOccurrence)
+        val movedBillDate = expectedCardModel.getBestBill(movedOccurrence)
+        val secondOccurrenceBillDate = expectedCardModel.getBestBill(recalculatedSecondOccurrence)
+
+        lateinit var creditCardId: UUID
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCardId =
+                    creditCard(
+                        limit = totalLimit,
+                        name = "BBB",
+                        currency = "BRL",
+                        dueDay = dueDay,
+                        daysBetweenDueAndClosing = daysBetweenDueAndClosing,
+                        dueOnNextBusinessDay = dueOnNextBusinessDay,
+                    )
+            }
+
+            `when` {
+                createEntry(
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        date = originalOccurrence,
+                        value = installmentValue,
+                        name = "AAA",
+                        confirmed = false,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = 5,
+                        periodicity = RecurrenceType.MONTHLY,
+                        tags = emptyList(),
+                        sources =
+                            listOf(
+                                NewWalletSourceLeg(
+                                    walletItemId = creditCardId,
+                                    contributionPercent = BigDecimal("100.00"),
+                                    billDate = originalBillDate,
+                                ),
+                            ),
+                    ),
+                )
+                editScheduled(
+                    occurrenceDate = originalOccurrence,
+                    scope = ScheduledEditScope.THIS_AND_FUTURE,
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.EXPENSE,
+                            date = movedOccurrence,
+                            value = installmentValue,
+                            name = "AAA",
+                            confirmed = false,
+                            paymentType = PaymentType.INSTALLMENTS,
+                            installments = 5,
+                            periodicity = RecurrenceType.MONTHLY,
+                            tags = emptyList(),
+                            sources =
+                                listOf(
+                                    NewWalletSourceLeg(
+                                        walletItemId = creditCardId,
+                                        contributionPercent = BigDecimal("100.00"),
+                                        billDate = movedBillDate,
+                                    ),
+                                ),
+                        ),
+                )
+                fetchFirstScheduledExecution(ScheduledExecutionFilter.FUTURE)
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("500.00"), creditCardId)
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = movedBillDate, creditCardId = creditCardId)
+                recurrenceNextExecutionShouldBe(recalculatedSecondOccurrence)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(movedOccurrence, recalculatedSecondOccurrence),
+                )
+                fetchedScheduledWalletEventShouldExist()
+                fetchedScheduledWalletEventDateShouldBe(recalculatedSecondOccurrence)
+                fetchedScheduledWalletEventInstallmentShouldBe(2)
+                fetchedScheduledWalletEventEntryBillDateShouldBe(secondOccurrenceBillDate)
+            }
+
+            `when` {
+                advanceTime(recalculatedSecondOccurrence)
+                runRecurrence()
+            }
+
+            then {
+                availableLimitShouldBe(BigDecimal("500.00"), creditCardId)
+                recurrenceNextExecutionShouldBe(recalculatedThirdOccurrence)
+                billValueShouldBe(installmentValue.unaryMinus(), billDate = secondOccurrenceBillDate, creditCardId = creditCardId)
+                scheduledManagerDatesShouldBe(
+                    filter = ScheduledExecutionFilter.ALL,
+                    expectedDates = listOf(movedOccurrence, recalculatedSecondOccurrence, recalculatedThirdOccurrence),
+                )
             }
         }
     }

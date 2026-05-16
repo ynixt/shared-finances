@@ -38,6 +38,7 @@ export class EditScheduledTransactionPageComponent {
   readonly entry = signal<EventForListDto | null>(null);
   readonly withFuture = signal(false);
   readonly isRecurring = computed(() => this.entry()?.recurrenceConfigId != null);
+  readonly occurrenceDate = computed(() => this.route.snapshot.queryParamMap.get('occurrenceDate'));
 
   constructor() {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(() => {
@@ -62,7 +63,7 @@ export class EditScheduledTransactionPageComponent {
       const scope = this.withFuture() ? ScheduledEditScope__Obj.THIS_AND_FUTURE : ScheduledEditScope__Obj.ONLY_THIS;
 
       const scheduledRequest: EditScheduledEntryDto = {
-        occurrenceDate: dayjs(currentEntry.date).format(ONLY_DATE_FORMAT),
+        occurrenceDate: this.occurrenceDate() ?? dayjs(currentEntry.date).format(ONLY_DATE_FORMAT),
         scope: scope,
         entry: request,
       };
@@ -91,7 +92,16 @@ export class EditScheduledTransactionPageComponent {
     this.loading.set(true);
 
     try {
-      this.entry.set(await this.walletEntryService.getScheduledEntryByRecurrenceConfigId(recurrenceConfigId));
+      const occurrenceDate = this.occurrenceDate();
+      const entry = await this.walletEntryService.getScheduledEntryByRecurrenceConfigId(recurrenceConfigId);
+      this.entry.set(
+        occurrenceDate == null
+          ? entry
+          : {
+              ...entry,
+              date: occurrenceDate,
+            },
+      );
     } catch (error) {
       if (error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400)) {
         await this.router.navigateByUrl('/not-found');

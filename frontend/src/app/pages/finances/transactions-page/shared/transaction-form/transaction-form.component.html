@@ -400,7 +400,13 @@
         <span
           >{{ 'financesPage.transactionsPage.installments' | translate }} <app-required-field-asterisk></app-required-field-asterisk
         ></span>
-        <p-input-number formControlName="installments" [min]="2" [max]="720" [showButtons]="true" fluid></p-input-number>
+        <p-input-number
+          formControlName="installments"
+          [min]="scopedRecurrenceMinQty()"
+          [max]="720"
+          [showButtons]="true"
+          fluid
+        ></p-input-number>
       </label>
 
       <label class="flex flex-col gap-2">
@@ -440,7 +446,7 @@
             <span class="mr">({{ sublabel | translate }})</span>
           }
         </span>
-        <p-input-number formControlName="periodicityQtyLimit" [showButtons]="true" [min]="2" fluid></p-input-number>
+        <p-input-number formControlName="periodicityQtyLimit" [showButtons]="true" [min]="scopedRecurrenceMinQty()" fluid></p-input-number>
       </label>
     </div>
   }

@@ -12,4 +12,6 @@ export interface RecurrenceEventDto {
   periodicity: RecurrenceType;
   qtyExecuted: number;
   qtyLimit?: number | null;
+  segmentQtyLimit?: number | null;
+  seriesQtyLimit?: number | null;
 }

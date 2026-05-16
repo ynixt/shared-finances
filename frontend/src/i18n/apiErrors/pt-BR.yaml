@@ -14,6 +14,7 @@ apiErrors:
   bankAccountAlreadyInGroup: Conta bancária já associada a este grupo.
   duplicatedCategory: Este nome já está em uso por outra categoria.
   invalidRecurrenceQtyLimit: 'A quantidade informada ({{requestedQtyLimit}}) não pode ser menor que a quantidade já executada ({{alreadyExecuted}}).'
+  invalidPastScheduledExecutionEdit: A próxima execução agendada não pode ser movida para a mesma data ou para antes da última execução gerada.
   login:
     invalidCredentials: Credenciais incorretas.
   generic:

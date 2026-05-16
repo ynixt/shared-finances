@@ -8,6 +8,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEn
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
+import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
@@ -16,6 +17,7 @@ import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.walletentry.EventListResponse
 import com.ynixt.sharedfinances.domain.repositories.CreditCardBillRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceSeriesRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletEventCursorFindAll
@@ -44,6 +46,7 @@ class WalletEventListServiceImpl(
     private val walletEventRepository: WalletEventRepository,
     private val walletEntryRepository: WalletEntryRepository,
     private val recurrenceEntryRepository: RecurrenceEntryRepository,
+    private val recurrenceEventRepository: RecurrenceEventRepository,
     private val creditCardBillRepository: CreditCardBillRepository,
     private val walletItemMapper: WalletItemMapper,
     private val walletItemService: WalletItemService,
@@ -284,7 +287,6 @@ class WalletEventListServiceImpl(
         recurrenceConfigId: UUID,
     ): EventListResponse? {
         val config = recurrenceService.findAllByIdIn(setOf(recurrenceConfigId)).toList().firstOrNull() ?: return null
-        hydrateSeriesTotals(listOf(config))
 
         val hasReadPermission =
             when {
@@ -357,6 +359,8 @@ class WalletEventListServiceImpl(
                 .associateBy { category -> category.id!! }
 
         val nextBillDateByWalletItemId = recurrenceEntries.associate { entry -> entry.walletItemId to entry.nextBillDate }
+        val seriesSegments = recurrenceEventRepository.findAllBySeriesId(config.seriesId).asFlow().toList()
+        config.seriesQtyTotal = resolveSeriesQtyTotalFromSegments(seriesSegments.ifEmpty { listOf(config) })
 
         return recurrenceSimulationService
             .simulateGeneration(
@@ -444,6 +448,16 @@ class WalletEventListServiceImpl(
 
         configs.forEach { config ->
             config.seriesQtyTotal = seriesById[config.seriesId]?.qtyTotal
+        }
+    }
+
+    private fun resolveSeriesQtyTotalFromSegments(segments: List<RecurrenceEventEntity>): Int? {
+        if (segments.any { it.paymentType == PaymentType.RECURRING && it.qtyLimit == null }) {
+            return null
+        }
+
+        return segments.maxOfOrNull { segment ->
+            segment.seriesOffset + (segment.qtyLimit ?: segment.qtyExecuted)
         }
     }
 

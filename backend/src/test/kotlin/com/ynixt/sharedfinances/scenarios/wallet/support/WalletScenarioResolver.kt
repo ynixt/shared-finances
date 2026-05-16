@@ -236,6 +236,12 @@ internal class WalletScenarioResolver(
     fun countPublishedWalletEvents(type: ActionEventType): Int =
         runtime.walletEventActionEventService.publishedEvents.count { it.type == type }
 
+    suspend fun convertLastPublishedWalletEvent(type: ActionEventType): EventListResponse? =
+        runtime.walletEventActionEventService.publishedEvents
+            .lastOrNull { it.type == type }
+            ?.walletEvent
+            ?.let { runtime.walletEventListService.convertEntityToEntryListResponse(it, true) }
+
     suspend fun listScheduledExecutions(filter: ScheduledExecutionFilter): Int = listScheduledExecutionEntries(filter).size
 
     suspend fun listScheduledExecutionEntries(filter: ScheduledExecutionFilter): List<EventListResponse> {

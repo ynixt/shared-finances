@@ -1,19 +1,24 @@
 package com.ynixt.sharedfinances.resources.services.walletentry
 
+import com.ynixt.sharedfinances.domain.entities.wallet.entries.MinimumWalletEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.RecurrenceEventEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidPastScheduledExecutionEditException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimitException
 import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.walletentry.EditScheduledEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletBeneficiaryLeg
+import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
 import com.ynixt.sharedfinances.domain.models.walletentry.WalletSourceSplit
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEntryRepository
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
@@ -27,6 +32,7 @@ import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptServic
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
@@ -47,6 +53,7 @@ class WalletEntryEditServiceImpl(
     private val walletEventRepository: WalletEventRepository,
     walletEntryRepository: WalletEntryRepository,
     private val walletEventActionEventService: WalletEventActionEventService,
+    private val walletEntryCreateService: WalletEntryCreateService,
     walletItemMapper: WalletItemMapper,
     groupDebtService: GroupDebtService,
     groupService: GroupService,
@@ -116,13 +123,13 @@ class WalletEntryEditServiceImpl(
         userId: UUID,
         recurrenceConfigId: UUID,
         request: EditScheduledEntryRequest,
-    ): RecurrenceEventEntity? {
+    ): MinimumWalletEventEntity? {
         val config = loadRecurrenceConfigWithEntries(recurrenceConfigId) ?: return null
 
         val preparedRequest =
             normalizeAndAuthorize(
                 userId = userId,
-                request = request.entry.copy(date = request.occurrenceDate),
+                request = request.entry,
                 existingGroupId = config.groupId,
                 existingType = config.type,
             ) ?: return null
@@ -187,12 +194,21 @@ class WalletEntryEditServiceImpl(
         occurrenceDate: LocalDate,
         preparedRequest: NewEntryRequest,
     ): RecurrenceEventEntity? {
+        val requestedExecutionDate = preparedRequest.date
         val selection = resolveSeriesSelection(config, occurrenceDate) ?: return null
         val segments = selection.segments
         val selectedSegment = selection.selectedSegment
         val selectedGlobalIndex = selection.selectedGlobalIndex
         val requestedSeriesQtyTotal = resolveRequestedSeriesQtyTotal(preparedRequest)
         val globalExecutedCount = segments.maxOf { it.seriesOffset + it.qtyExecuted }
+        validateNextScheduledEditIsNotMovedToPast(
+            executionCount = globalExecutedCount,
+            previousGeneratedExecutionDate = segments.mapNotNull { it.lastExecution }.maxOrNull(),
+            nextExecution = selectedSegment.nextExecution,
+            occurrenceDate = occurrenceDate,
+            requestedExecutionDate = requestedExecutionDate,
+            periodicity = selectedSegment.periodicity,
+        )
 
         validateRequestedQtyLimit(
             requestedSeriesQtyTotal = requestedSeriesQtyTotal,
@@ -217,6 +233,7 @@ class WalletEntryEditServiceImpl(
 
         if (
             isEditingNextExecution &&
+            requestedExecutionDate == occurrenceDate &&
             !hasFutureSegmentsAfterBoundary &&
             !hasTemplateChangesBeyondQtyLimit(oldTemplateRequest, preparedRequest)
         ) {
@@ -283,36 +300,60 @@ class WalletEntryEditServiceImpl(
             }
 
         val remainingFromBoundary = targetSeriesQtyTotal?.let { (it - selectedGlobalIndex).coerceAtLeast(0) }
-        val newUnifiedSegment =
+        val shouldGenerateCurrentOccurrenceNow =
+            !requestedExecutionDate.isAfter(LocalDate.now(clock)) &&
+                generatedOccurrences.isEmpty()
+
+        val newUnifiedResult: MinimumWalletEventEntity? =
             if (remainingFromBoundary != null && remainingFromBoundary == 0) {
                 null
             } else {
-                val unifiedRequest = buildRecurrenceRequest(preparedRequest, occurrenceDate, remainingFromBoundary)
-                createRecurrenceConfig(
-                    userId = userId,
-                    preparedRequest = unifiedRequest,
-                    qtyLimit = remainingFromBoundary,
-                    seriesId = selectedSegment.seriesId,
-                    seriesQtyTotal = selectedSegment.seriesQtyTotal,
-                    seriesOffset = selectedGlobalIndex,
-                )
+                if (shouldGenerateCurrentOccurrenceNow) {
+                    createScheduledOccurrenceStartingAtDate(
+                        userId = userId,
+                        preparedRequest = preparedRequest,
+                        executionDate = requestedExecutionDate,
+                        qtyLimit = remainingFromBoundary,
+                        seriesId = selectedSegment.seriesId,
+                        seriesQtyTotal = selectedSegment.seriesQtyTotal,
+                        seriesOffset = selectedGlobalIndex,
+                    )
+                } else {
+                    val unifiedRequest = buildRecurrenceRequest(preparedRequest, requestedExecutionDate, remainingFromBoundary)
+                    createRecurrenceConfig(
+                        userId = userId,
+                        preparedRequest = unifiedRequest,
+                        qtyLimit = remainingFromBoundary,
+                        seriesId = selectedSegment.seriesId,
+                        seriesQtyTotal = selectedSegment.seriesQtyTotal,
+                        seriesOffset = selectedGlobalIndex,
+                    )
+                }
+            }
+        val newUnifiedSegment =
+            when (newUnifiedResult) {
+                is RecurrenceEventEntity -> newUnifiedResult
+                is WalletEventEntity -> loadRecurrenceConfigWithEntries(newUnifiedResult.recurrenceEventId!!)
+                else -> null
             }
 
-        val rewrittenCount =
+        val rewrittenDates =
             if (newUnifiedSegment != null) {
                 rewriteGeneratedOccurrencesForUnifiedSegment(
                     userId = userId,
                     generatedOccurrences = generatedOccurrences,
                     preparedRequest = preparedRequest,
                     unifiedSegment = newUnifiedSegment,
+                    firstOccurrenceDate = requestedExecutionDate,
+                    firstOccurrenceGlobalIndex = selectedGlobalIndex,
                 )
             } else {
-                0
+                emptyList()
             }
+        val rewrittenCount = rewrittenDates.size
 
         val unifiedWithExecutionState =
-            if (newUnifiedSegment != null && rewrittenCount > 0) {
-                val rewrittenDates = generatedOccurrences.map { it.event.date }
+            if (newUnifiedSegment != null && rewrittenCount > 0 && !shouldGenerateCurrentOccurrenceNow) {
                 val lastExecutionDate = rewrittenDates.maxOrNull()!!
                 val nextExecutionDate =
                     recurrenceService.calculateNextExecution(
@@ -384,7 +425,7 @@ class WalletEntryEditServiceImpl(
         scope: ScheduledEditScope,
     ): RecurrenceEventEntity? {
         val recurrenceConfig = loadRecurrenceConfigWithEntries(config.id!!) ?: config
-        val currentSeriesQtyTotal = resolveSeriesQtyTotal(recurrenceConfig)
+        val currentSeriesQtyTotal = resolveActualSeriesQtyTotal(recurrenceConfig)
 
         val updatedEvent =
             editPostedEvent(
@@ -460,10 +501,19 @@ class WalletEntryEditServiceImpl(
         occurrenceDate: LocalDate,
         preparedRequest: NewEntryRequest,
         scope: ScheduledEditScope,
-    ): RecurrenceEventEntity? {
+    ): MinimumWalletEventEntity? {
+        val requestedExecutionDate = preparedRequest.date
         val position = resolveScheduledPosition(config, occurrenceDate) ?: return null
         val selectedSeriesOffset = calculateSeriesOffsetForPosition(config, position)
-        val currentSeriesQtyTotal = resolveSeriesQtyTotal(config)
+        val currentSeriesQtyTotal = resolveActualSeriesQtyTotal(config)
+        validateNextScheduledEditIsNotMovedToPast(
+            executionCount = config.seriesOffset + config.qtyExecuted,
+            previousGeneratedExecutionDate = config.lastExecution,
+            nextExecution = config.nextExecution,
+            occurrenceDate = occurrenceDate,
+            requestedExecutionDate = requestedExecutionDate,
+            periodicity = config.periodicity,
+        )
 
         val targetSeriesQtyTotal =
             if (scope == ScheduledEditScope.THIS_AND_FUTURE) {
@@ -488,6 +538,7 @@ class WalletEntryEditServiceImpl(
         if (
             scope == ScheduledEditScope.THIS_AND_FUTURE &&
             isEditingNextExecution &&
+            requestedExecutionDate == occurrenceDate &&
             !hasTemplateChangesBeyondQtyLimit(oldTemplateRequest, preparedRequest)
         ) {
             val targetQtyLimit = targetSeriesQtyTotal?.let { (it - config.seriesOffset).coerceAtLeast(0) }
@@ -532,13 +583,13 @@ class WalletEntryEditServiceImpl(
                 null
             }
 
-        val selectedResult =
+        val selectedResult: MinimumWalletEventEntity? =
             when (scope) {
                 ScheduledEditScope.ONLY_THIS -> {
-                    val selectedRequest = buildRecurrenceRequest(preparedRequest, occurrenceDate, 1)
-                    createRecurrenceConfig(
+                    createScheduledOccurrenceStartingAtDate(
                         userId = userId,
-                        preparedRequest = selectedRequest,
+                        preparedRequest = preparedRequest,
+                        executionDate = requestedExecutionDate,
                         qtyLimit = 1,
                         seriesId = config.seriesId,
                         seriesQtyTotal = config.seriesQtyTotal,
@@ -551,15 +602,27 @@ class WalletEntryEditServiceImpl(
                     if (remainingFromSelected != null && remainingFromSelected == 0) {
                         null
                     } else {
-                        val selectedRequest = buildRecurrenceRequest(preparedRequest, occurrenceDate, remainingFromSelected)
-                        createRecurrenceConfig(
-                            userId = userId,
-                            preparedRequest = selectedRequest,
-                            qtyLimit = remainingFromSelected,
-                            seriesId = config.seriesId,
-                            seriesQtyTotal = config.seriesQtyTotal,
-                            seriesOffset = selectedSeriesOffset,
-                        )
+                        if (!requestedExecutionDate.isAfter(LocalDate.now(clock))) {
+                            createScheduledOccurrenceStartingAtDate(
+                                userId = userId,
+                                preparedRequest = preparedRequest,
+                                executionDate = requestedExecutionDate,
+                                qtyLimit = remainingFromSelected,
+                                seriesId = config.seriesId,
+                                seriesQtyTotal = config.seriesQtyTotal,
+                                seriesOffset = selectedSeriesOffset,
+                            )
+                        } else {
+                            val selectedRequest = buildRecurrenceRequest(preparedRequest, requestedExecutionDate, remainingFromSelected)
+                            createRecurrenceConfig(
+                                userId = userId,
+                                preparedRequest = selectedRequest,
+                                qtyLimit = remainingFromSelected,
+                                seriesId = config.seriesId,
+                                seriesQtyTotal = config.seriesQtyTotal,
+                                seriesOffset = selectedSeriesOffset,
+                            )
+                        }
                     }
                 }
 
@@ -598,8 +661,69 @@ class WalletEntryEditServiceImpl(
             affectedOccurrences = installmentOccurrences,
         )
 
-        walletEventActionEventService.sendUpdatedWalletEvent(userId, selectedResult ?: truncated)
+        val publishedTarget = selectedResult ?: truncated.takeIf { it.nextExecution != null }
+        if (publishedTarget != null) {
+            walletEventActionEventService.sendUpdatedWalletEvent(userId, publishedTarget)
+        }
+
         return if (scope == ScheduledEditScope.THIS_AND_FUTURE) selectedResult ?: truncated else truncated
+    }
+
+    private suspend fun createScheduledOccurrenceStartingAtDate(
+        userId: UUID,
+        preparedRequest: NewEntryRequest,
+        executionDate: LocalDate,
+        qtyLimit: Int?,
+        seriesId: UUID,
+        seriesQtyTotal: Int?,
+        seriesOffset: Int,
+    ): MinimumWalletEventEntity? {
+        if (executionDate.isAfter(LocalDate.now(clock))) {
+            val selectedRequest = buildRecurrenceRequest(preparedRequest, executionDate, qtyLimit)
+            return createRecurrenceConfig(
+                userId = userId,
+                preparedRequest = selectedRequest,
+                qtyLimit = qtyLimit,
+                seriesId = seriesId,
+                seriesQtyTotal = seriesQtyTotal,
+                seriesOffset = seriesOffset,
+            )
+        }
+
+        val pendingSeedDate = LocalDate.now(clock).plusDays(1)
+        val selectedRequest = buildRecurrenceRequest(preparedRequest, pendingSeedDate, qtyLimit)
+        val createdRecurrence =
+            createRecurrenceConfig(
+                userId = userId,
+                preparedRequest = selectedRequest,
+                qtyLimit = qtyLimit,
+                seriesId = seriesId,
+                seriesQtyTotal = seriesQtyTotal,
+                seriesOffset = seriesOffset,
+            )
+
+        val armedRecurrence =
+            persistRecurrenceCopy(
+                current = createdRecurrence,
+                qtyLimit = qtyLimit,
+                qtyExecuted = 0,
+                lastExecution = null,
+                nextExecution = executionDate,
+                endExecution =
+                    recurrenceService.calculateEndDate(
+                        lastExecution = executionDate,
+                        periodicity = createdRecurrence.periodicity,
+                        qtyExecuted = 0,
+                        qtyLimit = qtyLimit?.let { (it - 1).coerceAtLeast(0) },
+                    ),
+            )
+        armedRecurrence.seriesQtyTotal = createdRecurrence.seriesQtyTotal
+
+        return walletEntryCreateService.createFromRecurrenceConfig(
+            recurrenceConfigId = armedRecurrence.id!!,
+            date = executionDate,
+            confirmedOverride = preparedRequest.confirmed,
+        )
     }
 
     private suspend fun editPostedEvent(
@@ -609,15 +733,12 @@ class WalletEntryEditServiceImpl(
         recurrenceConfig: RecurrenceEventEntity?,
         recurrenceEventIdOverride: UUID? = null,
     ): WalletEventEntity {
-        val oldEntries =
-            walletEntryRepository
-                .findAllByWalletEventId(existingEvent.id!!)
-                .asFlow()
-                .toList()
+        val hydratedExistingEvent = hydratePostedEventForMutation(existingEvent)
+        val oldEntries = hydratedExistingEvent.entries!!.filterIsInstance<WalletEntryEntity>()
 
         rollbackPostedImpact(
             actorUserId = userId,
-            event = existingEvent,
+            event = hydratedExistingEvent,
             entries = oldEntries,
             recurrenceConfig = recurrenceConfig,
         )
@@ -723,7 +844,7 @@ class WalletEntryEditServiceImpl(
                 }
             }
 
-        val currentSeriesQtyTotal = resolveSeriesQtyTotal(segments.first())
+        val currentSeriesQtyTotal = resolveSeriesQtyTotalFromSegments(segments)
         segments.forEach { segment ->
             segment.seriesQtyTotal = currentSeriesQtyTotal
         }
@@ -836,12 +957,21 @@ class WalletEntryEditServiceImpl(
         generatedOccurrences: List<GeneratedOccurrence>,
         preparedRequest: NewEntryRequest,
         unifiedSegment: RecurrenceEventEntity,
-    ): Int {
+        firstOccurrenceDate: LocalDate,
+        firstOccurrenceGlobalIndex: Int,
+    ): List<LocalDate> {
+        val rewrittenDates = mutableListOf<LocalDate>()
+
         generatedOccurrences.forEach { occurrence ->
+            val occurrenceOffset = (occurrence.globalIndex - firstOccurrenceGlobalIndex).coerceAtLeast(0)
+            val recalculatedDate = calculateDateAtIndex(firstOccurrenceDate, unifiedSegment.periodicity, occurrenceOffset)
             val eventRequest =
-                prepareMutationRequest(
+                prepareShiftedPreparedRequest(
                     userId = userId,
-                    newEntryRequest = preparedRequest.copy(date = occurrence.event.date),
+                    preparedRequest = preparedRequest,
+                    occurrenceDate = recalculatedDate,
+                    periodicity = unifiedSegment.periodicity,
+                    occurrenceOffset = occurrenceOffset,
                 )
 
             val updated =
@@ -853,9 +983,79 @@ class WalletEntryEditServiceImpl(
                     recurrenceEventIdOverride = unifiedSegment.id,
                 )
             walletEventActionEventService.sendUpdatedWalletEvent(userId, updated)
+            rewrittenDates += recalculatedDate
         }
 
-        return generatedOccurrences.size
+        return rewrittenDates
+    }
+
+    private suspend fun prepareShiftedPreparedRequest(
+        userId: UUID,
+        preparedRequest: NewEntryRequest,
+        occurrenceDate: LocalDate,
+        periodicity: RecurrenceType,
+        occurrenceOffset: Int,
+    ): NewEntryRequest {
+        val shiftedSources =
+            (
+                preparedRequest.sources
+                    ?: preparedRequest.resolvedSources?.map { source ->
+                        NewWalletSourceLeg(
+                            walletItemId = source.walletItemId,
+                            contributionPercent = source.contributionPercent,
+                            billDate = source.bill?.billDate,
+                        )
+                    }
+            )?.map { source ->
+                source.copy(
+                    billDate = shiftBillDate(source.billDate, periodicity, occurrenceOffset),
+                )
+            }
+        val shiftedBeneficiaries =
+            preparedRequest.beneficiaries
+                ?: preparedRequest.resolvedBeneficiaries?.map { beneficiary ->
+                    NewWalletBeneficiaryLeg(
+                        userId = beneficiary.userId,
+                        benefitPercent = beneficiary.benefitPercent,
+                    )
+                }
+
+        return prepareMutationRequest(
+            userId = userId,
+            newEntryRequest =
+                preparedRequest.copy(
+                    date = occurrenceDate,
+                    originBillDate = shiftBillDate(preparedRequest.originBillDate, periodicity, occurrenceOffset),
+                    targetBillDate = shiftBillDate(preparedRequest.targetBillDate, periodicity, occurrenceOffset),
+                    origin = null,
+                    originBill = null,
+                    target = null,
+                    targetBill = null,
+                    category = null,
+                    sources = shiftedSources,
+                    resolvedSources = null,
+                    beneficiaries = shiftedBeneficiaries,
+                    resolvedBeneficiaries = null,
+                ),
+        )
+    }
+
+    private fun shiftBillDate(
+        billDate: LocalDate?,
+        periodicity: RecurrenceType,
+        occurrenceOffset: Int,
+    ): LocalDate? {
+        var shifted = billDate ?: return null
+        repeat(occurrenceOffset) {
+            val candidate = recurrenceService.calculateNextDate(shifted, periodicity)
+            shifted =
+                if (candidate.year == shifted.year && candidate.month == shifted.month) {
+                    shifted
+                } else {
+                    candidate.withDayOfMonth(1)
+                }
+        }
+        return shifted
     }
 
     private suspend fun applyInstallmentReservationDeltaBySegment(
@@ -1233,16 +1433,68 @@ class WalletEntryEditServiceImpl(
         }
     }
 
+    private fun validateNextScheduledEditIsNotMovedToPast(
+        executionCount: Int,
+        previousGeneratedExecutionDate: LocalDate?,
+        nextExecution: LocalDate?,
+        occurrenceDate: LocalDate,
+        requestedExecutionDate: LocalDate,
+        periodicity: RecurrenceType,
+    ) {
+        val isEditingNextScheduledOccurrence = nextExecution != null && occurrenceDate == nextExecution
+        val lowerBoundDate =
+            if (executionCount <= 0 || !isEditingNextScheduledOccurrence) {
+                null
+            } else {
+                previousGeneratedExecutionDate ?: calculatePreviousOccurrenceDate(occurrenceDate, periodicity)
+            }
+        if (
+            lowerBoundDate != null &&
+            !requestedExecutionDate.isAfter(lowerBoundDate)
+        ) {
+            throw InvalidPastScheduledExecutionEditException()
+        }
+    }
+
+    private fun calculatePreviousOccurrenceDate(
+        occurrenceDate: LocalDate,
+        periodicity: RecurrenceType,
+    ): LocalDate =
+        when (periodicity) {
+            RecurrenceType.SINGLE -> occurrenceDate
+            RecurrenceType.DAILY -> occurrenceDate.minusDays(1)
+            RecurrenceType.WEEKLY -> occurrenceDate.minusWeeks(1)
+            RecurrenceType.MONTHLY -> occurrenceDate.minusMonths(1)
+            RecurrenceType.YEARLY -> occurrenceDate.minusYears(1)
+        }
+
     private suspend fun syncSeriesQtyTotal(
         config: RecurrenceEventEntity,
         targetSeriesQtyTotal: Int?,
     ) {
-        if (config.seriesQtyTotal == targetSeriesQtyTotal) {
+        val persistedQtyTotal = recurrenceSeriesRepository.findById(config.seriesId).awaitSingleOrNull()?.qtyTotal
+        if (persistedQtyTotal == targetSeriesQtyTotal) {
+            config.seriesQtyTotal = targetSeriesQtyTotal
             return
         }
 
         recurrenceSeriesRepository.updateQtyTotal(config.seriesId, targetSeriesQtyTotal).awaitSingle()
         config.seriesQtyTotal = targetSeriesQtyTotal
+    }
+
+    private suspend fun resolveActualSeriesQtyTotal(config: RecurrenceEventEntity): Int? {
+        val segments = recurrenceEventRepository.findAllBySeriesId(config.seriesId).asFlow().toList()
+        return resolveSeriesQtyTotalFromSegments(segments.ifEmpty { listOf(config) })
+    }
+
+    private fun resolveSeriesQtyTotalFromSegments(segments: List<RecurrenceEventEntity>): Int? {
+        if (segments.any { it.paymentType == PaymentType.RECURRING && it.qtyLimit == null }) {
+            return null
+        }
+
+        return segments.maxOfOrNull { segment ->
+            segment.seriesOffset + (segment.qtyLimit ?: segment.qtyExecuted)
+        }
     }
 
     private fun resolveUpdatedEndExecutionForInPlaceThisAndFuture(

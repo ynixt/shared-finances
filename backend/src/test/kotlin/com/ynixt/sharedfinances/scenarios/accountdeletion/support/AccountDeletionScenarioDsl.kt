@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.WalletTransactionQueryScope
 import com.ynixt.sharedfinances.resources.services.AccountDeletionServiceImpl
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupWalletItemRepository
+import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEntryRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryRecurrenceEventRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryUserRepository
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEventRepository
@@ -33,7 +34,12 @@ class AccountDeletionScenarioDsl {
     internal val groupStore = InMemoryAccountDeletionGroupStore()
     internal val walletItemRepository = InMemoryWalletItemRepository()
     internal val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
-    internal val recurrenceEventRepository = InMemoryRecurrenceEventRepository(walletItemRepository)
+    internal val recurrenceEntryRepository = InMemoryRecurrenceEntryRepository()
+    internal val recurrenceEventRepository =
+        InMemoryRecurrenceEventRepository(
+            walletItemRepository = walletItemRepository,
+            recurrenceEntryRepository = recurrenceEntryRepository,
+        )
     internal val simulationJobService = RecordingComplianceSimulationJobService()
     internal val avatarService = RecordingAvatarService()
 

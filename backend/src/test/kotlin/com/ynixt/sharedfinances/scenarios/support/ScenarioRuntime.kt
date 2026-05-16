@@ -126,8 +126,12 @@ internal class ScenarioRuntime(
     private val walletItemRepository = InMemoryWalletItemRepository()
     private val walletEventRepository = InMemoryWalletEventRepository(walletItemRepository)
     private val walletEntryRepository = InMemoryWalletEntryRepository(walletEventRepository, walletItemRepository)
-    private val recurrenceEventRepositoryRaw = InMemoryRecurrenceEventRepository(walletItemRepository)
     private val recurrenceEntryRepository = InMemoryRecurrenceEntryRepository()
+    private val recurrenceEventRepositoryRaw =
+        InMemoryRecurrenceEventRepository(
+            walletItemRepository = walletItemRepository,
+            recurrenceEntryRepository = recurrenceEntryRepository,
+        )
     private val recurrenceSeriesRepositoryRaw =
         InMemoryRecurrenceSeriesRepository { seriesId ->
             val recurrenceEventIds = recurrenceEventRepositoryRaw.findIdsBySeriesId(seriesId)
@@ -292,6 +296,7 @@ internal class ScenarioRuntime(
             walletEventRepository = walletEventRepository,
             walletEntryRepository = walletEntryRepository,
             recurrenceEntryRepository = recurrenceEntryRepository,
+            recurrenceEventRepository = recurrenceEventRepository,
             creditCardBillRepository = creditCardBillRepository,
             walletItemMapper = walletItemMapper,
             walletItemService = walletItemService,
@@ -363,6 +368,9 @@ internal class ScenarioRuntime(
         WalletEntryEditServiceImpl(
             walletEventRepository = walletEventRepository,
             walletEntryRepository = walletEntryRepository,
+            walletEventActionEventService = walletEventActionEventService,
+            walletEntryCreateService = walletEntryCreateService,
+            walletItemMapper = walletItemMapper,
             groupService = groupService,
             walletItemService = walletItemService,
             genericCategoryService = genericCategoryService,
@@ -375,8 +383,6 @@ internal class ScenarioRuntime(
             groupDebtService = groupDebtService,
             walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
             recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
-            walletEventActionEventService = walletEventActionEventService,
-            walletItemMapper = walletItemMapper,
             clock = clock,
         )
 

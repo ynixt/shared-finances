@@ -15,6 +15,14 @@ class RecurrenceEventDtoMapperImpl : RecurrenceEventDtoMapper {
             else -> from.qtyLimit
         }
 
+    private fun resolveSeriesQtyLimit(from: RecurrenceEventEntity): Int? =
+        when (from.paymentType) {
+            PaymentType.INSTALLMENTS -> from.seriesQtyTotal
+            PaymentType.RECURRING -> if (from.qtyLimit != null) from.seriesQtyTotal else null
+
+            else -> from.qtyLimit
+        }
+
     override fun toDto(from: RecurrenceEventEntity): RecurrenceEventDto =
         RecurrenceEventDto(
             id = requireNotNull(from.id),
@@ -22,6 +30,8 @@ class RecurrenceEventDtoMapperImpl : RecurrenceEventDtoMapper {
             periodicity = from.periodicity,
             qtyExecuted = from.qtyExecuted,
             qtyLimit = resolveDisplayQtyLimit(from),
+            segmentQtyLimit = from.qtyLimit,
+            seriesQtyLimit = resolveSeriesQtyLimit(from),
             lastExecution = from.lastExecution,
             nextExecution = from.nextExecution,
             endExecution = from.endExecution,

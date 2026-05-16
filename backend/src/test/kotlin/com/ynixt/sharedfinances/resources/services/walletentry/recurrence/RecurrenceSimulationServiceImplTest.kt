@@ -126,7 +126,11 @@ class RecurrenceSimulationServiceImplTest {
                     includeUncategorized = false,
                 )
 
-            val secondInstallment = simulatedEvents.single()
+            val secondInstallment =
+                simulatedEvents.single { simulated ->
+                    simulated.installment == 2 &&
+                        simulated.entries.single().billDate == LocalDate.of(2026, 6, 1)
+                }
             val beneficiary = secondInstallment.beneficiaries.orEmpty().single()
             assertThat(beneficiary.userId).isEqualTo(deboraId)
             assertThat(beneficiary.benefitPercent).isEqualByComparingTo("100.00")

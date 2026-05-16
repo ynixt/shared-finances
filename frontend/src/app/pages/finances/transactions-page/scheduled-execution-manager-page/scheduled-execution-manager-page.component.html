@@ -95,7 +95,7 @@
 
                       <a
                         [routerLink]="editRouterLink(entry)"
-                        [queryParams]="{ withFuture: true }"
+                        [queryParams]="editQueryParams(entry)"
                         pButton
                         severity="secondary"
                         [text]="true"

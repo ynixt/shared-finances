@@ -14,5 +14,6 @@ interface WalletEntryCreateService {
     suspend fun createFromRecurrenceConfig(
         recurrenceConfigId: UUID,
         date: LocalDate,
+        confirmedOverride: Boolean? = null,
     ): MinimumWalletEventEntity?
 }

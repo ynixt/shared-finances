@@ -81,6 +81,8 @@ class WalletEntryCreateServiceImpl(
         clock = clock,
     ),
     WalletEntryCreateService {
+    private val maxRetroactiveCatchUpIterations = 2048
+
     @Transactional
     override suspend fun create(
         userId: UUID,
@@ -107,6 +109,7 @@ class WalletEntryCreateServiceImpl(
     override suspend fun createFromRecurrenceConfig(
         recurrenceConfigId: UUID,
         date: LocalDate,
+        confirmedOverride: Boolean?,
     ): MinimumWalletEventEntity? {
         val event = recurrenceEventRepository.findById(recurrenceConfigId).awaitSingle()
         event.seriesQtyTotal = recurrenceSeriesRepository.findById(event.seriesId).awaitSingleOrNull()?.qtyTotal
@@ -196,7 +199,7 @@ class WalletEntryCreateServiceImpl(
                         name = event.name,
                         categoryId = event.categoryId,
                         date = date,
-                        confirmed = false,
+                        confirmed = confirmedOverride ?: false,
                         observations = event.observations,
                         tags = event.tags?.ifEmpty { null },
                         installment = installment,
@@ -374,8 +377,18 @@ class WalletEntryCreateServiceImpl(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
     ): MinimumWalletEventEntity {
+        val today = LocalDate.now(clock)
+
+        if (shouldBackfillRetroactiveOccurrences(newEntryRequest, today)) {
+            return createRetroactiveRecurringSchedule(
+                userId = userId,
+                newEntryRequest = newEntryRequest,
+                today = today,
+            )
+        }
+
         val recurrenceConfig = createRecurrenceConfig(userId, newEntryRequest)
-        val isInFuture = newEntryRequest.isInFuture(LocalDate.now(clock))
+        val isInFuture = newEntryRequest.isInFuture(today)
 
         return if (isInFuture) {
             recurrenceConfig!!
@@ -400,6 +413,49 @@ class WalletEntryCreateServiceImpl(
                 entity.walletItem = model?.let { w -> walletItemMapper.fromModel(w) }
             }
         }
+    }
+
+    private fun shouldBackfillRetroactiveOccurrences(
+        newEntryRequest: NewEntryRequest,
+        today: LocalDate,
+    ): Boolean =
+        newEntryRequest.date.isBefore(today) &&
+            (
+                newEntryRequest.paymentType == PaymentType.INSTALLMENTS ||
+                    newEntryRequest.paymentType == PaymentType.RECURRING
+            )
+
+    private suspend fun createRetroactiveRecurringSchedule(
+        userId: UUID,
+        newEntryRequest: NewEntryRequest,
+        today: LocalDate,
+    ): MinimumWalletEventEntity {
+        val recurrenceConfig =
+            requireNotNull(
+                createRecurrenceConfig(
+                    userId = userId,
+                    newEntryRequest = newEntryRequest,
+                    forcePendingStart = true,
+                ),
+            )
+
+        var currentRecurrence = recurrenceConfig
+        var lastResult: MinimumWalletEventEntity = recurrenceConfig
+
+        repeat(maxRetroactiveCatchUpIterations) {
+            val dueDate = currentRecurrence.nextExecution ?: return lastResult
+            if (dueDate.isAfter(today)) {
+                return lastResult
+            }
+
+            lastResult = createFromRecurrenceConfig(currentRecurrence.id!!, dueDate) ?: return lastResult
+            currentRecurrence =
+                recurrenceEventRepository.findById(currentRecurrence.id!!).awaitSingle().also {
+                    it.seriesQtyTotal = recurrenceSeriesRepository.findById(it.seriesId).awaitSingleOrNull()?.qtyTotal
+                }
+        }
+
+        return lastResult
     }
 
     private suspend fun createNowWithoutCheckPermissions(
@@ -484,6 +540,7 @@ class WalletEntryCreateServiceImpl(
     private suspend fun createRecurrenceConfig(
         userId: UUID,
         newEntryRequest: NewEntryRequest,
+        forcePendingStart: Boolean = false,
     ): RecurrenceEventEntity? =
         when (newEntryRequest.paymentType) {
             PaymentType.INSTALLMENTS ->
@@ -492,6 +549,7 @@ class WalletEntryCreateServiceImpl(
                     userId = userId,
                     newEntryRequest = newEntryRequest,
                     qtyLimit = newEntryRequest.installments!!,
+                    forcePendingStart = forcePendingStart,
                 ).also { recurrenceEvent ->
                     persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)
                 }
@@ -502,6 +560,7 @@ class WalletEntryCreateServiceImpl(
                     userId = userId,
                     newEntryRequest = newEntryRequest,
                     qtyLimit = newEntryRequest.periodicityQtyLimit,
+                    forcePendingStart = forcePendingStart,
                 ).also { recurrenceEvent ->
                     persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)
                 }
@@ -513,6 +572,7 @@ class WalletEntryCreateServiceImpl(
                         userId = userId,
                         newEntryRequest = newEntryRequest,
                         qtyLimit = 1,
+                        forcePendingStart = forcePendingStart,
                     ).also { recurrenceEvent ->
                         persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)
                     }

@@ -11,6 +11,8 @@ data class RecurrenceEventDto(
     val periodicity: RecurrenceType,
     val qtyExecuted: Int,
     val qtyLimit: Int?,
+    val segmentQtyLimit: Int?,
+    val seriesQtyLimit: Int?,
     val lastExecution: LocalDate?,
     val nextExecution: LocalDate?,
     val endExecution: LocalDate?,

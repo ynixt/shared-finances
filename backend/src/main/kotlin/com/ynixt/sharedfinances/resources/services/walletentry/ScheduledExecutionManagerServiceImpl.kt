@@ -54,8 +54,8 @@ class ScheduledExecutionManagerServiceImpl(
             }
 
         return (generated + futures).sortedWith(
-            compareByDescending<EventListResponse> { it.date }
-                .thenByDescending { it.id },
+            compareBy<EventListResponse> { it.date }
+                .thenBy { it.id },
         )
     }
 

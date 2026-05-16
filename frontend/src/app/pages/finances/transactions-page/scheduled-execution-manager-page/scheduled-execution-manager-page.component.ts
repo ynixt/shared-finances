@@ -103,6 +103,13 @@ export class ScheduledExecutionManagerPageComponent implements OnInit {
     return ['/app/transactions/scheduler-manager/edit', entry.recurrenceConfigId!!];
   }
 
+  editQueryParams(entry: EventForListDto) {
+    return {
+      occurrenceDate: dayjs(entry.date).format(ONLY_DATE_FORMAT),
+      withFuture: true,
+    };
+  }
+
   requestDelete(entry: EventForListDto) {
     if (entry.recurrenceConfigId == null) {
       return;

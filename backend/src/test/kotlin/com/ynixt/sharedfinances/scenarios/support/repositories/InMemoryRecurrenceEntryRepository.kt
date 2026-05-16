@@ -11,6 +11,8 @@ import java.util.UUID
 internal class InMemoryRecurrenceEntryRepository : RecurrenceEntryRepository {
     private val data = linkedMapOf<UUID, RecurrenceEntryEntity>()
 
+    fun snapshotByWalletEventId(walletEventId: UUID): List<RecurrenceEntryEntity> = data.values.filter { it.walletEventId == walletEventId }
+
     fun deleteAllByWalletEventIds(walletEventIds: Set<UUID>): Int {
         val initial = data.size
         data.entries.removeIf { (_, entry) -> walletEventIds.contains(entry.walletEventId) }

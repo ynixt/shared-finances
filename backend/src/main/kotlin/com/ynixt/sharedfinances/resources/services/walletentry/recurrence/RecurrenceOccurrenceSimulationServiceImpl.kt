@@ -68,7 +68,12 @@ class RecurrenceOccurrenceSimulationServiceImpl(
         }
 
         val askedWalletItem = askedWalletItemId?.let { askedId -> walletItems.find { it.id == askedId } }
-        val askedBillWindow = resolveBillWindow(askedWalletItem, askedBillDate, requestUserId)
+        val askedBillWindow =
+            if (askedWalletItemId?.let(initialState.billDateByWalletItemId::get) != null) {
+                null
+            } else {
+                resolveBillWindow(askedWalletItem, askedBillDate, requestUserId)
+            }
 
         return simulateOccurrences(
             config = config,

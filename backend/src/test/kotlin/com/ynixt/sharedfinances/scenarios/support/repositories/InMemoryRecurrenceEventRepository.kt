@@ -15,6 +15,7 @@ import java.util.UUID
 
 internal class InMemoryRecurrenceEventRepository(
     private val walletItemRepository: InMemoryWalletItemRepository,
+    private val recurrenceEntryRepository: InMemoryRecurrenceEntryRepository,
 ) : RecurrenceEventRepository {
     private val data = linkedMapOf<UUID, RecurrenceEventEntity>()
 
@@ -32,13 +33,13 @@ internal class InMemoryRecurrenceEventRepository(
 
     override fun findAllByNextExecutionLessThanEqual(nextExecution: LocalDate): Flux<RecurrenceEventEntity> =
         Flux.fromIterable(
-            data.values.filter {
+            data.values.map(::hydrateEntries).filter {
                 it.nextExecution != null && (it.nextExecution.isBefore(nextExecution) || it.nextExecution == nextExecution)
             },
         )
 
     override fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity> =
-        Flux.fromIterable(data.values.filter { it.seriesId == seriesId })
+        Flux.fromIterable(data.values.map(::hydrateEntries).filter { it.seriesId == seriesId })
 
     override fun deleteAllByWalletItemIdAndUserId(
         walletItemId: UUID,
@@ -46,7 +47,8 @@ internal class InMemoryRecurrenceEventRepository(
     ): Mono<Long> {
         val initial = data.size
         data.entries.removeIf { (_, value) ->
-            value.entries
+            val hydrated = hydrateEntries(value)
+            hydrated.entries
                 .orEmpty()
                 .any { entry ->
                     entry.walletItemId == walletItemId &&
@@ -110,6 +112,7 @@ internal class InMemoryRecurrenceEventRepository(
     ): Flux<RecurrenceEventEntity> {
         val filtered =
             data.values
+                .map(::hydrateEntries)
                 .asSequence()
                 .filter { maximumNextExecution == null || (it.nextExecution != null && !it.nextExecution.isAfter(maximumNextExecution)) }
                 .filter { minimumEndExecution == null || (it.endExecution == null || !it.endExecution.isBefore(minimumEndExecution)) }
@@ -161,7 +164,7 @@ internal class InMemoryRecurrenceEventRepository(
         return Flux.fromIterable(filtered)
     }
 
-    override fun findById(id: UUID): Mono<RecurrenceEventEntity> = Mono.justOrEmpty(data[id])
+    override fun findById(id: UUID): Mono<RecurrenceEventEntity> = Mono.justOrEmpty(data[id]?.let(::hydrateEntries))
 
     override fun deleteById(id: UUID): Mono<Long> = Mono.just(if (data.remove(id) != null) 1L else 0L)
 
@@ -178,7 +181,21 @@ internal class InMemoryRecurrenceEventRepository(
 
     override fun <S : RecurrenceEventEntity> saveAll(entity: Iterable<S>): Flux<S> = Flux.fromIterable(entity).flatMap { save(it) }
 
-    override fun findAllByIdIn(id: Collection<UUID>): Flux<RecurrenceEventEntity> = Flux.fromIterable(id.mapNotNull { data[it] })
+    override fun findAllByIdIn(id: Collection<UUID>): Flux<RecurrenceEventEntity> =
+        Flux.fromIterable(id.mapNotNull { data[it] }.map(::hydrateEntries))
+
+    private fun hydrateEntries(event: RecurrenceEventEntity): RecurrenceEventEntity {
+        val eventId = event.id ?: return event
+        event.entries =
+            recurrenceEntryRepository
+                .snapshotByWalletEventId(eventId)
+                .also { entries ->
+                    entries.forEach { entry ->
+                        entry.event = event
+                    }
+                }
+        return event
+    }
 
     private fun copyRecurrence(
         current: RecurrenceEventEntity,

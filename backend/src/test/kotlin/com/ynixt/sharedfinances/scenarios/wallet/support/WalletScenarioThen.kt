@@ -248,6 +248,42 @@ class WalletScenarioThen internal constructor(
             .isTrue()
     }
 
+    fun fetchedScheduledWalletEventDateShouldBe(expected: LocalDate) {
+        val fetched = resolver.lastFetchedScheduledWalletEvent()
+
+        assertThat(fetched)
+            .describedAs("fetched scheduled wallet event")
+            .isNotNull()
+
+        assertThat(fetched!!.date)
+            .describedAs("fetched scheduled wallet event date")
+            .isEqualTo(expected)
+    }
+
+    fun fetchedScheduledWalletEventInstallmentShouldBe(expected: Int?) {
+        val fetched = resolver.lastFetchedScheduledWalletEvent()
+
+        assertThat(fetched)
+            .describedAs("fetched scheduled wallet event")
+            .isNotNull()
+
+        assertThat(fetched!!.installment)
+            .describedAs("fetched scheduled wallet event installment")
+            .isEqualTo(expected)
+    }
+
+    fun fetchedScheduledWalletEventEntryBillDateShouldBe(expected: LocalDate?) {
+        val fetched = resolver.lastFetchedScheduledWalletEvent()
+
+        assertThat(fetched)
+            .describedAs("fetched scheduled wallet event")
+            .isNotNull()
+
+        assertThat(fetched!!.entries.single().billDate)
+            .describedAs("fetched scheduled wallet event entry bill date")
+            .isEqualTo(expected)
+    }
+
     fun fetchedScheduledWalletEventShouldHideTargetValue() {
         val fetched = resolver.lastFetchedScheduledWalletEvent()
 
@@ -293,6 +329,23 @@ class WalletScenarioThen internal constructor(
             },
         ).describedAs("scheduled installment totals for $filter")
             .isTrue()
+    }
+
+    suspend fun scheduledManagerDatesShouldBe(
+        filter: ScheduledExecutionFilter,
+        expectedDates: List<java.time.LocalDate>,
+    ) {
+        val dates = resolver.listScheduledExecutionEntries(filter).map { it.date }
+
+        assertThat(dates)
+            .describedAs("scheduled manager dates for $filter")
+            .containsExactlyElementsOf(expectedDates)
+    }
+
+    suspend fun lastPublishedWalletEventShouldConvert(type: ActionEventType) {
+        assertThat(resolver.convertLastPublishedWalletEvent(type))
+            .describedAs("last published wallet event converted for $type")
+            .isNotNull()
     }
 
     suspend fun recurrenceSeriesQtyTotalShouldBe(

@@ -40,6 +40,8 @@ class RecurrenceEventDtoMapperImplTest {
         val dto = mapper.toDto(recurrence)
 
         assertThat(dto.qtyLimit).isEqualTo(3)
+        assertThat(dto.segmentQtyLimit).isEqualTo(2)
+        assertThat(dto.seriesQtyLimit).isEqualTo(3)
     }
 
     @Test
@@ -70,9 +72,10 @@ class RecurrenceEventDtoMapperImplTest {
         val dto = mapper.toDto(recurrence)
 
         assertThat(dto.qtyLimit).isEqualTo(8)
+        assertThat(dto.segmentQtyLimit).isEqualTo(5)
+        assertThat(dto.seriesQtyLimit).isEqualTo(8)
     }
 
-    @Test
     fun `should keep qtyLimit null for unlimited recurring recurrence`() {
         val recurrence =
             RecurrenceEventEntity(
@@ -100,5 +103,7 @@ class RecurrenceEventDtoMapperImplTest {
         val dto = mapper.toDto(recurrence)
 
         assertThat(dto.qtyLimit).isNull()
+        assertThat(dto.segmentQtyLimit).isNull()
+        assertThat(dto.seriesQtyLimit).isNull()
     }
 }

@@ -44,8 +44,8 @@ jacoco {
 
 sourceSets {
     create("integrationTest") {
-        compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-        runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
     }
 }
 
@@ -56,6 +56,10 @@ val integrationTestTask =
 
         testClassesDirs = sourceSets["integrationTest"].output.classesDirs
         classpath = sourceSets["integrationTest"].runtimeClasspath
+        minHeapSize = "512m"
+        maxHeapSize = "2g"
+        forkEvery = 1
+        systemProperty("spring.test.context.cache.maxSize", "1")
 
         shouldRunAfter(tasks.named("test"))
     }
@@ -147,6 +151,7 @@ val integrationTestImplementation: Configuration by configurations.getting {
 }
 
 configurations["integrationTestRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+configurations["integrationTestRuntimeOnly"].extendsFrom(configurations.testRuntimeOnly.get())
 
 tasks.withType<Test> {
     useJUnitPlatform()

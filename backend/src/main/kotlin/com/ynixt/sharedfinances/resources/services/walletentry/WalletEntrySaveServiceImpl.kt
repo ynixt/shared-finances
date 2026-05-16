@@ -330,10 +330,11 @@ abstract class WalletEntrySaveServiceImpl(
         seriesId: UUID? = null,
         seriesQtyTotal: Int? = null,
         seriesOffset: Int = 0,
+        forcePendingStart: Boolean = false,
     ): RecurrenceEventEntity {
         val periodicity = newEntryRequest.periodicity ?: RecurrenceType.SINGLE
         val now = LocalDate.now(clock)
-        val alreadyExecuted = !newEntryRequest.isInFuture(now)
+        val alreadyExecuted = !forcePendingStart && !newEntryRequest.isInFuture(now)
         val qtyExecuted = if (alreadyExecuted) 1 else 0
         val lastExecution: LocalDate? = if (alreadyExecuted) now else null
 
