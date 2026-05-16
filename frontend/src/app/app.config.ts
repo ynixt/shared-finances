@@ -55,14 +55,14 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
-    provideApollo(() => {
-      const httpLink = inject(HttpLink);
-
-      return {
-        link: httpLink.create({ uri: '/api/graphql' }),
-        cache: new InMemoryCache(),
-      };
-    }),
+    // provideApollo(() => {
+    //   const httpLink = inject(HttpLink);
+    //
+    //   return {
+    //     link: httpLink.create({ uri: '/api/graphql' }),
+    //     cache: new InMemoryCache(),
+    //   };
+    // }),
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     importProvidersFrom(
       TranslateModule.forRoot({
