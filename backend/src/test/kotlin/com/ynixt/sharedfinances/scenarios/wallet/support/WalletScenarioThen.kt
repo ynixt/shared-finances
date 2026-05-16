@@ -299,8 +299,14 @@ class WalletScenarioThen internal constructor(
     suspend fun scheduledManagerCountShouldBe(
         filter: ScheduledExecutionFilter,
         expected: Int,
+        selectedMonths: List<YearMonth> = emptyList(),
     ) {
-        val count = resolver.listScheduledExecutions(filter)
+        val count =
+            if (selectedMonths.isEmpty()) {
+                resolver.listScheduledExecutions(filter)
+            } else {
+                selectedMonths.distinct().sumOf { month -> resolver.listScheduledExecutions(filter, selectedMonth = month) }
+            }
 
         assertThat(count)
             .describedAs("scheduled manager count for $filter")
@@ -311,8 +317,14 @@ class WalletScenarioThen internal constructor(
         filter: ScheduledExecutionFilter,
         expectedInstallments: List<Int>,
         expectedTotal: Int,
+        selectedMonths: List<YearMonth> = emptyList(),
     ) {
-        val entries = resolver.listScheduledExecutionEntries(filter)
+        val entries =
+            if (selectedMonths.isEmpty()) {
+                resolver.listScheduledExecutionEntries(filter)
+            } else {
+                selectedMonths.distinct().flatMap { month -> resolver.listScheduledExecutionEntries(filter, selectedMonth = month) }
+            }
         val installmentEntries = entries.filter { it.installment != null }
         val installments = installmentEntries.mapNotNull { it.installment }.sorted()
 
@@ -334,8 +346,19 @@ class WalletScenarioThen internal constructor(
     suspend fun scheduledManagerDatesShouldBe(
         filter: ScheduledExecutionFilter,
         expectedDates: List<java.time.LocalDate>,
+        selectedMonth: YearMonth? = null,
     ) {
-        val dates = resolver.listScheduledExecutionEntries(filter).map { it.date }
+        val dates =
+            when {
+                selectedMonth != null -> resolver.listScheduledExecutionEntries(filter, selectedMonth = selectedMonth).map { it.date }
+                expectedDates.isEmpty() -> resolver.listScheduledExecutionEntries(filter).map { it.date }
+                else ->
+                    expectedDates
+                        .map(YearMonth::from)
+                        .distinct()
+                        .flatMap { month -> resolver.listScheduledExecutionEntries(filter, selectedMonth = month) }
+                        .map { it.date }
+            }
 
         assertThat(dates)
             .describedAs("scheduled manager dates for $filter")

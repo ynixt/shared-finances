@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 internal class WalletScenarioResolver(
@@ -242,9 +243,15 @@ internal class WalletScenarioResolver(
             ?.walletEvent
             ?.let { runtime.walletEventListService.convertEntityToEntryListResponse(it, true) }
 
-    suspend fun listScheduledExecutions(filter: ScheduledExecutionFilter): Int = listScheduledExecutionEntries(filter).size
+    suspend fun listScheduledExecutions(
+        filter: ScheduledExecutionFilter,
+        selectedMonth: YearMonth = YearMonth.from(runtime.clock.today()),
+    ): Int = listScheduledExecutionEntries(filter, selectedMonth).size
 
-    suspend fun listScheduledExecutionEntries(filter: ScheduledExecutionFilter): List<EventListResponse> {
+    suspend fun listScheduledExecutionEntries(
+        filter: ScheduledExecutionFilter,
+        selectedMonth: YearMonth = YearMonth.from(runtime.clock.today()),
+    ): List<EventListResponse> {
         val userId = ensureUser()
 
         return runtime.scheduledExecutionManagerService
@@ -254,6 +261,7 @@ internal class WalletScenarioResolver(
                     ScheduledExecutionManagerRequest(
                         groupId = null,
                         filter = filter,
+                        selectedMonth = selectedMonth.toString(),
                     ),
             )
     }

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.UUID
 
 class TransactionEditScenarioDslTest {
@@ -1177,6 +1178,7 @@ class TransactionEditScenarioDslTest {
         val today = LocalDate.of(2026, 1, 8)
         val firstOccurrence = today.plusDays(1)
         val secondOccurrence = firstOccurrence.plusMonths(1)
+        val thirdOccurrence = secondOccurrence.plusMonths(1)
         lateinit var bankAccountId: UUID
 
         walletScenario(initialDate = today) {
@@ -1217,9 +1219,36 @@ class TransactionEditScenarioDslTest {
             }
 
             then {
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 3)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 0)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALL, 3)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    3,
+                    selectedMonths =
+                        listOf(
+                            YearMonth.from(firstOccurrence),
+                            YearMonth.from(secondOccurrence),
+                            YearMonth.from(thirdOccurrence),
+                        ),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    0,
+                    selectedMonths =
+                        listOf(
+                            YearMonth.from(firstOccurrence),
+                            YearMonth.from(secondOccurrence),
+                            YearMonth.from(thirdOccurrence),
+                        ),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALL,
+                    3,
+                    selectedMonths =
+                        listOf(
+                            YearMonth.from(firstOccurrence),
+                            YearMonth.from(secondOccurrence),
+                            YearMonth.from(thirdOccurrence),
+                        ),
+                )
             }
 
             `when` {
@@ -1229,9 +1258,26 @@ class TransactionEditScenarioDslTest {
 
             then {
                 balanceShouldBe(BigDecimal("900.00"), bankAccountId)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 2)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALL, 3)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    2,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence), YearMonth.from(thirdOccurrence)),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(firstOccurrence)),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALL,
+                    3,
+                    selectedMonths =
+                        listOf(
+                            YearMonth.from(firstOccurrence),
+                            YearMonth.from(secondOccurrence),
+                            YearMonth.from(thirdOccurrence),
+                        ),
+                )
             }
 
             `when` {
@@ -1366,8 +1412,16 @@ class TransactionEditScenarioDslTest {
 
             then {
                 balanceShouldBe(BigDecimal("960.00"), bankAccountId)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence)),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(today)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALL,
                     expectedDates = listOf(today, secondOccurrence),
@@ -1479,7 +1533,11 @@ class TransactionEditScenarioDslTest {
 
             then {
                 balanceShouldBe(BigDecimal("900.00"), bankAccountId)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(today)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALL,
                     expectedDates = listOf(today, secondOccurrence),
@@ -1488,6 +1546,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(2),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence)),
                 )
                 lastPublishedWalletEventShouldConvert(ActionEventType.UPDATE)
             }
@@ -1507,6 +1566,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(3),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(thirdOccurrence)),
                 )
             }
         }
@@ -1559,11 +1619,19 @@ class TransactionEditScenarioDslTest {
 
             then {
                 balanceShouldBe(BigDecimal("960.00"), bankAccountId)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 1)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(today)),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    2,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALL,
-                    expectedDates = listOf(today, secondOccurrence),
+                    expectedDates = listOf(today, secondOccurrence, thirdOccurrence),
                 )
                 lastPublishedWalletEventShouldConvert(ActionEventType.UPDATE)
             }
@@ -1621,8 +1689,21 @@ class TransactionEditScenarioDslTest {
                 recurrenceLimitShouldBe(5)
                 recurrenceSeriesQtyTotalShouldBe(5)
                 recurrenceNextExecutionShouldBe(fourthOccurrence)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 3)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    3,
+                    selectedMonths =
+                        listOf(
+                            YearMonth.from(firstOccurrence),
+                            YearMonth.from(secondOccurrence),
+                            YearMonth.from(thirdOccurrence),
+                        ),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(fourthOccurrence)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALREADY_GENERATED,
                     expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
@@ -1635,6 +1716,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(4),
                     expectedTotal = 5,
+                    selectedMonths = listOf(YearMonth.from(fourthOccurrence)),
                 )
             }
 
@@ -1655,6 +1737,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(5),
                     expectedTotal = 5,
+                    selectedMonths = listOf(YearMonth.from(fifthOccurrence)),
                 )
             }
         }
@@ -1697,8 +1780,21 @@ class TransactionEditScenarioDslTest {
                 recurrenceLimitShouldBe(null)
                 recurrenceSeriesQtyTotalShouldBe(3)
                 recurrenceNextExecutionShouldBe(fourthOccurrence)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 3)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    3,
+                    selectedMonths =
+                        listOf(
+                            YearMonth.from(firstOccurrence),
+                            YearMonth.from(secondOccurrence),
+                            YearMonth.from(thirdOccurrence),
+                        ),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(fourthOccurrence)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALREADY_GENERATED,
                     expectedDates = listOf(firstOccurrence, secondOccurrence, thirdOccurrence),
@@ -1778,8 +1874,16 @@ class TransactionEditScenarioDslTest {
             then {
                 balanceShouldBe(BigDecimal("900.00"), bankAccountId)
                 recurrenceExecutionCountShouldBe(1)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 2)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    2,
+                    selectedMonths = listOf(YearMonth.from(firstOccurrence)),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(thirdOccurrence)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALL,
                     expectedDates = listOf(firstOccurrence, allowedPastDate, thirdOccurrence),
@@ -1927,8 +2031,16 @@ class TransactionEditScenarioDslTest {
             then {
                 balanceShouldBe(BigDecimal("800.00"), bankAccountId)
                 recurrenceExecutionCountShouldBe(1)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.ALREADY_GENERATED, 2)
-                scheduledManagerCountShouldBe(ScheduledExecutionFilter.FUTURE, 1)
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.ALREADY_GENERATED,
+                    2,
+                    selectedMonths = listOf(YearMonth.from(firstOccurrence)),
+                )
+                scheduledManagerCountShouldBe(
+                    ScheduledExecutionFilter.FUTURE,
+                    1,
+                    selectedMonths = listOf(YearMonth.from(thirdOccurrence)),
+                )
                 scheduledManagerDatesShouldBe(
                     filter = ScheduledExecutionFilter.ALL,
                     expectedDates = listOf(firstOccurrence, allowedPastDate, thirdOccurrence),
@@ -1937,6 +2049,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(3),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(thirdOccurrence)),
                 )
             }
         }
@@ -2031,6 +2144,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(3),
                     expectedTotal = 5,
+                    selectedMonths = listOf(YearMonth.from(thirdOccurrence)),
                 )
             }
         }
@@ -2084,6 +2198,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(2),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence)),
                 )
             }
 
@@ -2097,6 +2212,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(3),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence.plusMonths(1))),
                 )
             }
         }
@@ -2150,6 +2266,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(2, 3),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence), YearMonth.from(secondOccurrence.plusMonths(1))),
                 )
             }
         }
@@ -2545,6 +2662,7 @@ class TransactionEditScenarioDslTest {
                     filter = ScheduledExecutionFilter.FUTURE,
                     expectedInstallments = listOf(2),
                     expectedTotal = 3,
+                    selectedMonths = listOf(YearMonth.from(secondOccurrence)),
                 )
             }
         }
