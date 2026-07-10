@@ -216,6 +216,7 @@ class GroupDebtServiceImplSettlementAllocationTest {
                 walletEventRepository = Mockito.mock(WalletEventRepository::class.java),
                 walletEventListService = Mockito.mock(WalletEventListService::class.java),
                 recurrenceSimulationService = Mockito.mock(RecurrenceSimulationService::class.java),
+                ledgerMaintenanceService = GroupDebtLedgerMaintenanceService(movementRepository, debtDatabaseClientRepository),
                 clock = fixedClock(),
             )
 

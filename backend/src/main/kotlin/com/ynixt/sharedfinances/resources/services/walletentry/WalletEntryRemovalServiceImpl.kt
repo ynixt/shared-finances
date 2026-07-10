@@ -76,6 +76,18 @@ class WalletEntryRemovalServiceImpl(
     override suspend fun deleteOneOff(
         userId: UUID,
         walletEventId: UUID,
+    ): WalletEventEntity? = deleteOneOffInternal(userId = userId, walletEventId = walletEventId, rollbackDebtImpact = true)
+
+    @Transactional
+    override suspend fun deleteOneOffWithoutDebtRollback(
+        userId: UUID,
+        walletEventId: UUID,
+    ): WalletEventEntity? = deleteOneOffInternal(userId = userId, walletEventId = walletEventId, rollbackDebtImpact = false)
+
+    private suspend fun deleteOneOffInternal(
+        userId: UUID,
+        walletEventId: UUID,
+        rollbackDebtImpact: Boolean,
     ): WalletEventEntity? {
         val existingEvent = walletEventRepository.findById(walletEventId).awaitSingleOrNull() ?: return null
 
@@ -89,11 +101,21 @@ class WalletEntryRemovalServiceImpl(
 
         val payloadEvent = hydratePostedEventForMutation(existingEvent)
 
-        deletePostedEvents(
-            actorUserId = userId,
-            events = listOf(payloadEvent),
-            recurrenceConfig = null,
-        )
+        if (rollbackDebtImpact) {
+            deletePostedEvents(
+                actorUserId = userId,
+                events = listOf(payloadEvent),
+                recurrenceConfig = null,
+            )
+        } else {
+            rollbackWalletAndBillImpact(
+                event = payloadEvent,
+                entries = payloadEvent.entries!!.filterIsInstance<WalletEntryEntity>(),
+                recurrenceConfig = null,
+            )
+            walletEntryRepository.deleteAllByWalletEventId(payloadEvent.id!!).awaitSingle()
+            walletEventRepository.deleteById(payloadEvent.id!!).awaitSingle()
+        }
 
         walletEventActionEventService.sendDeletedWalletEvent(userId, payloadEvent)
         return payloadEvent

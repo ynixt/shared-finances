@@ -10,6 +10,11 @@ interface WalletEntryRemovalService {
         walletEventId: UUID,
     ): MinimumWalletEventEntity?
 
+    suspend fun deleteOneOffWithoutDebtRollback(
+        userId: UUID,
+        walletEventId: UUID,
+    ): MinimumWalletEventEntity?
+
     suspend fun deleteScheduled(
         userId: UUID,
         recurrenceConfigId: UUID,

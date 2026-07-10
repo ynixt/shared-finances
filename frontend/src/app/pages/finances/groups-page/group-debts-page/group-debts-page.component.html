@@ -4,6 +4,8 @@
   </div>
 } @else if (group() != null) {
   <div class="finances-page flex flex-col gap-6">
+    <p-confirmdialog />
+
     <app-finances-title-bar
       [title]="'financesPage.groupsPage.debtsPage.title' | translate: { name: group()!.name }"
       closeRouterLink=".."
@@ -38,6 +40,11 @@
                   <div class="text-right">
                     <div class="text-lg font-semibold dark:surface-400">{{ pair.outstandingAmount | localCurrency: pair.currency }}</div>
                     <div class="mt-2 flex flex-wrap justify-end gap-2">
+                      @if (canMutate()) {
+                        <button type="button" pButton class="p-button-sm p-button-text" (click)="openCreateAdjustmentPage(pair)">
+                          {{ 'financesPage.groupsPage.debtsPage.addAdjustmentAction' | translate }}
+                        </button>
+                      }
                       @if (canMutate() && pair.outstandingAmount !== 0) {
                         <button type="button" pButton class="p-button-sm" (click)="openSettlementPage(pair)">
                           {{ 'financesPage.groupsPage.debtsPage.settleAction' | translate }}
@@ -134,12 +141,42 @@
                               <div class="flex gap-2">
                                 @if (canMutate() && isAdjustableMovement(movement)) {
                                   <button type="button" pButton class="p-button-sm p-button-text" (click)="openAdjustmentPage(movement)">
-                                    {{ 'financesPage.groupsPage.debtsPage.adjustAction' | translate }}
+                                    {{ adjustmentActionLabel(movement) | translate }}
+                                  </button>
+                                }
+                                @if (canMutate() && canEditSettlement(movement)) {
+                                  <button
+                                    type="button"
+                                    pButton
+                                    class="p-button-sm p-button-text"
+                                    (click)="openEditSettlementPage(movement)"
+                                  >
+                                    {{ 'financesPage.groupsPage.debtsPage.editSettlementAction' | translate }}
                                   </button>
                                 }
                                 @if (canMutate() && isSettleValueMovement(movement)) {
                                   <button type="button" pButton class="p-button-sm p-button-text" (click)="openSettleValuePage(movement)">
                                     {{ 'financesPage.groupsPage.debtsPage.settleValueAction' | translate }}
+                                  </button>
+                                }
+                                @if (canMutate() && canDeleteManualAdjustment(movement)) {
+                                  <button
+                                    type="button"
+                                    pButton
+                                    class="p-button-sm p-button-text"
+                                    (click)="confirmDeleteManualAdjustment(movement)"
+                                  >
+                                    {{ 'financesPage.groupsPage.debtsPage.deleteAction' | translate }}
+                                  </button>
+                                }
+                                @if (canMutate() && canDeleteSettlement(movement)) {
+                                  <button
+                                    type="button"
+                                    pButton
+                                    class="p-button-sm p-button-text"
+                                    (click)="confirmDeleteSettlement(movement)"
+                                  >
+                                    {{ 'financesPage.groupsPage.debtsPage.deleteAction' | translate }}
                                   </button>
                                 }
                               </div>

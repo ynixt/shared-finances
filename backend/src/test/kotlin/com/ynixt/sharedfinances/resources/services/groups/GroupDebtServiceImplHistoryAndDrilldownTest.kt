@@ -211,7 +211,16 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
                                 chargeDelta = BigDecimal("538.86"),
                             ),
                         ),
-                    historyRows = emptyList(),
+                    historyRows =
+                        listOf(
+                            historyRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = selectedMonth.minusMonths(1),
+                                deltaSigned = BigDecimal("538.86"),
+                                reasonKind = GroupDebtMovementReasonKind.BENEFICIARY_CHARGE,
+                            ),
+                        ),
                     projectedEvents = emptyList(),
                 )
 
@@ -226,6 +235,70 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
             assertThat(line.projected).isFalse()
             assertThat(line.month).isEqualTo(selectedMonth.minusMonths(1))
             assertThat(line.deltaSigned).isEqualByComparingTo("538.86")
+        }
+    }
+
+    @Test
+    fun `pair history should keep opening carryover and show selected-month settlement against older debt`() {
+        runBlocking {
+            val groupId = UUID.randomUUID()
+            val userId = UUID.randomUUID()
+            val payerId = UUID.randomUUID()
+            val receiverId = UUID.randomUUID()
+            val selectedMonth = YearMonth.of(2026, 7)
+            val debtMonth = selectedMonth.minusMonths(3)
+
+            val service =
+                createService(
+                    groupId = groupId,
+                    compositionRows =
+                        listOf(
+                            compositionRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = debtMonth,
+                                netAmount = BigDecimal("19.68"),
+                                chargeDelta = BigDecimal("19.78"),
+                                settlementDelta = BigDecimal("-0.10"),
+                            ),
+                        ),
+                    historyRows =
+                        listOf(
+                            historyRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = debtMonth,
+                                deltaSigned = BigDecimal("19.78"),
+                                reasonKind = GroupDebtMovementReasonKind.BENEFICIARY_CHARGE,
+                                createdAt = OffsetDateTime.of(debtMonth.atDay(8), java.time.LocalTime.NOON, ZoneOffset.UTC),
+                            ),
+                            historyRow(
+                                payerId = payerId,
+                                receiverId = receiverId,
+                                month = debtMonth,
+                                deltaSigned = BigDecimal("-0.10"),
+                                reasonKind = GroupDebtMovementReasonKind.DEBT_SETTLEMENT,
+                                createdAt = OffsetDateTime.of(selectedMonth.atDay(3), java.time.LocalTime.NOON, ZoneOffset.UTC),
+                            ),
+                        ),
+                    projectedEvents = emptyList(),
+                )
+
+            val history = service.listPairHistory(userId = userId, groupId = groupId, selectedMonth = selectedMonth)
+            val pair = history.single()
+
+            assertThat(pair.netAmount).isEqualByComparingTo("19.68")
+            assertThat(pair.lines).hasSize(2)
+
+            val carryoverLine = pair.lines.single { it.carriedOver }
+            assertThat(carryoverLine.month).isEqualTo(debtMonth)
+            assertThat(carryoverLine.deltaSigned).isEqualByComparingTo("19.78")
+
+            val settlementLine = pair.lines.single { it.reasonKind == GroupDebtMovementReasonKind.DEBT_SETTLEMENT }
+            assertThat(settlementLine.carriedOver).isFalse()
+            assertThat(settlementLine.month).isEqualTo(debtMonth)
+            assertThat(settlementLine.deltaSigned).isEqualByComparingTo("-0.10")
+            assertThat(settlementLine.createdAt?.toLocalDate()).isEqualTo(selectedMonth.atDay(3))
         }
     }
 
@@ -266,6 +339,11 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
             walletEventRepository = Mockito.mock(WalletEventRepository::class.java),
             walletEventListService = Mockito.mock(WalletEventListService::class.java),
             recurrenceSimulationService = RecordingRecurrenceSimulationService(projectedEvents),
+            ledgerMaintenanceService =
+                GroupDebtLedgerMaintenanceService(
+                    Mockito.mock(GroupMemberDebtMovementSpringDataRepository::class.java),
+                    debtDatabaseClientRepository,
+                ),
             clock = fixedClock(),
         )
     }
@@ -295,6 +373,7 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
         month: YearMonth,
         deltaSigned: BigDecimal,
         reasonKind: GroupDebtMovementReasonKind,
+        createdAt: OffsetDateTime = OffsetDateTime.of(month.atDay(10), java.time.LocalTime.NOON, ZoneOffset.UTC),
     ) = GroupMemberDebtDatabaseClientRepository.DebtMovementHistoryRow(
         id = UUID.randomUUID(),
         payerId = payerId,
@@ -307,7 +386,7 @@ class GroupDebtServiceImplHistoryAndDrilldownTest {
         note = null,
         sourceWalletEventId = null,
         sourceMovementId = null,
-        createdAt = OffsetDateTime.of(month.atDay(10), java.time.LocalTime.NOON, ZoneOffset.UTC),
+        createdAt = createdAt,
     )
 
     private fun projectedExpenseEvent(

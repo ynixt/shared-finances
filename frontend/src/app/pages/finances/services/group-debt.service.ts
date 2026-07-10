@@ -119,4 +119,26 @@ export class GroupDebtService {
 
     throw new UserMissingError();
   }
+
+  async deleteAdjustment(groupId: string, movementId: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.delete<void>(`/api/groups/${groupId}/debts/adjustments/${movementId}`).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
+
+  async deleteSettlement(groupId: string, movementId: string): Promise<void> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      await lastValueFrom(this.http.delete<void>(`/api/groups/${groupId}/debts/settlements/${movementId}`).pipe(take(1)));
+      return;
+    }
+
+    throw new UserMissingError();
+  }
 }

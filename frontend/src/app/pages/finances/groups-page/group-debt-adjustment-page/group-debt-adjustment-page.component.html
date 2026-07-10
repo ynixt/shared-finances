@@ -5,19 +5,13 @@
 } @else if (group() != null && debtMovement() != null) {
   <div class="finances-page flex flex-col gap-6">
     <app-finances-title-bar
-      [title]="'financesPage.groupsPage.debtsPage.adjustmentPageTitle' | translate: { name: group()!.name }"
+      [title]="pageTitleKey() | translate: { name: group()!.name }"
       [closeRouterLink]="['/app/groups', groupId, 'debts']"
     ></app-finances-title-bar>
 
     <section class="rounded-xl border border-slate-200 dark:border-surface-500 bg-white dark:bg-surface-900 p-4 shadow-sm">
-      <h3 class="text-lg font-semibold text-default">{{ 'financesPage.groupsPage.debtsPage.adjustmentFormTitle' | translate }}</h3>
-      <p class="mt-1 text-sm text-muted">{{ 'financesPage.groupsPage.debtsPage.adjustmentContextHint' | translate }}</p>
-
-      @if (modeIsEdit()) {
-        <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {{ 'financesPage.groupsPage.debtsPage.editCompensationHint' | translate }}
-        </p>
-      }
+      <h3 class="text-lg font-semibold text-default">{{ formTitleKey() | translate }}</h3>
+      <p class="mt-1 text-sm text-muted">{{ contextHintKey() | translate }}</p>
 
       @let movement = debtMovement()!;
       <div class="mt-4 grid gap-3 rounded-lg border border-slate-200 dark:border-surface-500 bg-slate-50 p-3 text-sm md:grid-cols-2">
@@ -52,7 +46,7 @@
         </label>
 
         <button type="submit" pButton [loading]="saving()" [disabled]="adjustmentForm.invalid || !canMutate()">
-          {{ 'financesPage.groupsPage.debtsPage.saveAdjustment' | translate }}
+          {{ submitLabelKey() | translate }}
         </button>
       </form>
     </section>

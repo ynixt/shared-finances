@@ -10,10 +10,12 @@ import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupDebtAdjustmen
 import com.ynixt.sharedfinances.domain.models.groups.debts.GroupDebtHistoryFilter
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
+import com.ynixt.sharedfinances.domain.services.groups.GroupDebtSettlementDeletionService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -32,6 +34,7 @@ import java.util.UUID
 @Tag(name = "Group debts", description = "Debt ledger workspace operations for a group")
 class GroupDebtController(
     private val groupDebtService: GroupDebtService,
+    private val groupDebtSettlementDeletionService: GroupDebtSettlementDeletionService,
     private val groupDebtDtoMapper: GroupDebtDtoMapper,
     private val clock: Clock,
 ) {
@@ -118,7 +121,7 @@ class GroupDebtController(
             ),
         )
 
-    @Operation(summary = "Edit a manual group debt adjustment by appending compensation")
+    @Operation(summary = "Edit a manual group debt adjustment")
     @PutMapping("/adjustments/{movementId}")
     suspend fun editAdjustment(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
@@ -134,6 +137,36 @@ class GroupDebtController(
                 input = groupDebtDtoMapper.fromEditAdjustmentRequestDto(body),
             ),
         )
+
+    @Operation(summary = "Delete a manual group debt adjustment")
+    @DeleteMapping("/adjustments/{movementId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    suspend fun deleteAdjustment(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable groupId: UUID,
+        @PathVariable movementId: UUID,
+    ) {
+        groupDebtService.deleteManualAdjustment(
+            userId = principalToken.principal.id,
+            groupId = groupId,
+            movementId = movementId,
+        )
+    }
+
+    @Operation(summary = "Delete a debt settlement and all derived debt fragments")
+    @DeleteMapping("/settlements/{movementId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    suspend fun deleteSettlement(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable groupId: UUID,
+        @PathVariable movementId: UUID,
+    ) {
+        groupDebtSettlementDeletionService.deleteSettlement(
+            userId = principalToken.principal.id,
+            groupId = groupId,
+            movementId = movementId,
+        )
+    }
 
     private fun parseSelectedMonth(raw: String?): YearMonth {
         if (raw.isNullOrBlank()) {

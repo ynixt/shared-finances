@@ -316,7 +316,7 @@ BEGIN
             END LOOP;
 
             IF fragment_index = 0 THEN
-                RAISE EXCEPTION 'Failed to rebuild debt settlement reversal %, missing original settlement fragments for %',
+                RAISE NOTICE 'Skipping orphan debt settlement reversal %, missing original settlement fragments for %',
                     movement.id,
                     movement.source_movement_id;
             END IF;

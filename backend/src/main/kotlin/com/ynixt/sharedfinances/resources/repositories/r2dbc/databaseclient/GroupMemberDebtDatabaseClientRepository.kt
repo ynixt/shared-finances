@@ -273,6 +273,110 @@ class GroupMemberDebtDatabaseClientRepository(
             }.all()
     }
 
+    fun sumMovementBalanceForScope(
+        groupId: UUID,
+        payerId: UUID,
+        receiverId: UUID,
+        month: LocalDate,
+        currency: String,
+    ): Mono<BigDecimal> {
+        val sql =
+            """
+            SELECT COALESCE(SUM(delta_signed), 0) AS balance
+            FROM group_member_debt_movement
+            WHERE
+                group_id = :groupId
+                AND payer_id = :payerId
+                AND receiver_id = :receiverId
+                AND month = :month
+                AND currency = :currency
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("groupId", groupId)
+            .bind("payerId", payerId)
+            .bind("receiverId", receiverId)
+            .bind("month", month)
+            .bind("currency", currency.uppercase())
+            .map { row, _ -> row.get("balance", BigDecimal::class.java) ?: BigDecimal.ZERO }
+            .one()
+    }
+
+    fun upsertMonthlyBalance(
+        groupId: UUID,
+        payerId: UUID,
+        receiverId: UUID,
+        month: LocalDate,
+        currency: String,
+        balance: BigDecimal,
+    ): Mono<Void> {
+        val sql =
+            """
+            INSERT INTO group_member_debt_monthly (
+                id,
+                group_id,
+                payer_id,
+                receiver_id,
+                month,
+                currency,
+                balance
+            ) VALUES (
+                :id,
+                :groupId,
+                :payerId,
+                :receiverId,
+                :month,
+                :currency,
+                :balance
+            )
+            ON CONFLICT (group_id, payer_id, receiver_id, month, currency)
+            DO UPDATE SET
+                balance = EXCLUDED.balance,
+                updated_at = CURRENT_TIMESTAMP
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("id", UUID.randomUUID())
+            .bind("groupId", groupId)
+            .bind("payerId", payerId)
+            .bind("receiverId", receiverId)
+            .bind("month", month)
+            .bind("currency", currency.uppercase())
+            .bind("balance", balance)
+            .then()
+    }
+
+    fun deleteMonthlyBalance(
+        groupId: UUID,
+        payerId: UUID,
+        receiverId: UUID,
+        month: LocalDate,
+        currency: String,
+    ): Mono<Long> {
+        val sql =
+            """
+            DELETE FROM group_member_debt_monthly
+            WHERE
+                group_id = :groupId
+                AND payer_id = :payerId
+                AND receiver_id = :receiverId
+                AND month = :month
+                AND currency = :currency
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("groupId", groupId)
+            .bind("payerId", payerId)
+            .bind("receiverId", receiverId)
+            .bind("month", month)
+            .bind("currency", currency.uppercase())
+            .fetch()
+            .rowsUpdated()
+    }
+
     data class DebtMonthlyCompositionRow(
         val payerId: UUID,
         val receiverId: UUID,

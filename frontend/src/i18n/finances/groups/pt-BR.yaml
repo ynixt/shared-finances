@@ -51,6 +51,8 @@ financesPage:
     debtsPage:
       title: 'Dívidas do grupo: {{name}}'
       adjustmentPageTitle: 'Ajuste de dívida: {{name}}'
+      createAdjustmentPageTitle: 'Novo ajuste de dívida: {{name}}'
+      editAdjustmentPageTitle: 'Editar ajuste de dívida: {{name}}'
       settlementPageTitle: 'Quitação de dívida: {{name}}'
       balancesTitle: Saldos
       emptyBalances: Nenhum saldo de dívida foi encontrado para este grupo.
@@ -58,6 +60,10 @@ financesPage:
       settleAction: Quitar
       settleValueAction: Quitar valor
       adjustAction: Ajustar
+      addAdjustmentAction: Adicionar ajuste
+      editAdjustmentAction: Editar ajuste
+      editSettlementAction: Editar quitação
+      deleteAction: Excluir
       month: Mês
       netAmount: Valor líquido
       chargeDelta: Delta de cobrança
@@ -81,7 +87,8 @@ financesPage:
       executedState: Executado
       projectedState: Projetado
       adjustmentFormTitle: Ajuste manual
-      editCompensationHint: Editar um ajuste existente preserva o movimento original e adiciona um delta de compensação.
+      createAdjustmentFormTitle: Novo ajuste manual
+      editAdjustmentFormTitle: Editar ajuste manual
       payer: Devedor
       receiver: Credor
       currency: Moeda
@@ -89,15 +96,23 @@ financesPage:
       amountHint: Use valores positivos para aumentar a dívida e negativos para reduzi-la.
       note: Observação
       adjustmentContextHint: Dados da dívida carregados pelo identificador informado na URL.
+      createAdjustmentContextHint: Você está criando um novo ajuste manual para esta dívida.
+      editAdjustmentContextHint: Você está editando um ajuste manual existente.
       settlementContextHint: Finalize a quitação selecionando as carteiras de origem e destino.
       saveAdjustment: Salvar ajuste
+      saveNewAdjustment: Criar ajuste
+      saveEditedAdjustment: Salvar edição
       settlementFormTitle: Quitação de dívida
       originWallet: Carteira de origem
       targetWallet: Carteira de destino
       saveSettlement: Salvar quitação
       adjustmentSaved: Ajuste de dívida salvo com sucesso.
+      adjustmentDeleted: Ajuste de dívida excluído com sucesso.
       settlementSaved: Transferência de quitação salva com sucesso.
+      settlementDeleted: Quitação de dívida excluída com sucesso.
       settlementEntryName: Quitação de dívida
+      deleteAdjustmentConfirm: Esta ação excluirá permanentemente este ajuste manual.
+      deleteSettlementConfirm: Esta ação excluirá a quitação inteira de {{totalAmount}} e todos os {{fragmentCount}} fragmentos de dívida gerados por ela, inclusive em outros meses.
       noSource: Sem referência de origem
       carryoverSource: Saldo em aberto de mês anterior
       projectedSource: Projeção recorrente

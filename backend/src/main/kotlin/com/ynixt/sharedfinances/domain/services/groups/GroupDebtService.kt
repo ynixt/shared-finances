@@ -66,6 +66,12 @@ interface GroupDebtService {
         input: EditGroupDebtManualAdjustmentInput,
     ): GroupDebtMovementLine
 
+    suspend fun deleteManualAdjustment(
+        userId: UUID,
+        groupId: UUID,
+        movementId: UUID,
+    )
+
     suspend fun loadMonthlyCashFlow(
         groupId: UUID,
         scopedUserIds: Set<UUID>,

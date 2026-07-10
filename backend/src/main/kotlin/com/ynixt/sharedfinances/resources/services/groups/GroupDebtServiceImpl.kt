@@ -37,6 +37,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.YearMonth
 import java.util.UUID
 
@@ -48,6 +49,7 @@ class GroupDebtServiceImpl(
     private val walletEventRepository: WalletEventRepository,
     private val walletEventListService: WalletEventListService,
     private val recurrenceSimulationService: RecurrenceSimulationService,
+    private val ledgerMaintenanceService: GroupDebtLedgerMaintenanceService,
     private val clock: Clock,
 ) : GroupDebtService {
     companion object {
@@ -171,11 +173,37 @@ class GroupDebtServiceImpl(
                 persistedRows = loadPersistedMonthlyCompositionRows(groupId),
             )
         val directionalBalances = mapBalances(rows = rows, includeZeroBalances = true)
-        val historyLines =
+        val persistedHistoryLines =
             listHistory(
                 userId = userId,
                 groupId = groupId,
-                filter = GroupDebtHistoryFilter(selectedMonth = selectedMonth),
+                filter = GroupDebtHistoryFilter(),
+            ).filterNot { line ->
+                line.projected || line.month.isAfter(selectedMonth)
+            }
+        val carriedOverHistoryByDirection =
+            loadCarriedOverOpenBalanceLines(
+                userId = userId,
+                groupId = groupId,
+                selectedMonth = selectedMonth,
+                persistedHistoryLines = persistedHistoryLines,
+            ).groupBy { line ->
+                DirectionalDebtKey(
+                    payerId = line.payerId,
+                    receiverId = line.receiverId,
+                    currency = line.currency.uppercase(),
+                )
+            }
+        val historyLines =
+            sortHistoryLines(
+                persistedHistoryLines.filter { line ->
+                    shouldIncludeInSelectedMonthPairHistory(line, selectedMonth)
+                } +
+                    loadProjectedMovementLinesForMonth(
+                        userId = userId,
+                        groupId = groupId,
+                        selectedMonth = selectedMonth,
+                    ),
             )
         val historyByDirection =
             historyLines.groupBy { line ->
@@ -213,18 +241,14 @@ class GroupDebtServiceImpl(
                 val lines =
                     sortHistoryLines(
                         directionalLinesForPair(
-                            userId = userId,
-                            groupId = groupId,
-                            selectedMonth = selectedMonth,
                             direction = forward,
                             historyByDirection = historyByDirection,
+                            carriedOverByDirection = carriedOverHistoryByDirection,
                         ) +
                             directionalLinesForPair(
-                                userId = userId,
-                                groupId = groupId,
-                                selectedMonth = selectedMonth,
                                 direction = backward,
                                 historyByDirection = historyByDirection,
+                                carriedOverByDirection = carriedOverHistoryByDirection,
                             ),
                     )
 
@@ -352,38 +376,61 @@ class GroupDebtServiceImpl(
             throw InvalidGroupDebtAdjustmentException("Manual adjustment amount delta must be different from zero")
         }
 
-        val currentNet =
-            movementRepository
-                .findAdjustmentChain(root.id!!)
-                .collectList()
-                .awaitSingle()
-                .filter { movement ->
-                    movement.reasonKind == GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT ||
-                        movement.reasonKind == GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT_COMPENSATION
-                }.fold(ZERO) { acc, movement ->
-                    acc.add(movement.deltaSigned).asMoney()
-                }
+        val adjustmentChain = loadManualAdjustmentChain(root.id!!)
+        val normalizedNote = input.note?.trim()?.ifBlank { null }
+        val descendants = adjustmentChain.filter { movement -> movement.id != root.id }
 
-        val compensation = targetAmount.subtract(currentNet).asMoney()
-        if (compensation.compareTo(ZERO) == 0) {
+        if (
+            descendants.isEmpty() &&
+            root.deltaSigned.asMoney().compareTo(targetAmount) == 0 &&
+            root.note == normalizedNote
+        ) {
             return root.toLine()
         }
 
-        val compensationMovement =
+        val updatedRoot =
             GroupMemberDebtMovementEntity(
                 groupId = root.groupId,
                 payerId = root.payerId,
                 receiverId = root.receiverId,
                 month = root.month,
                 currency = root.currency.uppercase(),
-                deltaSigned = compensation,
-                reasonKind = GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT_COMPENSATION,
-                createdByUserId = userId,
-                note = input.note?.trim()?.ifBlank { root.note },
-                sourceMovementId = root.id,
-            )
+                deltaSigned = targetAmount,
+                reasonKind = GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT,
+                createdByUserId = root.createdByUserId,
+                note = normalizedNote,
+            ).also {
+                it.id = root.id
+                it.createdAt = root.createdAt
+                it.updatedAt = OffsetDateTime.now(clock)
+            }
 
-        return persistMovements(listOf(compensationMovement)).single().toLine()
+        val saved = movementRepository.save(updatedRoot).awaitSingle()
+        ledgerMaintenanceService.deleteMovements(descendants)
+        ledgerMaintenanceService.reconcileScopes(adjustmentChain.map(ledgerMaintenanceService::scopeFor))
+
+        return saved.toLine()
+    }
+
+    @Transactional
+    override suspend fun deleteManualAdjustment(
+        userId: UUID,
+        groupId: UUID,
+        movementId: UUID,
+    ) {
+        ensureMutationAccess(userId, groupId)
+        val root =
+            movementRepository
+                .findByIdAndGroupId(movementId, groupId)
+                .awaitSingleOrNull() ?: throw GroupDebtMovementNotFoundException(movementId)
+
+        if (root.reasonKind != GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT) {
+            throw InvalidGroupDebtAdjustmentException("Only root manual adjustments can be deleted")
+        }
+
+        val adjustmentChain = loadManualAdjustmentChain(root.id!!)
+        ledgerMaintenanceService.deleteMovements(adjustmentChain)
+        ledgerMaintenanceService.reconcileScopes(adjustmentChain.map(ledgerMaintenanceService::scopeFor))
     }
 
     override suspend fun loadMonthlyCashFlow(
@@ -686,42 +733,32 @@ class GroupDebtServiceImpl(
     private fun shouldIncludeProjectedForMonth(selectedMonth: YearMonth): Boolean =
         !selectedMonth.isBefore(YearMonth.from(LocalDate.now(clock)))
 
-    private suspend fun directionalLinesForPair(
-        userId: UUID,
-        groupId: UUID,
-        selectedMonth: YearMonth,
+    private fun directionalLinesForPair(
         direction: DirectionalDebtKey,
         historyByDirection: Map<DirectionalDebtKey, List<GroupDebtMovementLine>>,
+        carriedOverByDirection: Map<DirectionalDebtKey, List<GroupDebtMovementLine>>,
     ): List<GroupDebtMovementLine> =
         historyByDirection[direction].orEmpty() +
-            loadCarriedOverOpenBalanceLines(
-                userId = userId,
-                groupId = groupId,
-                payerId = direction.payerId,
-                receiverId = direction.receiverId,
-                currency = direction.currency,
-                selectedMonth = selectedMonth,
-            )
+            carriedOverByDirection[direction].orEmpty()
 
     private suspend fun loadCarriedOverOpenBalanceLines(
         userId: UUID,
         groupId: UUID,
-        payerId: UUID,
-        receiverId: UUID,
-        currency: String,
         selectedMonth: YearMonth,
+        persistedHistoryLines: List<GroupDebtMovementLine>,
     ): List<GroupDebtMovementLine> {
         val persistedCarryoverLines =
-            loadPersistedMonthlyCompositionRows(groupId)
+            persistedHistoryLines
                 .asSequence()
-                .filter { row ->
-                    row.payerId == payerId &&
-                        row.receiverId == receiverId &&
-                        row.currency.equals(currency, ignoreCase = true) &&
-                        row.month.isBefore(selectedMonth) &&
-                        row.netAmount.compareTo(ZERO) > 0
-                }.sortedBy { row -> row.month }
-                .map { row -> row.toCarriedOverLine() }
+                .filter { line ->
+                    line.month.isBefore(selectedMonth) &&
+                        effectiveMovementDate(line).isBefore(selectedMonth.atDay(1))
+                }.sortedWith(
+                    compareBy<GroupDebtMovementLine> { it.payerId.toString() }
+                        .thenBy { it.receiverId.toString() }
+                        .thenBy { it.currency.uppercase() }
+                        .thenBy { it.month },
+                ).map { line -> line.toCarriedOverLine() }
                 .toList()
 
         val projectedCarryoverLines =
@@ -731,9 +768,6 @@ class GroupDebtServiceImpl(
                     groupId = groupId,
                     fromMonth = YearMonth.from(LocalDate.now(clock)),
                     toMonth = selectedMonth.minusMonths(1),
-                    payerId = payerId,
-                    receiverId = receiverId,
-                    currency = currency,
                 ).map { line -> line.toCarriedOverLine() }
             } else {
                 emptyList()
@@ -741,6 +775,20 @@ class GroupDebtServiceImpl(
 
         return aggregateCarriedOverLinesByMonth(persistedCarryoverLines + projectedCarryoverLines)
     }
+
+    private fun shouldIncludeInSelectedMonthPairHistory(
+        line: GroupDebtMovementLine,
+        selectedMonth: YearMonth,
+    ): Boolean {
+        if (line.month == selectedMonth) {
+            return true
+        }
+
+        return line.month.isBefore(selectedMonth) && YearMonth.from(effectiveMovementDate(line)) == selectedMonth
+    }
+
+    private fun effectiveMovementDate(line: GroupDebtMovementLine): LocalDate =
+        line.transactionDate ?: line.createdAt?.toLocalDate() ?: line.month.atDay(1)
 
     private fun aggregateCarriedOverLinesByMonth(lines: List<GroupDebtMovementLine>): List<GroupDebtMovementLine> =
         lines
@@ -1057,6 +1105,16 @@ class GroupDebtServiceImpl(
             throw InvalidGroupDebtAdjustmentException("Manual adjustment amount delta must be different from zero")
         }
     }
+
+    private suspend fun loadManualAdjustmentChain(rootMovementId: UUID): List<GroupMemberDebtMovementEntity> =
+        movementRepository
+            .findAdjustmentChain(rootMovementId)
+            .collectList()
+            .awaitSingle()
+            .filter { movement ->
+                movement.reasonKind == GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT ||
+                    movement.reasonKind == GroupDebtMovementReasonKind.MANUAL_ADJUSTMENT_COMPENSATION
+            }
 
     private fun GroupMemberDebtMovementEntity.toReversal(actorUserId: UUID): GroupMemberDebtMovementEntity? {
         val reversalKind =

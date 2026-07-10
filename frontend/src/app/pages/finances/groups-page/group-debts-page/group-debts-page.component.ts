@@ -5,8 +5,9 @@ import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupUserDto, GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
@@ -20,6 +21,7 @@ import { GroupDebtMovementReasonKind__Obj } from '../../../../models/generated/c
 import { LocalCurrencyPipe } from '../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
+import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import {
   AdvancedDatePickerComponent,
@@ -54,8 +56,10 @@ interface MemberOption {
     TranslatePipe,
     AdvancedDatePickerComponent,
     ReactiveFormsModule,
+    ConfirmDialog,
   ],
   templateUrl: './group-debts-page.component.html',
+  providers: [ConfirmationService],
 })
 @UntilDestroy()
 export class GroupDebtsPageComponent {
@@ -66,6 +70,7 @@ export class GroupDebtsPageComponent {
   private readonly messageService = inject(MessageService);
   private readonly errorMessageService = inject(ErrorMessageService);
   private readonly translateService = inject(TranslateService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly groupId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly group = signal<GroupWithRoleDto | undefined>(undefined);
@@ -211,22 +216,75 @@ export class GroupDebtsPageComponent {
     });
   }
 
+  openEditSettlementPage(movement: GroupDebtMovementDto) {
+    if (!this.canEditSettlement(movement)) {
+      return;
+    }
+
+    void this.router.navigate(['/app/transactions/edit', movement.sourceWalletEventId], {
+      queryParams: {
+        returnTo: this.router.url,
+      },
+    });
+  }
+
   openAdjustmentPage(movement: GroupDebtMovementDto) {
     void this.router.navigate(['/app/groups', this.groupId, 'debts', 'adjustments', movement.id]);
+  }
+
+  openCreateAdjustmentPage(pair: GroupDebtPairBalanceDto) {
+    void this.router.navigate(['/app/groups', this.groupId, 'debts', 'adjustments', 'new'], {
+      queryParams: {
+        payerId: pair.payerId,
+        receiverId: pair.receiverId,
+        month: this.selectedMonth(),
+        currency: pair.currency,
+      },
+    });
   }
 
   isAdjustableMovement(movement: GroupDebtMovementDto): boolean {
     return (
       !movement.projected &&
       !movement.carriedOver &&
-      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT_COMPENSATION &&
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
+      movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT_REVERSAL
     );
+  }
+
+  adjustmentActionLabel(movement: GroupDebtMovementDto): string {
+    return movement.reasonKind === GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT
+      ? 'financesPage.groupsPage.debtsPage.editAdjustmentAction'
+      : 'financesPage.groupsPage.debtsPage.addAdjustmentAction';
   }
 
   isSettleValueMovement(movement: GroupDebtMovementDto): boolean {
     return (
       movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
       movement.reasonKind !== GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT_REVERSAL
+    );
+  }
+
+  canDeleteManualAdjustment(movement: GroupDebtMovementDto): boolean {
+    return !movement.projected && !movement.carriedOver && movement.reasonKind === GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT;
+  }
+
+  canDeleteSettlement(movement: GroupDebtMovementDto): boolean {
+    return (
+      !movement.projected &&
+      !movement.carriedOver &&
+      movement.reasonKind === GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
+      movement.sourceWalletEventId != null
+    );
+  }
+
+  canEditSettlement(movement: GroupDebtMovementDto): boolean {
+    return (
+      !movement.projected &&
+      !movement.carriedOver &&
+      movement.reasonKind === GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
+      movement.sourceWalletEventId != null
     );
   }
 
@@ -256,6 +314,61 @@ export class GroupDebtsPageComponent {
 
   selectedMonth(): string {
     return this.dateControl.value?.startDate?.format(MONTH_QUERY_PARAM_FORMAT) ?? dayjs().format(MONTH_QUERY_PARAM_FORMAT);
+  }
+
+  confirmDeleteManualAdjustment(movement: GroupDebtMovementDto) {
+    if (!this.canMutate() || !this.canDeleteManualAdjustment(movement)) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message: this.translateService.instant('financesPage.groupsPage.debtsPage.deleteAdjustmentConfirm'),
+      header: this.translateService.instant('general.confirmation'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translateService.instant('general.delete'),
+      rejectLabel: this.translateService.instant('general.cancel'),
+      acceptButtonProps: {
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        severity: 'secondary',
+      },
+      accept: () => {
+        void this.deleteManualAdjustment(movement.id);
+      },
+    });
+  }
+
+  confirmDeleteSettlement(movement: GroupDebtMovementDto) {
+    if (!this.canMutate() || !this.canDeleteSettlement(movement)) {
+      return;
+    }
+
+    const settlementSummary = this.settlementDeletionSummary(movement);
+
+    this.confirmationService.confirm({
+      message: this.translateService.instant('financesPage.groupsPage.debtsPage.deleteSettlementConfirm', {
+        totalAmount: settlementSummary.totalAmountFormatted,
+        fragmentCount: settlementSummary.fragmentCount,
+      }),
+      header: this.translateService.instant('general.confirmation'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translateService.instant('general.delete'),
+      rejectLabel: this.translateService.instant('general.cancel'),
+      acceptButtonProps: {
+        severity: 'danger',
+      },
+      rejectButtonProps: {
+        severity: 'secondary',
+      },
+      accept: () => {
+        void this.deleteSettlement(movement.id);
+      },
+    });
   }
 
   private async reloadVisibleData() {
@@ -292,6 +405,60 @@ export class GroupDebtsPageComponent {
       startDate: currentDate,
       endDate: currentDate,
       sameMonth: true,
+    };
+  }
+
+  private async deleteManualAdjustment(movementId: string) {
+    try {
+      await this.groupDebtService.deleteAdjustment(this.groupId, movementId);
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('financesPage.groupsPage.debtsPage.adjustmentDeleted'),
+        life: DEFAULT_SUCCESS_LIFE,
+      });
+      await this.reloadVisibleData();
+    } catch (error) {
+      this.errorMessageService.handleError(error, this.messageService);
+    }
+  }
+
+  private async deleteSettlement(movementId: string) {
+    try {
+      await this.groupDebtService.deleteSettlement(this.groupId, movementId);
+      this.messageService.add({
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('financesPage.groupsPage.debtsPage.settlementDeleted'),
+        life: DEFAULT_SUCCESS_LIFE,
+      });
+      await this.reloadVisibleData();
+    } catch (error) {
+      this.errorMessageService.handleError(error, this.messageService);
+    }
+  }
+
+  private settlementDeletionSummary(movement: GroupDebtMovementDto): { fragmentCount: number; totalAmountFormatted: string } {
+    const relatedMovements =
+      movement.sourceWalletEventId == null
+        ? []
+        : this.pairHistory()
+            .flatMap(pair => pair.lines)
+            .filter(
+              line =>
+                line.reasonKind === GroupDebtMovementReasonKind__Obj.DEBT_SETTLEMENT &&
+                line.sourceWalletEventId === movement.sourceWalletEventId,
+            );
+
+    const fragmentCount = Math.max(relatedMovements.length, 1);
+    const totalAmount = (relatedMovements.length > 0 ? relatedMovements : [movement]).reduce(
+      (acc, line) => acc + Math.abs(line.deltaSigned),
+      0,
+    );
+
+    return {
+      fragmentCount,
+      totalAmountFormatted: new Intl.NumberFormat(undefined, { style: 'currency', currency: movement.currency }).format(totalAmount),
     };
   }
 }

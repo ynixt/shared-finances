@@ -103,6 +103,20 @@ abstract class WalletEntryMutationSupportServiceImpl(
         entries: List<WalletEntryEntity>,
         recurrenceConfig: RecurrenceEventEntity?,
     ) {
+        rollbackWalletAndBillImpact(
+            event = event,
+            entries = entries,
+            recurrenceConfig = recurrenceConfig,
+        )
+
+        groupDebtService.rollbackWalletEvent(actorUserId = actorUserId, event = event)
+    }
+
+    protected suspend fun rollbackWalletAndBillImpact(
+        event: WalletEventEntity,
+        entries: List<WalletEntryEntity>,
+        recurrenceConfig: RecurrenceEventEntity?,
+    ) {
         entries.forEach { entry ->
             val walletDelta =
                 getWalletImpactForEntry(
@@ -119,8 +133,6 @@ abstract class WalletEntryMutationSupportServiceImpl(
                 creditCardBillService.addValueById(entry.billId, entry.value.negate())
             }
         }
-
-        groupDebtService.rollbackWalletEvent(actorUserId = actorUserId, event = event)
     }
 
     protected suspend fun applyPostedImpact(

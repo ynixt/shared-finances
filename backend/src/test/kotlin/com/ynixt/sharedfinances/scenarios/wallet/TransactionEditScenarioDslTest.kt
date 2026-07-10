@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidPastScheduledExecutionEditException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidRecurrenceQtyLimitException
@@ -14,6 +15,7 @@ import com.ynixt.sharedfinances.domain.exceptions.http.UnauthorizedException
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.walletentry.NewEntryRequest
 import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletSourceLeg
+import com.ynixt.sharedfinances.scenarios.support.ScenarioBackedGroupDebtService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
 import com.ynixt.sharedfinances.scenarios.wallet.support.walletScenario
 import org.assertj.core.api.Assertions.assertThat
@@ -954,6 +956,102 @@ class TransactionEditScenarioDslTest {
                 balanceShouldBe(BigDecimal("900.00"), originId)
                 balanceShouldBe(BigDecimal("600.00"), targetId)
                 publishedWalletEventsShouldBe(ActionEventType.UPDATE, 0)
+            }
+        }
+    }
+
+    @Test
+    fun `editing a debt settlement should replace prior debt effect in group overview`() {
+        val today = LocalDate.of(2026, 4, 10)
+        val selectedMonth = YearMonth.of(2026, 4)
+        val groupService = ScenarioGroupService()
+        val groupDebtService = ScenarioBackedGroupDebtService()
+        val groupId = groupService.createGroup(name = "Shared Group")
+
+        lateinit var joaoId: UUID
+        lateinit var joaoBankId: UUID
+        lateinit var gabrielId: UUID
+        lateinit var gabrielBankId: UUID
+
+        walletScenario(initialDate = today, groupService = groupService, groupDebtService = groupDebtService) {
+            given {
+                joaoId = user(email = "joao@example.com", firstName = "Joao", lastName = "Batata", defaultCurrency = "BRL")
+                joaoBankId = bankAccount(name = "Joao bank", balance = BigDecimal("1000.00"), currency = "BRL")
+                gabrielId = user(email = "gabriel@example.com", firstName = "Gabriel", lastName = "Silva", defaultCurrency = "BRL")
+                gabrielBankId = bankAccount(name = "Gabriel bank", balance = BigDecimal("1000.00"), currency = "BRL")
+            }
+
+            `when` {
+                groupService.upsertMemberScope(
+                    groupId = groupId,
+                    userId = joaoId,
+                    associatedItemIds = setOf(joaoBankId, gabrielBankId),
+                )
+                groupService.upsertMemberScope(
+                    groupId = groupId,
+                    userId = gabrielId,
+                    associatedItemIds = setOf(joaoBankId, gabrielBankId),
+                )
+
+                groupDebtService.seedCharge(
+                    groupId = groupId,
+                    payerId = joaoId,
+                    receiverId = gabrielId,
+                    month = selectedMonth,
+                    currency = "BRL",
+                    amount = BigDecimal("36.83"),
+                    createdByUserId = gabrielId,
+                )
+
+                switchUser(joaoId)
+                transfer(
+                    value = BigDecimal("0.03"),
+                    date = today,
+                    groupId = groupId,
+                    originId = joaoBankId,
+                    targetId = gabrielBankId,
+                    name = "Debt settlement",
+                    transferPurpose = TransferPurpose.DEBT_SETTLEMENT,
+                )
+                fetchGroupOverview(groupId = groupId, selectedMonth = selectedMonth)
+            }
+
+            then {
+                groupOverviewDebtPairsSizeShouldBe(1)
+                groupOverviewDebtPairShouldBe(
+                    payerId = joaoId,
+                    receiverId = gabrielId,
+                    outstanding = BigDecimal("36.80"),
+                )
+            }
+
+            `when` {
+                editOneOff(
+                    newEntryRequest =
+                        NewEntryRequest(
+                            type = WalletEntryType.TRANSFER,
+                            groupId = groupId,
+                            originId = joaoBankId,
+                            targetId = gabrielBankId,
+                            date = today,
+                            value = null,
+                            originValue = BigDecimal("0.09"),
+                            confirmed = true,
+                            paymentType = PaymentType.UNIQUE,
+                            transferPurpose = TransferPurpose.DEBT_SETTLEMENT,
+                            name = "Debt settlement",
+                        ),
+                )
+                fetchGroupOverview(groupId = groupId, selectedMonth = selectedMonth)
+            }
+
+            then {
+                groupOverviewDebtPairsSizeShouldBe(1)
+                groupOverviewDebtPairShouldBe(
+                    payerId = joaoId,
+                    receiverId = gabrielId,
+                    outstanding = BigDecimal("36.74"),
+                )
             }
         }
     }

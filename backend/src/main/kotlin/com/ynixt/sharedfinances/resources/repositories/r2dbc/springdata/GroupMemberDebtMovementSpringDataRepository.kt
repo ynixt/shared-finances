@@ -8,6 +8,10 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupMemberDebtMovementSpringDataRepository : R2dbcRepository<GroupMemberDebtMovementEntity, String> {
+    fun findAllBySourceWalletEventId(sourceWalletEventId: UUID): Flux<GroupMemberDebtMovementEntity>
+
+    fun findAllBySourceMovementId(sourceMovementId: UUID): Flux<GroupMemberDebtMovementEntity>
+
     @Query(
         """
         SELECT m.*

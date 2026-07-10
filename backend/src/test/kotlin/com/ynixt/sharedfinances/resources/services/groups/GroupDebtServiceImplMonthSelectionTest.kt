@@ -357,13 +357,16 @@ class GroupDebtServiceImplMonthSelectionTest {
             .`when`(debtDatabaseClientRepository.listMonthlyComposition(groupId))
             .thenReturn(Flux.fromIterable(rows))
 
+        val movementRepository = Mockito.mock(GroupMemberDebtMovementSpringDataRepository::class.java)
+
         return GroupDebtServiceImpl(
             groupPermissionService = AllowAllGroupPermissionService,
-            movementRepository = Mockito.mock(GroupMemberDebtMovementSpringDataRepository::class.java),
+            movementRepository = movementRepository,
             debtDatabaseClientRepository = debtDatabaseClientRepository,
             walletEventRepository = Mockito.mock(WalletEventRepository::class.java),
             walletEventListService = Mockito.mock(WalletEventListService::class.java),
             recurrenceSimulationService = recurrenceSimulationService,
+            ledgerMaintenanceService = GroupDebtLedgerMaintenanceService(movementRepository, debtDatabaseClientRepository),
             clock = fixedClock(),
         )
     }

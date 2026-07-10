@@ -9,6 +9,7 @@ import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
+import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidPastScheduledExecutionEditException
@@ -35,8 +36,10 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.GroupMemberDebtMovementSpringDataRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
+import com.ynixt.sharedfinances.resources.services.groups.GroupDebtLedgerMaintenanceService
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.awaitSingle
@@ -67,6 +70,8 @@ class WalletEntryEditServiceImpl(
     recurrenceEntryRepository: RecurrenceEntryRepository,
     walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
     recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
+    private val debtMovementRepository: GroupMemberDebtMovementSpringDataRepository,
+    private val debtLedgerMaintenanceService: GroupDebtLedgerMaintenanceService,
     clock: Clock,
 ) : WalletEntryMutationSupportServiceImpl(
         walletEntryRepository = walletEntryRepository,
@@ -735,13 +740,36 @@ class WalletEntryEditServiceImpl(
     ): WalletEventEntity {
         val hydratedExistingEvent = hydratePostedEventForMutation(existingEvent)
         val oldEntries = hydratedExistingEvent.entries!!.filterIsInstance<WalletEntryEntity>()
+        val isDebtSettlementEdit =
+            hydratedExistingEvent.type == WalletEntryType.TRANSFER &&
+                hydratedExistingEvent.transferPurpose == TransferPurpose.DEBT_SETTLEMENT &&
+                preparedRequest.type == WalletEntryType.TRANSFER &&
+                preparedRequest.transferPurpose == TransferPurpose.DEBT_SETTLEMENT &&
+                hydratedExistingEvent.id != null
 
-        rollbackPostedImpact(
-            actorUserId = userId,
-            event = hydratedExistingEvent,
-            entries = oldEntries,
-            recurrenceConfig = recurrenceConfig,
-        )
+        if (isDebtSettlementEdit) {
+            rollbackWalletAndBillImpact(
+                event = hydratedExistingEvent,
+                entries = oldEntries,
+                recurrenceConfig = recurrenceConfig,
+            )
+
+            val existingDebtMovements =
+                debtMovementRepository
+                    .findAllBySourceWalletEventId(requireNotNull(hydratedExistingEvent.id))
+                    .asFlow()
+                    .toList()
+
+            debtLedgerMaintenanceService.deleteMovements(existingDebtMovements)
+            debtLedgerMaintenanceService.reconcileScopes(existingDebtMovements.map(debtLedgerMaintenanceService::scopeFor))
+        } else {
+            rollbackPostedImpact(
+                actorUserId = userId,
+                event = hydratedExistingEvent,
+                entries = oldEntries,
+                recurrenceConfig = recurrenceConfig,
+            )
+        }
 
         val eventToPersist =
             WalletEventEntity(

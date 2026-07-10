@@ -19,7 +19,6 @@ import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupDebtService } from '../../services/group-debt.service';
 import { GroupService } from '../../services/group.service';
-import { manualAdjustmentNetAmountForRoot } from '../group-debts-page/group-debts-page.helpers';
 
 function nonZeroNumberValidator(control: AbstractControl): ValidationErrors | null {
   if (control.value == null) {
@@ -87,7 +86,7 @@ export class GroupDebtAdjustmentPageComponent {
   });
 
   constructor() {
-    if (this.groupId && this.debtId) {
+    if (this.groupId && (this.debtId || this.hasCreateQueryContext())) {
       void this.load();
     } else {
       this.loading.set(false);
@@ -100,6 +99,30 @@ export class GroupDebtAdjustmentPageComponent {
 
   modeIsEdit(): boolean {
     return this.mode() === 'edit';
+  }
+
+  pageTitleKey(): string {
+    return this.modeIsEdit()
+      ? 'financesPage.groupsPage.debtsPage.editAdjustmentPageTitle'
+      : 'financesPage.groupsPage.debtsPage.createAdjustmentPageTitle';
+  }
+
+  formTitleKey(): string {
+    return this.modeIsEdit()
+      ? 'financesPage.groupsPage.debtsPage.editAdjustmentFormTitle'
+      : 'financesPage.groupsPage.debtsPage.createAdjustmentFormTitle';
+  }
+
+  contextHintKey(): string {
+    return this.modeIsEdit()
+      ? 'financesPage.groupsPage.debtsPage.editAdjustmentContextHint'
+      : 'financesPage.groupsPage.debtsPage.createAdjustmentContextHint';
+  }
+
+  submitLabelKey(): string {
+    return this.modeIsEdit()
+      ? 'financesPage.groupsPage.debtsPage.saveEditedAdjustment'
+      : 'financesPage.groupsPage.debtsPage.saveNewAdjustment';
   }
 
   monthDate(month: string): Date {
@@ -155,21 +178,30 @@ export class GroupDebtAdjustmentPageComponent {
     this.loading.set(true);
 
     try {
-      const [group, members, movement, history] = await Promise.all([
+      const [group, members] = await Promise.all([
         this.groupService.getGroup(this.groupId),
         this.groupService.findAllMembers(this.groupId),
-        this.groupDebtService.getMovement(this.groupId, this.debtId),
-        this.groupDebtService.listHistory(this.groupId),
       ]);
 
       this.group.set(group);
       this.members.set(members);
+
+      const movement =
+        this.debtId.length > 0
+          ? await this.groupDebtService.getMovement(this.groupId, this.debtId)
+          : this.buildCreateContextFromQueryParams();
+
+      if (movement == null) {
+        this.debtMovement.set(undefined);
+        return;
+      }
+
       this.debtMovement.set(movement);
 
       if (movement.reasonKind === GroupDebtMovementReasonKind__Obj.MANUAL_ADJUSTMENT) {
         this.mode.set('edit');
         this.adjustmentForm.patchValue({
-          amountDelta: manualAdjustmentNetAmountForRoot(history, movement.id),
+          amountDelta: movement.deltaSigned,
           note: movement.note ?? '',
         });
       } else {
@@ -184,5 +216,41 @@ export class GroupDebtAdjustmentPageComponent {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private hasCreateQueryContext(): boolean {
+    const query = this.route.snapshot.queryParamMap;
+    return query.has('payerId') && query.has('receiverId') && query.has('month') && query.has('currency');
+  }
+
+  private buildCreateContextFromQueryParams(): GroupDebtMovementDto | undefined {
+    const query = this.route.snapshot.queryParamMap;
+    const payerId = query.get('payerId');
+    const receiverId = query.get('receiverId');
+    const month = query.get('month');
+    const currency = query.get('currency');
+
+    if (payerId == null || receiverId == null || month == null || currency == null) {
+      return undefined;
+    }
+
+    return {
+      id: 'new-adjustment-context',
+      payerId,
+      receiverId,
+      month,
+      transactionDate: null,
+      currency,
+      deltaSigned: 0,
+      reasonKind: GroupDebtMovementReasonKind__Obj.BENEFICIARY_CHARGE,
+      createdByUserId: payerId,
+      carriedOver: false,
+      projected: false,
+      note: null,
+      sourceWalletEventId: null,
+      sourceWalletEvent: null,
+      sourceMovementId: null,
+      createdAt: null,
+    };
   }
 }

@@ -51,6 +51,8 @@ financesPage:
     debtsPage:
       title: 'Group debts: {{name}}'
       adjustmentPageTitle: 'Debt adjustment: {{name}}'
+      createAdjustmentPageTitle: 'New debt adjustment: {{name}}'
+      editAdjustmentPageTitle: 'Edit debt adjustment: {{name}}'
       settlementPageTitle: 'Debt settlement: {{name}}'
       balancesTitle: Outstanding balances
       emptyBalances: No debt balances were found for this group.
@@ -58,6 +60,10 @@ financesPage:
       settleAction: Settle
       settleValueAction: Settle value
       adjustAction: Adjust
+      addAdjustmentAction: Add adjustment
+      editAdjustmentAction: Edit adjustment
+      editSettlementAction: Edit settlement
+      deleteAction: Delete
       month: Month
       netAmount: Net amount
       chargeDelta: Charge delta
@@ -77,7 +83,8 @@ financesPage:
       amountColumn: Amount
       noteColumn: Note
       adjustmentFormTitle: Manual adjustment
-      editCompensationHint: Editing an existing adjustment keeps the original movement and appends a compensation delta.
+      createAdjustmentFormTitle: New manual adjustment
+      editAdjustmentFormTitle: Edit manual adjustment
       payer: Payer
       receiver: Receiver
       currency: Currency
@@ -85,15 +92,23 @@ financesPage:
       amountHint: Use positive values to increase the debt and negative values to reduce it.
       note: Note
       adjustmentContextHint: Debt data loaded from the identifier in the URL.
+      createAdjustmentContextHint: You are creating a new manual adjustment for this debt.
+      editAdjustmentContextHint: You are editing an existing manual adjustment.
       settlementContextHint: Complete settlement by selecting origin and target wallets.
       saveAdjustment: Save adjustment
+      saveNewAdjustment: Create adjustment
+      saveEditedAdjustment: Save changes
       settlementFormTitle: Debt settlement
       originWallet: Origin wallet
       targetWallet: Target wallet
       saveSettlement: Save settlement
       adjustmentSaved: Debt adjustment saved.
+      adjustmentDeleted: Debt adjustment deleted.
       settlementSaved: Debt settlement transfer saved.
+      settlementDeleted: Debt settlement deleted.
       settlementEntryName: Debt settlement
+      deleteAdjustmentConfirm: This action will permanently delete this manual adjustment.
+      deleteSettlementConfirm: This action will delete the full settlement of {{totalAmount}} and all {{fragmentCount}} derived debt fragments, including fragments from other months.
       noSource: No source reference
       sourceWalletEvent: 'Wallet event {{id}}'
       sourceMovement: 'Movement {{id}}'

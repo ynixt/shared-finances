@@ -46,6 +46,7 @@ import com.ynixt.sharedfinances.resources.services.CreditCardServiceImpl
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
 import com.ynixt.sharedfinances.resources.services.WalletItemServiceImpl
 import com.ynixt.sharedfinances.resources.services.dashboard.OverviewDashboardServiceImpl
+import com.ynixt.sharedfinances.resources.services.groups.GroupDebtLedgerMaintenanceService
 import com.ynixt.sharedfinances.resources.services.walletentry.ScheduledExecutionManagerServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryCreateServiceImpl
 import com.ynixt.sharedfinances.resources.services.walletentry.WalletEntryEditServiceImpl
@@ -65,6 +66,7 @@ import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletEve
 import com.ynixt.sharedfinances.scenarios.support.repositories.InMemoryWalletItemRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.mockito.Mockito
 import org.springframework.context.MessageSource
 import org.springframework.context.MessageSourceResolvable
 import org.springframework.context.NoSuchMessageException
@@ -340,6 +342,18 @@ internal class ScenarioRuntime(
             exchangeRateService = exchangeRateService,
         )
 
+    private val scenarioDebtLedgerSupport = groupDebtService as? ScenarioDebtLedgerBackedService
+    private val debtMovementRepositoryForMutations =
+        scenarioDebtLedgerSupport?.scenarioDebtMovementRepository
+            ?: Mockito.mock(
+                com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.GroupMemberDebtMovementSpringDataRepository::class.java,
+            )
+    private val debtDatabaseClientRepositoryForMutations =
+        scenarioDebtLedgerSupport?.scenarioDebtDatabaseClientRepository
+            ?: Mockito.mock(
+                com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.GroupMemberDebtDatabaseClientRepository::class.java,
+            )
+
     val messageSource: MessageSource =
         object : MessageSource {
             override fun getMessage(
@@ -383,6 +397,12 @@ internal class ScenarioRuntime(
             groupDebtService = groupDebtService,
             walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
             recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
+            debtMovementRepository = debtMovementRepositoryForMutations,
+            debtLedgerMaintenanceService =
+                GroupDebtLedgerMaintenanceService(
+                    debtMovementRepositoryForMutations,
+                    debtDatabaseClientRepositoryForMutations,
+                ),
             clock = clock,
         )
 
