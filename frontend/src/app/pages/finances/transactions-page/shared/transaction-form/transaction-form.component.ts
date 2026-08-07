@@ -44,7 +44,7 @@ import { WalletItemPickerComponent } from '../../../components/item-picker/walle
 import { CreditCardBillService } from '../../../services/credit-card-bill.service';
 import { GroupService } from '../../../services/group.service';
 import { WalletEntryService } from '../../../services/wallet-entry.service';
-import { defaultBeneficiaryState, validateBeneficiarySplit } from './transaction-form.beneficiaries';
+import { defaultBeneficiaryState, hydrateBeneficiaryState, validateBeneficiarySplit } from './transaction-form.beneficiaries';
 import {
   ExtraBeneficiaryLegInit,
   ExtraSourceLegInit,
@@ -679,7 +679,7 @@ export class TransactionFormComponent {
   private resetExtraBeneficiaryLegs(
     legs: Array<{
       benefitPercent: number;
-      userId: string;
+      user?: UserForBeneficiary;
     }>,
   ): void {
     const arr = this.extraBeneficiaryLegs;
@@ -939,9 +939,9 @@ export class TransactionFormComponent {
     this.form.get('primaryBeneficiaryUser')?.setValue(defaults.primaryBeneficiaryUser, { emitEvent: false });
     this.form.get('primaryBeneficiaryPercent')?.setValue(defaults.primaryBeneficiaryPercent, { emitEvent: false });
     this.resetExtraBeneficiaryLegs(
-      defaults.extraBeneficiaryLegs.filter((leg): leg is { userId: string; benefitPercent: number } => {
-        return leg.userId != null && leg.benefitPercent != null;
-      }),
+      defaults.extraBeneficiaryLegs.filter(
+        (leg): leg is { benefitPercent: number; user: UserForBeneficiary } => leg.user != null && leg.benefitPercent != null,
+      ),
     );
   }
 
@@ -1013,15 +1013,11 @@ export class TransactionFormComponent {
       return;
     }
 
-    const usersById = new Map(members.map(member => [member.id, member] as const));
-    // Beneficiaries are a flat list in the domain model. The form requires one object-based
-    // control plus id-based extra rows, so we use the first item only as a UI anchor.
-    const [primaryLeg, ...extraLegs] = beneficiaryLegs;
-    const primaryBeneficiaryUser = primaryLeg == null ? undefined : usersById.get(primaryLeg.userId);
+    const beneficiaries = hydrateBeneficiaryState(beneficiaryLegs, members);
 
-    this.form.get('primaryBeneficiaryUser')?.setValue(primaryBeneficiaryUser, { emitEvent: false });
-    this.form.get('primaryBeneficiaryPercent')?.setValue(primaryLeg?.benefitPercent ?? 100, { emitEvent: false });
-    this.resetExtraBeneficiaryLegs(extraLegs);
+    this.form.get('primaryBeneficiaryUser')?.setValue(beneficiaries.primaryBeneficiaryUser, { emitEvent: false });
+    this.form.get('primaryBeneficiaryPercent')?.setValue(beneficiaries.primaryBeneficiaryPercent, { emitEvent: false });
+    this.resetExtraBeneficiaryLegs(beneficiaries.extraBeneficiaryLegs);
     this.form.updateValueAndValidity({ emitEvent: false });
   }
 

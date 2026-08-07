@@ -4,13 +4,39 @@ import { UserForBeneficiary } from './transaction-form.types';
 
 export interface BeneficiaryLegValue {
   benefitPercent?: number | null;
-  userId?: string | null;
+  user?: UserForBeneficiary | null;
 }
 
 export interface BeneficiaryDefaults {
   extraBeneficiaryLegs: BeneficiaryLegValue[];
   primaryBeneficiaryPercent: number;
   primaryBeneficiaryUser?: UserForBeneficiary;
+}
+
+export interface HydratedBeneficiaryState {
+  extraBeneficiaryLegs: Array<{
+    benefitPercent: number;
+    user?: UserForBeneficiary;
+  }>;
+  primaryBeneficiaryPercent: number;
+  primaryBeneficiaryUser?: UserForBeneficiary;
+}
+
+export function hydrateBeneficiaryState(
+  beneficiaryLegs: Array<{ benefitPercent: number; userId: string }>,
+  members: UserForBeneficiary[],
+): HydratedBeneficiaryState {
+  const usersById = new Map(members.map(member => [member.id, member] as const));
+  const [primaryLeg, ...extraLegs] = beneficiaryLegs;
+
+  return {
+    primaryBeneficiaryUser: primaryLeg == null ? undefined : usersById.get(primaryLeg.userId),
+    primaryBeneficiaryPercent: primaryLeg?.benefitPercent ?? 100,
+    extraBeneficiaryLegs: extraLegs.map(leg => ({
+      user: usersById.get(leg.userId),
+      benefitPercent: leg.benefitPercent,
+    })),
+  };
 }
 
 export function defaultBeneficiaryState(params: {
@@ -64,14 +90,15 @@ export function validateBeneficiarySplit(params: {
   }
 
   for (const leg of params.extraBeneficiaryLegs) {
-    if (!leg.userId) {
+    const userId = leg.user?.id;
+    if (!userId) {
       continue;
     }
-    if (ids.has(leg.userId)) {
+    if (ids.has(userId)) {
       errors.duplicateBeneficiaries = true;
       break;
     }
-    ids.add(leg.userId);
+    ids.add(userId);
   }
 
   return Object.keys(errors).length === 0 ? null : errors;
