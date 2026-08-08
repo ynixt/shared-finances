@@ -6,6 +6,7 @@ import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 
 import { CsvImportDraftStore } from '../../csv-import-draft.store';
+import { ImportDraftStore } from '../../import-draft.store';
 
 @Component({
   selector: 'app-csv-options',
@@ -14,7 +15,8 @@ import { CsvImportDraftStore } from '../../csv-import-draft.store';
   styleUrl: './csv-options.component.scss',
 })
 export class CsvOptionsComponent {
-  readonly store = inject(CsvImportDraftStore);
+  readonly csvStore = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
   private readonly translateService = inject(TranslateService);
 
   get decimalSeparatorOptions() {
@@ -25,7 +27,7 @@ export class CsvOptionsComponent {
   }
 
   get dateFormatOptions() {
-    return this.store.dateFormats.map(option => ({
+    return this.csvStore.dateFormats.map(option => ({
       name: this.translateService.instant(option.labelKey),
       value: option.value,
     }));

@@ -7,6 +7,7 @@ import { Tooltip } from 'primeng/tooltip';
 
 import { CsvImportDraftStore } from '../../csv-import-draft.store';
 import { CsvColumnField } from '../../csv-statement-parser';
+import { ImportDraftStore } from '../../import-draft.store';
 
 interface MappingSelectOption {
   name: string;
@@ -20,7 +21,8 @@ interface MappingSelectOption {
   styleUrl: './csv-column-mapping.component.scss',
 })
 export class CsvColumnMappingComponent {
-  readonly store = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
+  private readonly csvStore = inject(CsvImportDraftStore);
   private readonly translateService = inject(TranslateService);
 
   mappingChanged(field: CsvColumnField, value: string | null | undefined): void {
@@ -64,7 +66,7 @@ export class CsvColumnMappingComponent {
       value: this.store.fixedMappingValue,
     });
     if (this.store.fileFormat !== 'OFX') {
-      options.push(...this.store.headers.map(header => ({ name: header, value: header })));
+      options.push(...this.csvStore.headers.map(header => ({ name: header, value: header })));
     }
     return options;
   }

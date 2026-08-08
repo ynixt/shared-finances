@@ -17,7 +17,7 @@ import { LocalCurrencyPipe } from '../../../../../../pipes/local-currency.pipe';
 import { LocalDatePipe } from '../../../../../../pipes/local-date.pipe';
 import { CategoryPickerComponent } from '../../../../components/item-picker/category-picker/category-picker.component';
 import { WalletItemPickerComponent } from '../../../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
-import { CsvImportDraftStore } from '../../csv-import-draft.store';
+import { ImportDraftStore } from '../../import-draft.store';
 import { ImportPreviewRow } from '../../import-transactions.models';
 
 @Component({
@@ -43,7 +43,7 @@ import { ImportPreviewRow } from '../../import-transactions.models';
 })
 export class ImportPreviewRowComponent {
   readonly previewRow = input.required<ImportPreviewRow>();
-  readonly store = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
   private readonly translateService = inject(TranslateService);
 
   get groupOptions() {

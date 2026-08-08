@@ -4,7 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 import { ButtonDirective } from 'primeng/button';
 
-import { CsvImportDraftStore } from '../../csv-import-draft.store';
+import { ImportDraftStore } from '../../import-draft.store';
 
 @Component({
   selector: 'app-csv-file-upload',
@@ -13,5 +13,5 @@ import { CsvImportDraftStore } from '../../csv-import-draft.store';
   styleUrl: './csv-file-upload.component.scss',
 })
 export class CsvFileUploadComponent {
-  readonly store = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
 }

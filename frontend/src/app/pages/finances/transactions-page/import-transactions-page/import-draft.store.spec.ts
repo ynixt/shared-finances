@@ -26,9 +26,14 @@ import { CsvImportDraftStore } from './csv-import-draft.store';
 import { CsvImportDuplicateService } from './csv-import-duplicate.service';
 import { CsvImportRowResolver } from './csv-import-row.resolver';
 import { CsvImportSubmissionService } from './csv-import-submission.service';
+import { ImportDraftStore } from './import-draft.store';
+import { ParsedImportSourceStatement } from './import-file-source';
 import { ImportPreviewRow } from './import-transactions.models';
+import { OfxImportDraftStore } from './ofx-import-draft.store';
 
-describe('CsvImportDraftStore', () => {
+describe('ImportDraftStore', () => {
+  const csvStore = () => TestBed.inject(CsvImportDraftStore);
+  const ofxStore = () => TestBed.inject(OfxImportDraftStore);
   const importService = {
     checkHash: vi.fn().mockResolvedValue({ status: 'NOT_IMPORTED' }),
     checkDuplicates: vi.fn().mockResolvedValue([]),
@@ -128,6 +133,8 @@ describe('CsvImportDraftStore', () => {
         CsvImportBeneficiaryEditor,
         CsvImportSubmissionService,
         CsvImportDraftStore,
+        OfxImportDraftStore,
+        ImportDraftStore,
         FormBuilder,
         provideHttpClient(),
         { provide: ImportService, useValue: importService },
@@ -156,8 +163,45 @@ describe('CsvImportDraftStore', () => {
     }).compileComponents();
   });
 
+  it('keeps CSV parsing state outside the common draft store', () => {
+    const sourceStore = csvStore();
+    sourceStore.delimiter = ',';
+    sourceStore.load(new TextEncoder().encode('date,description,value\n2026-08-08,Coffee,12.50').buffer as ArrayBuffer);
+
+    const parsed = sourceStore.parse();
+
+    expect(parsed.headers).toEqual(['date', 'description', 'value']);
+    expect(parsed.rows).toHaveLength(1);
+    expect(TestBed.inject(ImportDraftStore)).not.toHaveProperty('fileText');
+  });
+
+  it('keeps OFX statements and account mappings outside the common draft store', () => {
+    const sourceStore = ofxStore();
+    const statement: ParsedImportSourceStatement = {
+      accountId: '123456789',
+      key: 'BANK:001:123456789:0',
+      kind: 'BANK',
+      maskedAccountId: '•••• 6789',
+      pendingCount: 0,
+      rows: [],
+    };
+    const wallet = {
+      id: 'wallet-1',
+      currency: 'BRL',
+      name: 'Conta',
+      showOnDashboard: true,
+      type: 'BANK_ACCOUNT' as const,
+    };
+    sourceStore.statements = [statement];
+
+    sourceStore.setStatementOrigin(statement, wallet, [wallet]);
+
+    expect(sourceStore.originFor(statement, [wallet])).toBe(wallet);
+    expect(TestBed.inject(ImportDraftStore)).not.toHaveProperty('ofxStatements');
+  });
+
   it('paginates the preview with 20 items by default and accepts all configured page sizes', () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.rows = Array.from({ length: 120 }, (_, index) => previewRow(index));
 
     expect(component.previewPageSizeOptions).toEqual([20, 50, 100, 500]);
@@ -173,18 +217,18 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('does not expose transaction type as a column mapping option', () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
 
     expect(component.mappingOptions.some(option => option.field === 'type')).toBe(false);
   });
 
   it('uses the bill derived from the row date by default and recomputes it after a date edit', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
     component.walletItems = [walletItem('wallet-card', 'BRL', 'CREDIT_CARD')];
     component.fixedValues.origin = 'wallet-card';
-    component.fileText = [
+    csvStore().fileText = [
       'origin;date;description;amount;currency;category;group;installment;beneficiaries;bill;tags;observations;confirmed',
       ['', '2026-08-07', 'Compra', '10', 'BRL', '', '', '', '', '', '', '', ''].join(';'),
     ].join('\n');
@@ -205,7 +249,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it.each(['CSV', 'OFX'] as const)('edits installment parts and converts a %s row back to a single purchase', async fileFormat => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const row: ImportPreviewRow = previewRow(0);
     component.fileFormat = fileFormat;
     component.rows = [row];
@@ -229,7 +273,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('submits a CSV installment detected from the file as a single purchase after the user disables installments', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
     component.walletItems = [walletItem('wallet-card', 'BRL', 'CREDIT_CARD')];
@@ -237,7 +281,7 @@ describe('CsvImportDraftStore', () => {
     component.file = new File(['csv'], 'installment.csv', { type: 'text/csv' });
     component.fileFormat = 'CSV';
     component.fileHash = 'hash-installment';
-    component.fileText = [
+    csvStore().fileText = [
       'origin;date;description;amount;currency;category;group;installment;beneficiaries;bill;tags;observations;confirmed',
       ['', '2026-08-07', 'Compra parcelada', '10', 'BRL', '', '', '3/12', '', '', '', '', ''].join(';'),
     ].join('\n');
@@ -257,10 +301,10 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('applies a fixed value to every row and reapplies it over manual preview edits', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
-    component.fileText = 'data;descricao;valor\n07/08/2026;Compra A;10\n08/08/2026;Compra B;20\n';
+    csvStore().fileText = 'data;descricao;valor\n07/08/2026;Compra A;10\n08/08/2026;Compra B;20\n';
     await component.reprocess(true);
     await component.setMapping('description', component.fixedMappingValue);
 
@@ -277,7 +321,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('hides the preview and only enables confirmation after a fixed origin is selected', () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
     component.walletItems = [walletItem('wallet-1')];
     component.mapping.origin = component.fixedMappingValue;
@@ -293,11 +337,11 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('checks duplicates only once when the fixed origin changes', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
     component.walletItems = [walletItem('wallet-1')];
-    component.fileText = 'data;descricao;valor\n07/08/2026;Compra;10\n';
+    csvStore().fileText = 'data;descricao;valor\n07/08/2026;Compra;10\n';
     await component.reprocess(true);
     importService.checkDuplicates.mockClear();
 
@@ -307,7 +351,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('uses the user default currency for impact before an origin is selected', () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.defaultCurrency = 'BRL';
     component.rows = [{ ...previewRow(0), convertedValue: 52.5 }];
 
@@ -316,7 +360,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('resolves a detected foreign currency into the effective currency', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.defaultCurrency = 'BRL';
     component.currencyOptions = ['BRL', 'USD'];
     component.walletItems = [walletItem('wallet-brl')];
@@ -349,7 +393,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('moves fallback currencies to the selected origin currency without conversion', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.defaultCurrency = 'BRL';
     component.walletItems = [walletItem('wallet-eur', 'EUR')];
     component.rows = [{ ...previewRow(0), walletItemId: 'wallet-eur', currency: 'BRL', conversionTargetCurrency: 'BRL' }];
@@ -363,7 +407,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('keeps a manually overridden converted value', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.defaultCurrency = 'BRL';
     component.rows = [
       {
@@ -384,10 +428,10 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('leaves an imported currency blank when it is not available in the selector catalog', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.defaultCurrency = 'BRL';
     component.currencyOptions = ['BRL', 'USD'];
-    component.fileText = 'data;descricao;valor;moeda\n2026-08-07;Compra;10;XYZ\n';
+    csvStore().fileText = 'data;descricao;valor;moeda\n2026-08-07;Compra;10;XYZ\n';
 
     await component.reprocess(true);
     await component.setMapping('currency', 'moeda');
@@ -398,11 +442,11 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('resolves an origin UUID from a mapped CSV column and keeps it editable per row', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.defaultCurrency = 'BRL';
     component.currencyOptions = ['BRL', 'USD'];
     component.walletItems = [walletItem('019fdb00-a88b-775d-806a-8d74982081ea'), walletItem('wallet-usd', 'USD')];
-    component.fileText = 'origem;data;descricao;valor\n019fdb00-a88b-775d-806a-8d74982081ea;2026-08-07;Compra;10\n';
+    csvStore().fileText = 'origem;data;descricao;valor\n019fdb00-a88b-775d-806a-8d74982081ea;2026-08-07;Compra;10\n';
     await component.reprocess(true);
 
     expect(component.mapping.origin).toBe(component.fixedMappingValue);
@@ -419,22 +463,22 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('detects the date format after the user maps a date column from an unknown layout', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
-    component.fileText = 'Quando;Detalhes\n2026-08-07;Compra\n';
+    const component = TestBed.inject(ImportDraftStore);
+    csvStore().fileText = 'Quando;Detalhes\n2026-08-07;Compra\n';
 
     await component.reprocess(true);
 
-    expect(component.detectedLayoutProviderId).toBeUndefined();
+    expect(csvStore().detectedLayoutProviderId).toBeUndefined();
     expect(component.mapping.date).toBeUndefined();
 
     await component.setMapping('date', 'Quando');
 
-    expect(component.detectedDateFormat).toBe('YYYY-MM-DD');
+    expect(csvStore().detectedDateFormat).toBe('YYYY-MM-DD');
     expect(component.rows[0].date).toBe('2026-08-07');
   });
 
   it('groups preview impacts by each row origin currency', () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.walletItems = [walletItem('wallet-brl'), walletItem('wallet-usd', 'USD')];
     component.rows = [
       { ...previewRow(0), walletItemId: 'wallet-brl', convertedValue: 25 },
@@ -448,7 +492,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('sends the resolved origin inside each imported line', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
     component.fileHash = 'hash';
     component.mapping.origin = 'origem';
@@ -469,7 +513,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('sets the current user as the default beneficiary when a group is selected', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const catalogs = TestBed.inject(CsvImportCatalogStore);
     const currentUser = {
       id: 'user-1',
@@ -489,7 +533,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('sets the default beneficiary before lazy group members finish loading', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const catalogs = TestBed.inject(CsvImportCatalogStore);
     const currentUser = {
       id: 'user-1',
@@ -521,7 +565,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('maps the category picker value to the import category id', () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const category = {
       id: 'category-1',
       name: 'Mercado',
@@ -539,7 +583,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('preloads personal and accessible group categories once for the page', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const personalCategory = {
       id: 'category-personal',
       name: 'Pessoal',
@@ -567,7 +611,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('loads the configured import line limit with the page catalogs', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     importService.preferences.mockResolvedValue({ maxLines: 2500 });
 
     await component.initialize();
@@ -578,7 +622,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('keeps file processing disabled when import preferences cannot be loaded', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     importService.preferences.mockRejectedValue(new Error('preferences unavailable'));
 
     await component.initialize();
@@ -590,10 +634,10 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('accepts exactly the configured number of parsed data rows and ignores blank rows and the header', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.maxLines = 2;
     component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
-    component.fileText = 'data;descricao;valor\n\n07/08/2026;Compra A;10\n\n08/08/2026;Compra B;20\n';
+    csvStore().fileText = 'data;descricao;valor\n\n07/08/2026;Compra A;10\n\n08/08/2026;Compra B;20\n';
 
     await component.reprocess(true);
 
@@ -603,10 +647,10 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('removes a CSV one line over the limit before duplicate checks', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.maxLines = 2;
     component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
-    component.fileText = 'data;descricao;valor\n07/08/2026;Compra A;10\n08/08/2026;Compra B;20\n09/08/2026;Compra C;30\n';
+    csvStore().fileText = 'data;descricao;valor\n07/08/2026;Compra A;10\n08/08/2026;Compra B;20\n09/08/2026;Compra C;30\n';
     importService.checkDuplicates.mockClear();
 
     await component.reprocess(true);
@@ -618,7 +662,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('fills a mapped CSV category automatically when a personal category matches', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const category = {
       id: 'category-personal',
       name: 'Mercado',
@@ -629,7 +673,7 @@ describe('CsvImportDraftStore', () => {
     component.categories = [category];
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
-    component.fileText = 'data;descricao;valor;categoria\n07/08/2026;Compra;10;mercado\n';
+    csvStore().fileText = 'data;descricao;valor;categoria\n07/08/2026;Compra;10;mercado\n';
 
     await component.reprocess(true);
     await component.setMapping('category', 'categoria');
@@ -638,7 +682,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('loads an OFX draft, maps its account, and submits only normalized data', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.importPreferencesLoaded = true;
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
@@ -650,7 +694,7 @@ describe('CsvImportDraftStore', () => {
     await component.selectFile({ target: { files: [file] } } as unknown as Event);
 
     expect(component.fileFormat).toBe('OFX');
-    expect(component.ofxStatements).toHaveLength(1);
+    expect(ofxStore().statements).toHaveLength(1);
     expect(component.rows[0]).toMatchObject({
       name: 'Mercado',
       value: -42.5,
@@ -659,7 +703,7 @@ describe('CsvImportDraftStore', () => {
     });
     expect(component.canShowPreview).toBe(false);
 
-    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    await component.setOfxStatementOrigin(ofxStore().statements[0], component.walletItems[0]);
     expect(component.canShowPreview).toBe(true);
 
     await component.rowInstallmentEnabledChanged(component.rows[0], true);
@@ -687,12 +731,12 @@ describe('CsvImportDraftStore', () => {
     });
     expect(JSON.stringify(request)).not.toContain('123456789');
     expect(JSON.stringify(request)).not.toContain('<OFX>');
-    expect(component.ofxStatements).toEqual([]);
+    expect(ofxStore().statements).toEqual([]);
     expect(component.file).toBeUndefined();
   });
 
   it('applies one fixed bill month to every OFX row and preserves it when the card changes', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.importPreferencesLoaded = true;
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
@@ -706,11 +750,11 @@ describe('CsvImportDraftStore', () => {
     expect(component.mapping.bill).toBe(component.billFromDateMappingValue);
     expect(component.fixedMappingOptions.some(option => option.field === 'bill')).toBe(false);
 
-    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    await component.setOfxStatementOrigin(ofxStore().statements[0], component.walletItems[0]);
     expect(component.rows.map(row => row.billDate)).toEqual(['2026-08-01', '2026-08-01']);
 
     await component.rowDateChanged(component.rows[0], '2026-09-07');
-    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[1]);
+    await component.setOfxStatementOrigin(ofxStore().statements[0], component.walletItems[1]);
     expect(component.rows.map(row => row.billDate)).toEqual(['2026-09-01', '2026-08-01']);
 
     await component.setMapping('bill', component.fixedMappingValue);
@@ -718,19 +762,19 @@ describe('CsvImportDraftStore', () => {
 
     expect(component.rows.map(row => row.billDate)).toEqual(['2026-09-01', '2026-09-01']);
 
-    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    await component.setOfxStatementOrigin(ofxStore().statements[0], component.walletItems[0]);
 
     expect(component.rows.map(row => row.walletItemId)).toEqual(['wallet-card-a', 'wallet-card-a']);
     expect(component.rows.map(row => row.billDate)).toEqual(['2026-09-01', '2026-09-01']);
   });
 
   it('requires every OFX statement with selected rows to be mapped independently', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     component.currencyOptions = ['BRL', 'USD'];
     component.defaultCurrency = 'BRL';
     component.walletItems = [walletItem('wallet-bank'), walletItem('wallet-card', 'USD', 'CREDIT_CARD')];
     component.fileFormat = 'OFX';
-    component.ofxStatements = [
+    ofxStore().statements = [
       {
         accountId: '11112222',
         currency: 'BRL',
@@ -774,16 +818,16 @@ describe('CsvImportDraftStore', () => {
     component.fixedValues = { confirmed: true };
 
     await component.reprocess(true);
-    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    await component.setOfxStatementOrigin(ofxStore().statements[0], component.walletItems[0]);
     expect(component.canShowPreview).toBe(false);
 
-    await component.setOfxStatementOrigin(component.ofxStatements[1], component.walletItems[1]);
+    await component.setOfxStatementOrigin(ofxStore().statements[1], component.walletItems[1]);
     expect(component.canShowPreview).toBe(true);
     expect(component.rows.map(row => row.walletItemId)).toEqual(['wallet-bank', 'wallet-card']);
   });
 
   it('prefills the exact Supermercado category from the C6 Categoria column', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const category = {
       id: '019fdaff-21c8-7418-9502-0f26c2670772',
       name: 'Supermercado',
@@ -795,7 +839,7 @@ describe('CsvImportDraftStore', () => {
     component.categories = [category];
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
-    component.fileText =
+    csvStore().fileText =
       'Data de Compra;Nome no Cartão;Final do Cartão;Categoria;Descrição;Parcela;Valor (em US$);Cotação (em R$);Valor (em R$)\n' +
       '04/07/2026;GABRIEL A SILVA;9668;Supermercado;CACAU SHOW;Única;0;0;5.29\n';
 
@@ -807,7 +851,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('maps a personal category to the corresponding group category when the group changes', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const catalogs = TestBed.inject(CsvImportCatalogStore);
     const personalCategory = {
       id: 'category-personal',
@@ -845,7 +889,7 @@ describe('CsvImportDraftStore', () => {
   });
 
   it('clears the category when the selected group has no corresponding category', async () => {
-    const component = TestBed.inject(CsvImportDraftStore);
+    const component = TestBed.inject(ImportDraftStore);
     const catalogs = TestBed.inject(CsvImportCatalogStore);
     const personalCategory = {
       id: 'category-personal',

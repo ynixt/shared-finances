@@ -9,7 +9,7 @@ import { Select } from 'primeng/select';
 
 import { ImportBatchDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/imports';
 import { LocalCurrencyPipe } from '../../../../../../pipes/local-currency.pipe';
-import { CsvImportDraftStore } from '../../csv-import-draft.store';
+import { ImportDraftStore } from '../../import-draft.store';
 import { BeneficiarySplitDialogComponent } from '../beneficiary-split-dialog/beneficiary-split-dialog.component';
 import { ImportPreviewTableComponent } from '../import-preview-table/import-preview-table.component';
 
@@ -30,7 +30,7 @@ import { ImportPreviewTableComponent } from '../import-preview-table/import-prev
   styleUrl: './import-preview.component.scss',
 })
 export class ImportPreviewComponent {
-  readonly store = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
   readonly batchAccepted = output<ImportBatchDto>();
   private readonly translateService = inject(TranslateService);
 

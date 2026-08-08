@@ -6,7 +6,7 @@
       <input
         pInputText
         maxlength="1"
-        [(ngModel)]="store.delimiter"
+        [(ngModel)]="csvStore.delimiter"
         (ngModelChange)="store.reprocess(true)"
         [attr.aria-label]="'financesPage.transactionsPage.importPage.csvOptions.delimiterAria' | translate"
       />
@@ -20,7 +20,7 @@
         optionValue="value"
         [filter]="true"
         [showClear]="false"
-        [(ngModel)]="store.decimalSeparator"
+        [(ngModel)]="csvStore.decimalSeparator"
         (ngModelChange)="store.reprocess()"
       />
     </label>
@@ -33,12 +33,12 @@
         optionValue="value"
         [filter]="true"
         [showClear]="false"
-        [(ngModel)]="store.dateFormat"
+        [(ngModel)]="csvStore.dateFormat"
         (ngModelChange)="store.reprocess()"
       />
-      @if (store.dateFormat === 'AUTO') {
+      @if (csvStore.dateFormat === 'AUTO') {
         <small class="text-muted">
-          {{ 'financesPage.transactionsPage.importPage.csvOptions.detectedFormat' | translate: { format: store.detectedDateFormat } }}
+          {{ 'financesPage.transactionsPage.importPage.csvOptions.detectedFormat' | translate: { format: csvStore.detectedDateFormat } }}
         </small>
       }
     </label>
@@ -46,11 +46,11 @@
 
   <div class="mt-4 flex flex-wrap gap-x-8 gap-y-3">
     <label class="check-label">
-      <input type="checkbox" [(ngModel)]="store.invertValues" (ngModelChange)="store.reprocess()" />
+      <input type="checkbox" [(ngModel)]="csvStore.invertValues" (ngModelChange)="store.reprocess()" />
       <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.invertValues' | translate }}</span>
     </label>
     <label class="check-label">
-      <input type="checkbox" [(ngModel)]="store.separateCreditDebit" (ngModelChange)="store.reprocess()" />
+      <input type="checkbox" [(ngModel)]="csvStore.separateCreditDebit" (ngModelChange)="store.reprocess()" />
       <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.separateCreditDebit' | translate }}</span>
     </label>
     <label class="check-label">

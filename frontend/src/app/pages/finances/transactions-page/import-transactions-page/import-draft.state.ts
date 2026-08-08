@@ -2,34 +2,22 @@ import dayjs from 'dayjs';
 
 import { ImportHashCheckDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/imports';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
-import { CsvColumnField, CsvColumnMapping, CsvDateFormat, normalizeHeader } from './csv-statement-parser';
-import { ImportFileFormat, ParsedImportSourceStatement } from './import-file-source';
+import { CsvColumnField, CsvColumnMapping, normalizeHeader } from './csv-statement-parser';
+import { ImportFileFormat } from './import-file-source';
 import { FixedValue, ImportPreviewRow } from './import-transactions.models';
 
 export abstract class ImportDraftState {
   fileFormat?: ImportFileFormat;
-  delimiter = ';';
-  decimalSeparator: '.' | ',' = '.';
-  dateFormat: CsvDateFormat = 'AUTO';
-  detectedDateFormat: Exclude<CsvDateFormat, 'AUTO'> = 'DD/MM/YYYY';
-  detectedLayoutProviderId?: string;
-  invertValues = false;
-  separateCreditDebit = false;
   autoIgnoreDuplicates = false;
   search = '';
   categoryFilter = '';
   mapping: CsvColumnMapping = {};
   fixedValues: Partial<Record<CsvColumnField, FixedValue>> = { origin: '', bill: dayjs().format('YYYY-MM') };
   fixedCategory?: CategoryDto;
-  headers: string[] = [];
   rows: ImportPreviewRow[] = [];
   hashCheck: ImportHashCheckDto | null = null;
   file?: File;
   fileHash = '';
-  fileText = '';
-  ofxStatements: ParsedImportSourceStatement[] = [];
-  ofxStatementOrigins: Record<string, string> = {};
-  ofxPendingCount = 0;
   maxLines = 1000;
   importPreferencesLoaded = false;
   loading = true;
@@ -110,5 +98,3 @@ export abstract class ImportDraftState {
     if (enabled) this.rows.filter(row => row.duplicate).forEach(row => (row.included = false));
   }
 }
-
-export { ImportDraftState as CsvImportDraftState };

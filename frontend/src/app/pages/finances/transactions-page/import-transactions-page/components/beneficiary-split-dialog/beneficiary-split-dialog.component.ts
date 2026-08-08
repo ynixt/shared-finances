@@ -6,7 +6,7 @@ import { ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 
 import { BeneficiarySplitComponent } from '../../../shared/beneficiary-split/beneficiary-split.component';
-import { CsvImportDraftStore } from '../../csv-import-draft.store';
+import { ImportDraftStore } from '../../import-draft.store';
 
 @Component({
   selector: 'app-beneficiary-split-dialog',
@@ -14,5 +14,5 @@ import { CsvImportDraftStore } from '../../csv-import-draft.store';
   templateUrl: './beneficiary-split-dialog.component.html',
 })
 export class BeneficiarySplitDialogComponent {
-  readonly store = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
 }

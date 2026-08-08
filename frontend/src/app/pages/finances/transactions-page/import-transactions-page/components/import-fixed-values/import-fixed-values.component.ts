@@ -13,8 +13,8 @@ import { DatePickerComponent } from '../../../../../../components/date-picker/da
 import { WalletItemSearchResponseDto } from '../../../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
 import { CategoryPickerComponent } from '../../../../components/item-picker/category-picker/category-picker.component';
 import { WalletItemPickerComponent } from '../../../../components/item-picker/wallet-item-picker/wallet-item-picker.component';
-import { CsvImportDraftStore } from '../../csv-import-draft.store';
 import { CsvColumnField } from '../../csv-statement-parser';
+import { ImportDraftStore } from '../../import-draft.store';
 
 @Component({
   selector: 'app-import-fixed-values',
@@ -34,7 +34,7 @@ import { CsvColumnField } from '../../csv-statement-parser';
   styleUrl: './import-fixed-values.component.scss',
 })
 export class ImportFixedValuesComponent {
-  readonly store = inject(CsvImportDraftStore);
+  readonly store = inject(ImportDraftStore);
   private readonly translateService = inject(TranslateService);
 
   get groupOptions() {
