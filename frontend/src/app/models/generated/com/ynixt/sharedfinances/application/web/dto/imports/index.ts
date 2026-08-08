@@ -5,3 +5,4 @@ export * from './import-duplicate-check-dto';
 export * from './import-duplicate-line-dto';
 export * from './import-hash-check-dto';
 export * from './import-line-dto';
+export * from './import-preferences-dto';

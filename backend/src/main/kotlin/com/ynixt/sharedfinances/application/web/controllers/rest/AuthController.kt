@@ -14,6 +14,7 @@ import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterResultDto
 import com.ynixt.sharedfinances.application.web.dto.auth.ResendEmailAckDto
 import com.ynixt.sharedfinances.domain.exceptions.MfaIsNeededException
+import com.ynixt.sharedfinances.domain.exceptions.http.auth.RegistrationDisabledException
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.AuthService
 import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
@@ -61,6 +62,7 @@ class AuthController(
     suspend fun openAuthPreferences(): ResponseEntity<OpenAuthPreferencesDto> =
         ResponseEntity.ok(
             OpenAuthPreferencesDto(
+                registrationEnabled = authProperties.features.registrationEnabled,
                 emailConfirmationEnabled = authProperties.features.emailConfirmationEnabled,
                 passwordRecoveryEnabled = authProperties.features.passwordRecoveryEnabled,
                 turnstileEnabled = authProperties.features.turnstileEnabled,
@@ -75,6 +77,10 @@ class AuthController(
         exchange: ServerWebExchange,
         @Valid @RequestBody payload: RegisterDto,
     ): ResponseEntity<RegisterResultDto> {
+        if (!authProperties.features.registrationEnabled) {
+            throw RegistrationDisabledException()
+        }
+
         verifyCaptcha(exchange, payload.turnstileToken)
 
         val user = userService.createUser(payload)

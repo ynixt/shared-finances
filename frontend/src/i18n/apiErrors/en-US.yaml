@@ -20,6 +20,7 @@ apiErrors:
   generic:
     fieldInvalid: "Invalid field '{{field}}'."
   registration:
+    disabled: New user registration is disabled.
     termsNotAccepted: You must accept the Terms of Use to register.
     privacyNotAccepted: You must accept the Privacy Policy to register.
     emailInvalid: Invalid e-mail.
@@ -45,3 +46,5 @@ apiErrors:
   simulationJobForbidden: You are not allowed to access this simulation job.
   duplicatedCategoryConcept: Already there exists a category with this concept.
   unauthorized: You do not have permission to perform this action.
+  imports:
+    lineLimitExceeded: An import cannot contain more than {{maxLines}} lines.

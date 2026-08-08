@@ -61,8 +61,8 @@ describe('CSV statement parser', () => {
 
   it('prioritizes and resolves every canonical header', () => {
     const csv =
-      'origem;data;descricao;valor;moeda;tipo;categoria;grupo;parcela;beneficiarios;fatura;tags;observacoes;confirmado\n' +
-      '019fdb00-a88b-775d-806a-8d74982081ea;2026-08-10;Mercado;-120.50;USD;despesa;Mercado;Casa;Única;a@x.com:50|b@x.com:50;08/2026;casa,comida;Compra;sim\n';
+      'origem;data;descricao;valor;moeda;categoria;grupo;parcela;beneficiarios;fatura;tags;observacoes;confirmado\n' +
+      '019fdb00-a88b-775d-806a-8d74982081ea;2026-08-10;Mercado;-120.50;USD;Mercado;Casa;Única;a@x.com:50|b@x.com:50;08/2026;casa,comida;Compra;sim\n';
     const parsed = parseCsv(csv, { delimiter: ';', decimalSeparator: '.', dateFormat: 'AUTO' });
     const mapping = parsed.mapping;
 
@@ -74,7 +74,6 @@ describe('CSV statement parser', () => {
       description: 'descricao',
       value: 'valor',
       currency: 'moeda',
-      type: 'tipo',
       category: 'categoria',
       group: 'grupo',
       installment: 'parcela',

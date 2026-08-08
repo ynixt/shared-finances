@@ -25,6 +25,8 @@ export abstract class CsvImportDraftState {
   file?: File;
   fileHash = '';
   fileText = '';
+  maxLines = 1000;
+  importPreferencesLoaded = false;
   loading = true;
   parsing = false;
   submitting = false;

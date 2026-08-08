@@ -12,9 +12,11 @@
         [innerHTML]="'landing.subtitle' | translate"
       ></p>
 
-      <a class="mt-6" routerLink="/register" pButton [rounded]="true">
-        <span pButtonLabel>{{ 'landing.startNow' | translate }}</span>
-      </a>
+      @if (openAuthPreferences.registrationEnabled()) {
+        <a class="mt-6" routerLink="/register" pButton [rounded]="true">
+          <span pButtonLabel>{{ 'landing.startNow' | translate }}</span>
+        </a>
+      }
     </div>
   </div>
 </div>

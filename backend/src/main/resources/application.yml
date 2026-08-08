@@ -86,6 +86,7 @@ app:
     base-url: ${SF_APP_PUBLIC_WEB_BASE_URL:http://localhost:4200}
   auth:
     features:
+      registration-enabled: ${SF_APP_REGISTRATION_ENABLED:true}
       email-confirmation-enabled: ${SF_APP_EMAIL_CONFIRMATION_ENABLED:false}
       password-recovery-enabled: ${SF_APP_PASSWORD_RECOVERY_ENABLED:false}
       turnstile-enabled: ${SF_APP_TURNSTILE_ENABLED:false}
@@ -135,6 +136,7 @@ app:
     providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
     fetchDelayMs: ${SF_APP_EXCHANGE_FETCH_DELAY_MS:1000}
   imports:
+    max-lines: ${SF_APP_IMPORT_MAX_LINES:1000}
     worker:
       enabled: ${SF_APP_IMPORT_WORKER_ENABLED:true}
   jobs:

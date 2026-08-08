@@ -3,7 +3,11 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { groupPermissionGuard } from './guards/group-permission.guard';
 import { notLoggedGuard } from './guards/not-logged.guard';
-import { emailConfirmationFlowsEnabledGuard, passwordRecoveryEnabledGuard } from './guards/open-auth-feature.guards';
+import {
+  emailConfirmationFlowsEnabledGuard,
+  passwordRecoveryEnabledGuard,
+  registrationEnabledGuard,
+} from './guards/open-auth-feature.guards';
 import { GroupPermissions__Obj } from './models/generated/com/ynixt/sharedfinances/domain/enums';
 
 export const routes: Routes = [
@@ -26,6 +30,7 @@ export const routes: Routes = [
   {
     'path': 'register',
     canActivate: [notLoggedGuard],
+    canMatch: [registrationEnabledGuard],
     loadComponent: () => import('./pages/registration-page/registration-page.component').then(m => m.RegistrationPageComponent),
     data: {
       pageTitleKey: 'pageTitle.register',

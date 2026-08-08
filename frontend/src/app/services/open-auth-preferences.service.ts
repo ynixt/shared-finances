@@ -9,6 +9,7 @@ import { OpenAuthPreferencesDto } from '../models/generated/com/ynixt/sharedfina
 const FALLBACK: OpenAuthPreferencesDto = {
   emailConfirmationEnabled: true,
   passwordRecoveryEnabled: true,
+  registrationEnabled: true,
   turnstileEnabled: true,
 };
 
@@ -26,6 +27,7 @@ export class OpenAuthPreferencesService {
 
   readonly emailConfirmationEnabled = computed(() => this.preferences()?.emailConfirmationEnabled ?? FALLBACK.emailConfirmationEnabled);
   readonly passwordRecoveryEnabled = computed(() => this.preferences()?.passwordRecoveryEnabled ?? FALLBACK.passwordRecoveryEnabled);
+  readonly registrationEnabled = computed(() => this.preferences()?.registrationEnabled ?? FALLBACK.registrationEnabled);
   readonly turnstileEnabled = computed(() => this.preferences()?.turnstileEnabled ?? FALLBACK.turnstileEnabled);
 
   private loadPromise: Promise<void> | null = null;

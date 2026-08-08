@@ -1,9 +1,12 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
+import com.ynixt.sharedfinances.application.config.ImportProperties
 import com.ynixt.sharedfinances.application.web.dto.imports.CreateImportDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportBatchDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportDuplicateCheckDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportHashCheckDto
+import com.ynixt.sharedfinances.application.web.dto.imports.ImportPreferencesDto
+import com.ynixt.sharedfinances.application.web.validation.ImportLineLimitValidator
 import com.ynixt.sharedfinances.domain.models.imports.CreateImport
 import com.ynixt.sharedfinances.domain.models.imports.ImportBatchSummary
 import com.ynixt.sharedfinances.domain.models.imports.ImportDuplicateCheck
@@ -34,7 +37,13 @@ import java.util.UUID
 @Tag(name = "Imports", description = "CSV bank statement import and history operations")
 class ImportController(
     private val importService: ImportService,
+    private val importProperties: ImportProperties,
+    private val importLineLimitValidator: ImportLineLimitValidator,
 ) {
+    @Operation(summary = "Get CSV import preferences")
+    @GetMapping("/preferences")
+    suspend fun preferences(): ImportPreferencesDto = ImportPreferencesDto(maxLines = importProperties.maxLines)
+
     @Operation(summary = "Check whether a SHA-256 file hash was imported before")
     @GetMapping("/check-hash/{hash}")
     suspend fun checkHash(
@@ -50,8 +59,9 @@ class ImportController(
     suspend fun checkDuplicates(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: ImportDuplicateCheckDto,
-    ): List<Int> =
-        importService.checkDuplicates(
+    ): List<Int> {
+        importLineLimitValidator.validate(body.lines.size)
+        return importService.checkDuplicates(
             userId = principalToken.principal.id,
             request =
                 ImportDuplicateCheck(
@@ -67,6 +77,7 @@ class ImportController(
                         },
                 ),
         )
+    }
 
     @Operation(summary = "Accept an import batch for asynchronous processing")
     @PostMapping
@@ -74,8 +85,9 @@ class ImportController(
     suspend fun create(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: CreateImportDto,
-    ): ImportBatchDto =
-        importService
+    ): ImportBatchDto {
+        importLineLimitValidator.validate(body.lines.size)
+        return importService
             .create(
                 userId = principalToken.principal.id,
                 request =
@@ -111,6 +123,7 @@ class ImportController(
                             },
                     ),
             ).toDto()
+    }
 
     @Operation(summary = "Get an import batch")
     @GetMapping("/{id}")

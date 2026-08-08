@@ -88,7 +88,8 @@ financesPage:
         confirmedFeminine: Confirmed
       fileStep:
         title: 1. CSV file
-        hint: 'Default delimiter: semicolon. The file is not uploaded at this step.'
+        hint: 'Default delimiter: semicolon.'
+        maxLines: 'Maximum: {{maxLines}} data rows.'
         select: Select CSV
         reading: Reading and calculating the file hash…
         hash:
@@ -183,6 +184,7 @@ financesPage:
         enterConvertedValue: Enter the converted amount.
       errors:
         loadData: The data required for the import could not be loaded.
+        lineLimitExceeded: 'The CSV exceeds the {{maxLines}} data row limit. Split the file into smaller batches.'
         readFile: The CSV file could not be read.
         parseCsv: The CSV could not be parsed.
         fixedOriginRequired: Fill in the fixed origin.

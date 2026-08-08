@@ -8,6 +8,7 @@ import {
   ImportBatchDto,
   ImportDuplicateCheckDto,
   ImportHashCheckDto,
+  ImportPreferencesDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/imports';
 import { UserService } from '../../../services/user.service';
 import { UserMissingError } from '../errors/user-missing.error';
@@ -22,6 +23,11 @@ export class ImportService {
   async checkHash(hash: string): Promise<ImportHashCheckDto> {
     await this.requireUser();
     return lastValueFrom(this.http.get<ImportHashCheckDto>(`/api/imports/check-hash/${encodeURIComponent(hash)}`).pipe(take(1)));
+  }
+
+  async preferences(): Promise<ImportPreferencesDto> {
+    await this.requireUser();
+    return lastValueFrom(this.http.get<ImportPreferencesDto>('/api/imports/preferences').pipe(take(1)));
   }
 
   async checkDuplicates(request: ImportDuplicateCheckDto): Promise<number[]> {

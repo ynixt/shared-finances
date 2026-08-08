@@ -13,6 +13,7 @@ data class AuthProperties(
 )
 
 data class AuthFeatureFlags(
+    val registrationEnabled: Boolean = true,
     val emailConfirmationEnabled: Boolean = true,
     val passwordRecoveryEnabled: Boolean = true,
     val turnstileEnabled: Boolean = true,

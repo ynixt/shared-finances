@@ -34,9 +34,11 @@
             <span pButtonLabel>{{ 'general.login' | translate }}</span>
           </a>
 
-          <a routerLink="/register" pButton [rounded]="true">
-            <span pButtonLabel>{{ 'general.register' | translate }}</span>
-          </a>
+          @if (openAuthPreferences.registrationEnabled()) {
+            <a routerLink="/register" pButton [rounded]="true">
+              <span pButtonLabel>{{ 'general.register' | translate }}</span>
+            </a>
+          }
 
           <app-dark-mode-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-dark-mode-button>
           <app-lang-button buttonClass="text-default-inverse dark:text-default hover:text-primary"></app-lang-button>

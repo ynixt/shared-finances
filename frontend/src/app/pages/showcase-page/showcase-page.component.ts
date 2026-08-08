@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 
@@ -6,6 +6,7 @@ import { ButtonDirective, ButtonLabel } from 'primeng/button';
 
 import { GithubStarsComponent } from '../../components/github-stars/github-stars.component';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
+import { OpenAuthPreferencesService } from '../../services/open-auth-preferences.service';
 
 @Component({
   selector: 'app-showcase-page',
@@ -13,4 +14,6 @@ import { NavbarComponent } from '../../components/navbar/navbar.component';
   templateUrl: './showcase-page.component.html',
   styleUrl: './showcase-page.component.scss',
 })
-export class ShowcasePageComponent {}
+export class ShowcasePageComponent {
+  protected readonly openAuthPreferences = inject(OpenAuthPreferencesService);
+}

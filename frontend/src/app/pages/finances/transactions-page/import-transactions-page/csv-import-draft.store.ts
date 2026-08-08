@@ -118,7 +118,9 @@ export class CsvImportDraftStore extends CsvImportDraftState {
 
   async initialize(): Promise<void> {
     try {
-      await this.catalogs.load();
+      const [, preferences] = await Promise.all([this.catalogs.load(), this.importService.preferences()]);
+      this.maxLines = preferences.maxLines;
+      this.importPreferencesLoaded = true;
     } catch {
       this.error = this.importText('errors.loadData');
     } finally {
@@ -129,7 +131,7 @@ export class CsvImportDraftStore extends CsvImportDraftState {
   async selectFile(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (file == null) return;
+    if (file == null || !this.importPreferencesLoaded) return;
 
     this.parsing = true;
     this.error = undefined;
@@ -171,6 +173,12 @@ export class CsvImportDraftStore extends CsvImportDraftState {
         decimalSeparator: this.decimalSeparator,
         dateFormat: this.dateFormat,
       });
+      if (parsed.rows.length > this.maxLines) {
+        const maxLines = this.maxLines;
+        this.removeFile();
+        this.error = this.importText('errors.lineLimitExceeded', { maxLines });
+        return;
+      }
       this.headers = parsed.headers;
       this.detectedLayoutProviderId = parsed.layoutProviderId;
       const detected = parsed.mapping;

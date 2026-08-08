@@ -30,6 +30,7 @@ import { CsvImportSubmissionService } from './csv-import-submission.service';
 describe('CsvImportDraftStore', () => {
   const importService = {
     checkDuplicates: vi.fn().mockResolvedValue([]),
+    preferences: vi.fn().mockResolvedValue({ maxLines: 1000 }),
     create: vi.fn(),
     get: vi.fn(),
     list: vi.fn().mockResolvedValue([]),
@@ -75,6 +76,7 @@ describe('CsvImportDraftStore', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     importService.checkDuplicates.mockResolvedValue([]);
+    importService.preferences.mockResolvedValue({ maxLines: 1000 });
     importService.create.mockResolvedValue({
       id: 'batch-new',
       fileHash: 'hash',
@@ -495,6 +497,57 @@ describe('CsvImportDraftStore', () => {
     expect(component.categoriesFor({ ...previewRow(0), groupId: 'group-1' })).toEqual([groupCategory]);
     expect(groupCategoriesService.getAllCategories).toHaveBeenCalledTimes(1);
     expect(groupCategoriesService.getAllCategories).toHaveBeenCalledWith('group-1', {}, { size: 500, page: 0, sort: 'name' });
+  });
+
+  it('loads the configured import line limit with the page catalogs', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    importService.preferences.mockResolvedValue({ maxLines: 2500 });
+
+    await component.initialize();
+
+    expect(component.maxLines).toBe(2500);
+    expect(component.importPreferencesLoaded).toBe(true);
+    expect(component.loading).toBe(false);
+  });
+
+  it('keeps file processing disabled when import preferences cannot be loaded', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    importService.preferences.mockRejectedValue(new Error('preferences unavailable'));
+
+    await component.initialize();
+
+    expect(component.maxLines).toBe(1000);
+    expect(component.importPreferencesLoaded).toBe(false);
+    expect(component.error).toBe('financesPage.transactionsPage.importPage.errors.loadData');
+    expect(component.loading).toBe(false);
+  });
+
+  it('accepts exactly the configured number of parsed data rows and ignores blank rows and the header', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    component.maxLines = 2;
+    component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
+    component.fileText = 'data;descricao;valor\n\n07/08/2026;Compra A;10\n\n08/08/2026;Compra B;20\n';
+
+    await component.reprocess(true);
+
+    expect(component.file).toBeDefined();
+    expect(component.rows).toHaveLength(2);
+    expect(component.error).toBeUndefined();
+  });
+
+  it('removes a CSV one line over the limit before duplicate checks', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    component.maxLines = 2;
+    component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
+    component.fileText = 'data;descricao;valor\n07/08/2026;Compra A;10\n08/08/2026;Compra B;20\n09/08/2026;Compra C;30\n';
+    importService.checkDuplicates.mockClear();
+
+    await component.reprocess(true);
+
+    expect(component.file).toBeUndefined();
+    expect(component.rows).toEqual([]);
+    expect(component.error).toBe('financesPage.transactionsPage.importPage.errors.lineLimitExceeded');
+    expect(importService.checkDuplicates).not.toHaveBeenCalled();
   });
 
   it('fills a mapped CSV category automatically when a personal category matches', async () => {

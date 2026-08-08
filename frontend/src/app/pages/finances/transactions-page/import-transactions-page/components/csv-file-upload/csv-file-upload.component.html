@@ -2,13 +2,24 @@
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
       <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.fileStep.title' | translate }}</h2>
-      <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.fileStep.hint' | translate }}</p>
+      <p class="text-sm text-muted">
+        {{ 'financesPage.transactionsPage.importPage.fileStep.hint' | translate }}
+        @if (store.importPreferencesLoaded) {
+          {{ 'financesPage.transactionsPage.importPage.fileStep.maxLines' | translate: { maxLines: store.maxLines } }}
+        }
+      </p>
     </div>
     @if (store.file == null) {
-      <label pButton class="cursor-pointer">
+      <label pButton class="cursor-pointer" [class.opacity-50]="!store.importPreferencesLoaded">
         <i class="pi pi-upload"></i>
         <span>{{ 'financesPage.transactionsPage.importPage.fileStep.select' | translate }}</span>
-        <input class="sr-only" type="file" accept=".csv,text/csv" (change)="store.selectFile($event)" />
+        <input
+          class="sr-only"
+          type="file"
+          accept=".csv,text/csv"
+          [disabled]="!store.importPreferencesLoaded"
+          (change)="store.selectFile($event)"
+        />
       </label>
     } @else {
       <div class="flex items-center gap-3 rounded-xl bg-surface-100 px-4 py-3 dark:bg-surface-800">

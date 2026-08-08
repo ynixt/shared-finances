@@ -88,7 +88,8 @@ financesPage:
         confirmedFeminine: Confirmada
       fileStep:
         title: 1. Arquivo CSV
-        hint: 'Delimitador padrão: ponto e vírgula. O arquivo não é enviado nesta etapa.'
+        hint: 'Delimitador padrão: ponto e vírgula.'
+        maxLines: 'Máximo: {{maxLines}} linhas de dados.'
         select: Selecionar CSV
         reading: Lendo e calculando o hash do arquivo…
         hash:
@@ -183,6 +184,7 @@ financesPage:
         enterConvertedValue: Informe o valor convertido.
       errors:
         loadData: Não foi possível carregar os dados necessários para a importação.
+        lineLimitExceeded: 'O CSV excede o limite de {{maxLines}} linhas de dados. Divida o arquivo em lotes menores.'
         readFile: Não foi possível ler o arquivo CSV.
         parseCsv: Não foi possível interpretar o CSV.
         fixedOriginRequired: Preencha a origem fixa.

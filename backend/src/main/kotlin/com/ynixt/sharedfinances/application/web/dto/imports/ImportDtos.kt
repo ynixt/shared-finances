@@ -15,6 +15,10 @@ data class ImportHashCheckDto(
     val fileName: String?,
 )
 
+data class ImportPreferencesDto(
+    val maxLines: Int,
+)
+
 data class ImportDuplicateLineDto(
     val walletItemId: UUID,
     val name: String?,
