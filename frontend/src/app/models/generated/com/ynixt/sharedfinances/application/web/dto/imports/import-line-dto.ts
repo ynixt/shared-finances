@@ -3,6 +3,7 @@
 import { WalletBeneficiaryLegDto } from '../walletentry/wallet-beneficiary-leg-dto';
 
 export interface ImportLineDto {
+  externalTransactionId?: string | null;
   beneficiaries?: Array<WalletBeneficiaryLegDto> | null;
   billDate?: string | null;
   categoryId?: string | null;

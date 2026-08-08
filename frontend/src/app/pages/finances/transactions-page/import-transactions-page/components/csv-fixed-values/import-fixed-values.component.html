@@ -105,7 +105,7 @@
                 [filter]="true"
                 [showClear]="true"
                 [placeholder]="'financesPage.transactionsPage.importPage.fields.noGroup' | translate"
-                [ngModel]="store.fixedValues.group ?? ''"
+                [ngModel]="selectedGroupId"
                 (ngModelChange)="groupChanged($event)"
               />
             }

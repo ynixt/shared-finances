@@ -222,6 +222,7 @@ abstract class WalletEntrySaveServiceImpl(
             installment = installment,
             recurrenceEventId = recurrenceConfig?.id,
             importBatchId = newEntryRequest.importBatchId,
+            externalTransactionId = if (recurrenceConfig == null) newEntryRequest.externalTransactionId else null,
             paymentType = newEntryRequest.paymentType,
             transferPurpose = newEntryRequest.transferPurpose,
             initialBalance = newEntryRequest.initialBalance,
@@ -481,6 +482,7 @@ abstract class WalletEntrySaveServiceImpl(
             seriesId = resolvedSeriesId,
             seriesOffset = seriesOffset,
             importBatchId = newEntryRequest.importBatchId,
+            externalTransactionId = newEntryRequest.externalTransactionId,
             transferPurpose = newEntryRequest.transferPurpose,
         ).also {
             if (id != null) {

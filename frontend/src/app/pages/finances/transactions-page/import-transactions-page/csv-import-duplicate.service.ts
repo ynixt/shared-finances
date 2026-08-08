@@ -14,6 +14,18 @@ export class CsvImportDuplicateService {
   async refresh(rows: ImportPreviewRow[], autoIgnore: boolean, text: (key: string) => string): Promise<void> {
     const requestId = ++this.requestId;
     rows.forEach(row => (row.duplicate = false));
+    const seenIdentifiers = new Set<string>();
+    rows.forEach(row => {
+      const externalTransactionId = row.externalTransactionId?.trim();
+      if (row.walletItemId == null || externalTransactionId == null || externalTransactionId === '') return;
+      const key = `${row.walletItemId}\u0000${externalTransactionId}`;
+      if (seenIdentifiers.has(key)) {
+        row.duplicate = true;
+        if (autoIgnore) row.included = false;
+      } else if (row.included) {
+        seenIdentifiers.add(key);
+      }
+    });
     const checkableRows = rows.filter(
       (row): row is ImportPreviewRow & { walletItemId: string } => row.walletItemId != null && row.walletItemId !== '',
     );
@@ -26,6 +38,7 @@ export class CsvImportDuplicateService {
           value: row.convertedValue ?? 0,
           date: row.date ?? '0001-01-01',
           installment: row.installment?.current,
+          externalTransactionId: row.externalTransactionId,
         })),
       });
       if (requestId !== this.requestId) return;
@@ -47,3 +60,5 @@ export class CsvImportDuplicateService {
     }
   }
 }
+
+export { CsvImportDuplicateService as ImportDuplicateService };

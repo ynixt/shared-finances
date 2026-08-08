@@ -34,13 +34,13 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/imports")
-@Tag(name = "Imports", description = "CSV bank statement import and history operations")
+@Tag(name = "Imports", description = "Transaction statement import and history operations")
 class ImportController(
     private val importService: ImportService,
     private val importProperties: ImportProperties,
     private val importLineLimitValidator: ImportLineLimitValidator,
 ) {
-    @Operation(summary = "Get CSV import preferences")
+    @Operation(summary = "Get transaction import preferences")
     @GetMapping("/preferences")
     suspend fun preferences(): ImportPreferencesDto = ImportPreferencesDto(maxLines = importProperties.maxLines)
 
@@ -73,6 +73,7 @@ class ImportController(
                                 value = line.value,
                                 date = line.date,
                                 installment = line.installment,
+                                externalTransactionId = line.externalTransactionId,
                             )
                         },
                 ),
@@ -119,6 +120,7 @@ class ImportController(
                                     createFollowingInstallments = line.createFollowingInstallments,
                                     tags = line.tags,
                                     observations = line.observations,
+                                    externalTransactionId = line.externalTransactionId,
                                 )
                             },
                     ),

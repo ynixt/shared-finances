@@ -21,10 +21,15 @@
     } @else {
       <app-csv-file-upload />
 
-      @if (store.file != null && store.headers.length > 0) {
-        <app-csv-options />
-        <app-csv-column-mapping />
-        <app-csv-fixed-values />
+      @if (store.file != null && store.hasParsedRows) {
+        @if (store.fileFormat === 'CSV') {
+          <app-csv-options />
+          <app-csv-column-mapping />
+        } @else if (store.fileFormat === 'OFX') {
+          <app-ofx-account-mapping />
+          <app-csv-column-mapping />
+        }
+        <app-import-fixed-values />
         <app-import-preview (batchAccepted)="batchAccepted($event)" />
       }
 

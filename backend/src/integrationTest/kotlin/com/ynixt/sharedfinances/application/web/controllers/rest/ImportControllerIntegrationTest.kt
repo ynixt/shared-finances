@@ -160,6 +160,7 @@ class ImportControllerIntegrationTest : IntegrationTestContainers() {
                                     createFollowingInstallments = case.following,
                                     tags = listOf("import-test"),
                                     observations = null,
+                                    externalTransactionId = "fit-segment-$index",
                                 ),
                             ),
                     )
@@ -183,8 +184,13 @@ class ImportControllerIntegrationTest : IntegrationTestContainers() {
                 assertThat(completed.qty).isEqualTo(case.expectedQty)
                 assertThat(walletEventRepository.findAllByImportBatchId(created.id).asFlow().toList())
                     .hasSize(case.expectedPostedEvents)
+                    .allMatch { it.externalTransactionId == null }
                 assertThat(recurrenceEventRepository.findAllByImportBatchId(created.id).asFlow().toList())
                     .hasSize(case.expectedRecurrenceConfigs)
+                    .filteredOn { it.externalTransactionId != null }
+                    .singleElement()
+                    .extracting<String> { it.externalTransactionId }
+                    .isEqualTo("fit-segment-$index")
                 val beforeRedelivery = walletEventRepository.findAllByImportBatchId(created.id).asFlow().toList()
                 importJobService.processDispatchMessage(created.id)
                 val afterRedelivery = walletEventRepository.findAllByImportBatchId(created.id).asFlow().toList()
@@ -464,10 +470,152 @@ class ImportControllerIntegrationTest : IntegrationTestContainers() {
             Unit
         }
 
+    @Test
+    fun `should persist OFX identifiers and prefer them for scoped duplicate checks until undo`() =
+        runBlocking {
+            val user = userTestUtil.createUserOnDatabase()
+            val accessToken = userTestUtil.login()
+            val firstRequest = JsonUtil.readJsonFromResources("mocks/bank-account/new-bank-account-request-200.json")
+            val secondRequest = firstRequest.replace("Conta IT", "Conta OFX 2")
+            listOf(firstRequest, secondRequest).forEach { request ->
+                webClient
+                    .post()
+                    .uri("/bank-accounts")
+                    .header(HttpHeaders.AUTHORIZATION, accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .exchange()
+                    .expectStatus()
+                    .isOk
+            }
+            val walletItems =
+                walletItemRepository
+                    .findAllByUserIdAndType(user.id!!, WalletItemType.BANK_ACCOUNT, PageRequest.of(0, 10))
+                    .collectList()
+                    .awaitSingle()
+                    .associateBy { it.name }
+            val firstWalletItemId = walletItems.getValue("Conta IT").id!!
+            val secondWalletItemId = walletItems.getValue("Conta OFX 2").id!!
+
+            val created =
+                webClient
+                    .post()
+                    .uri("/imports")
+                    .header(HttpHeaders.AUTHORIZATION, accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(
+                        CreateImportDto(
+                            fileHash = "e".repeat(64),
+                            fileName = "statement.ofx",
+                            format = "OFX",
+                            lines =
+                                listOf(
+                                    importLine(firstWalletItemId, "Original", BigDecimal("-10.00"), "fit-001"),
+                                    importLine(
+                                        firstWalletItemId,
+                                        "Parcelado",
+                                        BigDecimal("-20.00"),
+                                        "fit-rec-001",
+                                        installment = 2,
+                                        installmentTotal = 3,
+                                    ),
+                                ),
+                        ),
+                    ).exchange()
+                    .expectStatus()
+                    .isAccepted
+                    .expectBody(ImportBatchDto::class.java)
+                    .returnResult()
+                    .responseBody!!
+
+            val completed = awaitTerminalBatch(accessToken, created.id)
+            assertThat(completed.status).isEqualTo(ImportBatchStatus.COMPLETED)
+            assertThat(
+                walletEventRepository
+                    .findAllByImportBatchId(created.id)
+                    .asFlow()
+                    .toList()
+                    .map { it.externalTransactionId },
+            ).containsExactlyInAnyOrder("fit-001", null)
+            assertThat(recurrenceEventRepository.findAllByImportBatchId(created.id).asFlow().toList())
+                .singleElement()
+                .extracting<String> { it.externalTransactionId }
+                .isEqualTo("fit-rec-001")
+
+            assertThat(checkDuplicateIndexes(accessToken, duplicateLine(firstWalletItemId, "Changed", BigDecimal("-99.00"), "fit-001")))
+                .containsExactly(0)
+            assertThat(checkDuplicateIndexes(accessToken, duplicateLine(firstWalletItemId, "Original", BigDecimal("-10.00"), "fit-002")))
+                .isEmpty()
+            assertThat(checkDuplicateIndexes(accessToken, duplicateLine(firstWalletItemId, "Original", BigDecimal("-10.00"))))
+                .containsExactly(0)
+            assertThat(checkDuplicateIndexes(accessToken, duplicateLine(secondWalletItemId, "Other", BigDecimal("-10.00"), "fit-001")))
+                .isEmpty()
+            assertThat(
+                checkDuplicateIndexes(
+                    accessToken,
+                    duplicateLine(firstWalletItemId, "Changed installment", BigDecimal("-99.00"), "fit-rec-001", installment = 2),
+                ),
+            ).containsExactly(0)
+            assertThat(
+                checkDuplicateIndexes(
+                    accessToken,
+                    duplicateLine(firstWalletItemId, "Parcelado", BigDecimal("-20.00"), "fit-rec-002", installment = 2),
+                ),
+            ).isEmpty()
+
+            webClient
+                .delete()
+                .uri("/imports/${created.id}")
+                .header(HttpHeaders.AUTHORIZATION, accessToken)
+                .exchange()
+                .expectStatus()
+                .isAccepted
+            awaitBatchRemoved(created.id)
+
+            assertThat(checkDuplicateIndexes(accessToken, duplicateLine(firstWalletItemId, "Original", BigDecimal("-10.00"), "fit-001")))
+                .isEmpty()
+        }
+
+    @Test
+    fun `should reject unsupported formats and overlength external identifiers`() =
+        runBlocking {
+            val user = userTestUtil.createUserOnDatabase()
+            val accessToken = userTestUtil.login()
+            val walletItemId = createBankAccount(accessToken, user.id!!)
+
+            listOf(
+                CreateImportDto(
+                    fileHash = "b".repeat(64),
+                    fileName = "statement.qif",
+                    format = "QIF",
+                    lines = listOf(importLine(walletItemId, "Unsupported", BigDecimal.ONE)),
+                ),
+                CreateImportDto(
+                    fileHash = "c".repeat(64),
+                    fileName = "statement.ofx",
+                    format = "OFX",
+                    lines = listOf(importLine(walletItemId, "Too long", BigDecimal.ONE, "x".repeat(256))),
+                ),
+            ).forEach { request ->
+                webClient
+                    .post()
+                    .uri("/imports")
+                    .header(HttpHeaders.AUTHORIZATION, accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(request)
+                    .exchange()
+                    .expectStatus()
+                    .isBadRequest
+            }
+        }
+
     private fun importLine(
         walletItemId: java.util.UUID,
         name: String,
         value: BigDecimal,
+        externalTransactionId: String? = null,
+        installment: Int? = null,
+        installmentTotal: Int? = null,
     ) = ImportLineDto(
         walletItemId = walletItemId,
         name = name,
@@ -477,23 +625,45 @@ class ImportControllerIntegrationTest : IntegrationTestContainers() {
         groupId = null,
         beneficiaries = null,
         billDate = null,
-        installment = null,
-        installmentTotal = null,
+        installment = installment,
+        installmentTotal = installmentTotal,
         tags = null,
         observations = null,
+        externalTransactionId = externalTransactionId,
     )
 
     private fun duplicateLine(
         walletItemId: java.util.UUID,
         name: String,
         value: BigDecimal,
+        externalTransactionId: String? = null,
+        installment: Int? = null,
     ) = ImportDuplicateLineDto(
         walletItemId = walletItemId,
         name = name,
         value = value,
         date = LocalDate.of(2026, 8, 10),
-        installment = null,
+        installment = installment,
+        externalTransactionId = externalTransactionId,
     )
+
+    private fun checkDuplicateIndexes(
+        accessToken: String,
+        line: ImportDuplicateLineDto,
+    ): List<Int> =
+        webClient
+            .post()
+            .uri("/imports/check-duplicates")
+            .header(HttpHeaders.AUTHORIZATION, accessToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(ImportDuplicateCheckDto(lines = listOf(line)))
+            .exchange()
+            .expectStatus()
+            .isOk
+            .expectBodyList(Int::class.java)
+            .returnResult()
+            .responseBody
+            .orEmpty()
 
     private suspend fun createBankAccount(
         accessToken: String,

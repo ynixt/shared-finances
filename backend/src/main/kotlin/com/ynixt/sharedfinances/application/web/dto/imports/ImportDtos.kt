@@ -25,6 +25,7 @@ data class ImportDuplicateLineDto(
     val value: BigDecimal,
     val date: LocalDate,
     val installment: Int?,
+    val externalTransactionId: String? = null,
 )
 
 data class ImportDuplicateCheckDto(
@@ -47,6 +48,7 @@ data class ImportLineDto(
     val createFollowingInstallments: Boolean = false,
     val tags: List<String>?,
     val observations: String?,
+    val externalTransactionId: String? = null,
 )
 
 data class CreateImportDto(

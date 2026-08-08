@@ -33,10 +33,9 @@ Easily manage your personal and family finances. Free and open source.
 - [x] Financial goals
 - [x] Simulation of a new expense can show if you can afford it
 - [x] Support of many currencies, including cryptocurrencies. (You can see the list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
-- [X] Import transactions from CSV
+- [X] Import transactions from CSV/OFX
 - [ ] Export transactions AS CSV (⌛ Planned)
 - [ ] PDF report (⌛ Planned)
-- [ ] Import transactions from OFX (⌛ Planned)
 - [ ] Email before due date (✖️ Not planned)
 
 # Self Hosted

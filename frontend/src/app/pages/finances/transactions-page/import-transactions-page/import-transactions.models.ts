@@ -23,6 +23,7 @@ export interface ImportPreviewRow {
   currencySource: 'FALLBACK' | 'FILE' | 'MANUAL';
   date?: string;
   duplicate: boolean;
+  externalTransactionId?: string;
   groupId?: string;
   included: boolean;
   index: number;
@@ -31,8 +32,8 @@ export interface ImportPreviewRow {
   observations?: string;
   parseError?: string;
   raw: Record<string, string>;
+  sourceStatementKey?: string;
   tags?: string[];
-  transactionId?: string;
   value?: number;
   walletItemId?: string;
 }

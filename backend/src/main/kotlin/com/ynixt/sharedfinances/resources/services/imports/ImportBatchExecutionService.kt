@@ -121,6 +121,7 @@ class ImportBatchExecutionService(
                     seriesOffset = 0,
                     seriesQtyTotal = total,
                     seriesId = seriesId,
+                    externalTransactionId = null,
                 ),
         ) ?: throw UnauthorizedException()
     }
@@ -135,6 +136,7 @@ class ImportBatchExecutionService(
         seriesOffset: Int,
         seriesQtyTotal: Int?,
         seriesId: UUID?,
+        externalTransactionId: String? = this.externalTransactionId,
     ): NewEntryRequest {
         val type = if (value.signum() < 0) WalletEntryType.EXPENSE else WalletEntryType.REVENUE
         return NewEntryRequest(
@@ -155,6 +157,7 @@ class ImportBatchExecutionService(
             seriesQtyTotal = seriesQtyTotal,
             seriesId = seriesId,
             importBatchId = batchId,
+            externalTransactionId = externalTransactionId,
             recurrenceConfirmedOverride = confirmed,
             originBillDate = billDate,
             tags = tags,

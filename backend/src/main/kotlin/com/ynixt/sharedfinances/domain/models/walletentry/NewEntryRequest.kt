@@ -38,6 +38,8 @@ data class NewEntryRequest(
     val seriesId: UUID? = null,
     /** Import batch that owns the event and any recurrence config created from this request. */
     val importBatchId: UUID? = null,
+    /** Opaque provider identifier used only for imported-source duplicate detection. */
+    val externalTransactionId: String? = null,
     /** Confirmation state used only while materializing retroactive occurrences during creation. */
     val recurrenceConfirmedOverride: Boolean? = null,
     val originBillDate: LocalDate? = null,

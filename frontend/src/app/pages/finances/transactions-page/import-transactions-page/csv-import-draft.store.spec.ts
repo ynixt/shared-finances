@@ -26,9 +26,11 @@ import { CsvImportDraftStore } from './csv-import-draft.store';
 import { CsvImportDuplicateService } from './csv-import-duplicate.service';
 import { CsvImportRowResolver } from './csv-import-row.resolver';
 import { CsvImportSubmissionService } from './csv-import-submission.service';
+import { ImportPreviewRow } from './import-transactions.models';
 
 describe('CsvImportDraftStore', () => {
   const importService = {
+    checkHash: vi.fn().mockResolvedValue({ status: 'NOT_IMPORTED' }),
     checkDuplicates: vi.fn().mockResolvedValue([]),
     preferences: vi.fn().mockResolvedValue({ maxLines: 1000 }),
     create: vi.fn(),
@@ -55,6 +57,9 @@ describe('CsvImportDraftStore', () => {
   const currencyCatalogService = {
     getCurrencies: vi.fn().mockReturnValue(of([{ code: 'BRL', name: 'Real', symbol: 'R$' }])),
   };
+  const creditCardBillService = {
+    getBestBill: vi.fn((date: Date) => dayjs(date).startOf('month')),
+  };
   const messageService = {
     add: vi.fn(),
   };
@@ -75,6 +80,7 @@ describe('CsvImportDraftStore', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    importService.checkHash.mockResolvedValue({ status: 'NOT_IMPORTED' });
     importService.checkDuplicates.mockResolvedValue([]);
     importService.preferences.mockResolvedValue({ maxLines: 1000 });
     importService.create.mockResolvedValue({
@@ -111,6 +117,7 @@ describe('CsvImportDraftStore', () => {
     walletItemService.getAllItems.mockResolvedValue({ content: [] });
     importService.list.mockResolvedValue([]);
     currencyCatalogService.getCurrencies.mockReturnValue(of([{ code: 'BRL', name: 'Real', symbol: 'R$' }]));
+    creditCardBillService.getBestBill.mockImplementation((date: Date) => dayjs(date).startOf('month'));
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       providers: [
@@ -142,7 +149,7 @@ describe('CsvImportDraftStore', () => {
         { provide: GroupCategoriesService, useValue: groupCategoriesService },
         { provide: GroupService, useValue: groupService },
         { provide: CurrencyCatalogService, useValue: currencyCatalogService },
-        { provide: CreditCardBillService, useValue: {} },
+        { provide: CreditCardBillService, useValue: creditCardBillService },
         { provide: MessageService, useValue: messageService },
         { provide: TranslateService, useValue: translateService },
       ],
@@ -171,22 +178,82 @@ describe('CsvImportDraftStore', () => {
     expect(component.mappingOptions.some(option => option.field === 'type')).toBe(false);
   });
 
-  it('uses a fixed bill with the current month by default', async () => {
+  it('uses the bill derived from the row date by default and recomputes it after a date edit', async () => {
     const component = TestBed.inject(CsvImportDraftStore);
     component.currencyOptions = ['BRL'];
     component.defaultCurrency = 'BRL';
     component.walletItems = [walletItem('wallet-card', 'BRL', 'CREDIT_CARD')];
     component.fixedValues.origin = 'wallet-card';
-    component.fileText = 'data;descricao;valor\n07/08/2026;Compra;10\n';
+    component.fileText = [
+      'origin;date;description;amount;currency;category;group;installment;beneficiaries;bill;tags;observations;confirmed',
+      ['', '2026-08-07', 'Compra', '10', 'BRL', '', '', '', '', '', '', '', ''].join(';'),
+    ].join('\n');
 
     await component.reprocess(true);
 
     expect(component.mapping.origin).toBe(component.fixedMappingValue);
-    expect(component.mapping.bill).toBe(component.fixedMappingValue);
+    expect(component.mapping.bill).toBe(component.billFromDateMappingValue);
     expect(component.fixedMappingOptions[0].field).toBe('origin');
-    expect(component.fixedValues.bill).toBe(dayjs().format('YYYY-MM'));
-    expect(component.rows[0].walletItemId).toBe('wallet-card');
-    expect(component.rows[0].billDate).toBe(`${dayjs().format('YYYY-MM')}-01`);
+    expect(component.fixedMappingOptions.some(option => option.field === 'bill')).toBe(false);
+    expect(component.originFor(component.rows[0])?.type).toBe('CREDIT_CARD');
+    expect(creditCardBillService.getBestBill).toHaveBeenCalled();
+    expect(component.rows[0]).toMatchObject({ walletItemId: 'wallet-card', billDate: '2026-08-01' });
+
+    await component.rowDateChanged(component.rows[0], '2026-09-07');
+
+    expect(component.rows[0].billDate).toBe('2026-09-01');
+  });
+
+  it.each(['CSV', 'OFX'] as const)('edits installment parts and converts a %s row back to a single purchase', async fileFormat => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    const row: ImportPreviewRow = previewRow(0);
+    component.fileFormat = fileFormat;
+    component.rows = [row];
+
+    await component.rowInstallmentEnabledChanged(row, true);
+    expect(row.installment).toEqual({ current: 1, total: 2 });
+
+    await component.rowInstallmentPartChanged(row, 'current', 4);
+    expect(row.installment).toEqual({ current: 4, total: 4 });
+
+    await component.rowInstallmentPartChanged(row, 'total', 3);
+    expect(row.installment).toEqual({ current: 3, total: 3 });
+
+    row.createPreviousInstallments = true;
+    row.createFollowingInstallments = true;
+    await component.rowInstallmentEnabledChanged(row, false);
+
+    expect(row.installment).toBeUndefined();
+    expect(row.createPreviousInstallments).toBe(false);
+    expect(row.createFollowingInstallments).toBe(false);
+  });
+
+  it('submits a CSV installment detected from the file as a single purchase after the user disables installments', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    component.currencyOptions = ['BRL'];
+    component.defaultCurrency = 'BRL';
+    component.walletItems = [walletItem('wallet-card', 'BRL', 'CREDIT_CARD')];
+    component.fixedValues.origin = 'wallet-card';
+    component.file = new File(['csv'], 'installment.csv', { type: 'text/csv' });
+    component.fileFormat = 'CSV';
+    component.fileHash = 'hash-installment';
+    component.fileText = [
+      'origin;date;description;amount;currency;category;group;installment;beneficiaries;bill;tags;observations;confirmed',
+      ['', '2026-08-07', 'Compra parcelada', '10', 'BRL', '', '', '3/12', '', '', '', '', ''].join(';'),
+    ].join('\n');
+
+    await component.reprocess(true);
+    expect(component.rows[0].installment).toEqual({ current: 3, total: 12 });
+
+    await component.rowInstallmentEnabledChanged(component.rows[0], false);
+    await component.submit();
+
+    expect(importService.create.mock.calls[0][0].lines[0]).toMatchObject({
+      installment: undefined,
+      installmentTotal: undefined,
+      createPreviousInstallments: false,
+      createFollowingInstallments: false,
+    });
   });
 
   it('applies a fixed value to every row and reapplies it over manual preview edits', async () => {
@@ -568,6 +635,151 @@ describe('CsvImportDraftStore', () => {
     await component.setMapping('category', 'categoria');
 
     expect(component.rows[0].categoryId).toBe(category.id);
+  });
+
+  it('loads an OFX draft, maps its account, and submits only normalized data', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    component.importPreferencesLoaded = true;
+    component.currencyOptions = ['BRL'];
+    component.defaultCurrency = 'BRL';
+    component.walletItems = [walletItem('wallet-ofx')];
+    const ofx = `<?xml version="1.0" encoding="UTF-8"?><OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL</CURDEF><BANKACCTFROM><BANKID>001</BANKID><ACCTID>123456789</ACCTID></BANKACCTFROM><BANKTRANLIST><STMTTRN><DTPOSTED>20260807</DTPOSTED><TRNAMT>-42.50</TRNAMT><FITID>ofx-001</FITID><NAME>Mercado</NAME></STMTTRN></BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>`;
+    const file = new File([ofx], 'statement.ofx', { type: 'application/x-ofx' });
+    Object.defineProperty(file, 'arrayBuffer', { value: () => Promise.resolve(new TextEncoder().encode(ofx).buffer) });
+
+    await component.selectFile({ target: { files: [file] } } as unknown as Event);
+
+    expect(component.fileFormat).toBe('OFX');
+    expect(component.ofxStatements).toHaveLength(1);
+    expect(component.rows[0]).toMatchObject({
+      name: 'Mercado',
+      value: -42.5,
+      externalTransactionId: 'ofx-001',
+      walletItemId: undefined,
+    });
+    expect(component.canShowPreview).toBe(false);
+
+    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    expect(component.canShowPreview).toBe(true);
+
+    await component.rowInstallmentEnabledChanged(component.rows[0], true);
+    await component.rowInstallmentPartChanged(component.rows[0], 'total', 6);
+    await component.rowInstallmentPartChanged(component.rows[0], 'current', 2);
+    component.rows[0].createPreviousInstallments = true;
+    component.rows[0].createFollowingInstallments = true;
+
+    await component.submit();
+
+    const request = importService.create.mock.calls[0][0];
+    expect(request).toMatchObject({
+      fileName: 'statement.ofx',
+      format: 'OFX',
+      lines: [
+        expect.objectContaining({
+          walletItemId: 'wallet-ofx',
+          externalTransactionId: 'ofx-001',
+          installment: 2,
+          installmentTotal: 6,
+          createPreviousInstallments: true,
+          createFollowingInstallments: true,
+        }),
+      ],
+    });
+    expect(JSON.stringify(request)).not.toContain('123456789');
+    expect(JSON.stringify(request)).not.toContain('<OFX>');
+    expect(component.ofxStatements).toEqual([]);
+    expect(component.file).toBeUndefined();
+  });
+
+  it('applies one fixed bill month to every OFX row and preserves it when the card changes', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    component.importPreferencesLoaded = true;
+    component.currencyOptions = ['BRL'];
+    component.defaultCurrency = 'BRL';
+    component.walletItems = [walletItem('wallet-card-a', 'BRL', 'CREDIT_CARD'), walletItem('wallet-card-b', 'BRL', 'CREDIT_CARD')];
+    const ofx = `<?xml version="1.0" encoding="UTF-8"?><OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL</CURDEF><CCACCTFROM><ACCTID>123456789</ACCTID></CCACCTFROM><BANKTRANLIST><STMTTRN><DTPOSTED>20260807</DTPOSTED><TRNAMT>-42.50</TRNAMT><FITID>ofx-card-001</FITID><NAME>Compra A</NAME></STMTTRN><STMTTRN><DTPOSTED>20260808</DTPOSTED><TRNAMT>-18.90</TRNAMT><FITID>ofx-card-002</FITID><NAME>Compra B</NAME></STMTTRN></BANKTRANLIST></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>`;
+    const file = new File([ofx], 'card.ofx', { type: 'application/x-ofx' });
+    Object.defineProperty(file, 'arrayBuffer', { value: () => Promise.resolve(new TextEncoder().encode(ofx).buffer) });
+
+    await component.selectFile({ target: { files: [file] } } as unknown as Event);
+
+    expect(component.mapping.bill).toBe(component.billFromDateMappingValue);
+    expect(component.fixedMappingOptions.some(option => option.field === 'bill')).toBe(false);
+
+    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    expect(component.rows.map(row => row.billDate)).toEqual(['2026-08-01', '2026-08-01']);
+
+    await component.rowDateChanged(component.rows[0], '2026-09-07');
+    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[1]);
+    expect(component.rows.map(row => row.billDate)).toEqual(['2026-09-01', '2026-08-01']);
+
+    await component.setMapping('bill', component.fixedMappingValue);
+    await component.setFixedValue('bill', '2026-09');
+
+    expect(component.rows.map(row => row.billDate)).toEqual(['2026-09-01', '2026-09-01']);
+
+    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+
+    expect(component.rows.map(row => row.walletItemId)).toEqual(['wallet-card-a', 'wallet-card-a']);
+    expect(component.rows.map(row => row.billDate)).toEqual(['2026-09-01', '2026-09-01']);
+  });
+
+  it('requires every OFX statement with selected rows to be mapped independently', async () => {
+    const component = TestBed.inject(CsvImportDraftStore);
+    component.currencyOptions = ['BRL', 'USD'];
+    component.defaultCurrency = 'BRL';
+    component.walletItems = [walletItem('wallet-bank'), walletItem('wallet-card', 'USD', 'CREDIT_CARD')];
+    component.fileFormat = 'OFX';
+    component.ofxStatements = [
+      {
+        accountId: '11112222',
+        currency: 'BRL',
+        key: 'bank',
+        kind: 'BANK',
+        maskedAccountId: '•••• 2222',
+        pendingCount: 1,
+        rows: [
+          {
+            currency: 'BRL',
+            date: '2026-08-01',
+            externalTransactionId: 'bank-1',
+            name: 'Bank row',
+            raw: {},
+            sourceStatementKey: 'bank',
+            value: 10,
+          },
+        ],
+      },
+      {
+        accountId: '99998888',
+        currency: 'USD',
+        key: 'card',
+        kind: 'CREDIT_CARD',
+        maskedAccountId: '•••• 8888',
+        pendingCount: 0,
+        rows: [
+          {
+            currency: 'USD',
+            date: '2026-08-02',
+            externalTransactionId: 'card-1',
+            name: 'Card row',
+            raw: {},
+            sourceStatementKey: 'card',
+            value: -5,
+          },
+        ],
+      },
+    ];
+    component.mapping = { confirmed: component.fixedMappingValue };
+    component.fixedValues = { confirmed: true };
+
+    await component.reprocess(true);
+    await component.setOfxStatementOrigin(component.ofxStatements[0], component.walletItems[0]);
+    expect(component.canShowPreview).toBe(false);
+
+    await component.setOfxStatementOrigin(component.ofxStatements[1], component.walletItems[1]);
+    expect(component.canShowPreview).toBe(true);
+    expect(component.rows.map(row => row.walletItemId)).toEqual(['wallet-bank', 'wallet-card']);
   });
 
   it('prefills the exact Supermercado category from the C6 Categoria column', async () => {

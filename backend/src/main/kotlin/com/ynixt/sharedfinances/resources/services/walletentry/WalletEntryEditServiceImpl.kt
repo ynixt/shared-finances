@@ -784,6 +784,8 @@ class WalletEntryEditServiceImpl(
                 confirmed = preparedRequest.confirmed,
                 installment = existingEvent.installment,
                 recurrenceEventId = recurrenceEventIdOverride ?: existingEvent.recurrenceEventId,
+                importBatchId = existingEvent.importBatchId,
+                externalTransactionId = existingEvent.externalTransactionId,
                 paymentType = preparedRequest.paymentType,
                 transferPurpose = preparedRequest.transferPurpose,
                 initialBalance = existingEvent.initialBalance,

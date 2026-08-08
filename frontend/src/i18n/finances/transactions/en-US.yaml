@@ -87,10 +87,10 @@ financesPage:
         confirmed: Confirmed
         confirmedFeminine: Confirmed
       fileStep:
-        title: 1. CSV file
-        hint: 'Default delimiter: semicolon.'
-        maxLines: 'Maximum: {{maxLines}} data rows.'
-        select: Select CSV
+        title: 1. Statement file
+        hint: 'Accepted formats: CSV and OFX.'
+        maxLines: 'Maximum: {{maxLines}} transactions.'
+        select: Select file
         reading: Reading and calculating the file hash…
         hash:
           processing: This file is being processed.
@@ -114,12 +114,23 @@ financesPage:
           dayMonthYear: DD/MM/YYYY
           monthDayYear: MM/DD/YYYY
           iso: YYYY-MM-DD
+      ofxMapping:
+        title: 2. OFX accounts
+        hint: Link each account found in the file to a Shared Finances origin.
+        transactions: transactions
+        pendingOmitted: '{{count}} pending transactions were omitted because they can still change at the bank.'
+        kinds:
+          bank: Bank account
+          creditCard: Credit card
       mapping:
         title: 3. Column mapping
         hint: Canonical headers take priority. You can override any detection.
         currencyHint: The row currency must match an option available in the selector.
         autoDetect: Detect automatically / do not use
         fixedValue: Fixed value
+        billTitle: 3. Bill mapping
+        billHint: Choose how credit-card purchase bills are determined.
+        billFromDate: Calculate using date
       fixedValues:
         title: 4. Fixed values
         hint: These values apply to every row. Changing a fixed value overrides individual edits to that field.
@@ -142,6 +153,9 @@ financesPage:
         manuallyAdjusted: Amount adjusted manually
         beneficiaries: 'Beneficiaries ({{count}})'
         installmentPlaceholder: 'E.g.: 3/12'
+        installmentPurchase: Installment purchase
+        currentInstallment: Current installment
+        totalInstallments: Total installments
         installmentInfoAria: How previous and following installments work
         installmentInfo: Previous creates installments 1 through the one before the current installment and affects past balances and bills. Following schedules the remaining installments through the purchase total.
         createPreviousInstallments: Create previous installments
@@ -184,9 +198,13 @@ financesPage:
         enterConvertedValue: Enter the converted amount.
       errors:
         loadData: The data required for the import could not be loaded.
-        lineLimitExceeded: 'The CSV exceeds the {{maxLines}} data row limit. Split the file into smaller batches.'
-        readFile: The CSV file could not be read.
+        lineLimitExceeded: 'The file exceeds the {{maxLines}} transaction limit. Split it into smaller batches.'
+        readFile: The file could not be read.
         parseCsv: The CSV could not be parsed.
+        ofx:
+          malformedOfx: The OFX file could not be parsed.
+          noPostedTransactions: The OFX contains no supported posted bank or credit-card transactions.
+          unsupportedEncoding: The text encoding declared by the OFX file is not supported.
         fixedOriginRequired: Fill in the fixed origin.
         noValidRows: Select at least one valid row to import.
         startImport: The import could not be started.

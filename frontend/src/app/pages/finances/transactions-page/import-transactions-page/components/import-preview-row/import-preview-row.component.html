@@ -170,7 +170,7 @@
           [placeholder]="'financesPage.transactionsPage.importPage.fields.selectOrigin' | translate"
           [showClear]="false"
           [ngModel]="store.originFor(row)"
-          [disabled]="!row.included"
+          [disabled]="store.fileFormat === 'OFX' || !row.included"
           (ngModelChange)="rowOriginChanged($event)"
         />
       </label>
@@ -222,74 +222,104 @@
       </label>
     </section>
 
-    @if (store.originFor(row)?.type === 'CREDIT_CARD' || row.installment || store.isFixedMapping('installment')) {
-      <section class="editor-section">
-        <h3 class="mb-3 text-sm font-bold text-default">
-          {{ 'financesPage.transactionsPage.importPage.preview.sections.billAndInstallment' | translate }}
-        </h3>
-        @if (store.originFor(row)?.type === 'CREDIT_CARD') {
-          <label class="flex min-w-0 flex-col gap-1.5">
-            <span class="preview-card__field-label">{{ 'financesPage.transactionsPage.importPage.fields.bill' | translate }}</span>
-            <app-date-picker
-              class="block w-full min-w-0"
-              [ngModel]="rowBillValue()"
-              [disabled]="!row.included"
-              [readonlyInput]="true"
-              view="month"
-              dateFormat="MM, yy"
-              (ngModelChange)="rowBillChanged($event)"
-            />
-          </label>
-        }
-        <div class="mt-3">
-          @if (store.isFixedMapping('installment')) {
-            <label class="mb-3 flex min-w-0 flex-col gap-1.5">
-              <span class="preview-card__field-label">{{ 'financesPage.transactionsPage.importPage.fields.installment' | translate }}</span>
-              <input
-                pInputText
-                class="table-control w-full min-w-0"
-                [placeholder]="'financesPage.transactionsPage.importPage.preview.installmentPlaceholder' | translate"
-                [ngModel]="store.installmentValue(row)"
+    <section class="editor-section">
+      <h3 class="mb-3 text-sm font-bold text-default">
+        {{ 'financesPage.transactionsPage.importPage.preview.sections.billAndInstallment' | translate }}
+      </h3>
+      @if (store.originFor(row)?.type === 'CREDIT_CARD') {
+        <label class="flex min-w-0 flex-col gap-1.5">
+          <span class="preview-card__field-label">{{ 'financesPage.transactionsPage.importPage.fields.bill' | translate }}</span>
+          <app-date-picker
+            class="block w-full min-w-0"
+            [ngModel]="rowBillValue()"
+            [disabled]="!row.included"
+            [readonlyInput]="true"
+            view="month"
+            dateFormat="MM, yy"
+            (ngModelChange)="rowBillChanged($event)"
+          />
+        </label>
+      }
+      <div class="mt-3">
+        <label class="check-label">
+          <input
+            type="checkbox"
+            [ngModel]="row.installment != null"
+            [disabled]="!row.included"
+            (ngModelChange)="store.rowInstallmentEnabledChanged(row, $event)"
+          />
+          <span>{{ 'financesPage.transactionsPage.importPage.preview.installmentPurchase' | translate }}</span>
+        </label>
+        @if (row.installment; as installment) {
+          <div class="mt-3 grid grid-cols-2 gap-3">
+            <label class="flex min-w-0 flex-col gap-1.5">
+              <span class="preview-card__field-label">{{
+                'financesPage.transactionsPage.importPage.preview.currentInstallment' | translate
+              }}</span>
+              <p-input-number
+                class="w-full min-w-0"
+                [inputId]="'installment-current-' + row.index"
+                [ngModel]="installment.current"
+                [min]="1"
+                [max]="installment.total"
+                [maxFractionDigits]="0"
+                [useGrouping]="false"
+                [showButtons]="true"
                 [disabled]="!row.included"
-                (change)="store.rowInstallmentChanged(row, $any($event.target).value)"
+                fluid
+                (ngModelChange)="store.rowInstallmentPartChanged(row, 'current', $event)"
               />
             </label>
-          }
-          @if (row.installment; as installment) {
-            <div class="flex items-center gap-2">
-              <span class="preview-card__field-label">{{ 'financesPage.transactionsPage.importPage.fields.installment' | translate }}</span>
-              <strong>{{ installment.current }}/{{ installment.total }}</strong>
-              <button
-                type="button"
-                class="installment-info"
-                [attr.aria-label]="'financesPage.transactionsPage.importPage.preview.installmentInfoAria' | translate"
-                [pTooltip]="'financesPage.transactionsPage.importPage.preview.installmentInfo' | translate"
-                tooltipPosition="top"
-              >
-                i
-              </button>
-            </div>
-            <label class="mt-2 flex items-center gap-2 text-xs"
-              ><input type="checkbox" [(ngModel)]="row.createPreviousInstallments" [disabled]="!row.included" />{{
-                'financesPage.transactionsPage.importPage.preview.createPreviousInstallments' | translate
-              }}</label
+            <label class="flex min-w-0 flex-col gap-1.5">
+              <span class="preview-card__field-label">{{
+                'financesPage.transactionsPage.importPage.preview.totalInstallments' | translate
+              }}</span>
+              <p-input-number
+                class="w-full min-w-0"
+                [inputId]="'installment-total-' + row.index"
+                [ngModel]="installment.total"
+                [min]="1"
+                [maxFractionDigits]="0"
+                [useGrouping]="false"
+                [showButtons]="true"
+                [disabled]="!row.included"
+                fluid
+                (ngModelChange)="store.rowInstallmentPartChanged(row, 'total', $event)"
+              />
+            </label>
+          </div>
+          <div class="mt-3 flex items-center gap-2">
+            <strong>{{ installment.current }}/{{ installment.total }}</strong>
+            <button
+              type="button"
+              class="installment-info"
+              [attr.aria-label]="'financesPage.transactionsPage.importPage.preview.installmentInfoAria' | translate"
+              [pTooltip]="'financesPage.transactionsPage.importPage.preview.installmentInfo' | translate"
+              tooltipPosition="top"
             >
-            <label class="mt-2 flex items-center gap-2 text-xs"
-              ><input type="checkbox" [(ngModel)]="row.createFollowingInstallments" [disabled]="!row.included" />{{
-                'financesPage.transactionsPage.importPage.preview.createFollowingInstallments' | translate
-              }}</label
-            >
-            @if (row.createPreviousInstallments) {
-              <small class="mt-2 block text-amber-700">{{
-                'financesPage.transactionsPage.importPage.preview.previousInstallmentsWarning' | translate
-              }}</small>
-            }
-          } @else {
-            <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.preview.singlePurchase' | translate }}</p>
+              i
+            </button>
+          </div>
+          <label class="mt-2 flex items-center gap-2 text-xs"
+            ><input type="checkbox" [(ngModel)]="row.createPreviousInstallments" [disabled]="!row.included" />{{
+              'financesPage.transactionsPage.importPage.preview.createPreviousInstallments' | translate
+            }}</label
+          >
+          <label class="mt-2 flex items-center gap-2 text-xs"
+            ><input type="checkbox" [(ngModel)]="row.createFollowingInstallments" [disabled]="!row.included" />{{
+              'financesPage.transactionsPage.importPage.preview.createFollowingInstallments' | translate
+            }}</label
+          >
+          @if (row.createPreviousInstallments) {
+            <small class="mt-2 block text-amber-700">{{
+              'financesPage.transactionsPage.importPage.preview.previousInstallmentsWarning' | translate
+            }}</small>
           }
-        </div>
-      </section>
-    }
+        } @else {
+          <p class="mt-2 text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.preview.singlePurchase' | translate }}</p>
+        }
+      </div>
+    </section>
 
     @if (store.hasFixedMetadataMapping) {
       <section class="editor-section">
@@ -297,12 +327,18 @@
           {{ 'financesPage.transactionsPage.importPage.preview.sections.otherData' | translate }}
         </h3>
         <div class="flex min-w-0 flex-col gap-3">
-          @if (store.isFixedMapping('transactionId')) {
+          @if (store.fileFormat === 'OFX' || store.isFixedMapping('transactionId')) {
             <label class="flex min-w-0 flex-col gap-1.5"
               ><span class="preview-card__field-label">{{
                 'financesPage.transactionsPage.importPage.fields.transactionId' | translate
               }}</span
-              ><input class="table-control" [(ngModel)]="row.transactionId" [disabled]="!row.included" pInputText
+              ><input
+                class="table-control"
+                [(ngModel)]="row.externalTransactionId"
+                [disabled]="!row.included"
+                [readonly]="store.fileFormat === 'OFX'"
+                (change)="store.rowExternalTransactionIdChanged()"
+                pInputText
             /></label>
           }
           @if (store.isFixedMapping('tags')) {

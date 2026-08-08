@@ -3,9 +3,11 @@ import dayjs from 'dayjs';
 import { ImportHashCheckDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/imports';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
 import { CsvColumnField, CsvColumnMapping, CsvDateFormat, normalizeHeader } from './csv-statement-parser';
+import { ImportFileFormat, ParsedImportSourceStatement } from './import-file-source';
 import { FixedValue, ImportPreviewRow } from './import-transactions.models';
 
-export abstract class CsvImportDraftState {
+export abstract class ImportDraftState {
+  fileFormat?: ImportFileFormat;
   delimiter = ';';
   decimalSeparator: '.' | ',' = '.';
   dateFormat: CsvDateFormat = 'AUTO';
@@ -25,6 +27,9 @@ export abstract class CsvImportDraftState {
   file?: File;
   fileHash = '';
   fileText = '';
+  ofxStatements: ParsedImportSourceStatement[] = [];
+  ofxStatementOrigins: Record<string, string> = {};
+  ofxPendingCount = 0;
   maxLines = 1000;
   importPreferencesLoaded = false;
   loading = true;
@@ -37,6 +42,10 @@ export abstract class CsvImportDraftState {
   abstract get canShowPreview(): boolean;
   abstract displayCurrencyFor(row: ImportPreviewRow): string;
   abstract hasValidBeneficiaries(row: ImportPreviewRow): boolean;
+
+  get hasParsedRows(): boolean {
+    return this.rows.length > 0;
+  }
 
   get visibleRows(): ImportPreviewRow[] {
     const normalizedSearch = normalizeHeader(this.search);
@@ -101,3 +110,5 @@ export abstract class CsvImportDraftState {
     if (enabled) this.rows.filter(row => row.duplicate).forEach(row => (row.included = false));
   }
 }
+
+export { ImportDraftState as CsvImportDraftState };

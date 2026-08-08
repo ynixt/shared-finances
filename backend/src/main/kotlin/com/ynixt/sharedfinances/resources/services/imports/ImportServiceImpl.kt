@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.imports.ImportBatchEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.ImportBatchStatus
 import com.ynixt.sharedfinances.domain.enums.ImportHashStatus
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidImportRequestException
 import com.ynixt.sharedfinances.domain.exceptions.http.WalletItemNotFoundException
 import com.ynixt.sharedfinances.domain.models.imports.CreateImport
 import com.ynixt.sharedfinances.domain.models.imports.ImportBatchSummary
@@ -80,15 +81,29 @@ class ImportServiceImpl(
             .distinct()
             .forEach { requireOwnedWalletItem(userId, it) }
         return request.lines.mapIndexedNotNull { index, line ->
-            duplicateRepository
-                .existsExact(
-                    userId = userId,
-                    walletItemId = line.walletItemId,
-                    name = line.name?.trim()?.ifBlank { null },
-                    value = line.value,
-                    date = line.date,
-                    installment = line.installment,
-                ).awaitSingle()
+            val externalTransactionId = normalizeExternalTransactionId(line.externalTransactionId)
+            val duplicateByExternalId =
+                externalTransactionId?.let {
+                    duplicateRepository
+                        .existsExternal(
+                            userId = userId,
+                            walletItemId = line.walletItemId,
+                            externalTransactionId = it,
+                        ).awaitSingle()
+                } ?: false
+            val duplicate =
+                duplicateByExternalId ||
+                    duplicateRepository
+                        .existsExact(
+                            userId = userId,
+                            walletItemId = line.walletItemId,
+                            name = line.name?.trim()?.ifBlank { null },
+                            value = line.value,
+                            date = line.date,
+                            installment = line.installment,
+                            externalTransactionId = externalTransactionId,
+                        ).awaitSingle()
+            duplicate
                 .takeIf { it }
                 ?.let { index }
         }
@@ -195,6 +210,18 @@ class ImportServiceImpl(
         return normalized
     }
 
+    private fun normalizeExternalTransactionId(value: String?): String? =
+        value
+            ?.trim()
+            ?.ifBlank { null }
+            ?.also {
+                if (it.length > MAX_EXTERNAL_TRANSACTION_ID_LENGTH) {
+                    throw InvalidImportRequestException(
+                        "externalTransactionId must have at most $MAX_EXTERNAL_TRANSACTION_ID_LENGTH characters.",
+                    )
+                }
+            }
+
     private suspend fun resolveWalletItemName(batch: ImportBatchEntity): String =
         batch.walletItemId?.let { walletItemService.findOne(it)?.name ?: REMOVED_ACCOUNT_LABEL } ?: MULTIPLE_ORIGINS_LABEL
 
@@ -229,5 +256,6 @@ class ImportServiceImpl(
         val IMPORTED_STATUSES = setOf(ImportBatchStatus.COMPLETED, ImportBatchStatus.UNDO_FAILED)
         const val MULTIPLE_ORIGINS_LABEL = "Múltiplas origens"
         const val REMOVED_ACCOUNT_LABEL = "Conta removida"
+        const val MAX_EXTERNAL_TRANSACTION_ID_LENGTH = 255
     }
 }

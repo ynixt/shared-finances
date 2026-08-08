@@ -205,6 +205,7 @@ class WalletEntryCreateServiceImpl(
                         installment = installment,
                         recurrenceEventId = event.id,
                         importBatchId = event.importBatchId,
+                        externalTransactionId = null,
                         paymentType = event.paymentType,
                         transferPurpose = event.transferPurpose,
                     ),

@@ -48,3 +48,4 @@ apiErrors:
   unauthorized: You do not have permission to perform this action.
   imports:
     lineLimitExceeded: An import cannot contain more than {{maxLines}} lines.
+    invalidRequest: The import request is invalid.

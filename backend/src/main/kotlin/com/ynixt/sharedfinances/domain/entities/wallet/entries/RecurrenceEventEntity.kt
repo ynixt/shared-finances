@@ -31,6 +31,7 @@ class RecurrenceEventEntity(
     val seriesId: UUID,
     val seriesOffset: Int,
     val importBatchId: UUID? = null,
+    val externalTransactionId: String? = null,
     transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     initialBalance: Boolean = false,
 ) : MinimumWalletEventEntity(

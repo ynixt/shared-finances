@@ -3,7 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import dayjs from 'dayjs';
 
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
-import { WalletItemType__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { CreditCardBillService } from '../../services/credit-card-bill.service';
 import { UserForBeneficiary } from '../shared/transaction-form/transaction-form.types';
 import { CsvImportCatalogStore } from './csv-import-catalog.store';
@@ -17,6 +16,7 @@ import {
   parseCsvNumber,
   parseInstallment,
 } from './csv-statement-parser';
+import { ParsedImportSourceRow } from './import-file-source';
 import { FixedValue, ImportPreviewRow } from './import-transactions.models';
 import { hasValidImportBeneficiaries, parseImportBill } from './import-transactions.utils';
 
@@ -27,6 +27,7 @@ export interface CsvImportRowContext {
   separateCreditDebit: boolean;
   invertValues: boolean;
   mapping: CsvColumnMapping;
+  billFromDateMappingValue: string;
   fixedMappingValue: string;
   fixedValues: Partial<Record<CsvColumnField, FixedValue>>;
   fixedCategory?: CategoryDto;
@@ -94,8 +95,56 @@ export class CsvImportRowResolver {
         .map(tag => tag.trim())
         .filter(Boolean),
       observations: this.value(raw, 'observations', context)?.trim() || undefined,
-      transactionId: this.value(raw, 'transactionId', context)?.trim() || undefined,
+      externalTransactionId: this.value(raw, 'transactionId', context)?.trim() || undefined,
       billDate: parseImportBill(this.value(raw, 'bill', context)),
+      parseError,
+      walletItemId,
+    };
+  }
+
+  createFromSource(
+    source: ParsedImportSourceRow,
+    index: number,
+    walletItemId: string | undefined,
+    context: CsvImportRowContext,
+  ): ImportPreviewRow {
+    const walletItem = this.catalogs.walletItems.find(item => item.id === walletItemId);
+    const targetCurrency = walletItem?.currency ?? this.catalogs.defaultCurrency;
+    const rawCurrency = source.currency?.trim();
+    const currencyFromFile = this.catalogs.findKnownCurrency(rawCurrency);
+    const hasInvalidFileCurrency = rawCurrency != null && rawCurrency !== '' && currencyFromFile == null;
+    const currency = hasInvalidFileCurrency ? undefined : (currencyFromFile ?? targetCurrency);
+    const sameCurrency = currency === targetCurrency;
+    const parseError =
+      source.date == null
+        ? context.text('validation.invalidDate')
+        : source.value == null
+          ? context.text('validation.invalidValue')
+          : undefined;
+
+    return {
+      raw: source.raw,
+      index,
+      included: parseError == null,
+      duplicate: false,
+      date: source.date,
+      name: source.name,
+      value: source.value,
+      currency,
+      currencySource: rawCurrency == null || rawCurrency === '' ? 'FALLBACK' : 'FILE',
+      conversionRate: sameCurrency ? 1 : undefined,
+      convertedValue: sameCurrency ? source.value : undefined,
+      convertedValueOverridden: false,
+      conversionLoading: false,
+      conversionTargetCurrency: targetCurrency,
+      conversionError: hasInvalidFileCurrency ? context.text('conversion.unknownCurrency') : undefined,
+      createPreviousInstallments: false,
+      createFollowingInstallments: false,
+      confirmed: true,
+      beneficiaries: [],
+      observations: source.observations,
+      externalTransactionId: source.externalTransactionId,
+      sourceStatementKey: source.sourceStatementKey,
       parseError,
       walletItemId,
     };
@@ -157,7 +206,7 @@ export class CsvImportRowResolver {
 
   applyBillSuggestion(row: ImportPreviewRow, context: CsvImportRowContext): void {
     const card = this.catalogs.originFor(row);
-    if (card == null || card.type !== WalletItemType__Obj.CREDIT_CARD) {
+    if (card == null || card.type !== 'CREDIT_CARD') {
       row.billDate = undefined;
       return;
     }
@@ -165,7 +214,7 @@ export class CsvImportRowResolver {
       row.billDate = parseImportBill(this.value(row.raw, 'bill', context));
       return;
     }
-    if (row.billDate == null && row.date != null) {
+    if ((context.mapping.bill === context.billFromDateMappingValue || row.billDate == null) && row.date != null) {
       row.billDate = this.creditCardBillService
         .getBestBill(dayjs(row.date).toDate(), card.dueDay ?? 1, card.dueOnNextBusinessDay ?? false, card.daysBetweenDueAndClosing ?? 0)
         .format('YYYY-MM-01');

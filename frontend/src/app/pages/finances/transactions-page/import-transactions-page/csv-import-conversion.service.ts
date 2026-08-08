@@ -117,3 +117,5 @@ export class CsvImportConversionService {
     return `${fromCurrency}|${toCurrency}|${referenceDate}`;
   }
 }
+
+export { CsvImportConversionService as ImportConversionService };

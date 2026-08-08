@@ -37,6 +37,7 @@ class RecurrenceEventR2DBCMapping {
                 seriesId = row.get("${columnPrefix}series_id", UUID::class.java)!!,
                 seriesOffset = row.get("${columnPrefix}series_offset", Int::class.javaObjectType)!!,
                 importBatchId = row.get("${columnPrefix}import_batch_id", UUID::class.java),
+                externalTransactionId = row.get("${columnPrefix}external_transaction_id", String::class.java),
                 initialBalance = row.get("${columnPrefix}initial_balance", Boolean::class.java) ?: false,
             ).also { gu ->
                 gu.id = row.get("${columnPrefix}id", UUID::class.java)

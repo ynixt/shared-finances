@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.services.imports
 
 import com.ynixt.sharedfinances.domain.entities.imports.ImportBatchEntity
 import com.ynixt.sharedfinances.domain.enums.ImportBatchStatus
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidImportRequestException
 import com.ynixt.sharedfinances.domain.exceptions.http.WalletItemNotFoundException
 import com.ynixt.sharedfinances.domain.models.imports.CreateImport
 import com.ynixt.sharedfinances.domain.models.imports.ImportLine
@@ -124,7 +125,9 @@ class ImportBatchAcceptanceService(
                 request.format
                     .trim()
                     .uppercase()
-                    .take(16),
+                    .also {
+                        if (it !in SUPPORTED_FORMATS) throw InvalidImportRequestException("Unsupported import format: $it")
+                    },
             lines =
                 request.lines.map { line ->
                     validateInstallment(line)
@@ -136,6 +139,7 @@ class ImportBatchAcceptanceService(
                                 ?.filter(String::isNotBlank)
                                 ?.distinct(),
                         observations = line.observations?.trim()?.ifBlank { null },
+                        externalTransactionId = normalizeExternalTransactionId(line.externalTransactionId),
                     )
                 },
         )
@@ -164,6 +168,18 @@ class ImportBatchAcceptanceService(
         return normalized
     }
 
+    private fun normalizeExternalTransactionId(value: String?): String? =
+        value
+            ?.trim()
+            ?.ifBlank { null }
+            ?.also {
+                if (it.length > MAX_EXTERNAL_TRANSACTION_ID_LENGTH) {
+                    throw InvalidImportRequestException(
+                        "externalTransactionId must have at most $MAX_EXTERNAL_TRANSACTION_ID_LENGTH characters.",
+                    )
+                }
+            }
+
     private companion object {
         val ACTIVE_STATUSES =
             setOf(
@@ -174,5 +190,7 @@ class ImportBatchAcceptanceService(
             )
         const val MULTIPLE_ORIGINS_LABEL = "Múltiplas origens"
         const val REMOVED_ACCOUNT_LABEL = "Conta removida"
+        const val MAX_EXTERNAL_TRANSACTION_ID_LENGTH = 255
+        val SUPPORTED_FORMATS = setOf("CSV", "OFX")
     }
 }

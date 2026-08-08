@@ -85,6 +85,7 @@ function context(mapping: CsvImportRowContext['mapping']): CsvImportRowContext {
     separateCreditDebit: false,
     invertValues: false,
     mapping,
+    billFromDateMappingValue: '__BILL_FROM_DATE__',
     fixedMappingValue: '__FIXED_VALUE__',
     fixedValues: {},
     text: key => key,

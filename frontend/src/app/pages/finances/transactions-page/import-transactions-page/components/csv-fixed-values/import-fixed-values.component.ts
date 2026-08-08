@@ -17,7 +17,7 @@ import { CsvImportDraftStore } from '../../csv-import-draft.store';
 import { CsvColumnField } from '../../csv-statement-parser';
 
 @Component({
-  selector: 'app-csv-fixed-values',
+  selector: 'app-import-fixed-values',
   imports: [
     FormsModule,
     TranslatePipe,
@@ -30,21 +30,19 @@ import { CsvColumnField } from '../../csv-statement-parser';
     CategoryPickerComponent,
     WalletItemPickerComponent,
   ],
-  templateUrl: './csv-fixed-values.component.html',
-  styleUrl: './csv-fixed-values.component.scss',
+  templateUrl: './import-fixed-values.component.html',
+  styleUrl: './import-fixed-values.component.scss',
 })
-export class CsvFixedValuesComponent {
+export class ImportFixedValuesComponent {
   readonly store = inject(CsvImportDraftStore);
   private readonly translateService = inject(TranslateService);
 
   get groupOptions() {
-    return [
-      {
-        id: '',
-        name: this.translateService.instant('financesPage.transactionsPage.importPage.fields.group'),
-      },
-      ...this.store.groups,
-    ];
+    return this.store.groups;
+  }
+
+  get selectedGroupId(): string | null {
+    return this.store.fixedGroupId ?? null;
   }
 
   get confirmationOptions() {

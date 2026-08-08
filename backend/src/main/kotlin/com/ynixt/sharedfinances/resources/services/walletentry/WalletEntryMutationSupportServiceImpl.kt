@@ -418,6 +418,8 @@ abstract class WalletEntryMutationSupportServiceImpl(
                     endExecution = endExecution,
                     seriesId = current.seriesId,
                     seriesOffset = current.seriesOffset,
+                    importBatchId = current.importBatchId,
+                    externalTransactionId = current.externalTransactionId,
                     transferPurpose = current.transferPurpose,
                 ).also {
                     it.id = current.id

@@ -7,10 +7,11 @@ import { ImportBatchDto } from '../../../../models/generated/com/ynixt/sharedfin
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
 import { CsvColumnMappingComponent } from './components/csv-column-mapping/csv-column-mapping.component';
 import { CsvFileUploadComponent } from './components/csv-file-upload/csv-file-upload.component';
-import { CsvFixedValuesComponent } from './components/csv-fixed-values/csv-fixed-values.component';
+import { ImportFixedValuesComponent } from './components/csv-fixed-values/import-fixed-values.component';
 import { CsvOptionsComponent } from './components/csv-options/csv-options.component';
 import { ImportHistoryComponent } from './components/import-history/import-history.component';
 import { ImportPreviewComponent } from './components/import-preview/import-preview.component';
+import { OfxAccountMappingComponent } from './components/ofx-account-mapping/ofx-account-mapping.component';
 import { CsvImportBeneficiaryEditor } from './csv-import-beneficiary.editor';
 import { CsvImportCatalogStore } from './csv-import-catalog.store';
 import { CsvImportConversionService } from './csv-import-conversion.service';
@@ -30,9 +31,10 @@ import { ImportBatchRemovedEvent } from './import-transactions.models';
     CsvFileUploadComponent,
     CsvOptionsComponent,
     CsvColumnMappingComponent,
-    CsvFixedValuesComponent,
+    ImportFixedValuesComponent,
     ImportPreviewComponent,
     ImportHistoryComponent,
+    OfxAccountMappingComponent,
   ],
   providers: [
     CsvImportCatalogStore,

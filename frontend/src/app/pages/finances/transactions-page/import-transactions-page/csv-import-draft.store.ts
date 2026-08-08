@@ -14,6 +14,7 @@ import { CsvImportBeneficiaryEditor } from './csv-import-beneficiary.editor';
 import { CsvImportCatalogStore } from './csv-import-catalog.store';
 import { CsvImportConversionContext, CsvImportConversionService } from './csv-import-conversion.service';
 import {
+  CSV_IMPORT_BILL_FROM_DATE_MAPPING_VALUE,
   CSV_IMPORT_DATE_FORMATS,
   CSV_IMPORT_FIXED_MAPPING_VALUE,
   CSV_IMPORT_MAPPING_OPTIONS,
@@ -22,13 +23,19 @@ import {
 import { CsvImportDraftState } from './csv-import-draft.state';
 import { CsvImportDuplicateService } from './csv-import-duplicate.service';
 import { CsvImportRowContext, CsvImportRowResolver } from './csv-import-row.resolver';
+import { CsvImportSourceAdapter } from './csv-import-source.adapter';
 import { CsvImportSubmissionService } from './csv-import-submission.service';
-import { CsvColumnField, detectDateFormat, parseCsv, parseCsvDate, parseInstallment, sha256File } from './csv-statement-parser';
+import { CsvColumnField, detectDateFormat, parseCsvDate } from './csv-statement-parser';
+import { ParsedImportSourceStatement, decodeCsvBytes, detectImportFileFormat, sha256Bytes } from './import-file-source';
 import { FixedValue, ImportPreviewRow, MappingOption } from './import-transactions.models';
-import { formatImportInstallment, formatImportTags, hasValidImportBeneficiaries, parseImportTags } from './import-transactions.utils';
+import { formatImportTags, hasValidImportBeneficiaries, parseImportTags } from './import-transactions.utils';
+import { OfxImportSourceAdapter } from './ofx-import-source.adapter';
+import { OfxParseError } from './ofx-statement-parser';
 
 @Injectable()
 export class CsvImportDraftStore extends CsvImportDraftState {
+  private readonly csvSource = new CsvImportSourceAdapter();
+  private readonly ofxSource = new OfxImportSourceAdapter();
   private readonly catalogs = inject(CsvImportCatalogStore);
   private readonly rowResolver = inject(CsvImportRowResolver);
   private readonly conversions = inject(CsvImportConversionService);
@@ -40,6 +47,7 @@ export class CsvImportDraftStore extends CsvImportDraftState {
 
   readonly dateFormats = CSV_IMPORT_DATE_FORMATS;
   readonly mappingOptions: MappingOption[] = CSV_IMPORT_MAPPING_OPTIONS;
+  readonly billFromDateMappingValue = CSV_IMPORT_BILL_FROM_DATE_MAPPING_VALUE;
   readonly fixedMappingValue = CSV_IMPORT_FIXED_MAPPING_VALUE;
   readonly previewPageSizeOptions = CSV_IMPORT_PREVIEW_PAGE_SIZE_OPTIONS;
   get beneficiaryDialogVisible(): boolean {
@@ -102,6 +110,7 @@ export class CsvImportDraftStore extends CsvImportDraftState {
       separateCreditDebit: this.separateCreditDebit,
       invertValues: this.invertValues,
       mapping: this.mapping,
+      billFromDateMappingValue: this.billFromDateMappingValue,
       fixedMappingValue: this.fixedMappingValue,
       fixedValues: this.fixedValues,
       fixedCategory: this.fixedCategory,
@@ -137,13 +146,33 @@ export class CsvImportDraftStore extends CsvImportDraftState {
     this.error = undefined;
     try {
       this.file = file;
-      [this.fileText, this.fileHash] = await Promise.all([file.text(), sha256File(file)]);
+      const bytes = await file.arrayBuffer();
+      this.fileFormat = detectImportFileFormat(bytes, file.name);
+      this.fileHash = await sha256Bytes(bytes);
       const hash = await this.importService.checkHash(this.fileHash);
       this.hashCheck = hash.status === 'NOT_IMPORTED' ? null : hash;
-      await this.reprocess(true);
+      if (this.fileFormat === 'OFX') {
+        const parsed = this.ofxSource.parse(bytes, this.maxLines);
+        this.ofxStatements = parsed.statements;
+        this.ofxPendingCount = parsed.pendingCount;
+        this.ofxStatementOrigins = {};
+        this.mapping = {
+          bill: this.billFromDateMappingValue,
+          category: this.fixedMappingValue,
+          confirmed: this.fixedMappingValue,
+          group: this.fixedMappingValue,
+          tags: this.fixedMappingValue,
+        };
+        this.fixedValues = { bill: dayjs().format('YYYY-MM'), category: '', confirmed: true, group: '', tags: '' };
+        await this.reprocessOfx(true);
+      } else {
+        this.fileText = decodeCsvBytes(bytes);
+        await this.reprocessCsv(true);
+      }
     } catch (error) {
+      const message = this.fileErrorMessage(error);
       this.removeFile();
-      this.error = error instanceof Error ? error.message : this.importText('errors.readFile');
+      this.error = message;
     } finally {
       this.parsing = false;
     }
@@ -153,6 +182,10 @@ export class CsvImportDraftStore extends CsvImportDraftState {
     this.file = undefined;
     this.fileHash = '';
     this.fileText = '';
+    this.fileFormat = undefined;
+    this.ofxStatements = [];
+    this.ofxStatementOrigins = {};
+    this.ofxPendingCount = 0;
     this.hashCheck = null;
     this.headers = [];
     this.detectedLayoutProviderId = undefined;
@@ -165,10 +198,18 @@ export class CsvImportDraftStore extends CsvImportDraftState {
   }
 
   async reprocess(resetMapping = false): Promise<void> {
+    if (this.fileFormat === 'OFX') {
+      await this.reprocessOfx(resetMapping);
+      return;
+    }
+    await this.reprocessCsv(resetMapping);
+  }
+
+  private async reprocessCsv(resetMapping = false): Promise<void> {
     if (this.fileText === '') return;
     try {
       const inclusionByIndex = new Map(this.rows.map(row => [row.index, row.included] as const));
-      const parsed = parseCsv(this.fileText, {
+      const parsed = this.csvSource.parse(this.fileText, {
         delimiter: this.delimiter,
         decimalSeparator: this.decimalSeparator,
         dateFormat: this.dateFormat,
@@ -183,15 +224,19 @@ export class CsvImportDraftStore extends CsvImportDraftState {
       this.detectedLayoutProviderId = parsed.layoutProviderId;
       const detected = parsed.mapping;
       this.mapping = resetMapping
-        ? { ...detected, origin: this.fixedMappingValue, bill: this.fixedMappingValue }
+        ? { ...detected, origin: this.fixedMappingValue, bill: this.billFromDateMappingValue }
         : Object.fromEntries(
             this.mappingOptions
               .map(({ field }) => [
                 field,
-                this.mapping[field] === this.fixedMappingValue || (this.mapping[field] && parsed.headers.includes(this.mapping[field]!))
+                this.mapping[field] === this.fixedMappingValue ||
+                (field === 'bill' && this.mapping[field] === this.billFromDateMappingValue) ||
+                (this.mapping[field] && parsed.headers.includes(this.mapping[field]!))
                   ? this.mapping[field]
                   : field === 'origin' || field === 'bill'
-                    ? this.fixedMappingValue
+                    ? field === 'bill'
+                      ? this.billFromDateMappingValue
+                      : this.fixedMappingValue
                     : detected[field],
               ])
               .filter(([, value]) => value != null),
@@ -218,9 +263,37 @@ export class CsvImportDraftStore extends CsvImportDraftState {
     }
   }
 
+  private async reprocessOfx(resetRows = false): Promise<void> {
+    if (this.ofxStatements.length === 0) return;
+    const inclusionByIndex = new Map(this.rows.map(row => [row.index, row.included] as const));
+    const sources = this.ofxStatements.flatMap(statement => statement.rows);
+    this.rows = sources.map((source, index) => {
+      const row = this.rowResolver.createFromSource(
+        source,
+        index,
+        source.sourceStatementKey == null ? undefined : this.ofxStatementOrigins[source.sourceStatementKey],
+        this.rowContext,
+      );
+      row.confirmed = this.fixedValues.confirmed !== false;
+      row.tags = parseImportTags(String(this.fixedValues.tags ?? ''));
+      if (!resetRows) row.included = inclusionByIndex.get(index) ?? row.included;
+      return row;
+    });
+    this.headers = ['date', 'description', 'value'];
+    this.detectedLayoutProviderId = 'ofx';
+    this.resetPreviewPagination();
+    await this.rowResolver.resolve(this.rows, this.rowContext);
+    this.rowResolver.applyBillSuggestions(this.rows, this.rowContext);
+    await this.refreshConversions();
+    await this.refreshDuplicates();
+    this.error = undefined;
+  }
+
   async setMapping(field: CsvColumnField, column: string): Promise<void> {
     const previousFixedCategory = this.fixedCategory;
-    if ((field === 'origin' || field === 'bill') && column === '') {
+    if (field === 'bill' && column === '') {
+      this.mapping[field] = this.billFromDateMappingValue;
+    } else if (field === 'origin' && column === '') {
       this.mapping[field] = this.fixedMappingValue;
     } else if (column === '') {
       delete this.mapping[field];
@@ -276,7 +349,34 @@ export class CsvImportDraftStore extends CsvImportDraftState {
   }
 
   get canShowPreview(): boolean {
+    if (this.fileFormat === 'OFX') {
+      return this.ofxStatements
+        .filter(statement => this.rows.some(row => row.sourceStatementKey === statement.key && row.included))
+        .every(statement => this.walletItems.some(item => item.id === this.ofxStatementOrigins[statement.key]));
+    }
     return !this.isFixedMapping('origin') || this.fixedOrigin != null;
+  }
+
+  ofxStatementOrigin(statement: ParsedImportSourceStatement): WalletItemSearchResponseDto | undefined {
+    return this.walletItems.find(item => item.id === this.ofxStatementOrigins[statement.key]);
+  }
+
+  async setOfxStatementOrigin(
+    statement: ParsedImportSourceStatement,
+    origin: WalletItemSearchResponseDto | null | undefined,
+  ): Promise<void> {
+    const originId = origin != null && this.walletItems.some(item => item.id === origin.id) ? origin.id : undefined;
+    if (originId == null) delete this.ofxStatementOrigins[statement.key];
+    else this.ofxStatementOrigins[statement.key] = originId;
+    this.rows
+      .filter(row => row.sourceStatementKey === statement.key)
+      .forEach(row => {
+        row.walletItemId = originId;
+        this.rowResolver.applyBillSuggestion(row, this.rowContext);
+        this.resetRowConversion(row);
+      });
+    await this.refreshConversions();
+    await this.refreshDuplicates();
   }
 
   async setFixedValue(field: CsvColumnField, value: FixedValue | null | undefined): Promise<void> {
@@ -344,6 +444,7 @@ export class CsvImportDraftStore extends CsvImportDraftState {
   async rowDateChanged(row: ImportPreviewRow, date: string): Promise<void> {
     row.date = parseCsvDate(date, 'YYYY-MM-DD') ?? undefined;
     this.rowResolver.updateParseError(row, this.rowContext);
+    this.rowResolver.applyBillSuggestion(row, this.rowContext);
     this.resetRowConversion(row);
     await this.refreshConversions();
     await this.refreshDuplicates();
@@ -359,15 +460,27 @@ export class CsvImportDraftStore extends CsvImportDraftState {
     await this.refreshDuplicates();
   }
 
-  async rowInstallmentChanged(row: ImportPreviewRow, value: string): Promise<void> {
-    row.installment = parseInstallment(value) ?? undefined;
-    row.createPreviousInstallments = false;
-    row.createFollowingInstallments = false;
+  async rowExternalTransactionIdChanged(): Promise<void> {
     await this.refreshDuplicates();
   }
 
-  installmentValue(row: ImportPreviewRow): string {
-    return formatImportInstallment(row.installment);
+  async rowInstallmentEnabledChanged(row: ImportPreviewRow, enabled: boolean): Promise<void> {
+    row.installment = enabled ? (row.installment ?? { current: 1, total: 2 }) : undefined;
+    if (!enabled) {
+      row.createPreviousInstallments = false;
+      row.createFollowingInstallments = false;
+    }
+    await this.refreshDuplicates();
+  }
+
+  async rowInstallmentPartChanged(row: ImportPreviewRow, part: 'current' | 'total', value: number | null | undefined): Promise<void> {
+    if (row.installment == null) return;
+    const normalized = Math.max(1, Math.trunc(value ?? 1));
+    row.installment =
+      part === 'current'
+        ? { current: normalized, total: Math.max(normalized, row.installment.total) }
+        : { current: Math.min(row.installment.current, normalized), total: normalized };
+    await this.refreshDuplicates();
   }
 
   rowTagsChanged(row: ImportPreviewRow, value: string): void {
@@ -447,6 +560,7 @@ export class CsvImportDraftStore extends CsvImportDraftState {
           canShowPreview: this.canShowPreview,
           file: this.file,
           fileHash: this.fileHash,
+          format: this.fileFormat ?? 'CSV',
           rows: this.selectedRows,
         },
         key => this.importText(key),
@@ -488,6 +602,14 @@ export class CsvImportDraftStore extends CsvImportDraftState {
 
   private importText(key: string, params?: Record<string, unknown>): string {
     return this.translateService.instant(`financesPage.transactionsPage.importPage.${key}`, params);
+  }
+
+  private fileErrorMessage(error: unknown): string {
+    if (error instanceof OfxParseError) {
+      if (error.code === 'lineLimitExceeded') return this.importText('errors.lineLimitExceeded', error.params);
+      return this.importText(`errors.ofx.${error.code}`, error.params);
+    }
+    return error instanceof Error ? error.message : this.importText('errors.readFile');
   }
 
   private value(row: Record<string, string>, field: CsvColumnField): string | undefined {

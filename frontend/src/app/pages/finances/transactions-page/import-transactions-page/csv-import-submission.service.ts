@@ -4,12 +4,14 @@ import { MessageService } from 'primeng/api';
 
 import { CreateImportDto, ImportBatchDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/imports';
 import { ImportService } from '../../services/import.service';
+import { ImportFileFormat } from './import-file-source';
 import { ImportPreviewRow } from './import-transactions.models';
 
 export interface CsvImportSubmissionSnapshot {
   canShowPreview: boolean;
   file?: File;
   fileHash: string;
+  format?: ImportFileFormat;
   rows: ImportPreviewRow[];
 }
 
@@ -25,7 +27,9 @@ export class CsvImportSubmissionService {
     if (snapshot.rows.length === 0 || snapshot.file == null) return { errorKey: 'errors.noValidRows' };
 
     try {
-      const batch = await this.importService.create(this.createRequest(snapshot.file, snapshot.fileHash, snapshot.rows));
+      const batch = await this.importService.create(
+        this.createRequest(snapshot.file, snapshot.fileHash, snapshot.rows, snapshot.format ?? 'CSV'),
+      );
       this.messageService.add({
         severity: 'info',
         summary: text('notifications.importStarted.summary'),
@@ -37,11 +41,11 @@ export class CsvImportSubmissionService {
     }
   }
 
-  createRequest(file: File, fileHash: string, rows: ImportPreviewRow[]): CreateImportDto {
+  createRequest(file: File, fileHash: string, rows: ImportPreviewRow[], format: ImportFileFormat = 'CSV'): CreateImportDto {
     return {
       fileHash,
       fileName: file.name,
-      format: 'CSV',
+      format,
       lines: rows.map(row => ({
         walletItemId: row.walletItemId!,
         name: row.name,
@@ -61,7 +65,10 @@ export class CsvImportSubmissionService {
         createFollowingInstallments: row.createFollowingInstallments,
         tags: row.tags,
         observations: row.observations,
+        externalTransactionId: row.externalTransactionId,
       })),
     };
   }
 }
+
+export { CsvImportSubmissionService as ImportSubmissionService };

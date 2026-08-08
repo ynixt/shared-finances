@@ -1,11 +1,13 @@
 <section class="import-card">
   <div>
-    <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.mapping.title' | translate }}</h2>
-    <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.mapping.hint' | translate }}</p>
-    <p class="mt-1 text-xs text-muted">{{ 'financesPage.transactionsPage.importPage.mapping.currencyHint' | translate }}</p>
+    <h2 class="text-lg font-semibold text-default">{{ titleKey | translate }}</h2>
+    <p class="text-sm text-muted">{{ hintKey | translate }}</p>
+    @if (store.fileFormat !== 'OFX') {
+      <p class="mt-1 text-xs text-muted">{{ 'financesPage.transactionsPage.importPage.mapping.currencyHint' | translate }}</p>
+    }
   </div>
   <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-    @for (option of store.mappingOptions; track option.field) {
+    @for (option of mappingFields; track option.field) {
       @if (store.isMappingOptionVisible(option.field)) {
         <label class="field-label">
           <span class="flex items-center gap-1.5">

@@ -27,8 +27,32 @@ export class CsvColumnMappingComponent {
     void this.store.setMapping(field, value ?? '');
   }
 
+  get mappingFields() {
+    return this.store.fileFormat === 'OFX'
+      ? this.store.mappingOptions.filter(option => option.field === 'bill')
+      : this.store.mappingOptions;
+  }
+
+  get titleKey(): string {
+    return this.store.fileFormat === 'OFX'
+      ? 'financesPage.transactionsPage.importPage.mapping.billTitle'
+      : 'financesPage.transactionsPage.importPage.mapping.title';
+  }
+
+  get hintKey(): string {
+    return this.store.fileFormat === 'OFX'
+      ? 'financesPage.transactionsPage.importPage.mapping.billHint'
+      : 'financesPage.transactionsPage.importPage.mapping.hint';
+  }
+
   mappingOptions(field: CsvColumnField): MappingSelectOption[] {
     const options: MappingSelectOption[] = [];
+    if (field === 'bill') {
+      options.push({
+        name: this.translateService.instant('financesPage.transactionsPage.importPage.mapping.billFromDate'),
+        value: this.store.billFromDateMappingValue,
+      });
+    }
     if (field !== 'origin' && field !== 'bill') {
       options.push({
         name: this.translateService.instant('financesPage.transactionsPage.importPage.mapping.autoDetect'),
@@ -39,7 +63,9 @@ export class CsvColumnMappingComponent {
       name: this.translateService.instant('financesPage.transactionsPage.importPage.mapping.fixedValue'),
       value: this.store.fixedMappingValue,
     });
-    options.push(...this.store.headers.map(header => ({ name: header, value: header })));
+    if (this.store.fileFormat !== 'OFX') {
+      options.push(...this.store.headers.map(header => ({ name: header, value: header })));
+    }
     return options;
   }
 }

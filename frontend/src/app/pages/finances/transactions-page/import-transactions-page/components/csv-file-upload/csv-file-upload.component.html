@@ -16,7 +16,7 @@
         <input
           class="sr-only"
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.ofx,text/csv,application/x-ofx,application/xml,text/xml"
           [disabled]="!store.importPreferencesLoaded"
           (change)="store.selectFile($event)"
         />

@@ -87,10 +87,10 @@ financesPage:
         confirmed: Confirmado
         confirmedFeminine: Confirmada
       fileStep:
-        title: 1. Arquivo CSV
-        hint: 'Delimitador padrão: ponto e vírgula.'
-        maxLines: 'Máximo: {{maxLines}} linhas de dados.'
-        select: Selecionar CSV
+        title: 1. Arquivo do extrato
+        hint: 'Formatos aceitos: CSV e OFX.'
+        maxLines: 'Máximo: {{maxLines}} transações.'
+        select: Selecionar arquivo
         reading: Lendo e calculando o hash do arquivo…
         hash:
           processing: Este arquivo está sendo processado.
@@ -114,12 +114,23 @@ financesPage:
           dayMonthYear: DD/MM/YYYY
           monthDayYear: MM/DD/YYYY
           iso: YYYY-MM-DD
+      ofxMapping:
+        title: 2. Contas do OFX
+        hint: Vincule cada conta encontrada no arquivo a uma origem do Shared Finances.
+        transactions: transações
+        pendingOmitted: '{{count}} transações pendentes foram omitidas porque ainda podem mudar no banco.'
+        kinds:
+          bank: Conta bancária
+          creditCard: Cartão de crédito
       mapping:
         title: 3. Mapeamento de colunas
         hint: Os cabeçalhos canônicos têm prioridade. Você pode substituir qualquer detecção.
         currencyHint: A moeda da linha precisa corresponder a uma opção disponível no seletor.
         autoDetect: Detectar automaticamente / não usar
         fixedValue: Valor fixo
+        billTitle: 3. Mapeamento de fatura
+        billHint: Escolha como a fatura das compras no cartão será determinada.
+        billFromDate: Calculada usando a data
       fixedValues:
         title: 4. Valores fixos
         hint: Estes valores são aplicados a todas as linhas. Alterar um valor fixo substitui as edições individuais desse campo.
@@ -142,6 +153,9 @@ financesPage:
         manuallyAdjusted: Valor ajustado manualmente
         beneficiaries: 'Beneficiários ({{count}})'
         installmentPlaceholder: 'Ex.: 3/12'
+        installmentPurchase: Compra parcelada
+        currentInstallment: Parcela atual
+        totalInstallments: Total de parcelas
         installmentInfoAria: Como funcionam parcelas anteriores e posteriores
         installmentInfo: Anteriores cria as parcelas 1 até a anterior à atual e afeta saldos e faturas passadas. Posteriores agenda as parcelas seguintes até o total da compra.
         createPreviousInstallments: Criar parcelas anteriores
@@ -184,9 +198,13 @@ financesPage:
         enterConvertedValue: Informe o valor convertido.
       errors:
         loadData: Não foi possível carregar os dados necessários para a importação.
-        lineLimitExceeded: 'O CSV excede o limite de {{maxLines}} linhas de dados. Divida o arquivo em lotes menores.'
-        readFile: Não foi possível ler o arquivo CSV.
+        lineLimitExceeded: 'O arquivo excede o limite de {{maxLines}} transações. Divida-o em lotes menores.'
+        readFile: Não foi possível ler o arquivo.
         parseCsv: Não foi possível interpretar o CSV.
+        ofx:
+          malformedOfx: Não foi possível interpretar o arquivo OFX.
+          noPostedTransactions: O OFX não contém transações lançadas de conta bancária ou cartão compatíveis.
+          unsupportedEncoding: A codificação de texto declarada pelo OFX não é compatível.
         fixedOriginRequired: Preencha a origem fixa.
         noValidRows: Selecione ao menos uma linha válida para importar.
         startImport: Não foi possível iniciar a importação.

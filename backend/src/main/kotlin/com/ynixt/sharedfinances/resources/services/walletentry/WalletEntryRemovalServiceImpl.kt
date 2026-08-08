@@ -350,6 +350,8 @@ class WalletEntryRemovalServiceImpl(
             endExecution = config.endExecution,
             seriesId = config.seriesId,
             seriesOffset = config.seriesOffset,
+            importBatchId = config.importBatchId,
+            externalTransactionId = config.externalTransactionId,
             transferPurpose = config.transferPurpose,
         ).also {
             it.id = config.id

@@ -30,9 +30,35 @@ describe('CsvImportDuplicateService', () => {
     expect(rows[1].duplicate).toBe(false);
     expect(rows[2]).toEqual(expect.objectContaining({ duplicate: true, included: false }));
   });
+
+  it('sends external identifiers and marks repeated identifiers only within the same wallet', async () => {
+    imports.checkDuplicates.mockResolvedValue([]);
+    const rows = [row('wallet-1', 'fit-1'), row('wallet-1', 'fit-1'), row('wallet-2', 'fit-1')];
+
+    await TestBed.inject(CsvImportDuplicateService).refresh(rows, false, key => key);
+
+    expect(imports.checkDuplicates).toHaveBeenCalledWith({
+      lines: expect.arrayContaining([expect.objectContaining({ walletItemId: 'wallet-1', externalTransactionId: 'fit-1' })]),
+    });
+    expect(rows.map(candidate => candidate.duplicate)).toEqual([false, true, false]);
+    expect(rows[1].included).toBe(true);
+  });
+
+  it('recomputes repeated identifiers after a wallet mapping changes', async () => {
+    imports.checkDuplicates.mockResolvedValue([]);
+    const rows = [row('wallet-1', 'fit-1'), row('wallet-2', 'fit-1')];
+    const service = TestBed.inject(CsvImportDuplicateService);
+
+    await service.refresh(rows, false, key => key);
+    expect(rows.map(candidate => candidate.duplicate)).toEqual([false, false]);
+
+    rows[1].walletItemId = 'wallet-1';
+    await service.refresh(rows, true, key => key);
+    expect(rows[1]).toEqual(expect.objectContaining({ duplicate: true, included: false }));
+  });
 });
 
-function row(walletItemId?: string): ImportPreviewRow {
+function row(walletItemId?: string, externalTransactionId?: string): ImportPreviewRow {
   return {
     raw: {},
     index: 0,
@@ -50,5 +76,6 @@ function row(walletItemId?: string): ImportPreviewRow {
     confirmed: true,
     beneficiaries: [],
     walletItemId,
+    externalTransactionId,
   };
 }
