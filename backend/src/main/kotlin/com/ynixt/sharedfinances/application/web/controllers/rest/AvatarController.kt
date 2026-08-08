@@ -1,10 +1,11 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
-import com.ynixt.sharedfinances.domain.models.Wrapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.AvatarReadService
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.io.Resource
+import org.springframework.http.CacheControl
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
@@ -19,22 +20,25 @@ import java.util.UUID
 )
 class AvatarController(
     private val avatarReadService: AvatarReadService,
-    @param:Value("\${app.s3.bucket}") private val bucket: String,
 ) {
-    @GetMapping("/private/external/{bucket}/avatar/{ownerId}")
+    @GetMapping("/private/avatars/{ownerId}", produces = [MediaType.IMAGE_PNG_VALUE])
     suspend fun getAvatar(
-        @PathVariable bucket: String,
         @PathVariable ownerId: UUID,
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
-    ): ResponseEntity<Wrapper<String>> {
-        if (bucket != this.bucket) return ResponseEntity.notFound().build()
-
-        return avatarReadService
+    ): ResponseEntity<Resource> =
+        avatarReadService
             .getAvatar(
                 ownerId = ownerId,
                 loggedUserId = principalToken.principal.id,
-            ).let { link ->
-                ResponseEntity.ofNullable(link?.let { Wrapper(it) })
+            ).let { resource ->
+                if (resource == null) {
+                    ResponseEntity.notFound().build()
+                } else {
+                    ResponseEntity
+                        .ok()
+                        .contentType(MediaType.IMAGE_PNG)
+                        .cacheControl(CacheControl.noCache())
+                        .body(resource)
+                }
             }
-    }
 }

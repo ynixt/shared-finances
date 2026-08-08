@@ -3,7 +3,10 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 import com.ynixt.sharedfinances.application.web.dto.CursorPageDto
 import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateQuoteDto
 import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateQuoteListRequestDto
+import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateResolutionDto
+import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateResolveBatchRequestDto
 import com.ynixt.sharedfinances.application.web.mapper.ExchangeRateQuoteDtoMapper
+import com.ynixt.sharedfinances.domain.exceptions.http.ExchangeRateUnavailableException
 import com.ynixt.sharedfinances.domain.extensions.CursorPageExtensions.mapCursorPageToDto
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
@@ -54,4 +57,40 @@ class ExchangeRateController(
             .listQuotes(listRequest)
             .mapCursorPageToDto(exchangeRateQuoteDtoMapper::toDto)
     }
+
+    @Operation(summary = "Resolve the closest stored exchange rate for multiple currency/date combinations")
+    @PostMapping("/resolve")
+    suspend fun resolve(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @RequestBody body: ExchangeRateResolveBatchRequestDto,
+    ): List<ExchangeRateResolutionDto> =
+        body.requests
+            .take(500)
+            .map { request ->
+                val fromCurrency = request.fromCurrency.trim().uppercase()
+                val toCurrency = request.toCurrency.trim().uppercase()
+                try {
+                    val resolved =
+                        exchangeRateService.resolveRate(
+                            fromCurrency = fromCurrency,
+                            toCurrency = toCurrency,
+                            referenceDate = request.referenceDate,
+                        )
+                    ExchangeRateResolutionDto(
+                        fromCurrency = fromCurrency,
+                        toCurrency = toCurrency,
+                        referenceDate = request.referenceDate,
+                        rate = resolved.rate,
+                        quoteDate = resolved.quoteDate,
+                    )
+                } catch (_: ExchangeRateUnavailableException) {
+                    ExchangeRateResolutionDto(
+                        fromCurrency = fromCurrency,
+                        toCurrency = toCurrency,
+                        referenceDate = request.referenceDate,
+                        rate = null,
+                        quoteDate = null,
+                    )
+                }
+            }
 }

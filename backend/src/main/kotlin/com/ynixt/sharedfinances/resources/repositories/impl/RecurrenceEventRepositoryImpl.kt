@@ -26,6 +26,9 @@ class RecurrenceEventRepositoryImpl(
 
     override fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity> = springDataRepository.findAllBySeriesId(seriesId)
 
+    override fun findAllByImportBatchId(importBatchId: UUID): Flux<RecurrenceEventEntity> =
+        springDataRepository.findAllByImportBatchId(importBatchId)
+
     override fun deleteAllByWalletItemIdAndUserId(
         walletItemId: UUID,
         userId: UUID,

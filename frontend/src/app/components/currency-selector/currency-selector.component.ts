@@ -1,15 +1,10 @@
-import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, forwardRef, input } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { ScrollerOptions } from 'primeng/api';
 import { Select } from 'primeng/select';
 
-export interface CurrencyItem {
-  code: string;
-  name?: string;
-  symbol: string;
-}
+import { CurrencyCatalogService, CurrencyItem } from './currency-catalog.service';
 
 @Component({
   selector: 'app-currency-selector',
@@ -27,7 +22,9 @@ export interface CurrencyItem {
 export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
   placeholder = input('');
   showClear = input(false);
+  compact = input(false);
   assetsUrl = input('/public/currencies.json');
+  appendTo = input<any>(undefined);
 
   currencies: CurrencyItem[] = [];
   value: string | null = null;
@@ -41,54 +38,26 @@ export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
   private onTouched = () => {};
   disabled = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly currencyCatalog: CurrencyCatalogService) {}
 
   ngOnInit(): void {
     this.loadCurrencies();
   }
 
   private loadCurrencies() {
-    this.http.get<Record<string, string>>(this.assetsUrl(), { responseType: 'json' as const }).subscribe({
-      next: data => {
-        this.currencies = Object.entries(data)
-          .map(([code, name]) => ({
-            code: code.toUpperCase(),
-            name: name || undefined,
-            symbol: this.getIntlSymbol(code.toUpperCase()),
-            all: code.toUpperCase() + ' ' + name + ' ' + this.getIntlSymbol(code.toUpperCase()),
-          }))
-          .sort((a, b) => a.code.localeCompare(b.code));
-      },
-      error: () => {
-        this.currencies = [];
+    this.currencyCatalog.getCurrencies(this.assetsUrl()).subscribe({
+      next: currencies => {
+        this.currencies = currencies;
       },
     });
   }
 
-  getIntlSymbol(code: string, locale = 'en-US') {
-    try {
-      const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: code }).formatToParts(0);
-      const sym = parts.find(p => p.type === 'currency')?.value;
-      return sym ?? code;
-    } catch {
-      return code;
-    }
-  }
-
   onSelectCurrency(e: any) {
-    const item = e.value;
-
-    if (!item) {
-      this.writeValue(null);
-      return;
-    }
-    this.writeValue(item);
-    this.onTouched();
+    this.setUserValue(e.value ?? null);
   }
 
   writeValue(obj: any): void {
     this.value = obj;
-    this.propagateChange(obj);
   }
 
   registerOnChange(fn: any): void {
@@ -103,12 +72,14 @@ export class CurrencySelectorComponent implements ControlValueAccessor, OnInit {
     this.disabled = isDisabled;
   }
 
-  private propagateChange(code: string | null) {
-    this.onChange(code);
+  clearSelection() {
+    this.setUserValue(null);
   }
 
-  clearSelection() {
-    this.writeValue(null);
-    this.propagateChange(null);
+  private setUserValue(code: string | null): void {
+    if (this.value === code) return;
+    this.value = code;
+    this.onChange(code);
+    this.onTouched();
   }
 }

@@ -1,4 +1,4 @@
-import { Component, ElementRef, forwardRef, inject, input, viewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, forwardRef, inject, input, viewChild } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -27,7 +27,7 @@ import { UserAvatarComponent } from '../user-avatar/user-avatar.component';
     },
   ],
 })
-export class UserAvatarEditorComponent extends SimpleControlValueAccessor<string | null> {
+export class UserAvatarEditorComponent extends SimpleControlValueAccessor<string | null> implements OnDestroy {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly fileService = inject(FileService);
 
@@ -38,6 +38,8 @@ export class UserAvatarEditorComponent extends SimpleControlValueAccessor<string
   imageChangedEvent: Event | undefined = undefined;
   currentValueUrl: string | null = null;
   urlInCrop: string | null = null;
+  private managedObjectUrl: string | null = null;
+  private loadSequence = 0;
 
   delete() {
     this.onValueChange(null);
@@ -80,12 +82,25 @@ export class UserAvatarEditorComponent extends SimpleControlValueAccessor<string
 
   override writeValue(value: string | null | undefined) {
     super.writeValue(value);
+    const sequence = ++this.loadSequence;
 
     if (value == null) {
+      this.replaceCurrentValueUrl(null);
       this.currentValueUrl = null;
     } else {
-      this.fileService.getRealUrl(value).then(value => (this.currentValueUrl = value));
+      this.fileService.getRealUrl(value).then(resolved => {
+        if (sequence !== this.loadSequence) {
+          this.fileService.revokeObjectUrl(resolved);
+          return;
+        }
+        this.replaceCurrentValueUrl(resolved);
+      });
     }
+  }
+
+  ngOnDestroy(): void {
+    this.loadSequence++;
+    this.fileService.revokeObjectUrl(this.managedObjectUrl);
   }
 
   ok() {
@@ -101,5 +116,11 @@ export class UserAvatarEditorComponent extends SimpleControlValueAccessor<string
     this.dialogOpen = false;
     this.imageChangedEvent = undefined;
     this.inputFile()!!.nativeElement.value = '';
+  }
+
+  private replaceCurrentValueUrl(url: string | null): void {
+    this.fileService.revokeObjectUrl(this.managedObjectUrl);
+    this.managedObjectUrl = url?.startsWith('blob:') === true ? url : null;
+    this.currentValueUrl = url;
   }
 }

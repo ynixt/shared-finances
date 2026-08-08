@@ -1,0 +1,72 @@
+<section class="import-card">
+  <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.preview.title' | translate }}</h2>
+  @if (!store.canShowPreview) {
+    <p class="mt-4 rounded-xl bg-surface-50 p-6 text-center font-medium text-muted dark:bg-surface-800">
+      {{ 'financesPage.transactionsPage.importPage.preview.originRequired' | translate }}
+    </p>
+  } @else {
+    <div class="mt-4 flex flex-wrap items-end justify-between gap-4">
+      <div class="mt-2 flex flex-wrap gap-2 text-sm">
+        <span class="metric-chip">{{
+          'financesPage.transactionsPage.importPage.preview.metrics.found' | translate: { count: store.rows.length }
+        }}</span>
+        <span class="metric-chip">{{
+          'financesPage.transactionsPage.importPage.preview.metrics.selected' | translate: { count: store.selectedRows.length }
+        }}</span>
+        <span class="metric-chip text-emerald-700">{{
+          'financesPage.transactionsPage.importPage.preview.metrics.revenues' | translate: { count: store.revenueCount }
+        }}</span>
+        <span class="metric-chip text-red-700">{{
+          'financesPage.transactionsPage.importPage.preview.metrics.expenses' | translate: { count: store.expenseCount }
+        }}</span>
+        @for (impact of store.balanceImpacts; track impact.currency) {
+          <span class="metric-chip">{{
+            'financesPage.transactionsPage.importPage.preview.metrics.impact'
+              | translate: { value: (impact.value | localCurrency: impact.currency) }
+          }}</span>
+        }
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <input
+          pInputText
+          class="min-w-56"
+          [placeholder]="'financesPage.transactionsPage.importPage.preview.searchPlaceholder' | translate"
+          [(ngModel)]="store.search"
+          (ngModelChange)="store.resetPreviewPagination()"
+        />
+        <p-select
+          class="min-w-56"
+          [options]="categoryFilterOptions"
+          optionLabel="name"
+          optionValue="id"
+          [filter]="true"
+          [showClear]="false"
+          [ngModel]="store.categoryFilter"
+          (ngModelChange)="categoryFilterChanged($event)"
+        />
+      </div>
+    </div>
+
+    <app-import-preview-table class="mt-4 block" [rows]="store.pagedRows" />
+
+    <p-paginator
+      class="mt-3"
+      [first]="store.previewFirst"
+      [rows]="store.previewPageSize"
+      [totalRecords]="store.visibleRows.length"
+      [rowsPerPageOptions]="store.previewPageSizeOptions"
+      [showCurrentPageReport]="true"
+      [currentPageReportTemplate]="'financesPage.transactionsPage.importPage.preview.pageReport' | translate"
+      (onPageChange)="store.previewPageChanged($event)"
+    />
+
+    <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-surface-200 pt-4 dark:border-surface-700">
+      <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.preview.deduplicationHint' | translate }}</p>
+      <button type="button" pButton [loading]="store.submitting" [disabled]="!store.canSubmit" (click)="submit()">
+        {{ 'financesPage.transactionsPage.importPage.preview.confirm' | translate: { count: store.selectedRows.length } }}
+      </button>
+    </div>
+  }
+</section>
+
+<app-beneficiary-split-dialog />

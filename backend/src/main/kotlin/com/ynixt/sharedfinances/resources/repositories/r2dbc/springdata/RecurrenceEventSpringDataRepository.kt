@@ -17,6 +17,8 @@ interface RecurrenceEventSpringDataRepository :
 
     fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity>
 
+    fun findAllByImportBatchId(importBatchId: UUID): Flux<RecurrenceEventEntity>
+
     @Modifying
     @Query(
         """

@@ -8,7 +8,7 @@ describe('date-query-params.util', () => {
     const result = readDateRangeFromQueryParams(queryParamsOf({ date: '2026-04' }), 'normal');
 
     expect(result?.startDate.format('YYYY-MM-DD')).toBe('2026-04-01');
-    expect(result?.endDate.format('YYYY-MM-DD')).toBe('2026-04-30');
+    expect(result?.endDate?.format('YYYY-MM-DD')).toBe('2026-04-30');
     expect(result?.sameMonth).toBe(true);
   });
 
@@ -16,7 +16,7 @@ describe('date-query-params.util', () => {
     const result = readDateRangeFromQueryParams(queryParamsOf({ date: '04-2026' }), 'normal');
 
     expect(result?.startDate.format('YYYY-MM-DD')).toBe('2026-04-01');
-    expect(result?.endDate.format('YYYY-MM-DD')).toBe('2026-04-30');
+    expect(result?.endDate?.format('YYYY-MM-DD')).toBe('2026-04-30');
     expect(result?.sameMonth).toBe(true);
   });
 

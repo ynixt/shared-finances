@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { lastValueFrom, take } from 'rxjs';
@@ -18,11 +19,23 @@ export interface ExchangeRateQuoteListFilters {
   quoteDateTo?: string | undefined;
 }
 
+export interface ExchangeRateResolveRequest {
+  fromCurrency: string;
+  referenceDate: string;
+  toCurrency: string;
+}
+
+export interface ExchangeRateResolution extends ExchangeRateResolveRequest {
+  quoteDate?: string | null;
+  rate?: number | null;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class ExchangeRateService {
   constructor(
+    private http: HttpClient,
     private cursorPaginationService: CursorPaginationService,
     private userService: UserService,
   ) {}
@@ -46,6 +59,26 @@ export class ExchangeRateService {
 
     return lastValueFrom(
       this.cursorPaginationService.post<ExchangeRateQuoteDto>('/api/exchange-rates/list', pageRequest, undefined, body).pipe(take(1)),
+    );
+  }
+
+  async resolve(requests: ExchangeRateResolveRequest[]): Promise<ExchangeRateResolution[]> {
+    const user = await this.userService.getUser();
+
+    if (user == null) {
+      throw new UserMissingError();
+    }
+
+    return lastValueFrom(
+      this.http
+        .post<ExchangeRateResolution[]>('/api/exchange-rates/resolve', {
+          requests: requests.map(request => ({
+            fromCurrency: request.fromCurrency.trim().toUpperCase(),
+            toCurrency: request.toCurrency.trim().toUpperCase(),
+            referenceDate: request.referenceDate,
+          })),
+        })
+        .pipe(take(1)),
     );
   }
 }

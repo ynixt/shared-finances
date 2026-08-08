@@ -1,0 +1,5 @@
+<div class="preview-list">
+  @for (row of rows(); track row.index) {
+    <app-import-preview-row [previewRow]="row" />
+  }
+</div>

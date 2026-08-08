@@ -44,6 +44,7 @@ import { WalletItemPickerComponent } from '../../../components/item-picker/walle
 import { CreditCardBillService } from '../../../services/credit-card-bill.service';
 import { GroupService } from '../../../services/group.service';
 import { WalletEntryService } from '../../../services/wallet-entry.service';
+import { BeneficiarySplitComponent } from '../beneficiary-split/beneficiary-split.component';
 import { defaultBeneficiaryState, hydrateBeneficiaryState, validateBeneficiarySplit } from './transaction-form.beneficiaries';
 import {
   ExtraBeneficiaryLegInit,
@@ -81,6 +82,7 @@ import {
     TextareaComponent,
     ChipEditorComponent,
     RouterLink,
+    BeneficiarySplitComponent,
   ],
   templateUrl: './transaction-form.component.html',
 })

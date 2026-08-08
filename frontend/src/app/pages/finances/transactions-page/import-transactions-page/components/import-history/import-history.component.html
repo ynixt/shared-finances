@@ -1,0 +1,20 @@
+<p-confirmDialog />
+
+<section class="import-card">
+  <div>
+    <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.history.title' | translate }}</h2>
+    <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.history.hint' | translate }}</p>
+  </div>
+  @if (loading) {
+    <p class="mt-4 rounded-xl bg-surface-50 p-6 text-center text-muted dark:bg-surface-800">
+      {{ 'financesPage.transactionsPage.importPage.loading' | translate }}
+    </p>
+  } @else {
+    <app-import-history-table
+      class="mt-4 block"
+      [batches]="history"
+      [undoingBatchId]="undoingBatchId"
+      (undoRequested)="confirmUndo($event)"
+    />
+  }
+</section>

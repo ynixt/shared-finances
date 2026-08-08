@@ -1,3 +1,4 @@
 docker-compose-local.yml
 secrets
 .env.production
+/data/

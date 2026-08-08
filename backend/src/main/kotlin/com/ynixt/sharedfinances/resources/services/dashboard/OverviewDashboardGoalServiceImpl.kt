@@ -64,7 +64,7 @@ internal class OverviewDashboardGoalServiceImpl(
                             .fold(BigDecimal.ZERO) { acc, row -> acc.add(row.committed) }
                             .asMoney()
                     val balance = rawBalanceByBankId[walletItemId] ?: BigDecimal.ZERO
-                    committed.compareTo(balance) > 0
+                    committed.signum() > 0 && committed.compareTo(balance) > 0
                 }
 
         return GoalCommitmentContext(
@@ -195,6 +195,6 @@ internal class OverviewDashboardGoalServiceImpl(
                 .filter { it.currency.equals(bank.currency, ignoreCase = true) }
                 .fold(BigDecimal.ZERO) { acc, raw -> acc.add(raw.value) }
                 .asMoney()
-        return nativeCommitted.compareTo(balance) > 0
+        return nativeCommitted.signum() > 0 && nativeCommitted.compareTo(balance) > 0
     }
 }

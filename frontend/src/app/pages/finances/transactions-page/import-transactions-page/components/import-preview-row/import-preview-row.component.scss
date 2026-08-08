@@ -1,0 +1,116 @@
+@use '../../import-section';
+
+.editor-section {
+  min-width: 0;
+  padding: 0.875rem;
+  border: 1px solid var(--p-surface-200);
+  border-radius: 0.75rem;
+  background: var(--p-surface-50);
+
+  :host-context(.dark-mode) & {
+    border-color: var(--p-surface-700);
+    background: var(--p-surface-800);
+  }
+}
+
+.preview-card--excluded {
+  opacity: 0.6;
+}
+.preview-card input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--p-primary-color);
+}
+.preview-card__header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+.preview-card__identity {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(5.75rem, auto) minmax(10rem, 1fr);
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.preview-card__status {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.preview-card__grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+.preview-card__field-label {
+  color: var(--p-text-muted-color);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+.installment-info {
+  display: inline-grid;
+  width: 1.125rem;
+  height: 1.125rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--p-primary-color);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--p-primary-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+}
+.status-tag {
+  display: inline-flex;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: normal;
+}
+.status-ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.status-muted {
+  background: var(--p-surface-200);
+  color: var(--p-text-muted-color);
+}
+
+@container (min-width: 40rem) {
+  .preview-card__header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+  }
+  .preview-card__status {
+    grid-column: auto;
+    justify-self: end;
+  }
+}
+@container (min-width: 48rem) {
+  .preview-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (min-width: 75rem) {
+  .preview-card__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 47.99rem) {
+  .preview-card__identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

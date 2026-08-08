@@ -30,12 +30,11 @@ export class PagedSelectComponent extends PagedSelectControlValueAccessor<any> {
   @ViewChild('select') select: Select | undefined;
 
   clearSelection() {
-    this.writeValue(null);
-    this.onChange(null);
+    this.onValueChange(null);
   }
 
   onSelectionChange(event: SelectChangeEvent) {
-    this.writeValue(event.value);
+    this.onValueChange(event.value);
   }
 
   async onShow() {

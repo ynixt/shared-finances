@@ -26,6 +26,8 @@ interface WalletEventRepository {
 
     fun findAllByRecurrenceEventId(recurrenceEventId: UUID): Flux<WalletEventEntity>
 
+    fun findAllByImportBatchId(importBatchId: UUID): Flux<WalletEventEntity>
+
     fun save(walletEntry: WalletEventEntity): Mono<WalletEventEntity>
 
     fun saveAll(walletEntry: Iterable<WalletEventEntity>): Flux<WalletEventEntity>

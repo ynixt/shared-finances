@@ -10,6 +10,7 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.lifecycle.Startables
 import org.testcontainers.utility.DockerImageName
+import java.nio.file.Files
 
 abstract class IntegrationTestContainers : IntegrationTest() {
     @Autowired
@@ -34,6 +35,8 @@ abstract class IntegrationTestContainers : IntegrationTest() {
             ).withExposedPorts(4222)
                 .withCommand("-js")
 
+        private val fileStoragePath = Files.createTempDirectory("shared-finances-integration-")
+
         init {
             Startables.deepStart(postgres, redis, nats).join()
         }
@@ -53,6 +56,7 @@ abstract class IntegrationTestContainers : IntegrationTest() {
             registry.add("spring.data.redis.port") { redis.getMappedPort(6379) }
 
             registry.add("app.nats.url") { "nats://${nats.host}:${nats.getMappedPort(4222)}" }
+            registry.add("app.file-storage.path") { fileStoragePath.toString() }
         }
 
         private fun env(

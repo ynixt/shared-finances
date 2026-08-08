@@ -33,8 +33,10 @@ Easily manage your personal and family finances. Free and open source.
 - [x] Financial goals
 - [x] Simulation of a new expense can show if you can afford it
 - [x] Support of many currencies, including cryptocurrencies. (You can see the list [here](https://github.com/ynixt/shared-finances/blob/main/backend/src/main/resources/currencies.json))
+- [X] Import transactions from CSV
+- [ ] Export transactions AS CSV (⌛ Planned)
 - [ ] PDF report (⌛ Planned)
-- [ ] Import transactions from xls/csv (⌛ Planned)
+- [ ] Import transactions from OFX (⌛ Planned)
 - [ ] Email before due date (✖️ Not planned)
 
 # Self Hosted
@@ -65,9 +67,7 @@ This configuration parameters are common between **only Shared Finances** and **
 | `SF_APP_NATS_PORT`                         | number            | X        |                                                           | `4222`                                                      | Nats port                                                                                                                                                 |
 | `SF_APP_NATS_USER`                         | string            | X        |                                                           | `client_user`                                               | Nats user                                                                                                                                                 |
 | `SF_APP_NATS_PASSWORD`                     | string            | X        |                                                           | `client_pass`                                               | Nats password                                                                                                                                             |
-| `SF_APP_S3_ENDPOINT`                       | string            | X        |                                                           | `http://localhost:9000`                                     | S3 endpoint                                                                                                                                               |
-| `SF_APP_S3_ACCESS_KEY_ID`                  | string            | X        |                                                           | `minioadmin`                                                | S3 access key                                                                                                                                             |
-| `SF_APP_S3_SECRET_ACCESS_KEY`              | string            | X        |                                                           | `minioadmin`                                                | S3 secret access key                                                                                                                                      |
+| `SF_APP_FILE_STORAGE_PATH`                 | string            | X        |                                                           | `/var/lib/shared-finances/files`                            | Writable directory used to persist application files. It must be backed up and mounted as a persistent volume when running in a container.               |
 | `SF_APP_PORT`                              | number            |          | `80`                                                      |                                                             | Shared Finances HTTP public port (not exists in backend-only image)                                                                                       |
 | `SF_APP_API_PORT`                          | number            |          | `8081`                                                    |                                                             | Shared FInances API port  (internal in combined image; exposed in backend-only image; not exists in frontend-only image)                                  |
 | `SF_APP_INVITATION_EXPIRATION_MINUTES`     | number            |          | `15`                                                      |                                                             | Time, in minutes, before expiration of group invitation                                                                                                   |
@@ -113,6 +113,11 @@ This configuration parameters are common between **only Shared Finances** and **
 | `SF_APP_SIMULATION_RECONCILE_CRON_ENABLED` | boolean           |          | `false`                                                   |                                                             |                                                                                                                                                           |
 | `SF_APP_SIMULATION_RECONCILE_CRON`         | string (cron)     |          | `0 */2 * * * *`                                           |                                                             |                                                                                                                                                           |
 | `SF_APP_SIMULATION_PURGE_CRON`             | string (cron)     |          | `0 30 3 * * *`                                            |                                                             | Cron to delete old financial simulations.                                                                                                                 |
+| `SF_APP_IMPORT_WORKER_ENABLED`             | boolean           |          | `true`                                                     |                                                             | Enables the durable JetStream consumer for asynchronous CSV imports.                                                                                       |
+| `SF_APP_IMPORT_RECONCILE_CRON_ENABLED`     | boolean           |          | `true`                                                     |                                                             | Enables reconciliation of queued imports and expired worker leases.                                                                                        |
+| `SF_APP_IMPORT_RECONCILE_CRON`             | string (cron)     |          | `0 */1 * * * *`                                           |                                                             | Cron for asynchronous CSV import reconciliation.                                                                                                           |
+
+See [Async CSV import operations](docs/async-csv-import-operations.md) for rollout, monitoring, and rollback procedures.
 
 ### Only Shared Finances Setup
 
@@ -120,8 +125,8 @@ This configuration parameters are common between **only Shared Finances** and **
 
 - Postgres 18+
 - Redis 8+
-- S3 (you can use minio)
 - Nats
+- A writable persistent directory for application files
 
 ### Instalation
 
@@ -139,17 +144,16 @@ This configuration parameters are common between **only Shared Finances** and **
           - .env
         environment:
           SF_APP_PORT: ${SF_APP_PORT:-80}
+          SF_APP_FILE_STORAGE_PATH: /var/lib/shared-finances/files
         ports:
           - "${SF_APP_PORT:-80}:${SF_APP_PORT:-80}"
+        volumes:
+          - file_data:/var/lib/shared-finances/files
         depends_on:
           db:
             condition: service_healthy
           redis:
             condition: service_healthy
-          minio:
-            condition: service_healthy
-          minio-mc:
-            condition: service_completed_successfully
           nats:
             condition: service_healthy
         healthcheck:
@@ -158,6 +162,9 @@ This configuration parameters are common between **only Shared Finances** and **
           timeout: 5s
           retries: 6
           start_period: 20s
+
+    volumes:
+      file_data:
     ```
 2. Create `.env` file. (remember to change user/password/et.)
 
@@ -179,12 +186,8 @@ This configuration parameters are common between **only Shared Finances** and **
      SF_APP_NATS_USER=client_user
      SF_APP_NATS_PASSWORD=client_pass
 
-     ## S3
-     SF_APP_S3_ENDPOINT=http://localhost:9000
-     SF_APP_S3_ACCESS_KEY_ID=minioadmin
-     SF_APP_S3_SECRET_ACCESS_KEY=minioadmin
-     SF_APP_S3_REGION=us-east-1
-     SF_APP_S3_BUCKET=shared-finances
+     ## File storage
+     SF_APP_FILE_STORAGE_PATH=/var/lib/shared-finances/files
 
      ## APP
      SF_APP_INVITATION_EXPIRATION_MINUTES=15
@@ -202,6 +205,20 @@ This configuration parameters are common between **only Shared Finances** and **
 
 3. Run `docker compose up -d`
 4. Open in your browser `http://localhost`
+
+### File storage operations
+
+All application files are stored below `SF_APP_FILE_STORAGE_PATH`. The application validates this directory at startup and refuses to start if it cannot create, read, and write files there.
+
+- Back up the file-storage volume together with Postgres. Losing either one can leave file references or content incomplete.
+- When running more than one application replica, every replica must mount the same shared filesystem at `SF_APP_FILE_STORAGE_PATH`. Independent local disks are not supported.
+- The development backend uses `./data/files` from `dev.env`; this directory is created automatically and should remain outside source control.
+
+### Upgrade from the S3/MinIO storage version
+
+This upgrade intentionally discards all existing avatars. The database migration clears every existing avatar reference, and no object is copied into the new filesystem. Users see their initials until they upload or select a new avatar.
+
+After deploying, validate avatar upload, display, replacement, removal, and persistence across a container recreation. The old Docker volume is no longer declared and remains orphaned until an operator removes it. Identify the old `minio_data` volume for this Compose project and delete it manually only after validation; deletion is permanent and the old avatars cannot be recovered afterward.
 
 ### Shared Finances and their dependencies
 

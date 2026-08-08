@@ -50,6 +50,210 @@ financesPage:
       pending: Pending
       confirmed: Confirmed
       future: Scheduled
+    importPage:
+      title: Import transactions
+      loading: Loading import options…
+      downloadTemplate: Download CSV template
+      fixedBillTooltip: This value is only used when the row origin is a credit card.
+      common:
+        yes: Yes
+        no: No
+      actions:
+        remove: Remove
+        undo: Undo
+        retry: Try again
+      fields:
+        origin: Origin
+        originLowercase: origin
+        selectOrigin: Select an origin
+        date: Date
+        description: Description
+        value: Amount
+        credit: Credit/inflow
+        debit: Debit/outflow
+        type: Type
+        category: Category
+        categoryPlaceholder: No category
+        currency: Row currency
+        currencyPlaceholder: Select a currency
+        beneficiaries: Beneficiaries
+        transactionId: Transaction ID
+        installment: Installment
+        group: Group
+        noGroup: Select a group
+        bill: Bill
+        tags: Tags
+        observations: Notes
+        confirmed: Confirmed
+        confirmedFeminine: Confirmed
+      fileStep:
+        title: 1. CSV file
+        hint: 'Default delimiter: semicolon. The file is not uploaded at this step.'
+        select: Select CSV
+        reading: Reading and calculating the file hash…
+        hash:
+          processing: This file is being processed.
+          imported: This file has already been imported.
+          previousFile: 'The previous import used “{{fileName}}”.'
+          canProceed: You can still continue.
+      csvOptions:
+        title: 2. CSV options
+        delimiter: Delimiter
+        delimiterAria: CSV delimiter
+        decimalSeparator: Decimal separator
+        decimalPoint: Dot (1234.56)
+        decimalComma: Comma (1.234,56)
+        dateFormat: Date format
+        detectedFormat: 'Detected: {{format}}'
+        invertValues: Invert amounts (swap inflow/outflow)
+        separateCreditDebit: Separate inflow and outflow columns
+        ignoreDuplicates: Automatically ignore possible duplicates
+        dateFormats:
+          auto: Automatic
+          dayMonthYear: DD/MM/YYYY
+          monthDayYear: MM/DD/YYYY
+          iso: YYYY-MM-DD
+      mapping:
+        title: 3. Column mapping
+        hint: Canonical headers take priority. You can override any detection.
+        currencyHint: The row currency must match an option available in the selector.
+        autoDetect: Detect automatically / do not use
+        fixedValue: Fixed value
+      fixedValues:
+        title: 4. Fixed values
+        hint: These values apply to every row. Changing a fixed value overrides individual edits to that field.
+        empty: No mapping is using a fixed value.
+        noFixedType: No fixed type
+      valueTypes:
+        revenue: Revenue
+        expense: Expense
+      preview:
+        title: 5. Preview
+        originRequired: Origin is required
+        include: Include
+        searchPlaceholder: Search preview
+        allCategories: All categories
+        descriptionAria: 'Transaction description for {{date}}'
+        originalValue: Original
+        originalCurrency: Original currency
+        convertedTo: 'In {{origin}}'
+        convertedValueAria: Converted row amount
+        manuallyAdjusted: Amount adjusted manually
+        beneficiaries: 'Beneficiaries ({{count}})'
+        installmentPlaceholder: 'E.g.: 3/12'
+        installmentInfoAria: How previous and following installments work
+        installmentInfo: Previous creates installments 1 through the one before the current installment and affects past balances and bills. Following schedules the remaining installments through the purchase total.
+        createPreviousInstallments: Create previous installments
+        createFollowingInstallments: Create following installments
+        previousInstallmentsWarning: Affects past bills and balances.
+        singlePurchase: Single purchase
+        pageReport: '{first}–{last} of {totalRecords}'
+        deduplicationHint: 'Deduplication is only a warning: marked rows can still be imported.'
+        confirm: 'Confirm import of {{count}} rows'
+        metrics:
+          found: '{{count}} found'
+          selected: '{{count}} will be imported'
+          revenues: '{{count}} revenues'
+          expenses: '{{count}} expenses'
+          impact: 'Impact: {{value}}'
+        status:
+          originRequired: Origin required
+          loadingRate: Fetching exchange rate
+          conversionPending: Conversion pending
+          beneficiaryRequired: Beneficiary required
+          ignoredDuplicate: Ignored · possible duplicate
+          ignored: Ignored
+          possibleDuplicate: Possible duplicate
+          willImport: Will be imported
+        sections:
+          values: Amounts
+          context: Context
+          classification: Classification
+          billAndInstallment: Bill and installment
+          otherData: Other data
+      validation:
+        invalidDate: Invalid date
+        invalidDateLowercase: invalid date
+        invalidValue: Invalid amount
+      conversion:
+        unknownCurrency: Currency not found in the catalog
+        selectValidCurrency: Select a valid currency
+        rateUnavailable: 'Exchange rate {{from}}→{{to}} unavailable'
+        lookupFailed: The exchange rate could not be fetched automatically
+        enterConvertedValue: Enter the converted amount.
+      errors:
+        loadData: The data required for the import could not be loaded.
+        readFile: The CSV file could not be read.
+        parseCsv: The CSV could not be parsed.
+        fixedOriginRequired: Fill in the fixed origin.
+        noValidRows: Select at least one valid row to import.
+        startImport: The import could not be started.
+      undoConfirmation:
+        title: Undo import
+        message: '{{count}} transactions will be removed and balances will be reverted. This action cannot be undone.'
+      status:
+        inProgress: In progress
+        imported: Imported
+        failed: Failed
+        undoing: Undoing
+        undoFailed: Undo failed
+      notifications:
+        importStarted:
+          summary: Import started
+          detail: Processing will continue in the background.
+        undoStarted:
+          summary: Undo started
+          detail: The reversal will continue in the background.
+        undoFailed:
+          summary: Undo failed
+          retry: Try again.
+          retryImport: Try undoing the import again.
+        undoCompleted:
+          summary: Import undone
+          detail: Balances and bills were reverted.
+        importCompleted:
+          summary: Import completed
+          detail: '{{count}} transactions created.'
+        importFailed:
+          summary: Import failed
+          retry: Try submitting the file again.
+        duplicates:
+          summary: Duplicates
+          detail: Duplicate rows could not be checked.
+      history:
+        title: Import history
+        hint: Undoing removes the transactions and reverts their effects on balances and bills.
+        empty: No imports yet.
+        columns:
+          date: Date
+          file: File
+          format: Format
+          origin: Origin
+          status: Status
+          quantity: Qty.
+          quantityLong: Quantity
+          credit: Credit
+          debit: Debit
+      beneficiaryDialog:
+        title: Split among beneficiaries
+        apply: Apply split
+      csvTemplate:
+        fileName: statement-import-template.csv
+        columns:
+          origin: origin
+          date: date
+          description: description
+          value: amount
+          currency: currency
+          type: type
+          category: category
+          group: group
+          installment: installment
+          beneficiaries: beneficiaries
+          bill: bill
+          tags: tags
+          observations: observations
+          confirmed: confirmed
     newTransactionPage:
       title: New transaction
       success: Transaction created successfully.

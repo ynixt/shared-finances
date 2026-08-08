@@ -30,6 +30,16 @@ data class NewEntryRequest(
     val installments: Int? = null,
     val periodicity: RecurrenceType? = null,
     val periodicityQtyLimit: Int? = null,
+    /** Zero-based installment offset used when creating a recurrence series segment. */
+    val seriesOffset: Int = 0,
+    /** Total number of installments in the logical series, independent from this segment length. */
+    val seriesQtyTotal: Int? = null,
+    /** Existing logical series to which this segment belongs. */
+    val seriesId: UUID? = null,
+    /** Import batch that owns the event and any recurrence config created from this request. */
+    val importBatchId: UUID? = null,
+    /** Confirmation state used only while materializing retroactive occurrences during creation. */
+    val recurrenceConfirmedOverride: Boolean? = null,
     val originBillDate: LocalDate? = null,
     val targetBillDate: LocalDate? = null,
     val tags: List<String>? = null,

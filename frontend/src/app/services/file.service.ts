@@ -1,23 +1,31 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { PresignedService } from '../pages/finances/services/presigned.service';
+import { lastValueFrom, take } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class FileService {
-  presignedService = inject(PresignedService);
+  private readonly http = inject(HttpClient);
 
   async getRealUrl(url: string | null): Promise<string | null> {
     if (url == null) return null;
 
-    if (url.startsWith('/private/external')) {
+    if (url.startsWith('/api/private/avatars/')) {
       try {
-        return await this.presignedService.getUrl(url);
+        const blob = await lastValueFrom(this.http.get(url, { responseType: 'blob' }).pipe(take(1)));
+        return URL.createObjectURL(blob);
       } catch (err) {
         console.error(err);
         return null;
       }
-    } else {
-      return url;
+    }
+
+    return /^(blob:|data:|https?:\/\/)/.test(url) ? url : null;
+  }
+
+  revokeObjectUrl(url: string | null | undefined): void {
+    if (url?.startsWith('blob:')) {
+      URL.revokeObjectURL(url);
     }
   }
 }

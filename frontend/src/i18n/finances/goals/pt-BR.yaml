@@ -14,7 +14,7 @@ financesPage:
       deadline: Prazo
     scopeIndividual: Individual
     scopeGroup: Grupo
-    groupNonePlaceholder: Sem grupo
+    groupNonePlaceholder: Selecione um grupo
     targets: Alvos por moeda
     committed: Comprometido por moeda
     commitmentChartTitle: Comprometimento e alvo (mês a mês)

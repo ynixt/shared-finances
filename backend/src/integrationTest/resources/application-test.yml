@@ -100,6 +100,8 @@ app:
   legal:
     terms-version: test-terms-1
     privacy-version: test-privacy-1
+  file-storage:
+    path: ${SF_APP_FILE_STORAGE_PATH}
   nats:
     url: mock
   invitationExpirationMinutes: ${SF_APP_INVITATION_EXPIRATION_MINUTES:15}
@@ -118,13 +120,6 @@ app:
       crypto:
         password: ${SF_APP_MFA_TOTP_CRYPTO_PASSWORD}
         saltHex: ${SF_APP_MFA_TOTP_CRYPTO_SALT_HEX}
-  s3:
-    endpoint: ${SF_APP_S3_ENDPOINT}
-    accessKey: ${SF_APP_S3_ACCESS_KEY_ID}
-    secretKey: ${SF_APP_S3_SECRET_ACCESS_KEY}
-    region: ${SF_APP_S3_REGION}
-    bucket: ${SF_APP_S3_BUCKET}
-    pathStyleAccessEnabled: ${SF_APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
   exchangeRates:
     providerUrl: http://localhost/mock-exchange
   jobs:

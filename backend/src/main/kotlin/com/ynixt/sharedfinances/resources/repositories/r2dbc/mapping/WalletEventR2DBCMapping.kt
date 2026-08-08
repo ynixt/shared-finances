@@ -26,6 +26,7 @@ class WalletEventR2DBCMapping {
                 confirmed = row.get("${columnPrefix}confirmed", Boolean::class.java)!!,
                 installment = row.get("${columnPrefix}installment", Int::class.javaObjectType),
                 recurrenceEventId = row.get("${columnPrefix}recurrence_event_id", UUID::class.java),
+                importBatchId = row.get("${columnPrefix}import_batch_id", UUID::class.java),
                 paymentType = PaymentType.valueOf(row.get("${columnPrefix}payment_type", String::class.java)!!),
                 transferPurpose =
                     TransferPurpose.valueOf(

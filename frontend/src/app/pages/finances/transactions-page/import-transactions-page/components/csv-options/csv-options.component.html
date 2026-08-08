@@ -1,0 +1,61 @@
+<section class="import-card">
+  <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.csvOptions.title' | translate }}</h2>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <label class="field-label">
+      <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.delimiter' | translate }}</span>
+      <input
+        pInputText
+        maxlength="1"
+        [(ngModel)]="store.delimiter"
+        (ngModelChange)="store.reprocess(true)"
+        [attr.aria-label]="'financesPage.transactionsPage.importPage.csvOptions.delimiterAria' | translate"
+      />
+    </label>
+    <label class="field-label">
+      <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.decimalSeparator' | translate }}</span>
+      <p-select
+        class="w-full"
+        [options]="decimalSeparatorOptions"
+        optionLabel="name"
+        optionValue="value"
+        [filter]="true"
+        [showClear]="false"
+        [(ngModel)]="store.decimalSeparator"
+        (ngModelChange)="store.reprocess()"
+      />
+    </label>
+    <label class="field-label">
+      <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.dateFormat' | translate }}</span>
+      <p-select
+        class="w-full"
+        [options]="dateFormatOptions"
+        optionLabel="name"
+        optionValue="value"
+        [filter]="true"
+        [showClear]="false"
+        [(ngModel)]="store.dateFormat"
+        (ngModelChange)="store.reprocess()"
+      />
+      @if (store.dateFormat === 'AUTO') {
+        <small class="text-muted">
+          {{ 'financesPage.transactionsPage.importPage.csvOptions.detectedFormat' | translate: { format: store.detectedDateFormat } }}
+        </small>
+      }
+    </label>
+  </div>
+
+  <div class="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+    <label class="check-label">
+      <input type="checkbox" [(ngModel)]="store.invertValues" (ngModelChange)="store.reprocess()" />
+      <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.invertValues' | translate }}</span>
+    </label>
+    <label class="check-label">
+      <input type="checkbox" [(ngModel)]="store.separateCreditDebit" (ngModelChange)="store.reprocess()" />
+      <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.separateCreditDebit' | translate }}</span>
+    </label>
+    <label class="check-label">
+      <input type="checkbox" [ngModel]="store.autoIgnoreDuplicates" (ngModelChange)="store.setAutoIgnoreDuplicates($event)" />
+      <span>{{ 'financesPage.transactionsPage.importPage.csvOptions.ignoreDuplicates' | translate }}</span>
+    </label>
+  </div>
+</section>

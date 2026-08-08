@@ -41,6 +41,9 @@ internal class InMemoryRecurrenceEventRepository(
     override fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity> =
         Flux.fromIterable(data.values.map(::hydrateEntries).filter { it.seriesId == seriesId })
 
+    override fun findAllByImportBatchId(importBatchId: UUID): Flux<RecurrenceEventEntity> =
+        Flux.fromIterable(data.values.map(::hydrateEntries).filter { it.importBatchId == importBatchId })
+
     override fun deleteAllByWalletItemIdAndUserId(
         walletItemId: UUID,
         userId: UUID,
@@ -220,6 +223,7 @@ internal class InMemoryRecurrenceEventRepository(
             endExecution = current.endExecution,
             seriesId = current.seriesId,
             seriesOffset = current.seriesOffset,
+            importBatchId = current.importBatchId,
         ).also {
             it.id = current.id
             it.entries = current.entries

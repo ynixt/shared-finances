@@ -1,0 +1,34 @@
+<main class="finances-page">
+  <app-finances-title-bar
+    [title]="'financesPage.transactionsPage.importPage.title' | translate"
+    closeRouterLink=".."
+    [extraButtons]="titleBarButtons"
+  />
+
+  <div class="flex flex-col gap-6">
+    @if (store.error != null) {
+      <div
+        class="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+      >
+        {{ store.error }}
+      </div>
+    }
+
+    @if (store.loading) {
+      <div class="rounded-2xl border border-surface-200 p-8 text-center text-muted dark:border-surface-700">
+        {{ 'financesPage.transactionsPage.importPage.loading' | translate }}
+      </div>
+    } @else {
+      <app-csv-file-upload />
+
+      @if (store.file != null && store.headers.length > 0) {
+        <app-csv-options />
+        <app-csv-column-mapping />
+        <app-csv-fixed-values />
+        <app-import-preview (batchAccepted)="batchAccepted($event)" />
+      }
+
+      <app-import-history [acceptedBatch]="acceptedBatch" (batchRemoved)="batchRemoved($event)" />
+    }
+  </div>
+</main>

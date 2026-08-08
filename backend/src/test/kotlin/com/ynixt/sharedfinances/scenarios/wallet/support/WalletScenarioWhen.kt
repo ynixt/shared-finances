@@ -244,6 +244,45 @@ class WalletScenarioWhen internal constructor(
         context.lastWalletEventId = resolver.extractWalletEventId(created)
     }
 
+    suspend fun installmentSegment(
+        installmentValue: Number,
+        installment: Int,
+        totalInstallments: Int,
+        segmentLength: Int = 1,
+        originId: UUID? = null,
+        date: LocalDate,
+        name: String = "Imported installment segment",
+    ) {
+        require(installment in 1..totalInstallments)
+        require(segmentLength in 1..(totalInstallments - installment + 1))
+
+        val userId = resolver.ensureUser()
+        val card = resolver.resolveCreditCard(originId)
+        val billDate = card.getBestBill(date)
+        val created =
+            runtime.walletEntryCreateService.create(
+                userId = userId,
+                newEntryRequest =
+                    NewEntryRequest(
+                        type = WalletEntryType.EXPENSE,
+                        originId = requireNotNull(card.id),
+                        date = date,
+                        value = installmentValue.toBigDecimalSafe(),
+                        name = name,
+                        confirmed = true,
+                        paymentType = PaymentType.INSTALLMENTS,
+                        installments = segmentLength,
+                        periodicity = RecurrenceType.MONTHLY,
+                        seriesOffset = installment - 1,
+                        seriesQtyTotal = totalInstallments,
+                        originBillDate = billDate,
+                    ),
+            )
+
+        context.lastRecurrenceConfigId = resolver.extractRecurrenceId(created)
+        context.lastWalletEventId = resolver.extractWalletEventId(created)
+    }
+
     suspend fun transfer(
         value: Number,
         targetValue: Number? = null,

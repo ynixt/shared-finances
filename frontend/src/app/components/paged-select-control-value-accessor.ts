@@ -21,9 +21,11 @@ export abstract class PagedSelectControlValueAccessor<TValue> extends SimpleCont
   allowFilter = input<boolean>(true);
   filterInMemory = input<boolean>(false);
   showToggleAll = input<boolean>(false);
+  showClear = input<boolean>(true);
   optionLabel = input<string>('name');
   optionValue = input<string>();
   dataKey = input<string>('id');
+  appendTo = input<any>(undefined);
 
   loading = signal<boolean>(true);
   searchControl = new FormControl('');
@@ -66,9 +68,7 @@ export abstract class PagedSelectControlValueAccessor<TValue> extends SimpleCont
 
   override writeValue(obj: TValue | undefined): void {
     this.putValueOnListIfListNotContainsValue(obj);
-
     this.value = obj;
-    this.onChange(obj);
   }
 
   protected async onOverlayShow() {

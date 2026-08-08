@@ -1,0 +1,26 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.import-card {
+  width: 100%;
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--p-surface-200);
+  border-radius: 1rem;
+  background: var(--p-surface-0);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+
+  :host-context(.dark-mode) & {
+    border-color: var(--p-surface-700);
+    background: var(--p-surface-900);
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .import-card {
+    padding: 0.875rem;
+    overflow: hidden;
+  }
+}

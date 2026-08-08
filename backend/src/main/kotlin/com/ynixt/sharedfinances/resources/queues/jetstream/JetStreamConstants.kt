@@ -10,4 +10,8 @@ object JetStreamConstants {
     const val SIMULATION_JOB_DISPATCH_STREAM = "SF_JOB_DISPATCH"
     const val SIMULATION_JOB_DISPATCH_SUBJECT = "sf.jobs.dispatch"
     const val SIMULATION_JOB_WORKER_CONSUMER = "sf-job-workers"
+
+    const val IMPORT_JOB_DISPATCH_STREAM = "SF_IMPORT_DISPATCH"
+    const val IMPORT_JOB_DISPATCH_SUBJECT = "sf.imports.dispatch"
+    const val IMPORT_JOB_WORKER_CONSUMER = "sf-import-workers"
 }

@@ -38,6 +38,8 @@ export class WalletItemPickerComponent extends SimpleControlValueAccessor<Wallet
     this.loadOrigins.bind(this),
   );
   group = input<GroupDto | undefined>(undefined);
+  placeholder = input<string>();
+  showClear = input(true);
   /** When true, only bank accounts are loaded (server-side filter). */
   onlyBankAccounts = input(false);
 
@@ -78,5 +80,12 @@ export class WalletItemPickerComponent extends SimpleControlValueAccessor<Wallet
     };
 
     return t.content.map(item => ({ ...item, icon: getIcon(item) })) as WalletItemSearchResponseDtoWithIcon[];
+  }
+
+  override valueEquals(
+    valueA: WalletItemSearchResponseDtoWithIcon | undefined,
+    valueB: WalletItemSearchResponseDtoWithIcon | undefined,
+  ): boolean {
+    return valueA?.id === valueB?.id;
   }
 }

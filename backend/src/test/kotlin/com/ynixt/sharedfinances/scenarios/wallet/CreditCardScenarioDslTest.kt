@@ -11,6 +11,47 @@ import java.util.UUID
 
 class CreditCardScenarioDslTest {
     @Test
+    fun `installment segment starting after first should keep global numbering without consuming full card limit`() {
+        val today = LocalDate.of(2026, 8, 10)
+        val totalLimit = BigDecimal("3000.00")
+        val installmentValue = BigDecimal("100.00")
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                creditCard(
+                    limit = totalLimit,
+                    currency = "BRL",
+                    dueDay = 20,
+                    daysBetweenDueAndClosing = 10,
+                    dueOnNextBusinessDay = false,
+                )
+            }
+
+            `when` {
+                installmentSegment(
+                    installmentValue = installmentValue,
+                    installment = 4,
+                    totalInstallments = 6,
+                    date = today,
+                )
+                fetchWalletEventById()
+            }
+
+            then {
+                availableLimitShouldBe(expected = totalLimit)
+                billValueShouldBe(expected = installmentValue.unaryMinus(), billDate = LocalDate.of(2026, 8, 1))
+                recurrenceLimitShouldBe(expected = 1)
+                fetchedWalletEventInstallmentShouldBe(
+                    expectedInstallment = 4,
+                    expectedTotal = 6,
+                    expectedSeriesOffset = 3,
+                )
+            }
+        }
+    }
+
+    @Test
     fun `should create credit card expense in 3 installments consuming total limit and generate only 3 bills`() {
         val today = LocalDate.of(2026, 1, 8)
         val totalLimit = BigDecimal("3000.00")

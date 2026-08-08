@@ -1,0 +1,48 @@
+<section class="import-card">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.fileStep.title' | translate }}</h2>
+      <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.fileStep.hint' | translate }}</p>
+    </div>
+    @if (store.file == null) {
+      <label pButton class="cursor-pointer">
+        <i class="pi pi-upload"></i>
+        <span>{{ 'financesPage.transactionsPage.importPage.fileStep.select' | translate }}</span>
+        <input class="sr-only" type="file" accept=".csv,text/csv" (change)="store.selectFile($event)" />
+      </label>
+    } @else {
+      <div class="flex items-center gap-3 rounded-xl bg-surface-100 px-4 py-3 dark:bg-surface-800">
+        <div>
+          <p class="font-medium text-default">{{ store.file.name }}</p>
+          <p class="text-xs text-muted">{{ store.file.size | number }} bytes · SHA-256 {{ store.fileHash.slice(0, 12) }}…</p>
+        </div>
+        <button type="button" pButton text severity="danger" (click)="store.removeFile()">
+          {{ 'financesPage.transactionsPage.importPage.actions.remove' | translate }}
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (store.parsing) {
+    <p class="mt-4 text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.fileStep.reading' | translate }}</p>
+  }
+
+  @if (store.hashCheck != null) {
+    <div
+      class="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+    >
+      <strong>
+        {{
+          (store.hashCheck.status === 'PROCESSING'
+            ? 'financesPage.transactionsPage.importPage.fileStep.hash.processing'
+            : 'financesPage.transactionsPage.importPage.fileStep.hash.imported'
+          ) | translate
+        }}
+      </strong>
+      @if (store.hashCheck.fileName) {
+        {{ 'financesPage.transactionsPage.importPage.fileStep.hash.previousFile' | translate: { fileName: store.hashCheck.fileName } }}
+      }
+      {{ 'financesPage.transactionsPage.importPage.fileStep.hash.canProceed' | translate }}
+    </div>
+  }
+</section>

@@ -151,7 +151,11 @@ internal class OverviewDashboardServiceImpl(
             )
 
         val goalOverCommittedWarning =
-            goalCommittedTotal.compareTo(balanceTotal) > 0 || goalCommitmentContext.hasAccountOverCommittedBalance
+            (
+                goalCommittedTotal.signum() > 0 &&
+                    goalCommittedTotal.compareTo(balanceTotal) > 0
+            ) ||
+                goalCommitmentContext.hasAccountOverCommittedBalance
 
         val periodCashInTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_IN])
         val periodCashOutTotal = assemblyService.sumDetails(convertedDetailByCardKey[OverviewDashboardCardKey.PERIOD_CASH_OUT])

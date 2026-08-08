@@ -207,9 +207,6 @@ dependencies {
     implementation("com.github.kagkarlsson:db-scheduler:16.7.1")
     implementation("com.zaxxer:HikariCP")
 
-    implementation(platform("software.amazon.awssdk:bom:2.25.60"))
-    implementation("software.amazon.awssdk:s3")
-
     runtimeOnly("commons-logging:commons-logging")
     runtimeOnly("org.postgresql:postgresql") // flyway
     runtimeOnly("org.postgresql:r2dbc-postgresql")

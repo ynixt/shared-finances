@@ -80,9 +80,16 @@ export abstract class ActionEventService implements OnDestroy {
         }),
       );
 
-      const followerBroadcast$ = this.sseCoordinator.distributedEvent$.pipe(
-        map(event => ({ id: event.sourceEventId, event: event.event, data: event.data })),
-      );
+      const followerBroadcast$ = new Observable<Wire>(subscriber => {
+        const subscription = this.sseCoordinator.distributedEvent$.subscribe({
+          next: event => {
+            this.zone.run(() => subscriber.next({ id: event.sourceEventId, event: event.event, data: event.data }));
+          },
+          error: error => this.zone.run(() => subscriber.error(error)),
+          complete: () => this.zone.run(() => subscriber.complete()),
+        });
+        return () => subscription.unsubscribe();
+      });
 
       this.wire$ = merge(leaderSse$, followerBroadcast$).pipe(
         share({

@@ -1,6 +1,6 @@
 <p-select
   class="w-full"
-  [(ngModel)]="value"
+  [ngModel]="value"
   [options]="currencies"
   (onChange)="onSelectCurrency($event)"
   (onClear)="clearSelection()"
@@ -15,10 +15,15 @@
   [virtualScrollItemSize]="65"
   [virtualScrollOptions]="scrollerOptions"
   [showClear]="showClear()"
+  [appendTo]="appendTo()"
 >
   <ng-template #selectedItem let-selectedOption>
     <div class="flex items-center gap-2">
-      <div>{{ selectedOption ? `${selectedOption.symbol} (${selectedOption.name})` : '' }}</div>
+      @if (compact()) {
+        <div>{{ selectedOption ? `${selectedOption.code} · ${selectedOption.symbol}` : '' }}</div>
+      } @else {
+        <div>{{ selectedOption ? `${selectedOption.symbol} (${selectedOption.name})` : '' }}</div>
+      }
     </div>
   </ng-template>
   <ng-template #item let-item>

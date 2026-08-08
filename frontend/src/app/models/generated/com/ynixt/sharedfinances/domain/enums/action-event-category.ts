@@ -12,6 +12,7 @@ export type ActionEventCategory =
   | 'GROUP_CATEGORY'
   | 'WALLET_EVENT'
   | 'SIMULATION_JOB'
+  | 'IMPORT_BATCH'
   | 'ONBOARDING';
 
 export const ActionEventCategory__Options: ActionEventCategory[] = [
@@ -25,6 +26,7 @@ export const ActionEventCategory__Options: ActionEventCategory[] = [
   'GROUP_CATEGORY',
   'WALLET_EVENT',
   'SIMULATION_JOB',
+  'IMPORT_BATCH',
   'ONBOARDING',
 ];
 
@@ -39,5 +41,6 @@ export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEvent
   'GROUP_CATEGORY': 'GROUP_CATEGORY',
   'WALLET_EVENT': 'WALLET_EVENT',
   'SIMULATION_JOB': 'SIMULATION_JOB',
+  'IMPORT_BATCH': 'IMPORT_BATCH',
   'ONBOARDING': 'ONBOARDING',
 };

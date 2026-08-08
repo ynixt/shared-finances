@@ -3,6 +3,7 @@ financesPage:
     overview: Overview
     newTransaction: New Transaction
     scheduleManager: Schedule Manager
+    importTransactions: Import transactions
     registrations: Registrations
     bankAccounts: Bank Accounts
     creditCards: Credit Cards

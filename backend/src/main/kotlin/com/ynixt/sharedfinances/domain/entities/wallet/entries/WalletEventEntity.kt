@@ -43,6 +43,7 @@ class WalletEventEntity(
     val confirmed: Boolean,
     val installment: Int?,
     val recurrenceEventId: UUID?,
+    val importBatchId: UUID? = null,
     paymentType: PaymentType,
     transferPurpose: TransferPurpose = TransferPurpose.GENERAL,
     initialBalance: Boolean = false,

@@ -16,6 +16,8 @@ interface WalletEventSpringDataRepository : R2dbcRepository<WalletEventEntity, S
 
     fun findAllByRecurrenceEventId(recurrenceEventId: UUID): Flux<WalletEventEntity>
 
+    fun findAllByImportBatchId(importBatchId: UUID): Flux<WalletEventEntity>
+
     @Modifying
     @Query(
         """

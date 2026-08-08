@@ -11,6 +11,7 @@ export type FinancesTitleBarExtraButton = {
   click?: () => void;
   routerLink?: string | string[];
   rounded?: boolean;
+  text?: boolean;
   tooltip?: string;
   tooltipPosition?: string;
   loading?: boolean;

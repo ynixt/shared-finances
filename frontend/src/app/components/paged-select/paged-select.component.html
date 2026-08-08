@@ -4,7 +4,7 @@
     [options]="options"
     [optionLabel]="optionLabel()"
     [filter]="allowFilter()"
-    [showClear]="true"
+    [showClear]="showClear()"
     [placeholder]="placeholder()"
     class="w-full {{ componentClass() }}"
     [disabled]="disabled"
@@ -16,6 +16,7 @@
     [virtualScrollOptions]="scrollerOptions()"
     [dataKey]="dataKey()"
     [optionValue]="optionValue()"
+    [appendTo]="appendTo()"
     (onShow)="onShow()"
   >
     <ng-template #loader>

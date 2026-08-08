@@ -6,6 +6,7 @@ import com.github.kagkarlsson.scheduler.task.helper.Tasks
 import com.github.kagkarlsson.scheduler.task.schedule.Schedules
 import com.ynixt.sharedfinances.application.web.jobs.ExpireInvitesJob
 import com.ynixt.sharedfinances.application.web.jobs.GenerateEntryRecurrenceJob
+import com.ynixt.sharedfinances.application.web.jobs.ImportJobsMaintenanceJob
 import com.ynixt.sharedfinances.application.web.jobs.MaterializeGoalContributionScheduleJob
 import com.ynixt.sharedfinances.application.web.jobs.SimulationJobsMaintenanceJob
 import com.ynixt.sharedfinances.application.web.jobs.SyncExchangeRatesJob
@@ -53,6 +54,8 @@ class DbSchedulerConfig(
     @param:Value("\${app.jobs.simulation.reconcile.cron-enabled:false}") private val simulationReconcileEnabled: Boolean,
     @param:Value("\${app.jobs.simulation.reconcile.cron}") private val simulationReconcileCron: String,
     @param:Value("\${app.jobs.simulation.purge.cron}") private val simulationPurgeCron: String,
+    @param:Value("\${app.jobs.imports.reconcile.cron-enabled:true}") private val importReconcileEnabled: Boolean,
+    @param:Value("\${app.jobs.imports.reconcile.cron:0 */1 * * * *}") private val importReconcileCron: String,
 ) {
     private val logger = LoggerFactory.getLogger(DbSchedulerConfig::class.java)
 
@@ -101,6 +104,7 @@ class DbSchedulerConfig(
         syncExchangeRatesJob: SyncExchangeRatesJob,
         unconfirmedAccountCleanupJob: UnconfirmedAccountCleanupJob,
         simulationJobsMaintenanceJob: SimulationJobsMaintenanceJob,
+        importJobsMaintenanceJob: ImportJobsMaintenanceJob,
     ): Scheduler {
         val tasks = mutableListOf<RecurringTask<*>>()
 
@@ -142,6 +146,16 @@ class DbSchedulerConfig(
             logger.info("Simulation reconcile task registered with cron: {}", simulationReconcileCron)
         } else {
             logger.info("Simulation reconcile task is disabled (app.jobs.simulation.reconcile.cron-enabled=false)")
+        }
+
+        if (importReconcileEnabled) {
+            tasks +=
+                Tasks
+                    .recurring("import-reconcile", Schedules.cron(importReconcileCron))
+                    .execute { _, _ -> runBlocking { importJobsMaintenanceJob.executeReconcile() } }
+            logger.info("Import reconcile task registered with cron: {}", importReconcileCron)
+        } else {
+            logger.info("Import reconcile task is disabled (app.jobs.imports.reconcile.cron-enabled=false)")
         }
 
         return Scheduler

@@ -224,6 +224,27 @@ class WalletScenarioThen internal constructor(
             .isTrue()
     }
 
+    fun fetchedWalletEventInstallmentShouldBe(
+        expectedInstallment: Int,
+        expectedTotal: Int,
+        expectedSeriesOffset: Int,
+    ) {
+        val fetched = resolver.lastFetchedWalletEvent()
+
+        assertThat(fetched)
+            .describedAs("fetched wallet event")
+            .isNotNull()
+        assertThat(fetched!!.installment)
+            .describedAs("global installment number")
+            .isEqualTo(expectedInstallment)
+        assertThat(fetched.recurrenceConfig?.seriesOffset)
+            .describedAs("recurrence segment offset")
+            .isEqualTo(expectedSeriesOffset)
+        assertThat(fetched.recurrenceConfig?.seriesQtyTotal)
+            .describedAs("logical installment series total")
+            .isEqualTo(expectedTotal)
+    }
+
     fun fetchedScheduledWalletEventShouldExist() {
         assertThat(resolver.lastFetchedScheduledWalletEvent())
             .describedAs("fetched scheduled wallet event")

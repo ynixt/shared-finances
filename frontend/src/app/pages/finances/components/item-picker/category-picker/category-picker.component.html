@@ -1,2 +1,28 @@
-<app-paged-select #pagedSelect [optionsGetter]="optionsGetter()" [ngModel]="value" (ngModelChange)="onValueChange($event)">
-</app-paged-select>
+@if (loadAllCategories() && categories() != null) {
+  <p-select
+    [options]="providedCategoryOptions()"
+    optionLabel="name"
+    dataKey="id"
+    [filter]="true"
+    [placeholder]="placeholder()"
+    [showClear]="showClear()"
+    [disabled]="disabled"
+    [appendTo]="appendTo()"
+    class="w-full"
+    [ngModel]="value"
+    (ngModelChange)="onValueChange($event)"
+  />
+} @else {
+  <app-paged-select
+    #pagedSelect
+    [optionsGetter]="loadAllCategories() ? allCategoriesGetter : optionsGetter()"
+    [pageSize]="loadAllCategories() ? allCategoriesPageSize() : pageSize()"
+    [filterInMemory]="loadAllCategories()"
+    [placeholder]="placeholder()"
+    [showClear]="showClear()"
+    [appendTo]="appendTo()"
+    [ngModel]="value"
+    (ngModelChange)="onValueChange($event)"
+  >
+  </app-paged-select>
+}

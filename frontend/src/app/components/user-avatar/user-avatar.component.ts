@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 import { Avatar } from 'primeng/avatar';
@@ -29,8 +29,10 @@ export const convertUserAvatarSizeToRem: (size: UserAvatarSize) => number = (siz
   templateUrl: './user-avatar.component.html',
   styleUrl: './user-avatar.component.scss',
 })
-export class UserAvatarComponent {
-  fileService = inject(FileService);
+export class UserAvatarComponent implements OnDestroy {
+  private readonly fileService = inject(FileService);
+  private managedObjectUrl: string | null = null;
+  private loadSequence = 0;
 
   tooltipPosition = input<'bottom' | 'left' | 'top' | 'right'>('bottom');
   user = input<UserSimpleDto | undefined>(undefined);
@@ -57,15 +59,46 @@ export class UserAvatarComponent {
       const user = this.user();
       const customImageUrl = this.customImageUrl();
 
-      if (customImageUrl === undefined) {
-        if (user == null) return undefined;
-        if (user.photoUrl == null) return this.imageUrl.set(undefined);
-        else {
-          this.fileService.getRealUrl(user.photoUrl).then(url => this.imageUrl.set(url == null ? undefined : url));
-        }
-      } else {
-        this.imageUrl.set(customImageUrl == null ? undefined : customImageUrl);
+      if (customImageUrl !== undefined) {
+        this.setImageUrl(customImageUrl, false);
+        return;
       }
+
+      if (user?.photoUrl == null) {
+        this.setImageUrl(null, false);
+        return;
+      }
+
+      void this.loadStoredImage(user.photoUrl);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.loadSequence++;
+    this.revokeManagedObjectUrl();
+  }
+
+  private async loadStoredImage(url: string): Promise<void> {
+    const sequence = ++this.loadSequence;
+    const resolved = await this.fileService.getRealUrl(url);
+
+    if (sequence !== this.loadSequence) {
+      this.fileService.revokeObjectUrl(resolved);
+      return;
+    }
+
+    this.setImageUrl(resolved, resolved?.startsWith('blob:') === true);
+  }
+
+  private setImageUrl(url: string | null | undefined, managed: boolean): void {
+    this.loadSequence++;
+    this.revokeManagedObjectUrl();
+    this.managedObjectUrl = managed ? (url ?? null) : null;
+    this.imageUrl.set(url ?? undefined);
+  }
+
+  private revokeManagedObjectUrl(): void {
+    this.fileService.revokeObjectUrl(this.managedObjectUrl);
+    this.managedObjectUrl = null;
   }
 }

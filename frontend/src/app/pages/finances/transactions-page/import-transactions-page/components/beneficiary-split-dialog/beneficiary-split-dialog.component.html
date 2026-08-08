@@ -1,0 +1,22 @@
+<p-dialog
+  [header]="'financesPage.transactionsPage.importPage.beneficiaryDialog.title' | translate"
+  [(visible)]="store.beneficiaryDialogVisible"
+  [modal]="true"
+  [style]="{ width: 'min(46rem, 95vw)' }"
+  [draggable]="false"
+>
+  <app-beneficiary-split
+    [form]="store.beneficiaryForm"
+    [members]="store.beneficiaryMembers"
+    [membersGetter]="store.loadBeneficiaryMembers.bind(store)"
+    [showClear]="false"
+    [addLeg]="store.addBeneficiaryLeg.bind(store)"
+    [removeLeg]="store.removeBeneficiaryLeg.bind(store)"
+  />
+  <ng-template #footer>
+    <button type="button" pButton text (click)="store.beneficiaryDialogVisible = false">{{ 'general.cancel' | translate }}</button>
+    <button type="button" pButton [disabled]="store.beneficiaryForm.invalid" (click)="store.saveBeneficiaries()">
+      {{ 'financesPage.transactionsPage.importPage.beneficiaryDialog.apply' | translate }}
+    </button>
+  </ng-template>
+</p-dialog>

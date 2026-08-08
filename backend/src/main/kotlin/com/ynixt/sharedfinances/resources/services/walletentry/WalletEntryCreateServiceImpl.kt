@@ -204,6 +204,7 @@ class WalletEntryCreateServiceImpl(
                         tags = event.tags?.ifEmpty { null },
                         installment = installment,
                         recurrenceEventId = event.id,
+                        importBatchId = event.importBatchId,
                         paymentType = event.paymentType,
                         transferPurpose = event.transferPurpose,
                     ),
@@ -448,7 +449,12 @@ class WalletEntryCreateServiceImpl(
                 return lastResult
             }
 
-            lastResult = createFromRecurrenceConfig(currentRecurrence.id!!, dueDate) ?: return lastResult
+            lastResult =
+                createFromRecurrenceConfig(
+                    recurrenceConfigId = currentRecurrence.id!!,
+                    date = dueDate,
+                    confirmedOverride = newEntryRequest.recurrenceConfirmedOverride,
+                ) ?: return lastResult
             currentRecurrence =
                 recurrenceEventRepository.findById(currentRecurrence.id!!).awaitSingle().also {
                     it.seriesQtyTotal = recurrenceSeriesRepository.findById(it.seriesId).awaitSingleOrNull()?.qtyTotal
@@ -471,7 +477,12 @@ class WalletEntryCreateServiceImpl(
                         userId = userId,
                         newEntryRequest = newEntryRequest,
                         recurrenceConfig = recurrenceEvent,
-                        installment = if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) 1 else null,
+                        installment =
+                            if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) {
+                                newEntryRequest.seriesOffset + 1
+                            } else {
+                                null
+                            },
                         date = newEntryRequest.date,
                     ),
                 ).awaitSingle()
@@ -549,6 +560,9 @@ class WalletEntryCreateServiceImpl(
                     userId = userId,
                     newEntryRequest = newEntryRequest,
                     qtyLimit = newEntryRequest.installments!!,
+                    seriesId = newEntryRequest.seriesId,
+                    seriesQtyTotal = newEntryRequest.seriesQtyTotal,
+                    seriesOffset = newEntryRequest.seriesOffset,
                     forcePendingStart = forcePendingStart,
                 ).also { recurrenceEvent ->
                     persistRecurrenceBeneficiaries(recurrenceEvent, newEntryRequest)

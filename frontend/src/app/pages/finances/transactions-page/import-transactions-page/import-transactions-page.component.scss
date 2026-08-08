@@ -1,0 +1,14 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@media (max-width: 47.99rem) {
+  main {
+    width: 100%;
+    min-width: 0;
+  }
+}

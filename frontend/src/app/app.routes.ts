@@ -130,6 +130,16 @@ export const routes: Routes = [
             },
           },
           {
+            path: 'import',
+            loadComponent: () =>
+              import('./pages/finances/transactions-page/import-transactions-page/import-transactions-page.component').then(
+                m => m.ImportTransactionsPageComponent,
+              ),
+            data: {
+              pageTitleKey: 'pageTitle.importTransactions',
+            },
+          },
+          {
             path: 'new',
             loadComponent: () =>
               import('./pages/finances/transactions-page/new-transaction-page/new-transaction-page.component').then(

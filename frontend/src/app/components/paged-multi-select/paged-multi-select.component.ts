@@ -30,12 +30,11 @@ export class PagedMultiSelectComponent extends PagedSelectControlValueAccessor<a
   @ViewChild('select') select: MultiSelect | undefined;
 
   clearSelection() {
-    this.writeValue([]);
-    this.onChange([]);
+    this.onValueChange([]);
   }
 
   onSelectionChange(event: MultiSelectChangeEvent) {
-    this.writeValue(event.value ?? []);
+    this.onValueChange(event.value ?? []);
   }
 
   async onShow() {

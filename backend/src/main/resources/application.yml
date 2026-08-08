@@ -111,6 +111,8 @@ app:
   legal:
     terms-version: ${SF_APP_LEGAL_TERMS_VERSION:2026-04-14}
     privacy-version: ${SF_APP_LEGAL_PRIVACY_VERSION:2026-04-14}
+  file-storage:
+    path: ${SF_APP_FILE_STORAGE_PATH}
   nats:
     url: nats://${SF_APP_NATS_HOST}:${SF_APP_NATS_PORT}
   invitationExpirationMinutes: ${SF_APP_INVITATION_EXPIRATION_MINUTES:15}
@@ -129,16 +131,12 @@ app:
       crypto:
         password: ${SF_APP_MFA_TOTP_CRYPTO_PASSWORD}
         saltHex: ${SF_APP_MFA_TOTP_CRYPTO_SALT_HEX}
-  s3:
-    endpoint: ${SF_APP_S3_ENDPOINT}
-    accessKey: ${SF_APP_S3_ACCESS_KEY_ID}
-    secretKey: ${SF_APP_S3_SECRET_ACCESS_KEY}
-    region: ${SF_APP_S3_REGION}
-    bucket: ${SF_APP_S3_BUCKET}
-    pathStyleAccessEnabled: ${SF_APP_S3_PATH_STYLE_ACCESS_ENABLED:true}
   exchangeRates:
     providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
     fetchDelayMs: ${SF_APP_EXCHANGE_FETCH_DELAY_MS:1000}
+  imports:
+    worker:
+      enabled: ${SF_APP_IMPORT_WORKER_ENABLED:true}
   jobs:
     refreshExchangeRates:
       cron: ${SF_APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * *}
@@ -156,3 +154,7 @@ app:
         cron: ${SF_APP_SIMULATION_RECONCILE_CRON:0 */2 * * * *}
       purge:
         cron: ${SF_APP_SIMULATION_PURGE_CRON:0 30 3 * * *}
+    imports:
+      reconcile:
+        cron-enabled: ${SF_APP_IMPORT_RECONCILE_CRON_ENABLED:true}
+        cron: ${SF_APP_IMPORT_RECONCILE_CRON:0 */1 * * * *}

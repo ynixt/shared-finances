@@ -1,0 +1,154 @@
+<section class="import-card">
+  <div>
+    <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.fixedValues.title' | translate }}</h2>
+    <p class="text-sm text-muted">{{ 'financesPage.transactionsPage.importPage.fixedValues.hint' | translate }}</p>
+  </div>
+  @if (store.fixedMappingOptions.length === 0) {
+    <p class="mt-4 rounded-xl bg-surface-50 p-4 text-sm text-muted dark:bg-surface-800">
+      {{ 'financesPage.transactionsPage.importPage.fixedValues.empty' | translate }}
+    </p>
+  } @else {
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      @for (option of store.fixedMappingOptions; track option.field) {
+        <label class="field-label">
+          <span class="flex items-center gap-1.5">
+            <span>{{ option.labelKey | translate }}</span>
+            @if (option.field === 'bill') {
+              <i
+                class="pi pi-info-circle cursor-help text-muted"
+                tabindex="0"
+                [pTooltip]="'financesPage.transactionsPage.importPage.fixedBillTooltip' | translate"
+                [attr.aria-label]="'financesPage.transactionsPage.importPage.fixedBillTooltip' | translate"
+                tooltipPosition="top"
+              ></i>
+            }
+          </span>
+          @switch (option.field) {
+            @case ('origin') {
+              <app-wallet-item-picker
+                class="block w-full min-w-0"
+                [placeholder]="'financesPage.transactionsPage.importPage.fields.selectOrigin' | translate"
+                [showClear]="false"
+                [ngModel]="fixedOrigin()"
+                (ngModelChange)="fixedOriginChanged($event)"
+              />
+            }
+            @case ('date') {
+              <app-date-picker
+                class="block w-full min-w-0"
+                [ngModel]="fixedDateValue('date')"
+                [readonlyInput]="true"
+                view="month"
+                dateFormat="MM, yy"
+                (ngModelChange)="fixedDateChanged('date', $event)"
+              />
+            }
+            @case ('value') {
+              <p-input-number
+                class="w-full"
+                mode="currency"
+                [currency]="fixedValueCurrency"
+                [ngModel]="fixedNumberValue(option.field)"
+                (ngModelChange)="fixedNumberChanged(option.field, $event)"
+                fluid
+              />
+            }
+            @case ('credit') {
+              <p-input-number
+                class="w-full"
+                mode="currency"
+                [currency]="fixedValueCurrency"
+                [ngModel]="fixedNumberValue(option.field)"
+                (ngModelChange)="fixedNumberChanged(option.field, $event)"
+                fluid
+              />
+            }
+            @case ('debit') {
+              <p-input-number
+                class="w-full"
+                mode="currency"
+                [currency]="fixedValueCurrency"
+                [ngModel]="fixedNumberValue(option.field)"
+                (ngModelChange)="fixedNumberChanged(option.field, $event)"
+                fluid
+              />
+            }
+            @case ('category') {
+              <app-category-picker
+                class="block w-full min-w-0"
+                [ngModel]="store.fixedCategory"
+                [groupId]="store.fixedGroupId"
+                [categories]="store.fixedCategories"
+                [loadAllCategories]="true"
+                [placeholder]="'financesPage.transactionsPage.importPage.fields.categoryPlaceholder' | translate"
+                [showClear]="true"
+                [appendTo]="'body'"
+                (ngModelChange)="store.fixedCategoryChanged($event)"
+              />
+            }
+            @case ('currency') {
+              <app-currency-selector
+                class="block w-full min-w-0"
+                [ngModel]="store.fixedValues.currency ?? null"
+                [showClear]="false"
+                [appendTo]="'body'"
+                [placeholder]="'financesPage.transactionsPage.importPage.fields.currencyPlaceholder' | translate"
+                (ngModelChange)="store.setFixedValue(option.field, $event)"
+              />
+            }
+            @case ('group') {
+              <p-select
+                class="group-select w-full"
+                [options]="groupOptions"
+                optionLabel="name"
+                optionValue="id"
+                [filter]="true"
+                [showClear]="true"
+                [placeholder]="'financesPage.transactionsPage.importPage.fields.noGroup' | translate"
+                [ngModel]="store.fixedValues.group ?? ''"
+                (ngModelChange)="groupChanged($event)"
+              />
+            }
+            @case ('bill') {
+              <app-date-picker
+                class="block w-full min-w-0"
+                [ngModel]="fixedDateValue('bill')"
+                [readonlyInput]="true"
+                view="month"
+                dateFormat="MM, yy"
+                (ngModelChange)="fixedDateChanged('bill', $event)"
+              />
+            }
+            @case ('confirmed') {
+              <p-select
+                class="w-full"
+                [options]="confirmationOptions"
+                optionLabel="name"
+                optionValue="value"
+                [filter]="true"
+                [showClear]="false"
+                [ngModel]="store.fixedValues.confirmed ?? true"
+                (ngModelChange)="fixedValueChanged(option.field, $event)"
+              />
+            }
+            @case ('observations') {
+              <textarea
+                class="min-h-24"
+                [ngModel]="store.fixedValues.observations ?? ''"
+                (change)="store.setFixedValue(option.field, $any($event.target).value)"
+              ></textarea>
+            }
+            @default {
+              <input
+                pInputText
+                type="text"
+                [ngModel]="store.fixedValues[option.field] ?? ''"
+                (change)="store.setFixedValue(option.field, $any($event.target).value)"
+              />
+            }
+          }
+        </label>
+      }
+    </div>
+  }
+</section>

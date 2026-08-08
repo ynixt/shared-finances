@@ -13,6 +13,8 @@ interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
 
     fun findAllBySeriesId(seriesId: UUID): Flux<RecurrenceEventEntity>
 
+    fun findAllByImportBatchId(importBatchId: UUID): Flux<RecurrenceEventEntity>
+
     fun deleteAllByWalletItemIdAndUserId(
         walletItemId: UUID,
         userId: UUID,

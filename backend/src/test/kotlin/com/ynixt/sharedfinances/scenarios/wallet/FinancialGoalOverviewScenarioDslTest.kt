@@ -34,4 +34,32 @@ class FinancialGoalOverviewScenarioDslTest {
             }
         }
     }
+
+    @Test
+    fun `overview does not show goal over committed warning for negative bank balance without goals`() {
+        val today = LocalDate.of(2026, 1, 8)
+        val selectedMonth = YearMonth.from(today)
+
+        walletScenario(initialDate = today) {
+            given {
+                user(defaultCurrency = "BRL")
+                bankAccount(
+                    name = "Overdrawn Account",
+                    balance = -100,
+                    currency = "BRL",
+                )
+            }
+
+            `when` {
+                fetchOverview(selectedMonth)
+            }
+
+            then {
+                overviewCardShouldBe(OverviewDashboardCardKey.BALANCE, -100)
+                overviewGoalCommittedShouldBe(0)
+                overviewFreeBalanceShouldBe(-100)
+                overviewGoalOverCommittedWarningShouldBe(false)
+            }
+        }
+    }
 }

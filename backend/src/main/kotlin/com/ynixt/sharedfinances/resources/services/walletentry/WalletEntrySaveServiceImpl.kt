@@ -156,6 +156,8 @@ abstract class WalletEntrySaveServiceImpl(
         if (newEntryRequest.paymentType == PaymentType.INSTALLMENTS) {
             requireNotNull(newEntryRequest.installments)
             requireNotNull(newEntryRequest.periodicity)
+            require(newEntryRequest.seriesOffset >= 0)
+            newEntryRequest.seriesQtyTotal?.let { total -> require(total > 0) }
         }
 
         if (newEntryRequest.paymentType == PaymentType.RECURRING) {
@@ -219,6 +221,7 @@ abstract class WalletEntrySaveServiceImpl(
             tags = newEntryRequest.tags?.ifEmpty { null },
             installment = installment,
             recurrenceEventId = recurrenceConfig?.id,
+            importBatchId = newEntryRequest.importBatchId,
             paymentType = newEntryRequest.paymentType,
             transferPurpose = newEntryRequest.transferPurpose,
             initialBalance = newEntryRequest.initialBalance,
@@ -477,6 +480,7 @@ abstract class WalletEntrySaveServiceImpl(
             endExecution = endExecution,
             seriesId = resolvedSeriesId,
             seriesOffset = seriesOffset,
+            importBatchId = newEntryRequest.importBatchId,
             transferPurpose = newEntryRequest.transferPurpose,
         ).also {
             if (id != null) {

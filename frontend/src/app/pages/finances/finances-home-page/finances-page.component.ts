@@ -7,6 +7,7 @@ import {
   faCalendarDays,
   faCreditCard,
   faDollarSign,
+  faFileImport,
   faFlask,
   faGrip,
   faMoneyBillTransfer,
@@ -63,7 +64,11 @@ export class FinancesPageComponent {
   private groupMenuRoot: AdvancedMenuItem | undefined;
 
   get shouldShowNewTransactionButton() {
-    return this.router.url.indexOf('/app/transactions/new') === -1 && this.router.url.indexOf('/app/transactions/edit/') === -1;
+    return (
+      this.router.url.indexOf('/app/transactions/new') === -1 &&
+      this.router.url.indexOf('/app/transactions/edit/') === -1 &&
+      this.router.url.indexOf('/app/transactions/import') === -1
+    );
   }
 
   constructor(
@@ -150,6 +155,12 @@ export class FinancesPageComponent {
         fa: faCalendarDays,
         label: this.translateService.instant('financesPage.menu.scheduleManager'),
         routerLink: ['/app/transactions/scheduler-manager'],
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
+        fa: faFileImport,
+        label: this.translateService.instant('financesPage.menu.importTransactions'),
+        routerLink: ['/app/transactions/import'],
         routerLinkActiveOptions: { exact: true },
       },
       {

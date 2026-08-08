@@ -1,0 +1,22 @@
+@use '../../import-section';
+
+.metric-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--p-surface-100);
+  font-weight: 500;
+
+  :host-context(.dark-mode) & {
+    background: var(--p-surface-800);
+  }
+}
+
+:host ::ng-deep .p-paginator {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 47.99rem) {
+  :host ::ng-deep .p-paginator {
+    flex-wrap: wrap;
+  }
+}

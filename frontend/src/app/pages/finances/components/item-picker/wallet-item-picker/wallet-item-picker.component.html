@@ -1,4 +1,11 @@
-<app-paged-select #pagedSelect [optionsGetter]="optionsGetter()" [ngModel]="value" (ngModelChange)="onValueChange($event)">
+<app-paged-select
+  #pagedSelect
+  [optionsGetter]="optionsGetter()"
+  [placeholder]="placeholder()"
+  [showClear]="showClear()"
+  [ngModel]="value"
+  (ngModelChange)="onValueChange($event)"
+>
   <ng-template let-item let-optionLabel="optionLabel" #item>
     <div class="flex items-center gap-4">
       <fa-icon [icon]="item['icon']"></fa-icon>

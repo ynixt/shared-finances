@@ -146,7 +146,7 @@ export class UserSettingsComponent {
     try {
       const photoUrl = this.generalForm.get('photo')!!.value;
       const getFromGravatar = photoUrl?.startsWith('https://www.gravatar.com/avatar/') ?? false;
-      const photoAlreadyUploaded = photoUrl?.startsWith('/private/external/') ?? false;
+      const photoAlreadyUploaded = photoUrl?.startsWith('/api/private/avatars/') ?? false;
       const removeAvatar = photoUrl === null;
 
       const photo = photoUrl == null || getFromGravatar || photoAlreadyUploaded ? undefined : await this.blobUrlToFile(photoUrl);

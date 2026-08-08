@@ -1,0 +1,98 @@
+<p-data-view class="block w-full min-w-0" [value]="batches()">
+  <ng-template #list let-batches>
+    <div class="grid w-full min-w-0 gap-3 lg:gap-0">
+      <div
+        class="hidden min-w-0 items-center gap-x-3 border-b border-surface-300 bg-surface-50 px-2.5 py-3 text-xs font-semibold tracking-wide text-muted uppercase lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,0.65fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,0.45fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.85fr)] dark:border-surface-700 dark:bg-surface-800"
+      >
+        <span>{{ 'financesPage.transactionsPage.importPage.history.columns.date' | translate }}</span>
+        <span>{{ 'financesPage.transactionsPage.importPage.history.columns.file' | translate }}</span>
+        <span>{{ 'financesPage.transactionsPage.importPage.history.columns.format' | translate }}</span>
+        <span>{{ 'financesPage.transactionsPage.importPage.history.columns.origin' | translate }}</span>
+        <span>{{ 'financesPage.transactionsPage.importPage.history.columns.status' | translate }}</span>
+        <span class="text-right">{{ 'financesPage.transactionsPage.importPage.history.columns.quantity' | translate }}</span>
+        <span class="text-right">{{ 'financesPage.transactionsPage.importPage.history.columns.credit' | translate }}</span>
+        <span class="text-right">{{ 'financesPage.transactionsPage.importPage.history.columns.debit' | translate }}</span>
+        <span class="text-right">{{ 'general.actions' | translate }}</span>
+      </div>
+
+      @for (batch of batches; track batch.id) {
+        <article
+          class="grid min-w-0 grid-cols-2 gap-4 rounded-xl border border-surface-200 bg-surface-50 p-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,0.65fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,0.45fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.85fr)] lg:items-center lg:gap-x-3 lg:gap-y-0 lg:rounded-none lg:border-0 lg:border-b lg:bg-transparent lg:px-2.5 lg:py-3 dark:border-surface-700 dark:bg-surface-800 lg:dark:border-surface-800 lg:dark:bg-transparent"
+        >
+          <div class="col-span-2 flex min-w-0 flex-col items-start gap-1 text-sm lg:col-span-1">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.date' | translate }}</span>
+            <span>{{ batch.createdAt | date: 'short' }}</span>
+          </div>
+          <div class="col-span-2 flex min-w-0 flex-col items-start gap-1 text-sm lg:col-span-1">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.file' | translate }}</span>
+            <span class="max-w-full font-medium [overflow-wrap:anywhere]">{{ batch.fileName }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col items-start gap-1 text-sm">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.format' | translate }}</span>
+            <span>{{ batch.format }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col items-start gap-1 text-sm">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.origin' | translate }}</span>
+            <span class="max-w-full [overflow-wrap:anywhere]">{{ batch.walletItemName }}</span>
+          </div>
+          <div class="col-span-2 flex min-w-0 flex-col items-start gap-1 text-sm lg:col-span-1">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.status' | translate }}</span>
+            <span
+              class="status-tag"
+              [class.status-ok]="batch.status === 'COMPLETED'"
+              [class.status-error]="batch.status === 'FAILED' || batch.status === 'UNDO_FAILED'"
+              [class.status-muted]="
+                batch.status === 'QUEUED' || batch.status === 'RUNNING' || batch.status === 'UNDO_QUEUED' || batch.status === 'UNDO_RUNNING'
+              "
+            >
+              {{ statusLabelKey(batch) | translate }}
+            </span>
+            @if ((batch.status === 'FAILED' || batch.status === 'UNDO_FAILED') && batch.errorMessage) {
+              <p class="mt-1 max-w-full text-xs text-red-700 [overflow-wrap:anywhere] dark:text-red-300">{{ batch.errorMessage }}</p>
+            }
+          </div>
+          <div class="flex min-w-0 flex-col items-start gap-1 text-sm lg:items-end lg:text-right">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.quantityLong' | translate }}</span>
+            <span>{{ isCompleted(batch) ? batch.qty : '—' }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col items-start gap-1 text-sm text-emerald-700 lg:items-end lg:text-right">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.credit' | translate }}</span>
+            <span>{{ isCompleted(batch) ? (batch.totalCredit | number: '1.2-2') : '—' }}</span>
+          </div>
+          <div class="flex min-w-0 flex-col items-start gap-1 text-sm text-red-700 lg:items-end lg:text-right">
+            <span class="mobile-label">{{ 'financesPage.transactionsPage.importPage.history.columns.debit' | translate }}</span>
+            <span>{{ isCompleted(batch) ? (batch.totalDebit | number: '1.2-2') : '—' }}</span>
+          </div>
+          <div class="col-span-2 flex min-w-0 flex-col items-start gap-1 text-sm lg:col-span-1 lg:items-end lg:text-right">
+            <span class="mobile-label">{{ 'general.actions' | translate }}</span>
+            @if (canUndo(batch)) {
+              <button
+                type="button"
+                pButton
+                [outlined]="true"
+                class="p-button-sm w-full lg:w-auto"
+                severity="danger"
+                [loading]="undoingBatchId() === batch.id"
+                [disabled]="undoingBatchId() != null"
+                (click)="undoRequested.emit(batch)"
+              >
+                {{
+                  (batch.status === 'UNDO_FAILED'
+                    ? 'financesPage.transactionsPage.importPage.actions.retry'
+                    : 'financesPage.transactionsPage.importPage.actions.undo'
+                  ) | translate
+                }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </ng-template>
+
+  <ng-template #emptymessage>
+    <p class="rounded-xl bg-surface-50 p-6 text-center text-muted dark:bg-surface-800">
+      {{ 'financesPage.transactionsPage.importPage.history.empty' | translate }}
+    </p>
+  </ng-template>
+</p-data-view>

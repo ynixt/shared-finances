@@ -77,6 +77,9 @@ internal class InMemoryWalletEventRepository(
     override fun findAllByRecurrenceEventId(recurrenceEventId: UUID): Flux<WalletEventEntity> =
         Flux.fromIterable(data.values.filter { it.recurrenceEventId == recurrenceEventId })
 
+    override fun findAllByImportBatchId(importBatchId: UUID): Flux<WalletEventEntity> =
+        Flux.fromIterable(data.values.filter { it.importBatchId == importBatchId })
+
     override fun save(walletEntry: WalletEventEntity): Mono<WalletEventEntity> {
         val id = walletEntry.id ?: UUID.randomUUID()
         walletEntry.id = id

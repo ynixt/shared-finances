@@ -5,6 +5,8 @@ export * from './entry-summary-type';
 export * from './goal-ledger-movement-kind';
 export * from './group-debt-movement-reason-kind';
 export * from './group-permissions';
+export * from './import-batch-status';
+export * from './import-hash-status';
 export * from './payment-type';
 export * from './planning-simulation-outcome-band';
 export * from './recurrence-type';

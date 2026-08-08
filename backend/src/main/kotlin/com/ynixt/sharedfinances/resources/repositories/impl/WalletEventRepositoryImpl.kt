@@ -32,6 +32,9 @@ class WalletEventRepositoryImpl(
     override fun findAllByRecurrenceEventId(recurrenceEventId: UUID): Flux<WalletEventEntity> =
         springDataRepository.findAllByRecurrenceEventId(recurrenceEventId)
 
+    override fun findAllByImportBatchId(importBatchId: UUID): Flux<WalletEventEntity> =
+        springDataRepository.findAllByImportBatchId(importBatchId)
+
     override fun save(walletEntry: WalletEventEntity): Mono<WalletEventEntity> = springDataRepository.save(walletEntry)
 
     override fun saveAll(walletEntry: Iterable<WalletEventEntity>): Flux<WalletEventEntity> = springDataRepository.saveAll(walletEntry)
