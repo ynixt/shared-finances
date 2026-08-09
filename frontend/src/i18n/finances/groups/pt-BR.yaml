@@ -2,6 +2,7 @@ financesPage:
   groupsPage:
     name: Nome do grupo
     noGroupYet: Você não está em nenhum grupo :(
+    unknownParticipant: Usuário desconhecido
     newGroupPage:
       title: Novo groupo
       successMessage: O grupo foi criado com sucesso
@@ -9,10 +10,19 @@ financesPage:
       title: 'Editar grupo: {{name}}'
       successMessage: O Grupo foi editado com sucesso
       successDeleteMessage: O grupo foi deletado com sucesso
+      ownerOnlyDelete: Somente o proprietário pode excluir este grupo. Um administrador precisa receber a propriedade primeiro.
+      ownerLeaveConstraint: Como proprietário, você precisa transferir a propriedade para outro membro ou excluir o grupo antes de sair.
     overviewPage:
       title: 'Visão geral do grupo: {{name}}'
       manageTeam: Gerenciar pessoas do grupo
       viewDebts: Abrir a área de dívidas do grupo
+      leave:
+        action: Sair do grupo
+        tooltip: Sair deste grupo
+        title: Sair do grupo
+        confirmation: 'Sair de {{name}}? Seus itens financeiros compartilhados serão removidos e as atividades agendadas que os utilizam serão encerradas.'
+        balanceWarning: 'Seu saldo pendente de {{amount}} continuará existindo após a saída.'
+        ownerCannotLeave: O proprietário precisa transferir a propriedade ou excluir o grupo antes de sair.
       charts:
         cashInByMember: Entrada em caixa por integrante (12 meses)
         expenseByMemberSeries: Despesas por integrante (12 meses)
@@ -26,6 +36,12 @@ financesPage:
         detailTitle: 'Detalhes: {{payer}} -> {{receiver}}'
     manageTeamPage:
       title: 'Gerenciar pessoas do grupo: {{name}}'
+      owner: Proprietário
+      currentOwner: 'Proprietário atual: {{name}}'
+      transferOwnership: Transferir propriedade
+      transferConfirmation: 'Transferir a propriedade para {{name}}? A mudança é imediata e este membro não precisa aceitá-la.'
+      transferSuccess: 'Propriedade transferida para {{name}}.'
+      ownerLeaveConstraint: Para sair deste grupo, primeiro transfira a propriedade para outro membro ou exclua o grupo.
       role: Permissão
       allowPlanningSimulator: Privacidade do simulador de planejamento
       onlyYouCanChange: Somente você pode alterar seu próprio opt-in de privacidade.

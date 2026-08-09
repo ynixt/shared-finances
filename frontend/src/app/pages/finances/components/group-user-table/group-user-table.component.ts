@@ -1,11 +1,12 @@
 import { Component, ViewChild, computed, effect, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faCheck, faEdit, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faCrown, faEdit, faRightLeft, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Ripple } from 'primeng/ripple';
 import { Select } from 'primeng/select';
 import { Table, TableModule } from 'primeng/table';
@@ -21,6 +22,7 @@ import {
   UserGroupRole__Options,
 } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { I18nOption } from '../../../../models/i18n-option';
+import { ErrorMessageService } from '../../../../services/error-message.service';
 import { UserService } from '../../../../services/user.service';
 import { DEFAULT_ERROR_LIFE } from '../../../../util/error-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../../../util/success-util';
@@ -41,9 +43,11 @@ type GroupUserWithIdDto = GroupUserDto & { id: string };
     FormsModule,
     FaIconComponent,
     ToggleSwitch,
+    ConfirmDialog,
   ],
   templateUrl: './group-user-table.component.html',
   styleUrl: './group-user-table.component.scss',
+  providers: [ConfirmationService],
 })
 export class GroupUserTableComponent {
   loading = false;
@@ -64,6 +68,8 @@ export class GroupUserTableComponent {
     private translateService: TranslateService,
     private messageService: MessageService,
     public userService: UserService,
+    private confirmationService: ConfirmationService,
+    private errorMessageService: ErrorMessageService,
   ) {
     this.roles = UserGroupRole__Options.map(value => ({
       value,
@@ -119,12 +125,64 @@ export class GroupUserTableComponent {
       this.table?.saveRowEdit(groupUser, rowElement);
     } catch (err) {
       console.error(err);
+      this.errorMessageService.handleError(err, this.messageService);
+    } finally {
+      this.submitting = false;
+    }
+  }
+
+  askForOwnershipTransfer(groupUser: GroupUserWithIdDto) {
+    const destinationName = this.fullName(groupUser);
+    this.confirmationService.confirm({
+      message: this.translateService.instant('financesPage.groupsPage.manageTeamPage.transferConfirmation', { name: destinationName }),
+      header: this.translateService.instant('financesPage.groupsPage.manageTeamPage.transferOwnership'),
+      closable: true,
+      closeOnEscape: true,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: this.translateService.instant('financesPage.groupsPage.manageTeamPage.transferOwnership'),
+      rejectLabel: this.translateService.instant('general.cancel'),
+      accept: () => this.transferOwnership(groupUser),
+    });
+  }
+
+  isGroupOwner(groupUser: GroupUserWithIdDto): boolean {
+    return this.group()?.ownerUserId === groupUser.user.id;
+  }
+
+  canTransferOwnership(groupUser: GroupUserWithIdDto): boolean {
+    return this.group()?.isOwner === true && !this.isOwnUser(groupUser);
+  }
+
+  currentOwnerName(): string {
+    const owner = this.members.find(member => this.isGroupOwner(member));
+    return owner == null ? '' : this.fullName(owner);
+  }
+
+  private fullName(groupUser: GroupUserWithIdDto): string {
+    return this.translateService.instant('name.fullName', {
+      firstName: groupUser.user.firstName,
+      lastName: groupUser.user.lastName,
+    });
+  }
+
+  private async transferOwnership(groupUser: GroupUserWithIdDto) {
+    const group = this.group();
+    if (group == null || !group.isOwner || this.isOwnUser(groupUser) || this.submitting) return;
+
+    this.submitting = true;
+    try {
+      const updated = await this.groupService.transferOwnership(group.id, groupUser.user.id);
+      group.ownerUserId = updated.ownerUserId;
+      group.isOwner = updated.isOwner;
+      groupUser.role = 'ADMIN';
       this.messageService.add({
-        severity: 'error',
-        summary: this.translateService.instant('error.genericTitle'),
-        detail: this.translateService.instant('error.genericMessage'),
-        life: DEFAULT_ERROR_LIFE,
+        severity: 'success',
+        summary: this.translateService.instant('general.success'),
+        detail: this.translateService.instant('financesPage.groupsPage.manageTeamPage.transferSuccess', { name: this.fullName(groupUser) }),
+        life: DEFAULT_SUCCESS_LIFE,
       });
+    } catch (err) {
+      this.errorMessageService.handleError(err, this.messageService);
     } finally {
       this.submitting = false;
     }
@@ -180,6 +238,8 @@ export class GroupUserTableComponent {
   }
 
   protected readonly faEdit = faEdit;
+  protected readonly faCrown = faCrown;
+  protected readonly faRightLeft = faRightLeft;
   protected readonly faCheck = faCheck;
   protected readonly faTimes = faTimes;
 }

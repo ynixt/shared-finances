@@ -51,6 +51,7 @@
               [pTooltip]="rightButton.tooltip != null ? (rightButton.tooltip | translate) : undefined"
               [tooltipPosition]="rightButton.tooltipPosition ?? 'bottom'"
               [loading]="rightButton.loading ?? false"
+              [severity]="rightButton.severity"
             >
               <fa-icon [icon]="rightButton.icon ?? deleteButtonIcon"></fa-icon>
             </button>

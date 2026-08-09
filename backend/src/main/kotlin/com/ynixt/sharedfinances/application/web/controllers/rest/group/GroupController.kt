@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.application.web.dto.groups.GroupInviteDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupWithRoleDto
 import com.ynixt.sharedfinances.application.web.dto.groups.NewGroupDto
+import com.ynixt.sharedfinances.application.web.dto.groups.TransferGroupOwnershipDto
 import com.ynixt.sharedfinances.application.web.dto.groups.UpdateGroupPlanningSimulatorOptInDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.application.web.mapper.GroupInviteDtoMapper
@@ -109,6 +110,32 @@ class GroupController(
                 userId = principalToken.principal.id,
                 id = id,
             ).let { if (it) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
+
+    @Operation(summary = "Transfer group ownership to another member")
+    @PutMapping("/{id}/owner")
+    suspend fun transferOwnership(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+        @RequestBody request: TransferGroupOwnershipDto,
+    ): ResponseEntity<GroupWithRoleDto> =
+        groupService
+            .transferOwnership(
+                userId = principalToken.principal.id,
+                groupId = id,
+                newOwnerId = request.newOwnerId,
+            ).let { group -> ResponseEntity.ofNullable(group?.let(groupDtoMapper::toDto)) }
+
+    @Operation(summary = "Leave a group")
+    @DeleteMapping("/{id}/members/me")
+    suspend fun leaveGroup(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+    ): ResponseEntity<Unit> =
+        groupService
+            .leaveGroup(
+                userId = principalToken.principal.id,
+                groupId = id,
+            ).let { left -> if (left) ResponseEntity.noContent().build() else ResponseEntity.notFound().build() }
 
     @Operation(summary = "Create a new group")
     @PostMapping

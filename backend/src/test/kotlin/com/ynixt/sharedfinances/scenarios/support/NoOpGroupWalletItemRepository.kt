@@ -44,6 +44,11 @@ internal class NoOpGroupWalletItemRepository : GroupWalletItemRepository {
         type: WalletItemType,
     ): Flux<WalletItemEntity> = Flux.empty()
 
+    override fun findAllAssociatedOwnedByUser(
+        groupId: UUID,
+        userId: UUID,
+    ): Flux<WalletItemEntity> = Flux.empty()
+
     override fun countByGroupIdAndWalletItemId(
         groupId: UUID,
         walletItemId: UUID,

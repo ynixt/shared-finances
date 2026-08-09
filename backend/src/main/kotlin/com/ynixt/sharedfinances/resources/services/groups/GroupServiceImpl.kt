@@ -4,12 +4,19 @@ import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
+import com.ynixt.sharedfinances.domain.exceptions.http.GroupOwnerCannotLeaveException
+import com.ynixt.sharedfinances.domain.exceptions.http.GroupOwnerRequiredException
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupOwnershipTransferException
+import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupOwnershipTransferException.Reason
 import com.ynixt.sharedfinances.domain.exceptions.http.MemberAlreadyInGroupException
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
+import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
+import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
@@ -18,6 +25,7 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociatio
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
+import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.FinancialGoalContributionScheduleSpringDataRepository
 import com.ynixt.sharedfinances.resources.services.EntityServiceImpl
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -37,6 +45,9 @@ class GroupServiceImpl(
     private val groupCategoryService: GroupCategoryService,
     private val groupBankAssociationService: GroupBankAssociationService,
     private val creditCardAssociationService: GroupCreditCardAssociationService,
+    private val groupWalletItemRepository: GroupWalletItemRepository,
+    private val recurrenceEventRepository: RecurrenceEventRepository,
+    private val goalContributionScheduleRepository: FinancialGoalContributionScheduleSpringDataRepository,
 ) : EntityServiceImpl<GroupEntity, GroupEntity>(),
     GroupService {
     override suspend fun findAllGroups(userId: UUID): List<GroupWithRole> =
@@ -106,16 +117,15 @@ class GroupServiceImpl(
                         .edit(id, request.name)
                         .awaitSingle()
                         .let {
+                            groupActionEventService.sendUpdatedGroup(
+                                groupId = id,
+                                name = request.name,
+                                userId = userId,
+                            )
                             findGroup(
                                 userId = userId,
                                 id = id,
                             )
-                        }?.also { g ->
-                            groupActionEventService
-                                .sendUpdatedGroup(
-                                    group = g,
-                                    userId = userId,
-                                )
                         }
                 } else {
                     null
@@ -126,32 +136,110 @@ class GroupServiceImpl(
     override suspend fun deleteGroup(
         userId: UUID,
         id: UUID,
-    ): Boolean =
-        groupPermissionService
-            .hasPermission(
+    ): Boolean {
+        val group = repository.findOneByUserIdAndId(userId, id).awaitSingleOrNull() ?: return false
+        if (!group.isOwner) {
+            throw GroupOwnerRequiredException()
+        }
+
+        val memberList =
+            groupUserRepository
+                .findAllMembers(id)
+                .map { it.userId }
+                .collectList()
+                .awaitSingle()
+        val modifiedLines = repository.deleteById(id).awaitSingle()
+        if (modifiedLines > 0) {
+            groupActionEventService.sendDeletedGroup(
+                id = id,
                 userId = userId,
-                groupId = id,
-                GroupPermissions.EDIT_GROUP,
-            ).let { hasPermission ->
-                if (hasPermission) {
-                    groupUserRepository.findAllMembers(id).map { it.userId }.collectList().awaitSingle().let { memberList ->
-                        repository.deleteById(id).awaitSingle().also { modifiedLines ->
-                            if (modifiedLines > 0) {
-                                groupActionEventService
-                                    .sendDeletedGroup(
-                                        id = id,
-                                        userId = userId,
-                                        membersId = memberList.toList(),
-                                    )
-                            }
+                membersId = memberList,
+            )
+        }
+        return modifiedLines > 0
+    }
 
-                            modifiedLines > 0
-                        }
-                    }
-                }
+    @Transactional
+    override suspend fun transferOwnership(
+        userId: UUID,
+        groupId: UUID,
+        newOwnerId: UUID,
+    ): GroupWithRole? {
+        val group = repository.findOneByUserIdAndId(userId, groupId).awaitSingleOrNull() ?: return null
+        if (!group.isOwner) {
+            throw GroupOwnerRequiredException()
+        }
+        if (newOwnerId == userId) {
+            throw InvalidGroupOwnershipTransferException(Reason.SELF_TRANSFER)
+        }
 
-                hasPermission
+        val newOwnerMembership =
+            groupUserRepository.findOneByGroupIdAndUserId(groupId, newOwnerId).awaitSingleOrNull()
+                ?: throw InvalidGroupOwnershipTransferException(Reason.TARGET_NOT_MEMBER)
+
+        if (newOwnerMembership.role != UserGroupRole.ADMIN) {
+            groupUserRepository.updateRole(newOwnerId, groupId, UserGroupRole.ADMIN).awaitSingle()
+        }
+        repository.updateOwnerUserId(groupId, newOwnerId).awaitSingle()
+
+        groupActionEventService.sendOwnershipChanged(
+            userId = userId,
+            groupId = groupId,
+            previousOwnerUserId = userId,
+            newOwnerUserId = newOwnerId,
+        )
+
+        return findGroup(userId, groupId)
+    }
+
+    @Transactional
+    override suspend fun leaveGroup(
+        userId: UUID,
+        groupId: UUID,
+    ): Boolean {
+        val group = repository.findOneByUserIdAndId(userId, groupId).awaitSingleOrNull() ?: return false
+        if (group.isOwner) {
+            throw GroupOwnerCannotLeaveException()
+        }
+
+        val membersId =
+            groupUserRepository
+                .findAllMembers(groupId)
+                .map { it.userId }
+                .collectList()
+                .awaitSingle()
+        val departingItems = groupWalletItemRepository.findAllAssociatedOwnedByUser(groupId, userId).collectList().awaitSingle()
+        val walletItemIds = departingItems.mapNotNull { it.id }
+
+        if (walletItemIds.isNotEmpty()) {
+            recurrenceEventRepository.endAllByGroupIdAndWalletItemIds(groupId, walletItemIds).awaitSingle()
+            goalContributionScheduleRepository
+                .endAllByGroupIdAndWalletItemIds(groupId, walletItemIds.toTypedArray())
+                .awaitSingle()
+            walletItemIds.forEach { walletItemId ->
+                groupWalletItemRepository.deleteByGroupIdAndWalletItemId(groupId, walletItemId).awaitSingle()
             }
+        }
+
+        val deleted = groupUserRepository.deleteByGroupIdAndUserId(groupId, userId).awaitSingle() > 0
+        if (!deleted) return false
+
+        departingItems.forEach { item ->
+            when (item.type) {
+                WalletItemType.BANK_ACCOUNT ->
+                    groupActionEventService.sendBankUnassociated(userId, groupId, item.id!!)
+                WalletItemType.CREDIT_CARD ->
+                    groupActionEventService.sendCreditCardUnassociated(userId, groupId, item.id!!)
+            }
+        }
+        groupActionEventService.sendMemberLeft(
+            userId = userId,
+            groupId = groupId,
+            departedUserId = userId,
+            membersId = membersId,
+        )
+        return true
+    }
 
     override suspend fun findGroup(
         userId: UUID,
@@ -203,6 +291,7 @@ class GroupServiceImpl(
             .save(
                 GroupEntity(
                     name = newGroupRequest.name,
+                    ownerUserId = userId,
                 ),
             ).awaitSingle()
             .let { group ->
@@ -256,12 +345,15 @@ class GroupServiceImpl(
         memberId: UUID,
         newRole: UserGroupRole,
     ): Boolean {
-        require(memberId != id) { "User cannot changed his own role." }
-
         return groupPermissionService
             .hasPermission(userId = userId, groupId = id, permission = GroupPermissions.CHANGE_ROLE)
             .let {
                 if (it) {
+                    val group = repository.findById(id).awaitSingleOrNull() ?: return@let false
+                    // Ownership is also membership: future leave/remove-member paths must reject removing the owner.
+                    if (memberId == group.ownerUserId && newRole != UserGroupRole.ADMIN) {
+                        throw InvalidGroupOwnershipTransferException(Reason.OWNER_MUST_BE_ADMIN)
+                    }
                     groupUserRepository
                         .updateRole(
                             userId = memberId,

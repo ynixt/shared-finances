@@ -88,6 +88,10 @@ export class EditGroupPageComponent {
     });
   }
 
+  canDeleteGroup(): boolean {
+    return this.group?.isOwner === true;
+  }
+
   async submit() {
     if (!this.formGroup || this.formGroup.invalid || this.submitting || !this.group) {
       return;
@@ -178,12 +182,7 @@ export class EditGroupPageComponent {
     } catch (err) {
       this.submitting = false;
 
-      this.messageService.add({
-        severity: 'error',
-        summary: this.translateService.instant('error.genericTitle'),
-        detail: this.translateService.instant('error.genericMessage'),
-        life: DEFAULT_ERROR_LIFE,
-      });
+      this.errorMessageService.handleError(err, this.messageService);
 
       console.error(err);
     }

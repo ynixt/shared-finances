@@ -15,3 +15,4 @@
 /.angular
 /v1-schema.yaml
 /src/app/api
+/src/app/models/generated

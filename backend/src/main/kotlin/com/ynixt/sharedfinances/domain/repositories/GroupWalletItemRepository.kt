@@ -43,6 +43,11 @@ interface GroupWalletItemRepository {
         type: WalletItemType,
     ): Flux<WalletItemEntity>
 
+    fun findAllAssociatedOwnedByUser(
+        groupId: UUID,
+        userId: UUID,
+    ): Flux<WalletItemEntity>
+
     fun countByGroupIdAndWalletItemId(
         groupId: UUID,
         walletItemId: UUID,

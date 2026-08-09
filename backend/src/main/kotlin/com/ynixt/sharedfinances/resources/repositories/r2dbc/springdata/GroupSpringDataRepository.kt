@@ -13,9 +13,11 @@ import java.util.UUID
 interface GroupSpringDataRepository :
     GroupRepository,
     R2dbcRepository<GroupEntity, String> {
+    override fun findAllByOwnerUserId(ownerUserId: UUID): Flux<GroupEntity>
+
     @Query(
         """
-            select g.*, gu.role as role
+            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner
             from "group" g
             join group_user gu on gu.group_id = g.id
             where gu.user_id = :userId
@@ -26,11 +28,11 @@ interface GroupSpringDataRepository :
 
     @Query(
         """
-            select g.*, gu.role as role
+            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner
             from "group" g
             join group_user gu on gu.group_id = g.id
             where
-                g.id = :groupId
+                g.id = :id
                 and gu.user_id = :userId
         """,
     )
@@ -41,7 +43,7 @@ interface GroupSpringDataRepository :
 
     @Query(
         """
-            select g.*, gu.role as role
+            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner
             from "group" g
             join group_user gu on gu.group_id = g.id
             where
@@ -83,5 +85,20 @@ interface GroupSpringDataRepository :
     override fun edit(
         id: UUID,
         newName: String,
+    ): Mono<Long>
+
+    @Modifying
+    @Query(
+        """
+        update "group"
+        set
+            owner_user_id = :ownerUserId,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :id
+    """,
+    )
+    override fun updateOwnerUserId(
+        id: UUID,
+        ownerUserId: UUID,
     ): Mono<Long>
 }

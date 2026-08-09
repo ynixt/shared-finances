@@ -29,13 +29,15 @@ export class GroupDebtPairsPanelComponent {
   ) {}
 
   showDetails(pair: GroupOverviewDebtPairDto) {
+    const payerName = this.participantName(pair.payerName);
+    const receiverName = this.participantName(pair.receiverName);
     this.selectedPair = pair;
     this.confirmationService.confirm({
       header: this.translateService.instant('financesPage.groupsPage.overviewPage.debtPairs.detailTitle', {
-        payer: pair.payerName,
-        receiver: pair.receiverName,
+        payer: payerName,
+        receiver: receiverName,
       }),
-      message: `${pair.payerName} -> ${pair.receiverName}`,
+      message: `${payerName} -> ${receiverName}`,
       closable: true,
       closeOnEscape: true,
       rejectVisible: false,
@@ -47,6 +49,10 @@ export class GroupDebtPairsPanelComponent {
         this.selectedPair = undefined;
       },
     });
+  }
+
+  participantName(name: string | null | undefined): string {
+    return name ?? this.translateService.instant('financesPage.groupsPage.unknownParticipant');
   }
 
   trackDebtPair(index: number, pair: GroupOverviewDebtPairDto): string {

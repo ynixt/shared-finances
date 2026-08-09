@@ -29,6 +29,7 @@ internal class ScenarioGroupService : GroupService {
     private data class GroupState(
         val id: UUID,
         var name: String,
+        var ownerUserId: UUID = UUID(0, 0),
         val members: MutableMap<UUID, MemberScope> = mutableMapOf(),
     )
 
@@ -37,8 +38,9 @@ internal class ScenarioGroupService : GroupService {
     fun createGroup(
         name: String = "Scenario Group",
         id: UUID = UUID.randomUUID(),
+        ownerUserId: UUID = UUID(0, 0),
     ): UUID {
-        groups[id] = GroupState(id = id, name = name)
+        groups[id] = GroupState(id = id, name = name, ownerUserId = ownerUserId)
         return id
     }
 
@@ -51,6 +53,9 @@ internal class ScenarioGroupService : GroupService {
         allowPlanningSimulator: Boolean = true,
     ) {
         val group = groups.getOrPut(groupId) { GroupState(id = groupId, name = "Scenario Group") }
+        if (group.ownerUserId == UUID(0, 0)) {
+            group.ownerUserId = userId
+        }
         group.members[userId] =
             MemberScope(
                 role = role,
@@ -68,6 +73,8 @@ internal class ScenarioGroupService : GroupService {
                     createdAt = null,
                     updatedAt = null,
                     name = state.name,
+                    ownerUserId = state.ownerUserId,
+                    isOwner = state.ownerUserId == userId,
                     role = member.role,
                     itemsAssociated = null,
                 ).also {
@@ -127,13 +134,35 @@ internal class ScenarioGroupService : GroupService {
         return true
     }
 
+    override suspend fun transferOwnership(
+        userId: UUID,
+        groupId: UUID,
+        newOwnerId: UUID,
+    ): GroupWithRole? {
+        val state = groups[groupId] ?: return null
+        if (state.ownerUserId != userId || !state.members.containsKey(newOwnerId) || newOwnerId == userId) return null
+        val destination = state.members.getValue(newOwnerId)
+        state.members[newOwnerId] = destination.copy(role = UserGroupRole.ADMIN)
+        state.ownerUserId = newOwnerId
+        return resolveGroup(userId, groupId, includeAssociatedItems = false)
+    }
+
+    override suspend fun leaveGroup(
+        userId: UUID,
+        groupId: UUID,
+    ): Boolean {
+        val state = groups[groupId] ?: return false
+        if (state.ownerUserId == userId) return false
+        return state.members.remove(userId) != null
+    }
+
     override suspend fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
     ): GroupEntity {
-        val id = createGroup(name = newGroupRequest.name)
-        upsertMemberScope(groupId = id, userId = userId)
-        return GroupEntity(name = newGroupRequest.name).also { it.id = id }
+        val id = createGroup(name = newGroupRequest.name, ownerUserId = userId)
+        upsertMemberScope(groupId = id, userId = userId, role = UserGroupRole.ADMIN)
+        return GroupEntity(name = newGroupRequest.name, ownerUserId = userId).also { it.id = id }
     }
 
     override suspend fun findAllMembers(
@@ -198,7 +227,7 @@ internal class ScenarioGroupService : GroupService {
             .asSequence()
             .filter { state -> ids.contains(state.id) }
             .map { state ->
-                GroupEntity(name = state.name).also { entity ->
+                GroupEntity(name = state.name, ownerUserId = state.ownerUserId).also { entity ->
                     entity.id = state.id
                 }
             }.toList()
@@ -218,6 +247,8 @@ internal class ScenarioGroupService : GroupService {
             createdAt = null,
             updatedAt = null,
             name = state.name,
+            ownerUserId = state.ownerUserId,
+            isOwner = state.ownerUserId == userId,
             role = member.role,
             itemsAssociated = associatedItems,
         ).also {

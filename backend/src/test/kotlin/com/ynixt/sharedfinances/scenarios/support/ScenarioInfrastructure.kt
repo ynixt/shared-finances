@@ -247,6 +247,17 @@ internal class NoOpGroupService : GroupService {
         id: UUID,
     ): Boolean = false
 
+    override suspend fun transferOwnership(
+        userId: UUID,
+        groupId: UUID,
+        newOwnerId: UUID,
+    ): GroupWithRole? = null
+
+    override suspend fun leaveGroup(
+        userId: UUID,
+        groupId: UUID,
+    ): Boolean = false
+
     override suspend fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,

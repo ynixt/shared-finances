@@ -11,6 +11,8 @@ data class GroupWithRole(
     var createdAt: OffsetDateTime?,
     var updatedAt: OffsetDateTime?,
     val name: String,
+    val ownerUserId: UUID,
+    val isOwner: Boolean,
     val role: UserGroupRole,
     val itemsAssociated: List<WalletItem>? = null,
 ) {

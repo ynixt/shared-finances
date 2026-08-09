@@ -4,6 +4,6 @@ import { OverviewDashboardChartPointDto } from './overview-dashboard-chart-point
 
 export interface GroupOverviewDashboardMemberSeriesDto {
   memberId: string;
-  memberName: string;
+  memberName: string | null;
   points: Array<OverviewDashboardChartPointDto>;
 }

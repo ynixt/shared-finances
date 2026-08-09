@@ -1,6 +1,15 @@
 @let user = userService.user();
 
 <div class="group-user-table w-full">
+  <div class="mb-4 flex flex-col gap-1">
+    <span class="font-semibold">
+      {{ 'financesPage.groupsPage.manageTeamPage.currentOwner' | translate: { name: currentOwnerName() } }}
+    </span>
+    @if (group()?.isOwner) {
+      <span class="text-sm text-slate-500">{{ 'financesPage.groupsPage.manageTeamPage.ownerLeaveConstraint' | translate }}</span>
+    }
+  </div>
+
   <p-table [value]="members" class="w-full" [tableStyle]="{ 'width': '100%', 'table-layout': 'fixed' }" dataKey="id" editMode="row" #table>
     <ng-template #header>
       <tr>
@@ -17,14 +26,23 @@
           <app-user-avatar [user]="groupUser.user" [showTooltip]="false"></app-user-avatar>
         </td>
         <td>
-          {{
-            'name.fullName'
-              | translate
-                : {
-                    firstName: groupUser.user.firstName,
-                    lastName: groupUser.user.lastName,
-                  }
-          }}
+          <div class="flex items-center gap-2">
+            <span>
+              {{
+                'name.fullName'
+                  | translate
+                    : {
+                        firstName: groupUser.user.firstName,
+                        lastName: groupUser.user.lastName,
+                      }
+              }}
+            </span>
+            @if (isGroupOwner(groupUser)) {
+              <p-tag severity="warn" [value]="'financesPage.groupsPage.manageTeamPage.owner' | translate">
+                <fa-icon [icon]="faCrown"></fa-icon>
+              </p-tag>
+            }
+          </div>
         </td>
         <td>
           <p-cellEditor>
@@ -60,9 +78,23 @@
 
         <td>
           <div class="flex items-center justify-center gap-2">
-            @if (!editing && user?.id != groupUser.user.id && hasPermissionToModifyRoles()) {
+            @if (!editing && user?.id != groupUser.user.id && !isGroupOwner(groupUser) && hasPermissionToModifyRoles()) {
               <button pButton pRipple type="button" pInitEditableRow (click)="onRowEditInit(groupUser)" text rounded severity="secondary">
                 <fa-icon [icon]="faEdit"></fa-icon>
+              </button>
+            }
+            @if (!editing && canTransferOwnership(groupUser)) {
+              <button
+                pButton
+                pRipple
+                type="button"
+                (click)="askForOwnershipTransfer(groupUser)"
+                [attr.aria-label]="'financesPage.groupsPage.manageTeamPage.transferOwnership' | translate"
+                text
+                rounded
+                severity="warn"
+              >
+                <fa-icon [icon]="faRightLeft"></fa-icon>
               </button>
             }
             @if (editing) {
@@ -99,3 +131,5 @@
     </ng-template>
   </p-table>
 </div>
+
+<p-confirm-dialog />

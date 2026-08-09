@@ -2,6 +2,7 @@ financesPage:
   groupsPage:
     name: Group name
     noGroupYet: You are not in any group :(
+    unknownParticipant: Unknown user
     newGroupPage:
       title: New group
       successMessage: Group created successfully
@@ -9,10 +10,19 @@ financesPage:
       title: 'Edit group: {{name}}'
       successMessage: Group edited successfully
       successDeleteMessage: Group deleted successfully
+      ownerOnlyDelete: Only the group owner can delete this group. An administrator must receive ownership first.
+      ownerLeaveConstraint: As owner, you must transfer ownership to another member or delete the group before leaving.
     overviewPage:
       title: 'Group overview: {{name}}'
       manageTeam: Manage people in the group
       viewDebts: Open group debt workspace
+      leave:
+        action: Leave group
+        tooltip: Leave this group
+        title: Leave group
+        confirmation: 'Leave {{name}}? Your shared wallet items will be removed and scheduled activity that uses them will be ended.'
+        balanceWarning: 'Your outstanding balance of {{amount}} will remain after you leave.'
+        ownerCannotLeave: The owner must transfer ownership or delete the group before leaving.
       charts:
         cashInByMember: Cash in by member (12 months)
         expenseByMemberSeries: Expense by member (12 months)
@@ -26,6 +36,12 @@ financesPage:
         detailTitle: 'Details: {{payer}} -> {{receiver}}'
     manageTeamPage:
       title: 'Manage team of group: {{name}}'
+      owner: Owner
+      currentOwner: 'Current owner: {{name}}'
+      transferOwnership: Transfer ownership
+      transferConfirmation: 'Transfer ownership to {{name}}? The change is immediate and this member does not need to accept it.'
+      transferSuccess: 'Ownership transferred to {{name}}.'
+      ownerLeaveConstraint: To leave this group, first transfer ownership to another member or delete the group.
       role: Role
       allowPlanningSimulator: Planning simulator privacy
       onlyYouCanChange: Only you can change your own privacy opt-in.

@@ -4,6 +4,8 @@
 export type ActionEventCategory =
   | 'BANK_ACCOUNT'
   | 'GROUP'
+  | 'GROUP_OWNERSHIP'
+  | 'GROUP_MEMBERSHIP'
   | 'CREDIT_CARD'
   | 'BANK_ACCOUNT_ASSOCIATE'
   | 'CREDIT_CARD_ASSOCIATE'
@@ -18,6 +20,8 @@ export type ActionEventCategory =
 export const ActionEventCategory__Options: ActionEventCategory[] = [
   'BANK_ACCOUNT',
   'GROUP',
+  'GROUP_OWNERSHIP',
+  'GROUP_MEMBERSHIP',
   'CREDIT_CARD',
   'BANK_ACCOUNT_ASSOCIATE',
   'CREDIT_CARD_ASSOCIATE',
@@ -33,6 +37,8 @@ export const ActionEventCategory__Options: ActionEventCategory[] = [
 export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEventCategory } = {
   'BANK_ACCOUNT': 'BANK_ACCOUNT',
   'GROUP': 'GROUP',
+  'GROUP_OWNERSHIP': 'GROUP_OWNERSHIP',
+  'GROUP_MEMBERSHIP': 'GROUP_MEMBERSHIP',
   'CREDIT_CARD': 'CREDIT_CARD',
   'BANK_ACCOUNT_ASSOCIATE': 'BANK_ACCOUNT_ASSOCIATE',
   'CREDIT_CARD_ASSOCIATE': 'CREDIT_CARD_ASSOCIATE',

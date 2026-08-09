@@ -208,7 +208,7 @@ export class GroupOverviewDashboardChartsComponent {
   ): Array<{ memberId: string; memberName: string; chartData: ChartData<'line'> }> {
     return this.sortMembersByName(members).map(member => ({
       memberId: member.memberId,
-      memberName: member.memberName,
+      memberName: this.participantName(member.memberName),
       chartData: this.buildLineChartData(member.points, borderColor, backgroundColor, includeProjected),
     }));
   }
@@ -231,7 +231,7 @@ export class GroupOverviewDashboardChartsComponent {
       const slices = this.buildPieSlices(member.slices, includeProjected);
       return {
         memberId: member.memberId,
-        memberName: member.memberName,
+        memberName: this.participantName(member.memberName),
         slices,
         chartData: this.buildPieChartData(slices),
         hasData: slices.length > 0,
@@ -251,14 +251,22 @@ export class GroupOverviewDashboardChartsComponent {
       const existingSlice = sliceByMemberId.get(member.memberId);
       return {
         id: member.memberId,
-        label: member.memberName,
+        label: this.participantName(member.memberName),
         value: (existingSlice?.executedValue ?? 0) + (includeProjected ? (existingSlice?.projectedValue ?? 0) : 0),
       };
     });
   }
 
-  private sortMembersByName<T extends { memberName: string }>(members: T[]): T[] {
-    return [...members].sort((left, right) => left.memberName.localeCompare(right.memberName, undefined, { sensitivity: 'base' }));
+  private sortMembersByName<T extends { memberName: string | null }>(members: T[]): T[] {
+    return [...members].sort((left, right) => {
+      if (left.memberName == null) return right.memberName == null ? 0 : 1;
+      if (right.memberName == null) return -1;
+      return left.memberName.localeCompare(right.memberName, undefined, { sensitivity: 'base' });
+    });
+  }
+
+  private participantName(memberName: string | null): string {
+    return memberName ?? this.translateService.instant('financesPage.groupsPage.unknownParticipant');
   }
 
   private buildPieChartData(slices: PieSlicePoint[]): ChartData<'pie'> {

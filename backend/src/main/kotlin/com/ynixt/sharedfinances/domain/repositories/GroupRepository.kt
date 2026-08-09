@@ -7,6 +7,8 @@ import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface GroupRepository : EntityRepository<GroupEntity> {
+    fun findAllByOwnerUserId(ownerUserId: UUID): Flux<GroupEntity>
+
     fun findAllByUserIdOrderByName(userId: UUID): Flux<GroupWithRole>
 
     fun findOneByUserIdAndId(
@@ -27,5 +29,10 @@ interface GroupRepository : EntityRepository<GroupEntity> {
     fun edit(
         id: UUID,
         newName: String,
+    ): Mono<Long>
+
+    fun updateOwnerUserId(
+        id: UUID,
+        ownerUserId: UUID,
     ): Mono<Long>
 }

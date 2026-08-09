@@ -2,14 +2,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { faPencil, faPeopleGroup, faScaleBalanced } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRightFromBracket, faPencil, faPeopleGroup, faScaleBalanced } from '@fortawesome/free-solid-svg-icons';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 import { Subject, debounceTime, filter } from 'rxjs';
 
 import dayjs from 'dayjs';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Message } from 'primeng/message';
 import { ProgressSpinner } from 'primeng/progressspinner';
 
@@ -22,6 +23,7 @@ import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sh
 import { WalletItemType } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums/wallet-item-type';
 import { WalletItemType__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums/wallet-item-type';
 import { ErrorMessageService } from '../../../../services/error-message.service';
+import { UserService } from '../../../../services/user.service';
 import {
   DashboardFeedFilters,
   DashboardFilterOption,
@@ -66,9 +68,11 @@ import { UserActionEventService } from '../../services/user-action-event.service
     GroupDebtPairsPanelComponent,
     GroupDashboardFiltersComponent,
     WalletEntryTableComponent,
+    ConfirmDialog,
   ],
   templateUrl: './overview-group-page.component.html',
   styleUrl: './overview-group-page.component.scss',
+  providers: [ConfirmationService],
 })
 @UntilDestroy()
 export class OverviewGroupPageComponent {
@@ -99,6 +103,9 @@ export class OverviewGroupPageComponent {
     private userActionEventService: UserActionEventService,
     private messageService: MessageService,
     private errorMessageService: ErrorMessageService,
+    private confirmationService: ConfirmationService,
+    private userService: UserService,
+    private translateService: TranslateService,
   ) {
     const initialDateRange =
       readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'normal') ?? createMonthDateRange(dayjs(), 'normal');
@@ -298,6 +305,16 @@ export class OverviewGroupPageComponent {
         icon: faPencil,
       });
     }
+    if (this.group != null && !this.group.isOwner) {
+      extraButtons.push({
+        click: () => this.askForConfirmationToLeave(),
+        rounded: true,
+        tooltip: 'financesPage.groupsPage.overviewPage.leave.tooltip',
+        icon: faArrowRightFromBracket,
+        severity: 'danger',
+        text: false,
+      });
+    }
     return extraButtons;
   }
 
@@ -309,6 +326,20 @@ export class OverviewGroupPageComponent {
       )
       .subscribe(e => this.groupUpdated(e.data));
 
+    this.groupsActionEventService.ownershipChanged$
+      .pipe(
+        untilDestroyed(this),
+        filter(e => e.data.groupId == groupId),
+      )
+      .subscribe(e => void this.ownershipChanged(e.data.newOwnerUserId));
+
+    this.groupsActionEventService.memberLeft$
+      .pipe(
+        untilDestroyed(this),
+        filter(e => e.data.groupId == groupId && e.data.userId === this.userService.user()?.id),
+      )
+      .subscribe(() => this.groupDeleted());
+
     this.groupsActionEventService.groupDeleted$
       .pipe(
         untilDestroyed(this),
@@ -317,9 +348,64 @@ export class OverviewGroupPageComponent {
       .subscribe(() => this.groupDeleted());
   }
 
-  private groupUpdated(newGroup: GroupWithRoleDto) {
-    this.group = newGroup;
+  private groupUpdated(newGroup: { id: string; name: string }) {
+    if (this.group != null) this.group = { ...this.group, name: newGroup.name };
     this.extraButtons = this.createExtraButtons();
+  }
+
+  private async ownershipChanged(newOwnerUserId: string) {
+    if (this.group == null || this.groupId == null) return;
+    if (newOwnerUserId === this.userService.user()?.id) {
+      this.group = await this.groupService.getGroup(this.groupId);
+    } else {
+      this.group = { ...this.group, ownerUserId: newOwnerUserId, isOwner: false };
+    }
+    this.extraButtons = this.createExtraButtons();
+  }
+
+  private askForConfirmationToLeave() {
+    if (this.group == null || this.group.isOwner) return;
+    const balance = this.currentUserOutstandingBalance();
+    const balanceWarning =
+      balance > 0
+        ? ' ' +
+          this.translateMessage('financesPage.groupsPage.overviewPage.leave.balanceWarning', {
+            amount: `${balance.toFixed(2)} ${this.dashboard?.currency ?? ''}`.trim(),
+          })
+        : '';
+    this.confirmationService.confirm({
+      header: this.translateMessage('financesPage.groupsPage.overviewPage.leave.title'),
+      message: this.translateMessage('financesPage.groupsPage.overviewPage.leave.confirmation', { name: this.group.name }) + balanceWarning,
+      acceptLabel: this.translateMessage('financesPage.groupsPage.overviewPage.leave.action'),
+      rejectLabel: this.translateMessage('general.cancel'),
+      acceptButtonProps: { severity: 'danger' },
+      accept: () => void this.leaveGroup(),
+    });
+  }
+
+  private currentUserOutstandingBalance(): number {
+    const userId = this.userService.user()?.id;
+    if (userId == null) return 0;
+    return (this.dashboard?.debtPairs ?? [])
+      .filter(pair => pair.payerId === userId || pair.receiverId === userId)
+      .reduce((total, pair) => total + Number(pair.outstandingAmount), 0);
+  }
+
+  private async leaveGroup() {
+    if (this.groupId == null) return;
+    this.submitting = true;
+    try {
+      await this.groupService.leaveGroup(this.groupId);
+      await this.router.navigate(['/app']);
+    } catch (error) {
+      this.errorMessageService.handleError(error, this.messageService);
+    } finally {
+      this.submitting = false;
+    }
+  }
+
+  private translateMessage(key: string, params?: Record<string, unknown>): string {
+    return this.translateService.instant(key, params);
   }
 
   private groupDeleted() {

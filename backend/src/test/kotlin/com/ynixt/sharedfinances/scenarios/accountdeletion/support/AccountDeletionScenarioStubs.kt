@@ -3,7 +3,6 @@ package com.ynixt.sharedfinances.scenarios.accountdeletion.support
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.entities.simulation.SimulationJobEntity
-import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.domain.services.simulation.NewSimulationJobInput
 import com.ynixt.sharedfinances.domain.services.simulation.SimulationJobService
@@ -96,7 +95,14 @@ internal class RecordingComplianceSimulationJobService : SimulationJobService {
     private fun unsupported(): Nothing = error("AccountDeletionScenario: SimulationJobService operation not stubbed")
 }
 
-internal object NoOpGroupActionEventServiceStub : GroupActionEventService {
+internal class RecordingAccountDeletionGroupActionEventService : GroupActionEventService {
+    data class DeletedGroup(
+        val id: UUID,
+        val membersId: List<UUID>,
+    )
+
+    val deletedGroups = mutableListOf<DeletedGroup>()
+
     override suspend fun sendInsertedGroup(
         userId: UUID,
         group: GroupEntity,
@@ -104,14 +110,31 @@ internal object NoOpGroupActionEventServiceStub : GroupActionEventService {
 
     override suspend fun sendUpdatedGroup(
         userId: UUID,
-        group: GroupWithRole,
+        groupId: UUID,
+        name: String,
+    ) {}
+
+    override suspend fun sendOwnershipChanged(
+        userId: UUID,
+        groupId: UUID,
+        previousOwnerUserId: UUID,
+        newOwnerUserId: UUID,
+    ) {}
+
+    override suspend fun sendMemberLeft(
+        userId: UUID,
+        groupId: UUID,
+        departedUserId: UUID,
+        membersId: List<UUID>,
     ) {}
 
     override suspend fun sendDeletedGroup(
         userId: UUID,
         id: UUID,
         membersId: List<UUID>,
-    ) {}
+    ) {
+        deletedGroups += DeletedGroup(id, membersId)
+    }
 
     override suspend fun sendBankAssociated(
         userId: UUID,

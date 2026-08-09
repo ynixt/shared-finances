@@ -2,7 +2,6 @@ package com.ynixt.sharedfinances.domain.services.actionevents
 
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
-import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import java.util.UUID
 
 interface GroupActionEventService {
@@ -13,7 +12,22 @@ interface GroupActionEventService {
 
     suspend fun sendUpdatedGroup(
         userId: UUID,
-        group: GroupWithRole,
+        groupId: UUID,
+        name: String,
+    )
+
+    suspend fun sendOwnershipChanged(
+        userId: UUID,
+        groupId: UUID,
+        previousOwnerUserId: UUID,
+        newOwnerUserId: UUID,
+    )
+
+    suspend fun sendMemberLeft(
+        userId: UUID,
+        groupId: UUID,
+        departedUserId: UUID,
+        membersId: List<UUID>,
     )
 
     suspend fun sendDeletedGroup(

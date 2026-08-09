@@ -127,6 +127,7 @@ class RecurrenceEventDatabaseClientRepository(
                         grp.created_at AS event_group_created_at,
                         grp.updated_at AS event_group_updated_at,
                         grp.name AS event_group_name,
+                        grp.owner_user_id AS event_group_owner_user_id,
                         ${UserR2DBCMapping.createSelectForUser("usr", "event_user_")},
                         ren.id AS entry_id,
                         ${RecurrenceEntryR2DBCMapping.createSelectForRecurrenceEntry("ren", "entry_")},
@@ -354,6 +355,7 @@ class RecurrenceEventDatabaseClientRepository(
         return com.ynixt.sharedfinances.domain.entities.groups
             .GroupEntity(
                 name = row.get("event_group_name", String::class.java)!!,
+                ownerUserId = row.get("event_group_owner_user_id", UUID::class.java)!!,
             ).also { group ->
                 group.id = groupId
                 group.createdAt = row.get("event_group_created_at", OffsetDateTime::class.java)

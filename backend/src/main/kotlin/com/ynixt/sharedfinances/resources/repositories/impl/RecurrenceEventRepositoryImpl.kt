@@ -56,6 +56,11 @@ class RecurrenceEventRepositoryImpl(
             nextExecution = nextExecution,
         )
 
+    override fun endAllByGroupIdAndWalletItemIds(
+        groupId: UUID,
+        walletItemIds: Collection<UUID>,
+    ): Mono<Long> = springDataRepository.endAllByGroupIdAndWalletItemIds(groupId, walletItemIds.toTypedArray())
+
     override fun findAllEntries(
         scope: WalletTransactionQueryScope,
         minimumEndExecution: LocalDate?,

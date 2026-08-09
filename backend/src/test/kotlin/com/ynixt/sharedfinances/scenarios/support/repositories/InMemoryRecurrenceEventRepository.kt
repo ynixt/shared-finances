@@ -101,6 +101,30 @@ internal class InMemoryRecurrenceEventRepository(
         return Mono.just(1)
     }
 
+    override fun endAllByGroupIdAndWalletItemIds(
+        groupId: UUID,
+        walletItemIds: Collection<UUID>,
+    ): Mono<Long> {
+        var changed = 0L
+        data.replaceAll { _, current ->
+            val touchesDepartingItem =
+                current.groupId == groupId &&
+                    hydrateEntries(current).entries.orEmpty().any { walletItemIds.contains(it.walletItemId) }
+            if (touchesDepartingItem) {
+                changed += 1
+                copyRecurrence(
+                    current = current,
+                    qtyLimit = current.qtyExecuted,
+                    nextExecution = null,
+                    endExecution = current.lastExecution,
+                )
+            } else {
+                current
+            }
+        }
+        return Mono.just(changed)
+    }
+
     override fun findAllEntries(
         scope: WalletTransactionQueryScope,
         minimumEndExecution: LocalDate?,
@@ -205,6 +229,8 @@ internal class InMemoryRecurrenceEventRepository(
         qtyExecuted: Int = current.qtyExecuted,
         lastExecution: LocalDate? = current.lastExecution,
         nextExecution: LocalDate? = current.nextExecution,
+        qtyLimit: Int? = current.qtyLimit,
+        endExecution: LocalDate? = current.endExecution,
     ): RecurrenceEventEntity =
         RecurrenceEventEntity(
             name = current.name,
@@ -217,10 +243,10 @@ internal class InMemoryRecurrenceEventRepository(
             periodicity = current.periodicity,
             paymentType = current.paymentType,
             qtyExecuted = qtyExecuted,
-            qtyLimit = current.qtyLimit,
+            qtyLimit = qtyLimit,
             lastExecution = lastExecution,
             nextExecution = nextExecution,
-            endExecution = current.endExecution,
+            endExecution = endExecution,
             seriesId = current.seriesId,
             seriesOffset = current.seriesOffset,
             importBatchId = current.importBatchId,

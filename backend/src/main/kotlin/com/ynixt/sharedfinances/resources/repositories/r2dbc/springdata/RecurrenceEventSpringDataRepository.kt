@@ -85,4 +85,25 @@ interface RecurrenceEventSpringDataRepository :
         oldNextExecution: LocalDate,
         nextExecution: LocalDate?,
     ): Mono<Int>
+
+    @Modifying
+    @Query(
+        """
+        UPDATE recurrence_event re
+        SET next_execution = NULL,
+            end_execution = last_execution,
+            qty_limit = qty_executed,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE re.group_id = :groupId
+          AND EXISTS (
+              SELECT 1 FROM recurrence_entry ren
+              WHERE ren.wallet_event_id = re.id
+                AND ren.wallet_item_id = ANY(:walletItemIds)
+          )
+        """,
+    )
+    fun endAllByGroupIdAndWalletItemIds(
+        groupId: UUID,
+        walletItemIds: Array<UUID>,
+    ): Mono<Long>
 }

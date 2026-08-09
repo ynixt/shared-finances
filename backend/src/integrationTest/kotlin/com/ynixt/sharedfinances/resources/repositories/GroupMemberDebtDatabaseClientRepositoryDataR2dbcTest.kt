@@ -34,7 +34,7 @@ class GroupMemberDebtDatabaseClientRepositoryDataR2dbcTest : IntegrationTestCont
             seedUser(payerId)
             seedUser(receiverId)
             seedUser(actorId)
-            seedGroup(groupId)
+            seedGroup(groupId, actorId)
 
             exec(
                 """
@@ -78,11 +78,14 @@ class GroupMemberDebtDatabaseClientRepositoryDataR2dbcTest : IntegrationTestCont
         )
     }
 
-    private suspend fun seedGroup(groupId: UUID) {
+    private suspend fun seedGroup(
+        groupId: UUID,
+        ownerUserId: UUID,
+    ) {
         exec(
             """
-            INSERT INTO "group"(id, name)
-            VALUES ('$groupId', 'Debt repository test')
+            INSERT INTO "group"(id, name, owner_user_id)
+            VALUES ('$groupId', 'Debt repository test', '$ownerUserId')
             """.trimIndent(),
         )
     }

@@ -16,6 +16,7 @@ export type FinancesTitleBarExtraButton = {
   tooltipPosition?: string;
   loading?: boolean;
   icon?: IconDefinition;
+  severity?: 'secondary' | 'success' | 'info' | 'warn' | 'help' | 'danger' | 'contrast';
 };
 
 @Component({

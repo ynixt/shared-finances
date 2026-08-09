@@ -160,4 +160,22 @@ class GroupWalletItemDatabaseClientRepository(
                 }
             }.all()
     }
+
+    fun findAllAssociatedOwnedByUser(
+        groupId: UUID,
+        userId: UUID,
+    ): Flux<WalletItemEntity> =
+        dbClient
+            .sql(
+                """
+                SELECT wi.*
+                FROM group_wallet_item gwi
+                JOIN wallet_item wi ON wi.id = gwi.wallet_item_id
+                WHERE gwi.group_id = :groupId AND wi.user_id = :userId
+                ORDER BY wi.id
+                """.trimIndent(),
+            ).bind("groupId", groupId)
+            .bind("userId", userId)
+            .map { row, _ -> WalletItemR2DBCMapping.walletItemFromRow(row, "")!! }
+            .all()
 }

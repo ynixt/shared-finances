@@ -97,9 +97,16 @@ export class FinancesPageComponent {
       const index = this.groups?.findIndex(g => g.id == group.id);
 
       if (this.groups != null && index != null && index !== -1) {
-        this.groups[index] = group;
+        this.groups[index] = { ...this.groups[index], name: group.name };
       }
 
+      this.convertGroupsIntoMenu();
+    });
+
+    groupsActionEventService.memberLeft$.pipe(untilDestroyed(this)).subscribe(event => {
+      if (event.data.userId !== this.userService.user()?.id) return;
+      const index = this.groups?.findIndex(g => g.id === event.data.groupId);
+      if (index != null && index !== -1) this.groups?.splice(index, 1);
       this.convertGroupsIntoMenu();
     });
 

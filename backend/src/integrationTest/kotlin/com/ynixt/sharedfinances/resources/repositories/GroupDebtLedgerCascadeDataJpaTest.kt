@@ -93,8 +93,8 @@ class GroupDebtLedgerCascadeDataJpaTest : IntegrationTestContainers() {
 
         connection.exec(
             """
-            INSERT INTO "group"(id, name)
-            VALUES ('$groupId', 'Debt cascade test')
+            INSERT INTO "group"(id, name, owner_user_id)
+            VALUES ('$groupId', 'Debt cascade test', '$actorId')
             """.trimIndent(),
         )
 

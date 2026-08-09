@@ -30,21 +30,21 @@ data class GroupOverviewDashboardSeries(
 
 data class GroupOverviewDashboardMemberSeries(
     val memberId: UUID,
-    val memberName: String,
+    val memberName: String?,
     val points: List<OverviewDashboardChartPoint>,
 )
 
 data class GroupOverviewDashboardMemberPie(
     val memberId: UUID,
-    val memberName: String,
+    val memberName: String?,
     val slices: List<OverviewDashboardPieSlice>,
 )
 
 data class GroupOverviewDebtPair(
     val payerId: UUID,
-    val payerName: String,
+    val payerName: String?,
     val receiverId: UUID,
-    val receiverName: String,
+    val receiverName: String?,
     val currency: String,
     val outstandingAmount: BigDecimal,
     val details: List<OverviewDashboardDetail> = emptyList(),

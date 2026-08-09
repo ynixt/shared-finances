@@ -12,6 +12,7 @@ import {
   GroupUserDto,
   GroupWithRoleDto,
   NewGroupDto,
+  TransferGroupOwnershipDto,
   UpdateGroupPlanningSimulatorOptInDto,
 } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { CategoryConceptDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
@@ -82,6 +83,23 @@ export class GroupService {
     }
 
     throw new UserMissingError();
+  }
+
+  async transferOwnership(groupId: string, newOwnerId: string): Promise<GroupWithRoleDto> {
+    const user = await this.userService.getUser();
+
+    if (user != null) {
+      const request: TransferGroupOwnershipDto = { newOwnerId };
+      return lastValueFrom(this.http.put<GroupWithRoleDto>(`/api/groups/${groupId}/owner`, request).pipe(take(1)));
+    }
+
+    throw new UserMissingError();
+  }
+
+  async leaveGroup(groupId: string): Promise<void> {
+    const user = await this.userService.getUser();
+    if (user == null) throw new UserMissingError();
+    await lastValueFrom(this.http.delete<void>(`/api/groups/${groupId}/members/me`).pipe(take(1)));
   }
 
   async newGroup(newGroupDto: NewGroupDto, useDefaultCategories = true): Promise<GroupDto> {

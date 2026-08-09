@@ -41,6 +41,17 @@ interface GroupService {
         id: UUID,
     ): Boolean
 
+    suspend fun transferOwnership(
+        userId: UUID,
+        groupId: UUID,
+        newOwnerId: UUID,
+    ): GroupWithRole?
+
+    suspend fun leaveGroup(
+        userId: UUID,
+        groupId: UUID,
+    ): Boolean
+
     suspend fun newGroup(
         userId: UUID,
         newGroupRequest: NewGroupRequest,

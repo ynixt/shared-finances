@@ -94,7 +94,10 @@ export class GroupDebtAdjustmentPageComponent {
   }
 
   memberName(userId: string): string {
-    return this.memberOptions().find(option => option.userId === userId)?.label ?? userId;
+    return (
+      this.memberOptions().find(option => option.userId === userId)?.label ??
+      this.translateService.instant('financesPage.groupsPage.unknownParticipant')
+    );
   }
 
   modeIsEdit(): boolean {

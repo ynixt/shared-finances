@@ -52,7 +52,8 @@ internal class GroupOverviewBuilderService(
 
         val visibleItems = dataService.loadVisibleItems(scope)
         val groupMembers = dataService.loadGroupMembers(actorUserId = userId, groupId = groupId)
-        val memberNameById = buildMemberNameById(groupMembers).toMutableMap()
+        val currentMemberNameById = buildMemberNameById(groupMembers)
+        val memberNameById = currentMemberNameById.toMutableMap()
         val allMemberIds = mutableSetOf<UUID>()
         allMemberIds.addAll(groupMembers.map { it.userId })
         allMemberIds.addAll(visibleItems.items.map { it.userId })
@@ -169,7 +170,10 @@ internal class GroupOverviewBuilderService(
                 rawBalanceByBankId = rawBalanceByBankId,
             )
 
-        val sortedMembers = allMemberIds.map { it to resolveMemberName(it, memberNameById) }.sortedBy { (_, name) -> name.lowercase() }
+        val sortedMembers =
+            allMemberIds
+                .map { it to resolveParticipantName(it, memberNameById) }
+                .sortedWith(compareBy(nullsLast()) { (_, name) -> name?.lowercase() })
         val debtPairs =
             buildDebtPairs(
                 actorUserId = userId,
@@ -177,7 +181,7 @@ internal class GroupOverviewBuilderService(
                 selectedMonth = selectedMonth,
                 currentMonth = currentMonth,
                 targetCurrency = targetCurrency,
-                memberNameById = memberNameById,
+                memberNameById = currentMemberNameById,
                 projectedEvents = projectedEvents,
             )
 
@@ -372,7 +376,7 @@ internal class GroupOverviewBuilderService(
                                         breakdownType = BreakdownType.EXPENSE_GROUP,
                                         component = component,
                                         sliceId = share.memberId,
-                                        label = resolveMemberName(share.memberId, memberNameById),
+                                        label = resolveParticipantName(share.memberId, memberNameById).orEmpty(),
                                         value = share.value,
                                         currency = walletItem.currency.uppercase(),
                                         referenceDate = selectedMonthEnd,
@@ -402,7 +406,7 @@ internal class GroupOverviewBuilderService(
                     OverviewDashboardDetail(
                         sourceId = null,
                         sourceType = OverviewDashboardDetailSourceType.GROUP_DEBT_PAIR,
-                        label = "${pair.payerName} -> ${pair.receiverName}",
+                        label = listOfNotNull(pair.payerName, pair.receiverName).joinToString(" -> "),
                         value = pair.outstandingAmount,
                         children = pair.details,
                     )
@@ -445,7 +449,7 @@ internal class GroupOverviewBuilderService(
 
     private fun buildCharts(
         chartMonths: List<YearMonth>,
-        sortedMembers: List<Pair<UUID, String>>,
+        sortedMembers: List<Pair<UUID, String?>>,
         convertedValueByKey: Map<String, BigDecimal>,
         rawChartContributions: List<RawChartContribution>,
         rawChartContributionsByMember: Map<UUID, List<RawChartContribution>>,
@@ -746,9 +750,9 @@ internal class GroupOverviewBuilderService(
             .mapIndexed { index, pair ->
                 GroupOverviewDebtPair(
                     payerId = pair.payerId,
-                    payerName = resolveMemberName(pair.payerId, memberNameById),
+                    payerName = resolveParticipantName(pair.payerId, memberNameById),
                     receiverId = pair.receiverId,
-                    receiverName = resolveMemberName(pair.receiverId, memberNameById),
+                    receiverName = resolveParticipantName(pair.receiverId, memberNameById),
                     currency = targetCurrency,
                     outstandingAmount = converted.getOrDefault(pairAmountKeyByIndex.getValue(index), BigDecimal.ZERO).asMoney(),
                     details =
@@ -771,8 +775,8 @@ internal class GroupOverviewBuilderService(
             }.filter { pair -> pair.outstandingAmount.compareTo(BigDecimal.ZERO) > 0 }
             .sortedWith(
                 compareByDescending<GroupOverviewDebtPair> { it.outstandingAmount }
-                    .thenBy { it.payerName.lowercase() }
-                    .thenBy { it.receiverName.lowercase() },
+                    .thenBy { it.payerName.orEmpty().lowercase() }
+                    .thenBy { it.receiverName.orEmpty().lowercase() },
             )
     }
 
@@ -1040,13 +1044,13 @@ internal class GroupOverviewBuilderService(
         if (fullName.isNotBlank()) {
             return fullName
         }
-        return "Member ${member.userId.toString().take(8)}"
+        return fullName
     }
 
-    private fun resolveMemberName(
+    private fun resolveParticipantName(
         memberId: UUID,
         memberNameById: Map<UUID, String>,
-    ): String = memberNameById[memberId] ?: "Member ${memberId.toString().take(8)}"
+    ): String? = memberNameById[memberId]
 
     private fun canonicalDebtKeyFor(
         userA: UUID,

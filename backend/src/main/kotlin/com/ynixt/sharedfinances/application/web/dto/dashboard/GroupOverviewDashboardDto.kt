@@ -29,21 +29,21 @@ data class GroupOverviewDashboardSeriesDto(
 
 data class GroupOverviewDashboardMemberSeriesDto(
     val memberId: UUID,
-    val memberName: String,
+    val memberName: String?,
     val points: List<OverviewDashboardChartPointDto>,
 )
 
 data class GroupOverviewDashboardMemberPieDto(
     val memberId: UUID,
-    val memberName: String,
+    val memberName: String?,
     val slices: List<OverviewDashboardPieSliceDto>,
 )
 
 data class GroupOverviewDebtPairDto(
     val payerId: UUID,
-    val payerName: String,
+    val payerName: String?,
     val receiverId: UUID,
-    val receiverName: String,
+    val receiverName: String?,
     val currency: String,
     val outstandingAmount: BigDecimal,
     val details: List<OverviewDashboardDetailDto>,

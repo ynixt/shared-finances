@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 
 import { Observable, filter, map } from 'rxjs';
 
-import { GroupWithRoleDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
+import {
+  GroupMemberLeftEventDto,
+  GroupOwnershipChangedEventDto,
+  GroupUpdatedEventDto,
+} from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { ActionEventType } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { UserActionEventService } from './user-action-event.service';
 
@@ -16,8 +20,10 @@ export interface GroupActionEvent<T> {
 
 @Injectable({ providedIn: 'root' })
 export class GroupsActionEventService {
-  readonly groupUpdated$: Observable<GroupActionEvent<GroupWithRoleDto>>;
+  readonly groupUpdated$: Observable<GroupActionEvent<GroupUpdatedEventDto>>;
   readonly groupDeleted$: Observable<GroupActionEvent<string>>;
+  readonly ownershipChanged$: Observable<GroupActionEvent<GroupOwnershipChangedEventDto>>;
+  readonly memberLeft$: Observable<GroupActionEvent<GroupMemberLeftEventDto>>;
 
   readonly bankAccountAssociated$: Observable<GroupActionEvent<string>>;
   readonly bankAccountUnassociated$: Observable<GroupActionEvent<string>>;
@@ -30,7 +36,17 @@ export class GroupsActionEventService {
 
     this.groupUpdated$ = baseGroup$.pipe(
       filter(e => e.type === 'UPDATE'),
-      map(e => e as GroupActionEvent<GroupWithRoleDto>),
+      map(e => e as GroupActionEvent<GroupUpdatedEventDto>),
+    );
+
+    this.ownershipChanged$ = this.userActionEventService.groupEvents$.pipe(
+      filter(g => g.event === 'GROUP_OWNERSHIP' && g.type === 'UPDATE'),
+      map(e => e as GroupActionEvent<GroupOwnershipChangedEventDto>),
+    );
+
+    this.memberLeft$ = this.userActionEventService.groupEvents$.pipe(
+      filter(g => g.event === 'GROUP_MEMBERSHIP' && g.type === 'DELETE'),
+      map(e => e as GroupActionEvent<GroupMemberLeftEventDto>),
     );
 
     this.groupDeleted$ = baseGroup$.pipe(

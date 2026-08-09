@@ -8,7 +8,7 @@ import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
 import com.ynixt.sharedfinances.resources.services.AccountDeletionServiceImpl
 import com.ynixt.sharedfinances.resources.services.AuthServiceImpl
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
-import com.ynixt.sharedfinances.scenarios.accountdeletion.support.NoOpGroupActionEventServiceStub
+import com.ynixt.sharedfinances.scenarios.accountdeletion.support.RecordingAccountDeletionGroupActionEventService
 import com.ynixt.sharedfinances.scenarios.support.NoOpDatabaseHelperService
 import com.ynixt.sharedfinances.scenarios.support.NoOpUserActionEventService
 import jakarta.validation.ConstraintViolation
@@ -45,7 +45,7 @@ internal class AuthScenarioRuntime(
             userRepository = infrastructure.userRepository,
             groupRepository = infrastructure.groupStore,
             groupUsersRepository = infrastructure.groupStore,
-            groupActionEventService = NoOpGroupActionEventServiceStub,
+            groupActionEventService = RecordingAccountDeletionGroupActionEventService(),
             groupWalletItemRepository = infrastructure.groupWalletItemRepository,
             walletEventRepository = infrastructure.walletEventRepository,
             recurrenceEventRepository = infrastructure.recurrenceEventRepository,

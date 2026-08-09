@@ -42,13 +42,14 @@ class AccountDeletionScenarioDsl {
         )
     internal val simulationJobService = RecordingComplianceSimulationJobService()
     internal val avatarService = RecordingAvatarService()
+    internal val groupActionEventService = RecordingAccountDeletionGroupActionEventService()
 
     private val accountDeletionService =
         AccountDeletionServiceImpl(
             userRepository = userRepository,
             groupRepository = groupStore,
             groupUsersRepository = groupStore,
-            groupActionEventService = NoOpGroupActionEventServiceStub,
+            groupActionEventService = groupActionEventService,
             groupWalletItemRepository = NoOpGroupWalletItemRepository(),
             walletEventRepository = walletEventRepository,
             recurrenceEventRepository = recurrenceEventRepository,
@@ -113,8 +114,9 @@ class AccountDeletionScenarioDsl {
         suspend fun group(
             name: String,
             vararg members: Pair<UUID, UserGroupRole>,
+            ownerUserId: UUID = members.first().first,
         ): UUID {
-            val saved = dsl.groupStore.save(GroupEntity(name)).awaitSingle()
+            val saved = dsl.groupStore.save(GroupEntity(name, ownerUserId)).awaitSingle()
             val gid = saved.id!!
             for ((uid, role) in members) {
                 dsl.groupStore.save(GroupUserEntity(gid, uid, role)).awaitSingle()
@@ -243,6 +245,14 @@ class AccountDeletionScenarioDsl {
 
         suspend fun groupShouldExist(groupId: UUID) {
             Assertions.assertTrue(dsl.groupStore.existsById(groupId).awaitSingle())
+        }
+
+        fun deletedGroupNotificationShouldInclude(
+            groupId: UUID,
+            vararg memberIds: UUID,
+        ) {
+            val event = dsl.groupActionEventService.deletedGroups.single { it.id == groupId }
+            Assertions.assertEquals(memberIds.toSet(), event.membersId.toSet())
         }
 
         suspend fun memberShouldHaveRole(

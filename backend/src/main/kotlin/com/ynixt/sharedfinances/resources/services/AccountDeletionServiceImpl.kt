@@ -1,6 +1,5 @@
 package com.ynixt.sharedfinances.resources.services
 
-import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.repositories.GroupRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupUsersRepository
 import com.ynixt.sharedfinances.domain.repositories.GroupWalletItemRepository
@@ -47,45 +46,30 @@ class AccountDeletionServiceImpl(
 
         simulationJobService.cancelAndRemoveAllJobsLinkedToUserForCompliance(userId)
 
-        for (gw in memberships) {
-            val groupId = gw.id ?: continue
-            if (!groupRepository.existsById(groupId).awaitSingle()) {
-                continue
+        val ownedGroups = groupRepository.findAllByOwnerUserId(userId).collectList().awaitSingle()
+        val ownedGroupIds = ownedGroups.mapNotNull { it.id }.toSet()
+
+        // Owned groups must be deleted before the users row because group.owner_user_id uses ON DELETE RESTRICT.
+        for (group in ownedGroups) {
+            val groupId = group.id ?: continue
+            val memberUserIds =
+                groupUsersRepository
+                    .findAllMembers(groupId)
+                    .map { it.userId }
+                    .collectList()
+                    .awaitSingle()
+            deleteGroupInternal(
+                groupId = groupId,
+                actingUserId = userId,
+                memberUserIds = memberUserIds,
+            )
+        }
+
+        for (membership in memberships) {
+            val groupId = membership.id ?: continue
+            if (groupId !in ownedGroupIds) {
+                groupUsersRepository.deleteByGroupIdAndUserId(groupId, userId).awaitSingle()
             }
-
-            val members = groupUsersRepository.findAllMembers(groupId).collectList().awaitSingle()
-            val me = members.find { it.userId == userId } ?: continue
-            val memberUserIds = members.map { it.userId }
-
-            if (members.size == 1) {
-                deleteGroupInternal(
-                    groupId = groupId,
-                    actingUserId = userId,
-                    memberUserIds = memberUserIds,
-                )
-                continue
-            }
-
-            if (me.role == UserGroupRole.ADMIN) {
-                val hasOtherAdmin = members.any { it.userId != userId && it.role == UserGroupRole.ADMIN }
-                if (!hasOtherAdmin) {
-                    val others = members.filter { it.userId != userId }.sortedWith(compareBy({ it.id }))
-                    val promotee =
-                        others.firstOrNull { it.role == UserGroupRole.EDITOR }
-                            ?: others.firstOrNull { it.role == UserGroupRole.VIEWER }
-                    if (promotee == null) {
-                        deleteGroupInternal(
-                            groupId = groupId,
-                            actingUserId = userId,
-                            memberUserIds = memberUserIds,
-                        )
-                        continue
-                    }
-                    groupUsersRepository.updateRole(promotee.userId, groupId, UserGroupRole.ADMIN).awaitSingle()
-                }
-            }
-
-            groupUsersRepository.deleteByGroupIdAndUserId(groupId, userId).awaitSingle()
         }
 
         runCatching { avatarService.deletePhoto(userId) }

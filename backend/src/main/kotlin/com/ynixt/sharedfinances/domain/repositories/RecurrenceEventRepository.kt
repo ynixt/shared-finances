@@ -34,6 +34,11 @@ interface RecurrenceEventRepository : EntityRepository<RecurrenceEventEntity> {
         nextExecution: LocalDate?,
     ): Mono<Int>
 
+    fun endAllByGroupIdAndWalletItemIds(
+        groupId: UUID,
+        walletItemIds: Collection<UUID>,
+    ): Mono<Long>
+
     fun findAllEntries(
         scope: WalletTransactionQueryScope,
         minimumEndExecution: LocalDate?,

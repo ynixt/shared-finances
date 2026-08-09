@@ -14,10 +14,12 @@ import { GroupInviteDto, GroupWithRoleDto } from '../../../../models/generated/c
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
+import { UserService } from '../../../../services/user.service';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupUserTableComponent } from '../../components/group-user-table/group-user-table.component';
 import { GroupInvitationService } from '../../services/group-invitation.service';
 import { GroupService } from '../../services/group.service';
+import { GroupsActionEventService } from '../../services/groups-action-event.service';
 
 @Component({
   selector: 'app-manage-group-team-page',
@@ -59,6 +61,8 @@ export class ManageGroupTeamPageComponent {
     private groupInvitationService: GroupInvitationService,
     private messageService: MessageService,
     private errorMessageService: ErrorMessageService,
+    private groupsActionEventService: GroupsActionEventService,
+    private userService: UserService,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -68,6 +72,25 @@ export class ManageGroupTeamPageComponent {
       } else {
         this.goToNotFound();
       }
+    });
+
+    this.groupsActionEventService.groupUpdated$.pipe(untilDestroyed(this)).subscribe(event => {
+      if (event.groupId === this.groupId) {
+        this.group = this.group == null ? null : { ...this.group, name: event.data.name };
+      }
+    });
+
+    this.groupsActionEventService.ownershipChanged$.pipe(untilDestroyed(this)).subscribe(event => {
+      if (event.data.groupId !== this.groupId || this.group == null) return;
+      if (event.data.newOwnerUserId === this.userService.user()?.id) {
+        void this.getGroup(event.data.groupId);
+        return;
+      }
+      this.group = {
+        ...this.group,
+        ownerUserId: event.data.newOwnerUserId,
+        isOwner: false,
+      };
     });
   }
 

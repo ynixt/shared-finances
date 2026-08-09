@@ -7,7 +7,7 @@ export interface GroupOverviewDebtPairDto {
   details: Array<OverviewDashboardDetailDto>;
   outstandingAmount: number;
   payerId: string;
-  payerName: string;
+  payerName?: string;
   receiverId: string;
-  receiverName: string;
+  receiverName?: string;
 }

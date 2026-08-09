@@ -1,11 +1,13 @@
 package com.ynixt.sharedfinances.resources.services.events.dispatchers
 
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupMemberLeftEventDto
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupOwnershipChangedEventDto
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupUpdatedEventDto
 import com.ynixt.sharedfinances.application.web.mapper.GroupDtoMapper
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupWalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
-import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.actionevents.GroupActionEventService
 import com.ynixt.sharedfinances.resources.services.events.NewEventGroupInfo
@@ -31,16 +33,54 @@ class GroupActionEventServiceImpl(
 
     override suspend fun sendUpdatedGroup(
         userId: UUID,
-        group: GroupWithRole,
+        groupId: UUID,
+        name: String,
     ) = actionEventService
         .newEvent(
-            data = mapper.toDto(group),
+            data = GroupUpdatedEventDto(id = groupId, name = name),
             userId = userId,
             type = ActionEventType.UPDATE,
             category = ActionEventCategory.GROUP,
             groupInfo =
                 NewEventGroupInfo(
-                    groupId = group.id!!,
+                    groupId = groupId,
+                ),
+        )
+
+    override suspend fun sendOwnershipChanged(
+        userId: UUID,
+        groupId: UUID,
+        previousOwnerUserId: UUID,
+        newOwnerUserId: UUID,
+    ) = actionEventService
+        .newEvent(
+            data =
+                GroupOwnershipChangedEventDto(
+                    groupId = groupId,
+                    previousOwnerUserId = previousOwnerUserId,
+                    newOwnerUserId = newOwnerUserId,
+                ),
+            userId = userId,
+            type = ActionEventType.UPDATE,
+            category = ActionEventCategory.GROUP_OWNERSHIP,
+            groupInfo = NewEventGroupInfo(groupId = groupId),
+        )
+
+    override suspend fun sendMemberLeft(
+        userId: UUID,
+        groupId: UUID,
+        departedUserId: UUID,
+        membersId: List<UUID>,
+    ) = actionEventService
+        .newEvent(
+            data = GroupMemberLeftEventDto(groupId = groupId, userId = departedUserId),
+            userId = userId,
+            type = ActionEventType.DELETE,
+            category = ActionEventCategory.GROUP_MEMBERSHIP,
+            groupInfo =
+                NewEventGroupInfo(
+                    groupId = groupId,
+                    groupMemberIdGetter = { membersId.asFlow() },
                 ),
         )
 

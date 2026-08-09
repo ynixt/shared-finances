@@ -3,6 +3,8 @@ package com.ynixt.sharedfinances.domain.enums
 enum class ActionEventCategory {
     BANK_ACCOUNT,
     GROUP,
+    GROUP_OWNERSHIP,
+    GROUP_MEMBERSHIP,
     CREDIT_CARD,
     BANK_ACCOUNT_ASSOCIATE,
     CREDIT_CARD_ASSOCIATE,

@@ -48,6 +48,11 @@ class GroupWalletItemRepositoryImpl(
         type: WalletItemType,
     ): Flux<WalletItemEntity> = dcRepository.findAllAssociatedToGroup(groupId, type)
 
+    override fun findAllAssociatedOwnedByUser(
+        groupId: UUID,
+        userId: UUID,
+    ): Flux<WalletItemEntity> = dcRepository.findAllAssociatedOwnedByUser(groupId, userId)
+
     override fun countByGroupIdAndWalletItemId(
         groupId: UUID,
         walletItemId: UUID,

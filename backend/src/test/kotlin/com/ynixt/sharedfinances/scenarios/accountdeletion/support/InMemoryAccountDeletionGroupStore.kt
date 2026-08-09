@@ -29,6 +29,9 @@ internal class InMemoryAccountDeletionGroupStore :
         var allowPlanningSimulator: Boolean,
     )
 
+    override fun findAllByOwnerUserId(ownerUserId: UUID): Flux<GroupEntity> =
+        Flux.fromIterable(groups.values.filter { it.ownerUserId == ownerUserId })
+
     override fun findAllByUserIdOrderByName(userId: UUID): Flux<GroupWithRole> {
         val result =
             memberships
@@ -40,6 +43,8 @@ internal class InMemoryAccountDeletionGroupStore :
                         createdAt = g.createdAt,
                         updatedAt = g.updatedAt,
                         name = g.name,
+                        ownerUserId = g.ownerUserId,
+                        isOwner = g.ownerUserId == userId,
                         role = row.role,
                     ).also { it.permissions = GroupPermissions.entries.toSet() }
                 }.sortedBy { it.name }
@@ -60,6 +65,8 @@ internal class InMemoryAccountDeletionGroupStore :
                         createdAt = g.createdAt,
                         updatedAt = g.updatedAt,
                         name = g.name,
+                        ownerUserId = g.ownerUserId,
+                        isOwner = g.ownerUserId == userId,
                         role = row.role,
                     ).also { it.permissions = GroupPermissions.entries.toSet() }
                 },
@@ -88,7 +95,7 @@ internal class InMemoryAccountDeletionGroupStore :
         Mono.just(
             groups[id]?.let {
                 val updated =
-                    GroupEntity(name = newName).also { copy ->
+                    GroupEntity(name = newName, ownerUserId = it.ownerUserId).also { copy ->
                         copy.id = it.id
                         copy.createdAt = it.createdAt
                         copy.updatedAt = nowOffset()
@@ -97,6 +104,20 @@ internal class InMemoryAccountDeletionGroupStore :
                 1L
             } ?: 0L,
         )
+
+    override fun updateOwnerUserId(
+        id: UUID,
+        ownerUserId: UUID,
+    ): Mono<Long> {
+        val current = groups[id] ?: return Mono.just(0L)
+        groups[id] =
+            GroupEntity(name = current.name, ownerUserId = ownerUserId).also { updated ->
+                updated.id = current.id
+                updated.createdAt = current.createdAt
+                updated.updatedAt = nowOffset()
+            }
+        return Mono.just(1L)
+    }
 
     override fun findById(id: UUID): Mono<GroupEntity> = Mono.justOrEmpty(groups[id])
 

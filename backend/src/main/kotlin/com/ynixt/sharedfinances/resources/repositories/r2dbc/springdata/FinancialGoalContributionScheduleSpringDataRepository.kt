@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata
 
 import com.ynixt.sharedfinances.domain.entities.goals.FinancialGoalContributionScheduleEntity
 import org.springframework.data.domain.Pageable
+import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
 import reactor.core.publisher.Flux
@@ -31,4 +32,25 @@ interface FinancialGoalContributionScheduleSpringDataRepository : R2dbcRepositor
         """,
     )
     fun findAllByNextExecutionLessThanEqual(date: LocalDate): Flux<FinancialGoalContributionScheduleEntity>
+
+    @Modifying
+    @Query(
+        """
+        UPDATE financial_goal_contribution_schedule schedule
+        SET next_execution = NULL,
+            end_execution = last_execution,
+            qty_limit = qty_executed,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE schedule.wallet_item_id = ANY(:walletItemIds)
+          AND EXISTS (
+              SELECT 1 FROM financial_goal goal
+              WHERE goal.id = schedule.financial_goal_id
+                AND goal.group_id = :groupId
+          )
+        """,
+    )
+    fun endAllByGroupIdAndWalletItemIds(
+        groupId: UUID,
+        walletItemIds: Array<UUID>,
+    ): Mono<Long>
 }

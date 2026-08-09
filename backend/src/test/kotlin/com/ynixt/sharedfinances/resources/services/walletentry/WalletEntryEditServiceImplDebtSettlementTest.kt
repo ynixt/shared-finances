@@ -298,6 +298,8 @@ class WalletEntryEditServiceImplDebtSettlementTest {
                     createdAt = null,
                     updatedAt = null,
                     name = "Group",
+                    ownerUserId = actorUserId,
+                    isOwner = true,
                     role = UserGroupRole.ADMIN,
                     itemsAssociated = listOf(originWallet, targetWallet),
                 ).also {

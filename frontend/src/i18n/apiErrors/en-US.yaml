@@ -46,6 +46,12 @@ apiErrors:
   simulationJobForbidden: You are not allowed to access this simulation job.
   duplicatedCategoryConcept: Already there exists a category with this concept.
   unauthorized: You do not have permission to perform this action.
+  groupOwnership:
+    ownerCannotLeave: The group owner must transfer ownership or delete the group before leaving.
+    ownerRequired: Only the group owner can perform this action.
+    selfTransfer: Choose another member as the new owner.
+    targetNotMember: The new owner must already be a member of this group.
+    ownerMustBeAdmin: The group owner must keep the administrator role. Transfer ownership first.
   imports:
     lineLimitExceeded: An import cannot contain more than {{maxLines}} lines.
     invalidRequest: The import request is invalid.
