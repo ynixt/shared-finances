@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -50,6 +50,8 @@ import { passwordValidator } from './password-validator';
   providers: [MessageService],
 })
 export class RegistrationPageComponent implements OnInit {
+  @ViewChild('turnstile') private turnstileWidget?: TurnstileWidgetComponent;
+
   form!: FormGroup;
   submitting = false;
   turnstileToken: string | null = null;
@@ -124,10 +126,16 @@ export class RegistrationPageComponent implements OnInit {
     } catch (error) {
       this.submitting = false;
 
+      this.resetTurnstile();
       this.errorMessageService.handleError(error, this.messageService);
 
       throw error;
     }
+  }
+
+  private resetTurnstile(): void {
+    this.turnstileToken = null;
+    this.turnstileWidget?.reset();
   }
 
   private async getFlow() {
