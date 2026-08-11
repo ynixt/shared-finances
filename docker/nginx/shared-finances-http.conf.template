@@ -11,12 +11,12 @@ server {
         return 301 /api/;
     }
 
-    location /api/ {
+    # ^~ so the static regex locations below never steal an API path
+    # (file downloads end in .png, .pdf, ...).
+    location ^~ /api/ {
         proxy_pass http://127.0.0.1:${SF_APP_API_PORT}/;
         include /etc/nginx/snippets/shared-finances-proxy.conf;
     }
 
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+    include /etc/nginx/snippets/shared-finances-static.conf;
 }

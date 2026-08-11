@@ -27,6 +27,7 @@ ENV SF_APP_PORT=80
 
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/shared-finances-frontend-only.conf /etc/nginx/templates/default.conf.template
+COPY docker/nginx/shared-finances-static.conf       /etc/nginx/snippets/shared-finances-static.conf
 
 COPY --from=frontend-builder /workspace/frontend/dist/shared-finances/browser/ /usr/share/nginx/html/
 
@@ -71,6 +72,7 @@ RUN mkdir -p /opt/shared-finances \
 # Nginx configurations
 COPY docker/nginx/nginx.conf                              /etc/nginx/nginx.conf
 COPY docker/nginx/shared-finances-proxy.conf               /etc/nginx/snippets/shared-finances-proxy.conf
+COPY docker/nginx/shared-finances-static.conf              /etc/nginx/snippets/shared-finances-static.conf
 COPY docker/nginx/shared-finances-http.conf.template       /etc/nginx/templates/shared-finances-http.conf.template
 
 # Frontend (build Angular)
