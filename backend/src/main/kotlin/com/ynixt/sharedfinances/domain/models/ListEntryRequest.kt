@@ -19,8 +19,8 @@ data class ListEntryRequest(
     val billId: UUID?,
     val billDate: LocalDate?,
 ) {
-    val lastId: UUID? = (pageRequest.nextCursor?.get("id") as String?)?.let { UUID.fromString(it) }
-    val lastDate: LocalDate? = (pageRequest.nextCursor?.get("date") as String?)?.let { LocalDate.parse(it) }
+    val lastId: UUID? = pageRequest.nextCursor?.get("id")?.let { it as? UUID ?: UUID.fromString(it.toString()) }
+    val lastDate: LocalDate? = pageRequest.nextCursor?.get("date")?.let { it as? LocalDate ?: LocalDate.parse(it.toString()) }
     val skipFuture: Boolean = pageRequest.nextCursor?.get("skipFuture") as Boolean? ?: false
 
     init {
