@@ -39,7 +39,7 @@ legal:
       interface. We may introduce strictly aggregated, anonymous operational metrics to keep the service
       reliable; if we do, we will describe them in the Privacy Policy.
     p11: >-
-      For privacy-related requests under Brazilian law (LGPD), contact lgdp-finances@gabrielsilva.dev.
+      For privacy-related requests under Brazilian law (LGPD), contact lgdp@sharedfinances.app.
     p12: >-
       We reserve the right to suspend or delete accounts that violate our fair use policy or these
       Terms of Use, including abuse, fraud, or activity that compromises the service or other users,
@@ -81,7 +81,7 @@ legal:
       if introduced, we will update this policy.
     p10: >-
       You may exercise LGPD rights, such as access or deletion where applicable, by contacting
-      lgdp-finances@gabrielsilva.dev. Some requests may require verifying your identity.
+      lgdp@sharedfinances.app. Some requests may require verifying your identity.
     p11: >-
       Legal documents are provided in English and Portuguese (Brazil). If translations diverge, we aim
       to keep them consistent; the version stored on registration is defined by the server.
