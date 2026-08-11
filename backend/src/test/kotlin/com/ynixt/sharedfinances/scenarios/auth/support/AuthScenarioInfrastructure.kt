@@ -39,12 +39,13 @@ import java.util.UUID
 
 internal class AuthScenarioInfrastructure(
     initialDate: LocalDate,
+    mfaServiceOverride: MfaService? = null,
 ) {
     val clock = MutableScenarioClock(initialDate)
     val objectMapper: ObjectMapper = jacksonObjectMapper()
     val passwordEncoder: PasswordEncoder = ScenarioPasswordEncoder()
     val avatarService: AvatarService = NoOpAvatarService()
-    val mfaService: MfaService = NoOpMfaService
+    val mfaService: MfaService = mfaServiceOverride ?: NoOpMfaService
     val jwtEncoder: JwtEncoder = ScenarioJwtEncoder(objectMapper)
 
     val userRepository = InMemoryUserRepository()

@@ -4,8 +4,10 @@
       <h2 class="text-lg font-semibold text-default">{{ 'financesPage.transactionsPage.importPage.fileStep.title' | translate }}</h2>
       <p class="text-sm text-muted">
         {{ 'financesPage.transactionsPage.importPage.fileStep.hint' | translate }}
-        @if (store.importPreferencesLoaded) {
-          {{ 'financesPage.transactionsPage.importPage.fileStep.maxLines' | translate: { maxLines: store.maxLines } }}
+        @if (store.importPreferencesLoaded && store.maxLines != null) {
+          <span data-testid="import-max-lines">
+            {{ 'financesPage.transactionsPage.importPage.fileStep.planMaxLines' | translate: { maxLines: store.maxLines } }}
+          </span>
         }
       </p>
     </div>

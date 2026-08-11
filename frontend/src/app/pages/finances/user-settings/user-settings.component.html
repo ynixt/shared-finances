@@ -11,6 +11,17 @@
       </p-tablist>
       <p-tabpanels>
         <p-tabpanel value="0">
+          @if (planEntitlements(); as entitlements) {
+            @if (entitlements.limitsEnabled) {
+              <app-plan-identity kind="user" [value]="entitlements.role" />
+            }
+            <div class="pt-4">
+              <app-account-activity-info
+                [lastLoginAt]="user.lastLoginAt"
+                [projectedDeletionAt]="entitlements.limitsEnabled ? entitlements.projectedDeletionAt : null"
+              />
+            </div>
+          }
           <form [formGroup]="generalForm" class="flex flex-col gap-4 pt-4" (ngSubmit)="submitGeneralForm()">
             <div class="grid md:grid-cols-2 gap-2" formGroupName="name">
               <div>

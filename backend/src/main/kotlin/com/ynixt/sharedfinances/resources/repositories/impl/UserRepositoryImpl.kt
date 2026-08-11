@@ -60,4 +60,17 @@ class UserRepositoryImpl(
         userId: UUID,
         newEmail: String,
     ): Mono<Int> = springDataRepository.updateEmailWhenUnverified(userId, newEmail)
+
+    override fun recordActivityIfOlderThan(
+        userId: UUID,
+        usedAt: OffsetDateTime,
+        cutoff: OffsetDateTime,
+    ): Mono<Int> = springDataRepository.recordActivityIfOlderThan(userId, usedAt, cutoff)
+
+    override fun recordInactivityNoticeStage(
+        userId: UUID,
+        stage: Int,
+    ): Mono<Int> = springDataRepository.recordInactivityNoticeStage(userId, stage)
+
+    override fun findAllWithTrackedActivity(): Flux<UserEntity> = springDataRepository.findAllWithTrackedActivity()
 }

@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.services.groups
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupOwnerCannotLeaveException
@@ -24,6 +25,7 @@ import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationServi
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.FinancialGoalContributionScheduleSpringDataRepository
 import com.ynixt.sharedfinances.resources.services.EntityServiceImpl
@@ -48,6 +50,7 @@ class GroupServiceImpl(
     private val groupWalletItemRepository: GroupWalletItemRepository,
     private val recurrenceEventRepository: RecurrenceEventRepository,
     private val goalContributionScheduleRepository: FinancialGoalContributionScheduleSpringDataRepository,
+    private val planQuotaService: PlanQuotaService,
 ) : EntityServiceImpl<GroupEntity, GroupEntity>(),
     GroupService {
     override suspend fun findAllGroups(userId: UUID): List<GroupWithRole> =
@@ -155,6 +158,7 @@ class GroupServiceImpl(
                 userId = userId,
                 membersId = memberList,
             )
+            planQuotaService.usageChanged(userId, PlanLimitKey.OWNED_GROUPS)
         }
         return modifiedLines > 0
     }
@@ -177,10 +181,19 @@ class GroupServiceImpl(
             groupUserRepository.findOneByGroupIdAndUserId(groupId, newOwnerId).awaitSingleOrNull()
                 ?: throw InvalidGroupOwnershipTransferException(Reason.TARGET_NOT_MEMBER)
 
+        planQuotaService.assertCanAdd(
+            quotaOwnerUserId = newOwnerId,
+            quota = PlanLimitKey.OWNED_GROUPS,
+            requesterUserId = userId,
+        )
+
         if (newOwnerMembership.role != UserGroupRole.ADMIN) {
             groupUserRepository.updateRole(newOwnerId, groupId, UserGroupRole.ADMIN).awaitSingle()
         }
         repository.updateOwnerUserId(groupId, newOwnerId).awaitSingle()
+
+        planQuotaService.usageChanged(userId, PlanLimitKey.OWNED_GROUPS)
+        planQuotaService.usageChanged(newOwnerId, PlanLimitKey.OWNED_GROUPS)
 
         groupActionEventService.sendOwnershipChanged(
             userId = userId,
@@ -238,6 +251,8 @@ class GroupServiceImpl(
             departedUserId = userId,
             membersId = membersId,
         )
+        planQuotaService.groupUsageChanged(groupId, PlanLimitKey.GROUP_MEMBERS, userId)
+        planQuotaService.groupUsageChanged(groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES, userId)
         return true
     }
 
@@ -287,40 +302,47 @@ class GroupServiceImpl(
         userId: UUID,
         newGroupRequest: NewGroupRequest,
     ): GroupEntity =
-        repository
-            .save(
-                GroupEntity(
-                    name = newGroupRequest.name,
-                    ownerUserId = userId,
-                ),
-            ).awaitSingle()
-            .let { group ->
-                groupUserRepository
+        planQuotaService
+            .assertCanAdd(userId, PlanLimitKey.OWNED_GROUPS)
+            .let {
+                repository
                     .save(
-                        GroupUserEntity(
-                            userId = userId,
-                            groupId = group.id!!,
-                            role = UserGroupRole.ADMIN,
+                        GroupEntity(
+                            name = newGroupRequest.name,
+                            ownerUserId = userId,
                         ),
                     ).awaitSingle()
+                    .let { group ->
+                        groupUserRepository
+                            .save(
+                                GroupUserEntity(
+                                    userId = userId,
+                                    groupId = group.id!!,
+                                    role = UserGroupRole.ADMIN,
+                                ),
+                            ).awaitSingle()
 
-                if (newGroupRequest.categories != null) {
-                    groupCategoryService
-                        .newCategories(
-                            groupId = group.id!!,
-                            categories = newGroupRequest.categories,
-                        )
-                }
+                        if (newGroupRequest.categories != null) {
+                            groupCategoryService
+                                .newCategories(
+                                    userId = userId,
+                                    groupId = group.id!!,
+                                    categories = newGroupRequest.categories,
+                                )
+                        }
 
-                groupCategoryService.ensureDebtSfCategory(group.id!!)
+                        groupCategoryService.ensureDebtSfCategory(group.id!!)
 
-                groupActionEventService
-                    .sendInsertedGroup(
-                        group = group,
-                        userId = userId,
-                    )
+                        groupActionEventService
+                            .sendInsertedGroup(
+                                group = group,
+                                userId = userId,
+                            )
 
-                group
+                        planQuotaService.usageChanged(userId, PlanLimitKey.OWNED_GROUPS)
+
+                        group
+                    }
             }
 
     override suspend fun findAllMembers(

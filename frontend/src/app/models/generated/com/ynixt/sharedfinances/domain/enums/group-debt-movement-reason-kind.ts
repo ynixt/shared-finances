@@ -1,22 +1,9 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export type GroupDebtMovementReasonKind =
-  | 'BENEFICIARY_CHARGE'
-  | 'BENEFICIARY_REVERSAL'
-  | 'DEBT_SETTLEMENT'
-  | 'DEBT_SETTLEMENT_REVERSAL'
-  | 'MANUAL_ADJUSTMENT'
-  | 'MANUAL_ADJUSTMENT_COMPENSATION';
+export type GroupDebtMovementReasonKind = 'BENEFICIARY_CHARGE' | 'BENEFICIARY_REVERSAL' | 'DEBT_SETTLEMENT' | 'DEBT_SETTLEMENT_REVERSAL' | 'MANUAL_ADJUSTMENT' | 'MANUAL_ADJUSTMENT_COMPENSATION';
 
-export const GroupDebtMovementReasonKind__Options: GroupDebtMovementReasonKind[] = [
-  'BENEFICIARY_CHARGE',
-  'BENEFICIARY_REVERSAL',
-  'DEBT_SETTLEMENT',
-  'DEBT_SETTLEMENT_REVERSAL',
-  'MANUAL_ADJUSTMENT',
-  'MANUAL_ADJUSTMENT_COMPENSATION',
-];
+export const GroupDebtMovementReasonKind__Options: GroupDebtMovementReasonKind[] = ['BENEFICIARY_CHARGE', 'BENEFICIARY_REVERSAL', 'DEBT_SETTLEMENT', 'DEBT_SETTLEMENT_REVERSAL', 'MANUAL_ADJUSTMENT', 'MANUAL_ADJUSTMENT_COMPENSATION'];
 
 export const GroupDebtMovementReasonKind__Obj: { [K in GroupDebtMovementReasonKind]: GroupDebtMovementReasonKind } = {
   'BENEFICIARY_CHARGE': 'BENEFICIARY_CHARGE',

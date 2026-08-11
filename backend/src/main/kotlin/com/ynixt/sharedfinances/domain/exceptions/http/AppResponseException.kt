@@ -7,5 +7,6 @@ abstract class AppResponseException(
     val messageI18n: String,
     val alternativeMessage: String? = null,
     val argsI18n: Map<String, Any>? = null,
+    val errorCode: String? = null,
     cause: Throwable? = null,
 ) : RuntimeException(alternativeMessage ?: messageI18n, cause)

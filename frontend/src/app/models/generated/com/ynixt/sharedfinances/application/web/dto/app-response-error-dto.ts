@@ -4,5 +4,6 @@
 export interface AppResponseErrorDto {
   alternativeMessage?: string | null;
   argsI18n?: { [key: string]: any } | null;
+  errorCode?: string | null;
   messageI18n?: string | null;
 }

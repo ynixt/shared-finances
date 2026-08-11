@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.services.categories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.exceptions.http.DebtSfCategoryProtectedException
 import com.ynixt.sharedfinances.domain.exceptions.http.DuplicatedCategoryConceptException
 import com.ynixt.sharedfinances.domain.exceptions.http.DuplicatedCategoryException
@@ -13,6 +14,7 @@ import com.ynixt.sharedfinances.domain.services.actionevents.GroupCategoryAction
 import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -20,6 +22,7 @@ import kotlinx.coroutines.reactor.mono
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -29,18 +32,22 @@ class GroupCategoryServiceImpl(
     private val databaseHelperService: DatabaseHelperService,
     private val groupCategoryActionEventService: GroupCategoryActionEventService,
     private val groupPermissionService: GroupPermissionService,
+    private val planQuotaService: PlanQuotaService? = null,
 ) : CategoryService(
         repository = repository,
         categoryConceptService = categoryConceptService,
     ),
     GroupCategoryService {
+    @Transactional
     override suspend fun newCategories(
+        userId: UUID,
         groupId: UUID,
         categories: List<NewCategoryRequest>,
     ): List<WalletEntryCategoryEntity> {
         val persisted = mutableListOf<WalletEntryCategoryEntity>()
 
         categories.forEach { request ->
+            planQuotaService?.assertGroupCanAdd(groupId, PlanLimitKey.GROUP_CATEGORIES, requesterUserId = userId)
             val concept =
                 categoryConceptService.resolveForMutation(
                     conceptId = request.conceptId,
@@ -66,7 +73,9 @@ class GroupCategoryServiceImpl(
                 )
         }
 
-        return persisted
+        return persisted.also {
+            if (it.isNotEmpty()) planQuotaService?.groupUsageChanged(groupId, PlanLimitKey.GROUP_CATEGORIES, userId)
+        }
     }
 
     override suspend fun ensureDebtSfCategory(groupId: UUID): WalletEntryCategoryEntity {
@@ -183,6 +192,7 @@ class GroupCategoryServiceImpl(
                 groupId = groupId,
             ).let { hasPermission ->
                 if (hasPermission) {
+                    planQuotaService?.assertGroupCanAdd(groupId, PlanLimitKey.GROUP_CATEGORIES, requesterUserId = userId)
                     repository
                         .findOneByIdAndGroupId(
                             id = id,
@@ -200,6 +210,7 @@ class GroupCategoryServiceImpl(
                 }
             }
 
+    @Transactional
     override suspend fun newCategory(
         userId: UUID,
         groupId: UUID,
@@ -239,6 +250,7 @@ class GroupCategoryServiceImpl(
                                 category = saved,
                                 userId = userId,
                             )
+                        planQuotaService?.groupUsageChanged(groupId, PlanLimitKey.GROUP_CATEGORIES, userId)
                     }
                 } else {
                     null
@@ -390,6 +402,7 @@ class GroupCategoryServiceImpl(
 
                     if (deleted) {
                         categoryConceptService.cleanupOrphanedCustomConcept(category.conceptId)
+                        planQuotaService?.groupUsageChanged(groupId, PlanLimitKey.GROUP_CATEGORIES, userId)
                     }
 
                     deleted

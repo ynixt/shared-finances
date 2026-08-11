@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest.group
 import com.ynixt.sharedfinances.application.web.dto.groups.ChangeRoleGroupUserRequestDto
 import com.ynixt.sharedfinances.application.web.dto.groups.EditGroupDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupDto
+import com.ynixt.sharedfinances.application.web.dto.groups.GroupEntitlementsDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupInviteDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupUserDto
 import com.ynixt.sharedfinances.application.web.dto.groups.GroupWithRoleDto
@@ -15,6 +16,7 @@ import com.ynixt.sharedfinances.application.web.mapper.GroupUserDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.groups.GroupInviteService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.GroupEntitlementsService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -44,7 +46,18 @@ class GroupController(
     private val groupUserDtoMapper: GroupUserDtoMapper,
     private val groupInviteDtoMapper: GroupInviteDtoMapper,
     private val groupInviteService: GroupInviteService,
+    private val groupEntitlementsService: GroupEntitlementsService,
 ) {
+    @Operation(summary = "Get a group's plan entitlements")
+    @GetMapping("/{id}/entitlements")
+    suspend fun entitlements(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+        @PathVariable id: UUID,
+    ): ResponseEntity<GroupEntitlementsDto> =
+        ResponseEntity.ofNullable(
+            groupEntitlementsService.get(principalToken.principal.id, id)?.let(GroupEntitlementsDto::from),
+        )
+
     @Operation(summary = "Get all groups")
     @GetMapping
     suspend fun findAll(

@@ -24,6 +24,7 @@ import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptServic
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
@@ -51,6 +52,7 @@ abstract class WalletEntryMutationSupportServiceImpl(
     recurrenceEntryRepository: RecurrenceEntryRepository,
     walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
     recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
+    planQuotaService: PlanQuotaService,
     clock: Clock,
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
@@ -64,6 +66,7 @@ abstract class WalletEntryMutationSupportServiceImpl(
         recurrenceEntryRepository = recurrenceEntryRepository,
         walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
         recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
+        planQuotaService = planQuotaService,
         clock = clock,
     ) {
     protected data class ScheduledPosition(

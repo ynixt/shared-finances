@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.resources.services
 
 import com.ynixt.sharedfinances.domain.entities.wallet.WalletItemEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.BankAccountMapper
@@ -14,6 +15,7 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.BankAccountService
 import com.ynixt.sharedfinances.domain.services.actionevents.BankAccountActionEventService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import kotlinx.coroutines.reactor.awaitSingle
@@ -35,6 +37,7 @@ class BankAccountServiceImpl(
     private val bankAccountActionEventService: BankAccountActionEventService,
     private val bankAccountMapper: BankAccountMapper,
     private val walletEntryCreateService: WalletEntryCreateService,
+    private val planQuotaService: PlanQuotaService,
     private val clock: Clock,
 ) : BankAccountService {
     override suspend fun findAllBanks(
@@ -78,35 +81,40 @@ class BankAccountServiceImpl(
         userId: UUID,
         newBankAccountRequest: NewBankAccountRequest,
     ): BankAccount =
-        walletItemRepository
-            .save(
-                bankAccountMapper.toEntity(
-                    BankAccount(
-                        userId = userId,
-                        balance = BigDecimal.ZERO,
-                        enabled = true,
-                        name = newBankAccountRequest.name,
-                        currency = newBankAccountRequest.currency,
-                        showOnDashboard = newBankAccountRequest.showOnDashboard,
-                    ),
-                ),
-            ).awaitSingle()
-            .also { saved ->
-                if (newBankAccountRequest.balance != BigDecimal.ZERO) {
-                    createInitialEntry(
-                        userId = userId,
-                        newBankAccountRequest = newBankAccountRequest,
-                        bankAccountEntity = saved,
-                    )
-                }
-            }.let { saved ->
-                bankAccountMapper.toModel(saved).also { savedModel ->
-                    bankAccountActionEventService
-                        .sendInsertedBankAccount(
-                            bankAccount = savedModel,
-                            userId = userId,
-                        )
-                }
+        planQuotaService
+            .assertCanAdd(userId, PlanLimitKey.BANK_ACCOUNTS)
+            .let {
+                walletItemRepository
+                    .save(
+                        bankAccountMapper.toEntity(
+                            BankAccount(
+                                userId = userId,
+                                balance = BigDecimal.ZERO,
+                                enabled = true,
+                                name = newBankAccountRequest.name,
+                                currency = newBankAccountRequest.currency,
+                                showOnDashboard = newBankAccountRequest.showOnDashboard,
+                            ),
+                        ),
+                    ).awaitSingle()
+                    .also { saved ->
+                        if (newBankAccountRequest.balance != BigDecimal.ZERO) {
+                            createInitialEntry(
+                                userId = userId,
+                                newBankAccountRequest = newBankAccountRequest,
+                                bankAccountEntity = saved,
+                            )
+                        }
+                    }.let { saved ->
+                        bankAccountMapper.toModel(saved).also { savedModel ->
+                            bankAccountActionEventService
+                                .sendInsertedBankAccount(
+                                    bankAccount = savedModel,
+                                    userId = userId,
+                                )
+                            planQuotaService.usageChanged(userId, PlanLimitKey.BANK_ACCOUNTS)
+                        }
+                    }
             }
 
     override suspend fun findBankAccount(
@@ -174,12 +182,15 @@ class BankAccountServiceImpl(
                     userId = userId,
                 ).awaitSingle()
 
-        return (modifiedLines > 0).also {
-            bankAccountActionEventService
-                .sendDeletedBankAccount(
-                    id = id,
-                    userId = userId,
-                )
+        return (modifiedLines > 0).also { deleted ->
+            if (deleted) {
+                bankAccountActionEventService
+                    .sendDeletedBankAccount(
+                        id = id,
+                        userId = userId,
+                    )
+                planQuotaService.usageChanged(userId, PlanLimitKey.BANK_ACCOUNTS)
+            }
         }
     }
 

@@ -36,7 +36,7 @@ export class GroupCategoriesPageComponent {
   categoriesTree: TreeNode[] = [];
 
   private currentPage = 0;
-  private groupId: string | undefined;
+  groupId: string | undefined;
   private skipNextLazyLoad = false;
 
   constructor(

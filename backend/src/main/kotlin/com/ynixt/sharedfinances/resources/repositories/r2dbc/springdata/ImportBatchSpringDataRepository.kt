@@ -11,15 +11,17 @@ import java.util.UUID
 interface ImportBatchSpringDataRepository :
     R2dbcRepository<ImportBatchEntity, String>,
     EntityRepository<ImportBatchEntity> {
-    fun findFirstByUserIdAndFileHashAndStatusInOrderByCreatedAtDesc(
+    fun findFirstByUserIdAndFileHashAndStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(
         userId: UUID,
         fileHash: String,
         statuses: Collection<ImportBatchStatus>,
     ): Mono<ImportBatchEntity>
 
-    fun findAllByUserIdOrderByCreatedAtDescIdDesc(userId: UUID): Flux<ImportBatchEntity>
+    fun findAllByUserIdAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(userId: UUID): Flux<ImportBatchEntity>
 
-    fun findByIdAndUserId(
+    fun findByIdAndDeletedAtIsNull(id: UUID): Mono<ImportBatchEntity>
+
+    fun findByIdAndUserIdAndDeletedAtIsNull(
         id: UUID,
         userId: UUID,
     ): Mono<ImportBatchEntity>

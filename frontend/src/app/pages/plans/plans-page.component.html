@@ -1,0 +1,151 @@
+<app-navbar></app-navbar>
+
+<main class="plans-page max-w-6xl mx-auto px-4 pb-12 text-default dark:text-surface-100">
+  <header class="plans-hero">
+    <p class="eyebrow">{{ 'plans.eyebrow' | translate }}</p>
+    <h1>{{ 'plans.title' | translate }}</h1>
+    <p>{{ 'plans.intro' | translate }}</p>
+  </header>
+
+  @if (loadFailed) {
+    <p class="status-message" role="alert">{{ 'plans.loadError' | translate }}</p>
+  } @else if (!comparison) {
+    <p class="status-message">{{ 'plans.loading' | translate }}</p>
+  } @else {
+    <section aria-labelledby="user-plans-title">
+      <div class="section-heading">
+        <p class="eyebrow">{{ 'plans.userPlans.eyebrow' | translate }}</p>
+        <h2 id="user-plans-title">{{ 'plans.userPlans.title' | translate }}</h2>
+        <p>{{ 'plans.userPlans.description' | translate }}</p>
+      </div>
+
+      <div class="comparison-shell">
+        <table data-testid="user-plan-comparison">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'plans.quota' | translate }}</th>
+              @for (plan of comparison.userPlans; track plan.plan) {
+                <th scope="col" [attr.data-user-plan]="plan.plan">{{ 'planIdentity.userPlans.' + plan.plan | translate }}</th>
+              }
+              <th scope="col" data-user-plan="SELF_HOSTED">{{ 'plans.selfHosted.name' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (quota of userQuotaKeys(comparison); track quota) {
+              <tr [attr.data-quota]="quota">
+                <th scope="row">{{ 'plans.quotas.' + quota | translate }}</th>
+                @for (plan of comparison.userPlans; track plan.plan) {
+                  @let item = limit(plan.limits, quota);
+                  <td>
+                    @if (item?.unlimited) {
+                      <span class="unlimited">{{ 'plans.unlimited' | translate }}</span>
+                    } @else {
+                      {{ item?.limit }}
+                    }
+                  </td>
+                }
+                <td data-self-hosted-limit>
+                  <span class="operator-defined">{{ 'plans.selfHosted.youDefine' | translate }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="policy-grid" data-testid="inactivity-policies">
+        @for (plan of comparison.userPlans; track plan.plan) {
+          <article>
+            <h3>{{ 'planIdentity.userPlans.' + plan.plan | translate }}</h3>
+            @if (plan.inactivityPolicy.unlimited) {
+              <p>{{ 'plans.inactivity.unlimited' | translate }}</p>
+            } @else {
+              <p>{{ 'plans.inactivity.finite' | translate: { months: plan.inactivityPolicy.retentionMonths } }}</p>
+            }
+            @if (plan.plan === 'USER') {
+              <a routerLink="/register" pButton [rounded]="true" class="plan-action" data-testid="plan-action-USER">
+                <span pButtonLabel>{{ 'plans.actions.startNow' | translate }}</span>
+              </a>
+            } @else if (plan.plan === 'PRO') {
+              <button type="button" pButton [rounded]="true" disabled class="plan-action" data-testid="plan-action-PRO">
+                <span pButtonLabel>{{ 'plans.actions.comingSoon' | translate }}</span>
+              </button>
+            }
+          </article>
+        }
+        <article data-self-hosted-policy>
+          <h3>{{ 'plans.selfHosted.name' | translate }}</h3>
+          <p class="operator-defined">{{ 'plans.selfHosted.youDefine' | translate }}</p>
+          <a
+            href="https://github.com/ynixt/shared-finances"
+            target="_blank"
+            rel="noopener noreferrer"
+            pButton
+            [rounded]="true"
+            class="plan-action"
+            data-testid="plan-action-SELF_HOSTED"
+          >
+            <span pButtonLabel>{{ 'plans.actions.startNow' | translate }}</span>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="group-tiers-title">
+      <div class="section-heading">
+        <p class="eyebrow">{{ 'plans.groupTiers.eyebrow' | translate }}</p>
+        <h2 id="group-tiers-title">{{ 'plans.groupTiers.title' | translate }}</h2>
+        <p>{{ 'plans.groupTiers.description' | translate }}</p>
+      </div>
+
+      <div class="comparison-shell">
+        <table data-testid="group-tier-comparison">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'plans.quota' | translate }}</th>
+              @for (tier of comparison.groupTiers; track tier.tier) {
+                <th scope="col" [attr.data-group-tier]="tier.tier">{{ 'planIdentity.groupTiers.' + tier.tier | translate }}</th>
+              }
+              <th scope="col" data-group-tier="SELF_HOSTED">{{ 'plans.selfHosted.name' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (quota of groupQuotaKeys(comparison); track quota) {
+              <tr [attr.data-quota]="quota">
+                <th scope="row">{{ 'plans.quotas.' + quota | translate }}</th>
+                @for (tier of comparison.groupTiers; track tier.tier) {
+                  @let item = limit(tier.limits, quota);
+                  <td>
+                    @if (item?.unlimited) {
+                      <span class="unlimited">{{ 'plans.unlimited' | translate }}</span>
+                    } @else {
+                      {{ item?.limit }}
+                    }
+                  </td>
+                }
+                <td data-self-hosted-limit>
+                  <span class="operator-defined">{{ 'plans.selfHosted.youDefine' | translate }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="open-source" aria-labelledby="open-source-title">
+      <p class="eyebrow">{{ 'plans.openSource.eyebrow' | translate }}</p>
+      <h2 id="open-source-title">{{ 'plans.openSource.title' | translate }}</h2>
+      <p>{{ 'plans.openSource.description' | translate }}</p>
+      <a
+        href="https://github.com/ynixt/shared-finances"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="self-host-link flex items-center gap-2"
+        data-testid="github-repository-link"
+      >
+        <fa-icon [icon]="faGithub" class="icon"></fa-icon> <span>{{ 'plans.openSource.link' | translate }}</span>
+      </a>
+    </section>
+  }
+</main>

@@ -3,10 +3,12 @@ package com.ynixt.sharedfinances.resources.services.groups
 import com.ynixt.sharedfinances.domain.entities.groups.GroupEntity
 import com.ynixt.sharedfinances.domain.entities.groups.GroupUserEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupOwnerCannotLeaveException
 import com.ynixt.sharedfinances.domain.exceptions.http.GroupOwnerRequiredException
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidGroupOwnershipTransferException
+import com.ynixt.sharedfinances.domain.exceptions.http.PlanQuotaExceededException
 import com.ynixt.sharedfinances.domain.models.groups.NewGroupRequest
 import com.ynixt.sharedfinances.domain.repositories.RecurrenceEventRepository
 import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
@@ -15,9 +17,11 @@ import com.ynixt.sharedfinances.domain.services.categories.GroupCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupBankAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupCreditCardAssociationService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.FinancialGoalContributionScheduleSpringDataRepository
 import com.ynixt.sharedfinances.scenarios.accountdeletion.support.InMemoryAccountDeletionGroupStore
 import com.ynixt.sharedfinances.scenarios.support.NoOpGroupWalletItemRepository
+import com.ynixt.sharedfinances.scenarios.support.NoOpPlanQuotaService
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.test.runTest
@@ -31,7 +35,9 @@ class GroupServiceImplOwnershipTest {
     private val store = InMemoryAccountDeletionGroupStore()
     private val events = RecordingGroupEvents()
     private val groupCategoryService = Mockito.mock(GroupCategoryService::class.java)
-    private val service =
+    private val service = newService(NoOpPlanQuotaService)
+
+    private fun newService(planQuotaService: PlanQuotaService) =
         GroupServiceImpl(
             repository = store,
             groupUserRepository = store,
@@ -44,6 +50,7 @@ class GroupServiceImplOwnershipTest {
             groupWalletItemRepository = NoOpGroupWalletItemRepository(),
             recurrenceEventRepository = Mockito.mock(RecurrenceEventRepository::class.java),
             goalContributionScheduleRepository = Mockito.mock(FinancialGoalContributionScheduleSpringDataRepository::class.java),
+            planQuotaService = planQuotaService,
         )
 
     @Test
@@ -54,6 +61,30 @@ class GroupServiceImplOwnershipTest {
 
             assertThat(group.ownerUserId).isEqualTo(creatorId)
             assertThat(store.findOneByGroupIdAndUserId(group.id!!, creatorId).awaitSingle().role).isEqualTo(UserGroupRole.ADMIN)
+        }
+
+    @Test
+    fun `ownership quota refuses creation and destination transfer without changing ownership`() =
+        runTest {
+            val rejecting = RejectingOwnershipQuota()
+            val limitedService = newService(rejecting)
+            val ownerId = UUID.randomUUID()
+            val destinationId = UUID.randomUUID()
+
+            assertThatThrownBy {
+                kotlinx.coroutines.runBlocking {
+                    limitedService.newGroup(ownerId, NewGroupRequest("Blocked", null))
+                }
+            }.isInstanceOf(PlanQuotaExceededException::class.java)
+
+            val groupId = group(ownerId, destinationId to UserGroupRole.ADMIN)
+            assertThatThrownBy {
+                kotlinx.coroutines.runBlocking {
+                    limitedService.transferOwnership(ownerId, groupId, destinationId)
+                }
+            }.isInstanceOf(PlanQuotaExceededException::class.java)
+            assertThat(store.findById(groupId).awaitSingle().ownerUserId).isEqualTo(ownerId)
+            assertThat(rejecting.owners).contains(ownerId, destinationId)
         }
 
     @Test
@@ -178,6 +209,32 @@ class GroupServiceImplOwnershipTest {
 
         override fun getAllPermissionsForRole(role: UserGroupRole): Set<GroupPermissions> =
             if (role == UserGroupRole.ADMIN) GroupPermissions.entries.toSet() else emptySet()
+    }
+
+    private class RejectingOwnershipQuota : PlanQuotaService {
+        val owners = mutableListOf<UUID>()
+
+        override suspend fun assertCanAdd(
+            quotaOwnerUserId: UUID,
+            quota: PlanLimitKey,
+            requesterUserId: UUID,
+        ) {
+            owners += quotaOwnerUserId
+            throw PlanQuotaExceededException(
+                quota = quota,
+                quotaOwnerUserId = quotaOwnerUserId.takeIf { it != requesterUserId },
+            )
+        }
+
+        override suspend fun currentUsage(
+            userId: UUID,
+            quota: PlanLimitKey,
+        ): Long = 0
+
+        override suspend fun usageChanged(
+            userId: UUID,
+            quota: PlanLimitKey,
+        ) = Unit
     }
 
     private class RecordingGroupEvents : GroupActionEventService {

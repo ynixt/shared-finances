@@ -8,7 +8,9 @@ import { OpenAuthPreferencesDto } from '../models/generated/com/ynixt/sharedfina
 /** Defaults when the request fails (aligned with backend defaults). */
 const FALLBACK: OpenAuthPreferencesDto = {
   emailConfirmationEnabled: true,
+  legalDocumentsEnabled: false,
   passwordRecoveryEnabled: true,
+  planLimitsEnabled: false,
   registrationEnabled: true,
   turnstileEnabled: true,
 };
@@ -26,7 +28,9 @@ export class OpenAuthPreferencesService {
   readonly loadError = signal<unknown>(null);
 
   readonly emailConfirmationEnabled = computed(() => this.preferences()?.emailConfirmationEnabled ?? FALLBACK.emailConfirmationEnabled);
+  readonly legalDocumentsEnabled = computed(() => this.preferences()?.legalDocumentsEnabled ?? FALLBACK.legalDocumentsEnabled);
   readonly passwordRecoveryEnabled = computed(() => this.preferences()?.passwordRecoveryEnabled ?? FALLBACK.passwordRecoveryEnabled);
+  readonly planLimitsEnabled = computed(() => this.preferences()?.planLimitsEnabled ?? FALLBACK.planLimitsEnabled);
   readonly registrationEnabled = computed(() => this.preferences()?.registrationEnabled ?? FALLBACK.registrationEnabled);
   readonly turnstileEnabled = computed(() => this.preferences()?.turnstileEnabled ?? FALLBACK.turnstileEnabled);
 

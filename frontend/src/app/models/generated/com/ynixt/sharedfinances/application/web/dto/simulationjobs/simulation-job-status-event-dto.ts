@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { SimulationJobStatus } from '../../../../domain/enums/simulation-job-status';
 import { SimulationJobType } from '../../../../domain/enums/simulation-job-type';
 

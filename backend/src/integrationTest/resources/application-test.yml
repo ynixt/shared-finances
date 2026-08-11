@@ -36,6 +36,8 @@ spring:
     baseline-on-migrate: true
     fail-on-missing-locations: false
     clean-disabled: false
+    placeholders:
+      default-role: ${SF_APP_DEFAULT_ROLE:pro}
   data:
     redis:
       host: mock
@@ -75,6 +77,10 @@ management:
       enabled: false
 
 app:
+  plan:
+    enabled: ${SF_APP_ENABLE_LIMITS:false}
+    default-role: ${SF_APP_DEFAULT_ROLE:pro}
+    limit-cache-ttl: 5m
   public-web:
     base-url: http://localhost:4200
   auth:

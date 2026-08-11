@@ -2,9 +2,13 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.config.AuthFeatureFlags
 import com.ynixt.sharedfinances.application.config.AuthProperties
+import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
+import com.ynixt.sharedfinances.application.config.PlanProperties
 import com.ynixt.sharedfinances.application.web.dto.auth.LoginDto
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
+import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.exceptions.http.auth.RegistrationDisabledException
+import com.ynixt.sharedfinances.domain.exceptions.http.auth.RegistrationLegalAcceptanceRequiredException
 import com.ynixt.sharedfinances.domain.models.LoginResult
 import com.ynixt.sharedfinances.domain.services.AuthService
 import com.ynixt.sharedfinances.domain.services.UserService
@@ -51,6 +55,48 @@ class AuthControllerRuntimeLimitsTest {
         }
 
     @Test
+    fun `reports both public instance switches in either position`() =
+        runTest {
+            val disabled = controller(legalDocumentsEnabled = false, planLimitsEnabled = false).openAuthPreferences().body!!
+            val enabled = controller(legalDocumentsEnabled = true, planLimitsEnabled = true).openAuthPreferences().body!!
+
+            assertEquals(false, disabled.legalDocumentsEnabled)
+            assertEquals(false, disabled.planLimitsEnabled)
+            assertEquals(true, enabled.legalDocumentsEnabled)
+            assertEquals(true, enabled.planLimitsEnabled)
+        }
+
+    @Test
+    fun `requires legal acceptance only while documents are presented`() =
+        runTest {
+            val request = validRegisterRequest().copy(acceptTerms = false, acceptPrivacy = false)
+
+            assertFailsWith<RegistrationLegalAcceptanceRequiredException> {
+                controller(legalDocumentsEnabled = true).register(Mockito.mock(ServerWebExchange::class.java), request)
+            }
+            Mockito.verifyNoInteractions(userService, captchaService, emailWorkflowService)
+        }
+
+    @Test
+    fun `allows registration without legal acceptance while documents are absent`() =
+        runTest {
+            val request = validRegisterRequest().copy(acceptTerms = false, acceptPrivacy = false)
+            val exchange = Mockito.mock(ServerWebExchange::class.java)
+            val serverRequest = Mockito.mock(ServerHttpRequest::class.java)
+            val user = Mockito.mock(UserEntity::class.java)
+            Mockito.`when`(exchange.request).thenReturn(serverRequest)
+            Mockito.`when`(serverRequest.remoteAddress).thenReturn(null)
+            Mockito.`when`(user.email).thenReturn(request.email)
+            Mockito.`when`(userService.createUser(request)).thenReturn(user)
+
+            val response = controller(legalDocumentsEnabled = false).register(exchange, request)
+
+            assertEquals(200, response.statusCode.value())
+            assertEquals(request.email, response.body!!.email)
+            Mockito.verify(userService).createUser(request)
+        }
+
+    @Test
     fun `keeps login available while registration is disabled`() =
         runTest {
             val exchange = Mockito.mock(ServerWebExchange::class.java)
@@ -67,15 +113,20 @@ class AuthControllerRuntimeLimitsTest {
             Mockito.verify(authService).login("user@example.com", "password", null, null)
         }
 
-    private fun controller(registrationEnabled: Boolean) =
-        AuthController(
-            userService = userService,
-            authService = authService,
-            authProperties = AuthProperties(features = AuthFeatureFlags(registrationEnabled = registrationEnabled)),
-            captchaService = captchaService,
-            openAuthEmailWorkflowService = emailWorkflowService,
-            secureCookie = false,
-        )
+    private fun controller(
+        registrationEnabled: Boolean = true,
+        legalDocumentsEnabled: Boolean = false,
+        planLimitsEnabled: Boolean = false,
+    ) = AuthController(
+        userService = userService,
+        authService = authService,
+        authProperties = AuthProperties(features = AuthFeatureFlags(registrationEnabled = registrationEnabled)),
+        legalDocumentProperties = LegalDocumentProperties(enabled = legalDocumentsEnabled),
+        planProperties = PlanProperties(enabled = planLimitsEnabled),
+        captchaService = captchaService,
+        openAuthEmailWorkflowService = emailWorkflowService,
+        secureCookie = false,
+    )
 
     private fun validRegisterRequest() =
         RegisterDto(

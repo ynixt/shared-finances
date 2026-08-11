@@ -1,6 +1,8 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.config.AuthProperties
+import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
+import com.ynixt.sharedfinances.application.config.PlanProperties
 import com.ynixt.sharedfinances.application.web.dto.auth.ChangePendingEmailRequestDto
 import com.ynixt.sharedfinances.application.web.dto.auth.ConfirmEmailRequestDto
 import com.ynixt.sharedfinances.application.web.dto.auth.EmailTurnstileRequestDto
@@ -15,6 +17,7 @@ import com.ynixt.sharedfinances.application.web.dto.auth.RegisterResultDto
 import com.ynixt.sharedfinances.application.web.dto.auth.ResendEmailAckDto
 import com.ynixt.sharedfinances.domain.exceptions.MfaIsNeededException
 import com.ynixt.sharedfinances.domain.exceptions.http.auth.RegistrationDisabledException
+import com.ynixt.sharedfinances.domain.exceptions.http.auth.RegistrationLegalAcceptanceRequiredException
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.AuthService
 import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
@@ -51,6 +54,8 @@ class AuthController(
     private val userService: UserService,
     private val authService: AuthService,
     private val authProperties: AuthProperties,
+    private val legalDocumentProperties: LegalDocumentProperties,
+    private val planProperties: PlanProperties,
     private val captchaService: CaptchaService,
     private val openAuthEmailWorkflowService: OpenAuthEmailWorkflowService,
     @param:Value("\${app.security.secureCookie}") private val secureCookie: Boolean,
@@ -66,6 +71,8 @@ class AuthController(
                 emailConfirmationEnabled = authProperties.features.emailConfirmationEnabled,
                 passwordRecoveryEnabled = authProperties.features.passwordRecoveryEnabled,
                 turnstileEnabled = authProperties.features.turnstileEnabled,
+                legalDocumentsEnabled = legalDocumentProperties.enabled,
+                planLimitsEnabled = planProperties.enabled,
             ),
         )
 
@@ -79,6 +86,9 @@ class AuthController(
     ): ResponseEntity<RegisterResultDto> {
         if (!authProperties.features.registrationEnabled) {
             throw RegistrationDisabledException()
+        }
+        if (legalDocumentProperties.enabled && (payload.acceptTerms != true || payload.acceptPrivacy != true)) {
+            throw RegistrationLegalAcceptanceRequiredException()
         }
 
         verifyCaptcha(exchange, payload.turnstileToken)

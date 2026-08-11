@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.services
 import com.fasterxml.uuid.Generators
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
+import com.ynixt.sharedfinances.application.config.PlanProperties
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
 import com.ynixt.sharedfinances.domain.entities.UserEntity
@@ -33,6 +34,7 @@ class UserServiceImpl(
     private val avatarService: AvatarService,
     private val legalDocumentProperties: LegalDocumentProperties,
     private val authProperties: AuthProperties,
+    private val planProperties: PlanProperties,
     private val clock: Clock,
     @Lazy private val accountDeletionService: AccountDeletionService,
     private val userActionEventService: UserActionEventService,
@@ -54,15 +56,19 @@ class UserServiceImpl(
                 mfaEnabled = false,
                 totpSecret = null,
                 onboardingDone = false,
+                role = planProperties.defaultRole,
+                lastLoginAt = OffsetDateTime.ofInstant(clock.instant(), clock.zone),
             ).also {
                 it.id = Generators.timeBasedEpochRandomGenerator().generate()
             }
 
-        val acceptedAt = OffsetDateTime.ofInstant(clock.instant(), clock.zone)
-        user.termsAcceptedAt = acceptedAt
-        user.termsVersion = legalDocumentProperties.termsVersion
-        user.privacyAcceptedAt = acceptedAt
-        user.privacyVersion = legalDocumentProperties.privacyVersion
+        if (legalDocumentProperties.enabled) {
+            val acceptedAt = OffsetDateTime.ofInstant(clock.instant(), clock.zone)
+            user.termsAcceptedAt = acceptedAt
+            user.termsVersion = legalDocumentProperties.termsVersion
+            user.privacyAcceptedAt = acceptedAt
+            user.privacyVersion = legalDocumentProperties.privacyVersion
+        }
 
         if (request.gravatarOptIn) {
             user.photoUrl = avatarService.getPhotoFromGravatar(user.email, user.id!!)

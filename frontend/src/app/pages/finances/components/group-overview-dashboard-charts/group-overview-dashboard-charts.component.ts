@@ -257,7 +257,7 @@ export class GroupOverviewDashboardChartsComponent {
     });
   }
 
-  private sortMembersByName<T extends { memberName: string | null }>(members: T[]): T[] {
+  private sortMembersByName<T extends { memberName?: string | null }>(members: T[]): T[] {
     return [...members].sort((left, right) => {
       if (left.memberName == null) return right.memberName == null ? 0 : 1;
       if (right.memberName == null) return -1;
@@ -265,7 +265,7 @@ export class GroupOverviewDashboardChartsComponent {
     });
   }
 
-  private participantName(memberName: string | null): string {
+  private participantName(memberName: string | null | undefined): string {
     return memberName ?? this.translateService.instant('financesPage.groupsPage.unknownParticipant');
   }
 

@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { GoalLedgerMovementKind } from '../../../../domain/enums/goal-ledger-movement-kind';
 
 export interface GoalLedgerMovementDto {

@@ -17,9 +17,11 @@ interface GroupSpringDataRepository :
 
     @Query(
         """
-            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner
+            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner,
+                   case when owner.role in ('PRO', 'ADMINISTRATOR') then 'PRO' else 'COMMON' end as tier
             from "group" g
             join group_user gu on gu.group_id = g.id
+            join users owner on owner.id = g.owner_user_id
             where gu.user_id = :userId
             order by g.name
         """,
@@ -28,9 +30,11 @@ interface GroupSpringDataRepository :
 
     @Query(
         """
-            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner
+            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner,
+                   case when owner.role in ('PRO', 'ADMINISTRATOR') then 'PRO' else 'COMMON' end as tier
             from "group" g
             join group_user gu on gu.group_id = g.id
+            join users owner on owner.id = g.owner_user_id
             where
                 g.id = :id
                 and gu.user_id = :userId
@@ -43,9 +47,11 @@ interface GroupSpringDataRepository :
 
     @Query(
         """
-            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner
+            select g.*, gu.role as role, (g.owner_user_id = :userId) as is_owner,
+                   case when owner.role in ('PRO', 'ADMINISTRATOR') then 'PRO' else 'COMMON' end as tier
             from "group" g
             join group_user gu on gu.group_id = g.id
+            join users owner on owner.id = g.owner_user_id
             where
                 gu.user_id = :userId
                 and lower(g.name) like concat('%', lower(:name), '%')

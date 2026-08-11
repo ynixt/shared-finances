@@ -13,6 +13,7 @@ import com.ynixt.sharedfinances.domain.repositories.FailedLoginRepository
 import com.ynixt.sharedfinances.domain.repositories.RefreshTokenRepository
 import com.ynixt.sharedfinances.domain.repositories.SessionRepository
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
+import com.ynixt.sharedfinances.domain.services.ACCOUNT_ACTIVITY_WRITE_INTERVAL
 import com.ynixt.sharedfinances.domain.services.AuthService
 import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
 import com.ynixt.sharedfinances.domain.services.mfa.MfaService
@@ -32,7 +33,10 @@ import org.springframework.stereotype.Service
 import java.net.InetAddress
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.time.Clock
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.Base64
 import java.util.UUID
 
@@ -46,6 +50,7 @@ class AuthServiceImpl(
     private val jwtEncoder: JwtEncoder,
     private val mfaService: MfaService,
     private val authProperties: AuthProperties,
+    private val clock: Clock,
     @param:Value("\${app.security.jwt.kid}") private val kid: String,
     @param:Value("\${app.security.jwt.issuer}") private val issuer: String,
     @param:Value("\${app.security.jwt.accessTokenTTLMinutes}") private val accessTtlMinutes: Int,
@@ -175,7 +180,10 @@ class AuthServiceImpl(
 
         // TODO: less selects
         return sessionRepository.findById(refreshTokenResult.sessionId).awaitSingleOrNull()?.let { session ->
-            userRepository.findById(session.userId).awaitSingleOrNull()?.let { user -> mintAccessToken(user, session.id!!) }
+            userRepository.findById(session.userId).awaitSingleOrNull()?.let { user ->
+                recordActivity(user.id!!)
+                mintAccessToken(user, session.id!!)
+            }
         } ?: throw BadCredentialsException("invalid refresh token")
     }
 
@@ -247,6 +255,8 @@ class AuthServiceImpl(
                         ),
                     ).awaitSingle()
 
+                recordActivity(user.id!!)
+
                 LoginResult(
                     accessToken = mintAccessToken(user, session.id!!),
                     refreshToken = refreshToken,
@@ -293,6 +303,13 @@ class AuthServiceImpl(
     }
 
     private fun sha256(input: String): ByteArray = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))
+
+    private suspend fun recordActivity(userId: UUID) {
+        val usedAt = OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)
+        userRepository
+            .recordActivityIfOlderThan(userId, usedAt, usedAt.minus(ACCOUNT_ACTIVITY_WRITE_INTERVAL))
+            .awaitSingle()
+    }
 
     private suspend fun refuseLoginIfTooManyFails(
         email: String,

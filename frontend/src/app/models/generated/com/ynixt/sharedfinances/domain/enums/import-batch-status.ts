@@ -1,17 +1,9 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export type ImportBatchStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'UNDO_QUEUED' | 'UNDO_RUNNING' | 'UNDO_FAILED';
+export type ImportBatchStatus = 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'UNDO_QUEUED' | 'UNDO_RUNNING' | 'UNDO_FAILED' | 'UNDONE';
 
-export const ImportBatchStatus__Options: ImportBatchStatus[] = [
-  'QUEUED',
-  'RUNNING',
-  'COMPLETED',
-  'FAILED',
-  'UNDO_QUEUED',
-  'UNDO_RUNNING',
-  'UNDO_FAILED',
-];
+export const ImportBatchStatus__Options: ImportBatchStatus[] = ['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED', 'UNDO_QUEUED', 'UNDO_RUNNING', 'UNDO_FAILED', 'UNDONE'];
 
 export const ImportBatchStatus__Obj: { [K in ImportBatchStatus]: ImportBatchStatus } = {
   'QUEUED': 'QUEUED',
@@ -21,4 +13,5 @@ export const ImportBatchStatus__Obj: { [K in ImportBatchStatus]: ImportBatchStat
   'UNDO_QUEUED': 'UNDO_QUEUED',
   'UNDO_RUNNING': 'UNDO_RUNNING',
   'UNDO_FAILED': 'UNDO_FAILED',
+  'UNDONE': 'UNDONE',
 };

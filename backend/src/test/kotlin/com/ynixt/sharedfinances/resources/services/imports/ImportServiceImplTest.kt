@@ -13,6 +13,7 @@ import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.ImportBatchDispatchRepository
 import com.ynixt.sharedfinances.resources.services.events.NewEventGroupInfo
+import com.ynixt.sharedfinances.scenarios.support.NoOpPlanQuotaService
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -86,6 +87,7 @@ class ImportServiceImplTest {
                     dispatchRepository = Mockito.mock(ImportBatchDispatchRepository::class.java),
                     dispatchQueueProducer = producer,
                     eventPublisher = ImportBatchEventPublisher(NoOpActionEventService()),
+                    planQuotaService = NoOpPlanQuotaService,
                 )
 
             val accepted = service.create(userId, request)

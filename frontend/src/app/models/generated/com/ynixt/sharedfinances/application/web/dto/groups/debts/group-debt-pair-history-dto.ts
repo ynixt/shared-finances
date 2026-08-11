@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { GroupDebtMovementDto } from './group-debt-movement-dto';
 
 export interface GroupDebtPairHistoryDto {

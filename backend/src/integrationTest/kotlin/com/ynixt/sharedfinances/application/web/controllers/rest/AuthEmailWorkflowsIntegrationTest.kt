@@ -23,6 +23,8 @@ import java.util.UUID
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "app.auth.features.email-confirmation-enabled=true",
+        "app.legal.enabled=true",
+        "app.plan.enabled=true",
     ],
 )
 @AutoConfigureWebTestClient
@@ -165,5 +167,9 @@ class AuthEmailWorkflowsIntegrationTest : IntegrationTestContainers() {
             .isEqualTo(true)
             .jsonPath("$.turnstileEnabled")
             .isEqualTo(false)
+            .jsonPath("$.legalDocumentsEnabled")
+            .isEqualTo(true)
+            .jsonPath("$.planLimitsEnabled")
+            .isEqualTo(true)
     }
 }

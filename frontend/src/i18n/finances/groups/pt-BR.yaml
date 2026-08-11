@@ -52,6 +52,12 @@ financesPage:
         disabled: Não participando
       generateInvitation: Gerar convite
       expiresOn: 'Expira em {{date}}'
+    limitsPage:
+      title: 'Limites do grupo: {{name}}'
+      description: O plano do proprietário define os limites disponíveis para todo o grupo.
+      used: '{{usage}} usados'
+      available: '{{remaining}} disponíveis'
+      unlimited: Sem limite
     bankAccountsAssociatedPage:
       title: 'Contas bancárias associadas ao grupo: {{name}}'
       owner: Dono da conta

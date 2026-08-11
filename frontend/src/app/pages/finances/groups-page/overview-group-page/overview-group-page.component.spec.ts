@@ -33,16 +33,16 @@ describe('OverviewGroupPageComponent ownership and departure', () => {
     expect(owner.extraButtons.some((button: FinancesTitleBarExtraButton) => button.severity === 'danger')).toBe(false);
   });
 
-  it('refetches only for the member who becomes owner and reveals leave after ownership moves away', async () => {
+  it('refetches for every member so ownership can update the tier and limits without a reload', async () => {
     const promoted = createComponent(group(false));
-    await promoted.ownershipChanged(userId);
+    await promoted.ownershipChanged();
     expect(promoted.groupService.getGroup).toHaveBeenCalledTimes(1);
+    expect(promoted.group.tier).toBe('PRO');
 
     const previousOwner = createComponent(group(true));
-    await previousOwner.ownershipChanged(otherUserId);
-    expect(previousOwner.groupService.getGroup).not.toHaveBeenCalled();
-    expect(previousOwner.group.isOwner).toBe(false);
-    expect(previousOwner.extraButtons.some((button: FinancesTitleBarExtraButton) => button.severity === 'danger')).toBe(true);
+    await previousOwner.ownershipChanged();
+    expect(previousOwner.groupService.getGroup).toHaveBeenCalledTimes(1);
+    expect(previousOwner.group.tier).toBe('PRO');
   });
 });
 
@@ -53,7 +53,7 @@ function createComponent(initialGroup: GroupWithRoleDto): any {
   component.dashboard = { currency: 'BRL', debtPairs: [] };
   component.userService = { user: () => ({ id: userId }) };
   component.groupService = {
-    getGroup: vi.fn().mockResolvedValue({ ...initialGroup, ownerUserId: userId, isOwner: true, role: 'ADMIN' }),
+    getGroup: vi.fn().mockResolvedValue({ ...initialGroup, ownerUserId: userId, isOwner: true, role: 'ADMIN', tier: 'PRO' }),
     leaveGroup: vi.fn().mockResolvedValue(undefined),
   };
   component.router = { navigate: vi.fn().mockResolvedValue(true) };
@@ -75,6 +75,7 @@ function group(
   permissions: GroupWithRoleDto['permissions'] = ['EDIT_GROUP'],
 ): GroupWithRoleDto {
   return {
+    tier: 'COMMON',
     id: '10000000-0000-0000-0000-000000000001',
     name: 'Shared',
     ownerUserId: isOwner ? userId : otherUserId,

@@ -23,22 +23,6 @@ class AuthRegistrationAndSessionScenarioDslTest {
     }
 
     @Test
-    fun `register rejects missing terms consent`() {
-        authScenario {
-            `when` {
-                attemptRegister(
-                    acceptTerms = false,
-                    acceptPrivacy = true,
-                )
-            }
-
-            then {
-                registrationShouldFailForMissingTermsConsent()
-            }
-        }
-    }
-
-    @Test
     fun `register persists legal metadata and optional gravatar opt out`() {
         val email = "reg-${UUID.randomUUID()}@example.com"
 

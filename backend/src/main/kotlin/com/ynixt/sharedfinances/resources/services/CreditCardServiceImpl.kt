@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.resources.services
 
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.mapper.CreditCardMapper
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
@@ -10,6 +11,7 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEventRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
 import com.ynixt.sharedfinances.domain.services.CreditCardService
 import com.ynixt.sharedfinances.domain.services.actionevents.CreditCardActionEventService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -26,6 +28,7 @@ class CreditCardServiceImpl(
     private val recurrenceEventRepository: RecurrenceEventRepository,
     private val creditCardActionEventService: CreditCardActionEventService,
     private val creditCardMapper: CreditCardMapper,
+    private val planQuotaService: PlanQuotaService,
 ) : CreditCardService {
     override suspend fun findAll(
         userId: UUID,
@@ -63,6 +66,7 @@ class CreditCardServiceImpl(
         userId: UUID,
         request: NewCreditCardRequest,
     ): CreditCard {
+        planQuotaService.assertCanAdd(userId, PlanLimitKey.CREDIT_CARDS)
         val saved =
             walletItemRepository
                 .save(
@@ -89,6 +93,7 @@ class CreditCardServiceImpl(
                 userId = userId,
                 creditCard = savedModel,
             )
+        planQuotaService.usageChanged(userId, PlanLimitKey.CREDIT_CARDS)
 
         return savedModel
     }
@@ -126,6 +131,7 @@ class CreditCardServiceImpl(
                         userId = userId,
                         creditCard = it,
                     )
+                planQuotaService.usageChanged(userId, PlanLimitKey.CREDIT_CARDS)
             }
         } else {
             null

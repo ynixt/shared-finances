@@ -36,6 +36,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     fail-on-missing-locations: false
+    placeholders:
+      default-role: ${SF_APP_DEFAULT_ROLE:pro}
 #    clean-disabled: false
   data:
     redis:
@@ -82,6 +84,13 @@ logging:
     io.r2dbc.postgresql.PARAM: ${SF_APP_DEBUG_QUERY_LEVEL:INFO}
 
 app:
+  inactive-account-deletion:
+    enabled: ${SF_APP_INACTIVE_ACCOUNT_DELETION_ENABLED:false}
+    cron: ${SF_APP_INACTIVE_ACCOUNT_DELETION_CRON:0 0 2 * * *}
+  plan:
+    enabled: ${SF_APP_ENABLE_LIMITS:false}
+    default-role: ${SF_APP_DEFAULT_ROLE:pro}
+    limit-cache-ttl: 5m
   public-web:
     base-url: ${SF_APP_PUBLIC_WEB_BASE_URL:http://localhost:4200}
   auth:
@@ -110,8 +119,9 @@ app:
         from-address: ${SF_APP_BREVO_FROM_ADDRESS:}
         from-name: ${SF_APP_BREVO_FROM_NAME:Shared Finances}
   legal:
-    terms-version: ${SF_APP_LEGAL_TERMS_VERSION:2026-04-14}
-    privacy-version: ${SF_APP_LEGAL_PRIVACY_VERSION:2026-04-14}
+    enabled: ${SF_APP_LEGAL_DOCUMENTS_ENABLED:false}
+    terms-version: ${SF_APP_LEGAL_TERMS_VERSION:2026-08-10}
+    privacy-version: ${SF_APP_LEGAL_PRIVACY_VERSION:2026-08-10}
   file-storage:
     path: ${SF_APP_FILE_STORAGE_PATH}
   nats:
@@ -136,7 +146,6 @@ app:
     providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
     fetchDelayMs: ${SF_APP_EXCHANGE_FETCH_DELAY_MS:1000}
   imports:
-    max-lines: ${SF_APP_IMPORT_MAX_LINES:1000}
     worker:
       enabled: ${SF_APP_IMPORT_WORKER_ENABLED:true}
   jobs:

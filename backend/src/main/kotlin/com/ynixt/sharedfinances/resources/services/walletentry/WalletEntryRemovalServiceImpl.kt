@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.mapper.WalletItemMapper
 import com.ynixt.sharedfinances.domain.models.walletentry.DeleteScheduledEntryRequest
@@ -21,6 +22,7 @@ import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptServic
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryRemovalService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
@@ -54,6 +56,7 @@ class WalletEntryRemovalServiceImpl(
     walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
     recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     clock: Clock,
+    planQuotaService: PlanQuotaService,
 ) : WalletEntryMutationSupportServiceImpl(
         walletEntryRepository = walletEntryRepository,
         walletItemMapper = walletItemMapper,
@@ -69,6 +72,7 @@ class WalletEntryRemovalServiceImpl(
         recurrenceEntryRepository = recurrenceEntryRepository,
         walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
         recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
+        planQuotaService = planQuotaService,
         clock = clock,
     ),
     WalletEntryRemovalService {
@@ -196,6 +200,11 @@ class WalletEntryRemovalServiceImpl(
         }
 
         walletEventActionEventService.sendDeletedWalletEvent(userId, payloadEvent)
+        if (config.groupId == null) {
+            planQuotaService.usageChanged(config.createdByUserId, PlanLimitKey.ACTIVE_SCHEDULES)
+        } else {
+            planQuotaService.groupUsageChanged(config.groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES, userId)
+        }
         return payloadEvent
     }
 

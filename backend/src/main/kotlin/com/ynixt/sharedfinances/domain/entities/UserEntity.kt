@@ -1,7 +1,9 @@
 package com.ynixt.sharedfinances.domain.entities
 
+import com.ynixt.sharedfinances.domain.enums.UserPlanRole
 import org.springframework.data.relational.core.mapping.Table
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @Table("users")
 class UserEntity(
@@ -22,4 +24,7 @@ class UserEntity(
     var termsVersion: String? = null,
     var privacyAcceptedAt: OffsetDateTime? = null,
     var privacyVersion: String? = null,
+    var role: UserPlanRole = UserPlanRole.PRO,
+    var lastLoginAt: OffsetDateTime = OffsetDateTime.now(ZoneOffset.UTC),
+    var inactivityNoticeStage: Int? = null,
 ) : AuditedEntity()

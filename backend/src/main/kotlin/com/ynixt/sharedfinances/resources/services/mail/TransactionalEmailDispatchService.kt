@@ -3,7 +3,8 @@ package com.ynixt.sharedfinances.resources.services.mail
 import com.ynixt.sharedfinances.application.config.AuthBrevoMailProperties
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.domain.exceptions.http.auth.NoTransactionalEmailProviderAvailableException
-import com.ynixt.sharedfinances.domain.mail.AuthTransactionalEmailMessage
+import com.ynixt.sharedfinances.domain.mail.TransactionalEmailMessage
+import com.ynixt.sharedfinances.domain.services.mail.TransactionalEmailSender
 import com.ynixt.sharedfinances.resources.repositories.redis.MailProviderQuotaRedisRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.reactor.awaitSingle
@@ -25,11 +26,11 @@ class TransactionalEmailDispatchService(
     private val objectMapper: ObjectMapper,
     webClientBuilder: WebClient.Builder,
     private val javaMailSenderProvider: ObjectProvider<JavaMailSender>,
-) {
+) : TransactionalEmailSender {
     private val logger = LoggerFactory.getLogger(javaClass)
     private val webClient: WebClient = webClientBuilder.build()
 
-    suspend fun send(message: AuthTransactionalEmailMessage) {
+    override suspend fun send(message: TransactionalEmailMessage) {
         for (providerId in authProperties.transactionalMail.providerPriority) {
             when (providerId.lowercase()) {
                 "smtp" -> {
@@ -83,7 +84,7 @@ class TransactionalEmailDispatchService(
         mailSender: JavaMailSender,
         fromAddress: String,
         fromName: String,
-        message: AuthTransactionalEmailMessage,
+        message: TransactionalEmailMessage,
     ) {
         withContext(Dispatchers.IO) {
             val mime = mailSender.createMimeMessage()
@@ -102,7 +103,7 @@ class TransactionalEmailDispatchService(
 
     private suspend fun sendBrevo(
         cfg: AuthBrevoMailProperties,
-        message: AuthTransactionalEmailMessage,
+        message: TransactionalEmailMessage,
     ) {
         val fromEmail = cfg.fromAddress.ifBlank { authProperties.transactionalMail.smtp.fromAddress }
         val fromName = cfg.fromName.ifBlank { authProperties.transactionalMail.smtp.fromName }

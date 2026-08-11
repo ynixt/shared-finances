@@ -1,32 +1,50 @@
 legal:
+  viewPlans: View the current plans and limits
   terms:
     title: Terms of Use
     p1: >-
       These Terms of Use govern access to and use of Shared Finances. The service is operated with
-      jurisdiction in Brazil. By creating an account, you agree to these terms.
+      jurisdiction in Brazil. By creating an account while these documents are presented, you agree
+      to these terms.
     p2: >-
       You are responsible for the accuracy of information you provide and for safeguarding your
       credentials. You must not misuse the service, attempt unauthorized access, or interfere with
       its normal operation.
     p3: >-
-      We may update these terms from time to time. When we do, we will adjust the version recorded
-      with new registrations. Existing accounts are not automatically required to re-accept in this
-      release, unless we notify you otherwise.
+      You may end your account. Deleting it permanently deletes the account and the financial records
+      associated with it, subject to any retention required by applicable law.
     p4: >-
+      Deleting an account also deletes every group that account owns and the group’s financial records,
+      including a group that still has or is being used by other members. Transfer or preserve anything
+      those members need before deleting the owner account.
+    p5: >-
+      An account left unused may be deleted after the inactivity period configured for its plan. We
+      send advance notice by e-mail before an inactivity deletion so the account holder can return or
+      preserve what they need.
+    p6: >-
+      Accounts and groups can have plan-based limits. The current allowances are published separately
+      and are read from the same settings the service enforces.
+    p7: >-
+      Shared Finances is open-source software. Operators may run and adapt their own instance under the
+      project license and are responsible for the policies and documents they present there.
+    p8: >-
+      A self-hosted instance is not subject to the limits of this public instance; its operator decides
+      what, if any, limits apply.
+    p9: >-
       Infrastructure note: traffic may pass through Cloudflare, which can provide proxying, caching,
       security protections, and its own analytics as described in Cloudflare’s documentation for the
       features enabled in our setup.
-    p5: >-
+    p10: >-
       The application does not use Google Analytics or similar third-party web analytics in the product
-      UI as of these terms. We may introduce strictly aggregated, anonymous operational metrics in the
-      future to keep the service reliable; if we do, we will describe them in the Privacy Policy.
-    p6: >-
+      interface. We may introduce strictly aggregated, anonymous operational metrics to keep the service
+      reliable; if we do, we will describe them in the Privacy Policy.
+    p11: >-
       For privacy-related requests under Brazilian law (LGPD), contact lgdp-finances@gabrielsilva.dev.
-    p7: >-
+    p12: >-
       We reserve the right to suspend or delete accounts that violate our fair use policy or these
       Terms of Use, including abuse, fraud, or activity that compromises the service or other users,
       at our discretion and where permitted by applicable law.
-    p8: >-
+    p13: >-
       Bot protection: registration, sign-in, and password-recovery requests may be processed through
       Cloudflare Turnstile. Turnstile may collect limited technical signals to distinguish humans from
       automated traffic; see Cloudflare’s documentation for details on data handling for Turnstile.
@@ -36,29 +54,38 @@ legal:
       This Privacy Policy explains how Shared Finances handles personal data when you use the service.
       It applies to users in all supported locales and is aligned with our operation in Brazil (LGPD).
     p2: >-
-      We process data you provide (for example account, profile, and financial information you enter)
-      and technical data needed to operate authentication and security (such as IP address and browser
-      user agent) while an authentication session is meaningful for login and session protection.
+      We process data you provide, including account, profile, and financial information, and technical
+      data needed to operate authentication and security, such as IP address and browser user agent.
     p3: >-
-      Authentication sessions and refresh tokens are stored with time-limited retention (including in
-      Redis with TTL), so related metadata does not outlive the configured session and token lifetimes.
+      Authentication sessions and refresh tokens are stored with time-limited retention, including in
+      Redis with TTL, so related metadata does not outlive the configured session and token lifetimes.
     p4: >-
+      You may request or perform account deletion. Deleting an account permanently deletes its profile
+      and financial records, subject to any retention required by applicable law.
+    p5: >-
+      Account deletion also deletes every group the account owns and the group’s financial records,
+      including groups with other members. Those members lose access to the deleted group data.
+    p6: >-
+      An unused account may be deleted after the inactivity period configured for its plan. Advance
+      notice is sent to the account e-mail before that deletion.
+    p7: >-
+      Plan and quota settings determine some retention and usage rules. Their current allowances are
+      published separately and are read from the same settings the service enforces.
+    p8: >-
       Traffic may be routed through Cloudflare, which can act as a reverse proxy and provide caching,
       security, and related processing. Depending on configuration, Cloudflare may process technical
       data for those purposes; see Cloudflare’s notices for the features in use.
-    p5: >-
-      We do not use Google Analytics or similar third-party analytics scripts inside the application
-      as of this policy.
-    p6: >-
-      We may later collect strictly aggregated, anonymous operational metrics (for example error rates
-      or performance summaries) that do not identify you; if introduced, we will update this policy.
-    p7: >-
-      You may exercise LGPD rights (such as access or deletion where applicable) by contacting
+    p9: >-
+      We do not use Google Analytics or similar third-party analytics scripts inside the application.
+      We may later collect strictly aggregated, anonymous operational metrics that do not identify you;
+      if introduced, we will update this policy.
+    p10: >-
+      You may exercise LGPD rights, such as access or deletion where applicable, by contacting
       lgdp-finances@gabrielsilva.dev. Some requests may require verifying your identity.
-    p8: >-
+    p11: >-
       Legal documents are provided in English and Portuguese (Brazil). If translations diverge, we aim
       to keep them consistent; the version stored on registration is defined by the server.
-    p9: >-
+    p12: >-
       Where Cloudflare Turnstile is enabled, it may process limited technical data during interactive
       challenges on authentication-related screens to reduce automated abuse; refer to Cloudflare’s
       notices for Turnstile.

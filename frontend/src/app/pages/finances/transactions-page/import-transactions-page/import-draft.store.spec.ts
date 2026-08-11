@@ -621,13 +621,27 @@ describe('ImportDraftStore', () => {
     expect(component.loading).toBe(false);
   });
 
+  it('keeps imports unbounded when the user has no plan line bound', async () => {
+    const component = TestBed.inject(ImportDraftStore);
+    importService.preferences.mockResolvedValue({ maxLines: null });
+
+    await component.initialize();
+    component.file = new File(['csv'], 'statement.csv', { type: 'text/csv' });
+    csvStore().fileText = 'data;descricao;valor\n07/08/2026;Compra A;10\n08/08/2026;Compra B;20\n09/08/2026;Compra C;30\n';
+    await component.reprocess(true);
+
+    expect(component.maxLines).toBeNull();
+    expect(component.rows).toHaveLength(3);
+    expect(component.error).toBeUndefined();
+  });
+
   it('keeps file processing disabled when import preferences cannot be loaded', async () => {
     const component = TestBed.inject(ImportDraftStore);
     importService.preferences.mockRejectedValue(new Error('preferences unavailable'));
 
     await component.initialize();
 
-    expect(component.maxLines).toBe(1000);
+    expect(component.maxLines).toBeNull();
     expect(component.importPreferencesLoaded).toBe(false);
     expect(component.error).toBe('financesPage.transactionsPage.importPage.errors.loadData');
     expect(component.loading).toBe(false);

@@ -85,8 +85,8 @@ class GroupDebtLedgerCascadeDataJpaTest : IntegrationTestContainers() {
         listOf(payerId, receiverId, actorId).forEach { userId ->
             connection.exec(
                 """
-                INSERT INTO users(id, email, password_hash, first_name, last_name, lang, tmz, default_currency, email_verified, mfa_enabled)
-                VALUES ('$userId', 'cascade-$userId@example.com', 'hash', 'Test', 'User', 'en', 'UTC', 'BRL', true, false)
+                INSERT INTO users(id, email, password_hash, first_name, last_name, lang, tmz, default_currency, email_verified, mfa_enabled, role)
+                VALUES ('$userId', 'cascade-$userId@example.com', 'hash', 'Test', 'User', 'en', 'UTC', 'BRL', true, false, 'PRO')
                 """.trimIndent(),
             )
         }

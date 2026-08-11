@@ -10,6 +10,10 @@ import java.util.UUID
 
 internal class InMemoryUserRepository : UserRepository {
     private val data = linkedMapOf<UUID, UserEntity>()
+    var activityWrites: Int = 0
+        private set
+    var activityQueries: Int = 0
+        private set
 
     override fun findDistinctDefaultCurrencies(): Flux<String> = Flux.fromIterable(data.values.map { it.defaultCurrency }.distinct())
 
@@ -144,4 +148,42 @@ internal class InMemoryUserRepository : UserRepository {
                 }
             } ?: 0,
         )
+
+    override fun recordActivityIfOlderThan(
+        userId: UUID,
+        usedAt: OffsetDateTime,
+        cutoff: OffsetDateTime,
+    ): Mono<Int> =
+        Mono.just(
+            data[userId]?.let { user ->
+                if (user.lastLoginAt.isBefore(cutoff)) {
+                    user.lastLoginAt = usedAt
+                    user.inactivityNoticeStage = null
+                    activityWrites++
+                    1
+                } else {
+                    0
+                }
+            } ?: 0,
+        )
+
+    override fun recordInactivityNoticeStage(
+        userId: UUID,
+        stage: Int,
+    ): Mono<Int> =
+        Mono.just(
+            data[userId]?.let { user ->
+                if (user.inactivityNoticeStage == null || user.inactivityNoticeStage!! > stage) {
+                    user.inactivityNoticeStage = stage
+                    1
+                } else {
+                    0
+                }
+            } ?: 0,
+        )
+
+    override fun findAllWithTrackedActivity(): Flux<UserEntity> {
+        activityQueries++
+        return Flux.fromIterable(data.values)
+    }
 }

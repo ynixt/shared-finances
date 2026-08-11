@@ -3,8 +3,10 @@ package com.ynixt.sharedfinances.scenarios.auth.support
 import com.ynixt.sharedfinances.application.config.AuthFeatureFlags
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
+import com.ynixt.sharedfinances.application.config.PlanProperties
 import com.ynixt.sharedfinances.application.web.dto.auth.RegisterDto
 import com.ynixt.sharedfinances.domain.services.SESSION_CLAIM_NAME
+import com.ynixt.sharedfinances.domain.services.mfa.MfaService
 import com.ynixt.sharedfinances.resources.services.AccountDeletionServiceImpl
 import com.ynixt.sharedfinances.resources.services.AuthServiceImpl
 import com.ynixt.sharedfinances.resources.services.UserServiceImpl
@@ -21,10 +23,12 @@ import java.util.UUID
 
 internal class AuthScenarioRuntime(
     initialDate: LocalDate = LocalDate.of(2026, 1, 1),
+    mfaService: MfaService? = null,
 ) {
     private val validator = Validation.buildDefaultValidatorFactory().validator
     private val legalDocumentProperties =
         LegalDocumentProperties(
+            enabled = true,
             termsVersion = "test-terms-1",
             privacyVersion = "test-privacy-1",
         )
@@ -38,7 +42,7 @@ internal class AuthScenarioRuntime(
                 ),
         )
 
-    val infrastructure = AuthScenarioInfrastructure(initialDate)
+    val infrastructure = AuthScenarioInfrastructure(initialDate, mfaService)
 
     private val accountDeletionService =
         AccountDeletionServiceImpl(
@@ -62,6 +66,7 @@ internal class AuthScenarioRuntime(
             avatarService = infrastructure.avatarService,
             legalDocumentProperties = legalDocumentProperties,
             authProperties = authProperties,
+            planProperties = PlanProperties(),
             clock = infrastructure.clock,
             accountDeletionService = accountDeletionService,
             userActionEventService = NoOpUserActionEventService(),
@@ -77,6 +82,7 @@ internal class AuthScenarioRuntime(
             jwtEncoder = infrastructure.jwtEncoder,
             mfaService = infrastructure.mfaService,
             authProperties = authProperties,
+            clock = infrastructure.clock,
             kid = "scenario-kid",
             issuer = "scenario-shared-finances",
             accessTtlMinutes = 15,

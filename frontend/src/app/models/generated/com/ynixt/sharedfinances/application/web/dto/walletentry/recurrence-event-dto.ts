@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { PaymentType } from '../../../../domain/enums/payment-type';
 import { RecurrenceType } from '../../../../domain/enums/recurrence-type';
 

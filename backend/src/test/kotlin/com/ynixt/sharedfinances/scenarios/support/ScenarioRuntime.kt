@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.scenarios.support
 
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
+import com.ynixt.sharedfinances.application.config.PlanProperties
 import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryConceptEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
@@ -251,6 +252,7 @@ internal class ScenarioRuntime(
             recurrenceEventRepository = recurrenceEventRepository,
             creditCardActionEventService = NoOpCreditCardActionEventService(),
             creditCardMapper = creditCardMapper,
+            planQuotaService = NoOpPlanQuotaService,
         )
 
     val creditCardBillService: CreditCardBillService =
@@ -268,6 +270,7 @@ internal class ScenarioRuntime(
             avatarService = NoOpAvatarService(),
             legalDocumentProperties = LegalDocumentProperties(),
             authProperties = AuthProperties(),
+            planProperties = PlanProperties(),
             clock = clock,
             accountDeletionService = NoOpAccountDeletionService,
             userActionEventService = NoOpUserActionEventService(),
@@ -332,6 +335,7 @@ internal class ScenarioRuntime(
             walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
             exchangeRateService = exchangeRateService,
+            planQuotaService = NoOpPlanQuotaService,
             clock = clock,
         )
 
@@ -403,6 +407,7 @@ internal class ScenarioRuntime(
                     debtMovementRepositoryForMutations,
                     debtDatabaseClientRepositoryForMutations,
                 ),
+            planQuotaService = NoOpPlanQuotaService,
             clock = clock,
         )
 
@@ -424,6 +429,7 @@ internal class ScenarioRuntime(
             recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
             walletEventActionEventService = walletEventActionEventService,
             walletItemMapper = walletItemMapper,
+            planQuotaService = NoOpPlanQuotaService,
             clock = clock,
         )
 
@@ -444,6 +450,7 @@ internal class ScenarioRuntime(
             bankAccountActionEventService = NoOpBankAccountActionEventService(),
             bankAccountMapper = bankAccountMapper,
             walletEntryCreateService = walletEntryCreateService,
+            planQuotaService = NoOpPlanQuotaService,
             clock = clock,
         )
 

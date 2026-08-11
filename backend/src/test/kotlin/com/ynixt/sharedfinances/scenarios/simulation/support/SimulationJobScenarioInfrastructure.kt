@@ -177,10 +177,16 @@ internal class InMemorySimulationJobStore(
             },
         )
 
-    override fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long> =
+    override fun deleteAllByCreatedAtBefore(
+        retentionThreshold: OffsetDateTime,
+        currentUtcMonthStart: OffsetDateTime,
+    ): Mono<Long> =
         Mono.just(
             synchronized(jobs) {
-                deleteWhere { it.createdAt?.isBefore(threshold) == true }
+                deleteWhere { job ->
+                    job.createdAt?.isBefore(retentionThreshold) == true &&
+                        (job.countedAt == null || job.countedAt!!.isBefore(currentUtcMonthStart))
+                }
             },
         )
 

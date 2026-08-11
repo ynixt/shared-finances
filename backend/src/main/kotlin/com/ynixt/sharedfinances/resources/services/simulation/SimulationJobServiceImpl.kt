@@ -5,12 +5,14 @@ import com.ynixt.sharedfinances.domain.entities.simulation.SimulationJobEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventCategory
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.SimulationJobStatus
 import com.ynixt.sharedfinances.domain.exceptions.http.SimulationJobForbiddenException
 import com.ynixt.sharedfinances.domain.exceptions.http.SimulationJobNotFoundException
 import com.ynixt.sharedfinances.domain.queue.producer.SimulationJobDispatchQueueProducer
 import com.ynixt.sharedfinances.domain.services.actionevents.ActionEventService
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.simulation.NewSimulationJobInput
 import com.ynixt.sharedfinances.domain.services.simulation.SimulationJobProcessor
 import com.ynixt.sharedfinances.domain.services.simulation.SimulationJobService
@@ -30,9 +32,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Duration
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 @Service
@@ -43,6 +47,7 @@ class SimulationJobServiceImpl(
     private val simulationJobProcessor: SimulationJobProcessor,
     private val groupPermissionService: GroupPermissionService,
     private val actionEventService: ActionEventService,
+    private val planQuotaService: PlanQuotaService,
     private val clock: Clock,
 ) : SimulationJobService {
     companion object {
@@ -60,10 +65,12 @@ class SimulationJobServiceImpl(
 
     private val logger = LoggerFactory.getLogger(SimulationJobServiceImpl::class.java)
 
+    @Transactional
     override suspend fun create(
         ownerUserId: UUID,
         input: NewSimulationJobInput,
     ): SimulationJobEntity {
+        planQuotaService.assertCanAdd(ownerUserId, PlanLimitKey.SIMULATIONS_PER_MONTH)
         val saved =
             simulationJobRepository
                 .save(
@@ -91,6 +98,7 @@ class SimulationJobServiceImpl(
         return saved
     }
 
+    @Transactional
     override suspend fun createForGroup(
         requesterUserId: UUID,
         groupId: UUID,
@@ -99,6 +107,7 @@ class SimulationJobServiceImpl(
         if (!groupPermissionService.hasPermission(requesterUserId, groupId, GroupPermissions.NEW_SIMULATION)) {
             throw SimulationJobForbiddenException()
         }
+        planQuotaService.assertCanAdd(requesterUserId, PlanLimitKey.SIMULATIONS_PER_MONTH)
 
         val saved =
             simulationJobRepository
@@ -295,8 +304,19 @@ class SimulationJobServiceImpl(
 
     override suspend fun purgeOldJobs(): Long =
         simulationJobRepository
-            .deleteAllByCreatedAtBefore(OffsetDateTime.now(clock).minusDays(RETENTION_DAYS))
-            .awaitSingle()
+            .deleteAllByCreatedAtBefore(
+                retentionThreshold = OffsetDateTime.now(clock).minusDays(RETENTION_DAYS),
+                currentUtcMonthStart = currentUtcMonthStart(),
+            ).awaitSingle()
+
+    private fun currentUtcMonthStart(): OffsetDateTime =
+        clock
+            .instant()
+            .atOffset(ZoneOffset.UTC)
+            .withDayOfMonth(1)
+            .toLocalDate()
+            .atStartOfDay()
+            .atOffset(ZoneOffset.UTC)
 
     override suspend fun cancelAndRemoveAllJobsLinkedToUserForCompliance(userId: UUID) {
         val scopes =
@@ -379,6 +399,7 @@ class SimulationJobServiceImpl(
                     .findById(jobId.toString())
                     .awaitSingleOrNull()
                     ?.let { emitStateEvent(it, ActionEventType.UPDATE) }
+                planQuotaService.usageChanged(fresh.requestedByUserId, PlanLimitKey.SIMULATIONS_PER_MONTH)
             }
         } catch (e: Exception) {
             logger.error("Simulation job $jobId failed", e)

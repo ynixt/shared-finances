@@ -1,13 +1,16 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.auth.ChangePasswordDto
+import com.ynixt.sharedfinances.application.web.dto.user.PlanQuotaEntitlementDto
 import com.ynixt.sharedfinances.application.web.dto.user.UpdateUserDto
+import com.ynixt.sharedfinances.application.web.dto.user.UserEntitlementsDto
 import com.ynixt.sharedfinances.application.web.dto.user.UserOnboardingDto
 import com.ynixt.sharedfinances.application.web.dto.user.UserResponseDto
 import com.ynixt.sharedfinances.application.web.mapper.UserDtoMapper
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.OnboardingService
 import com.ynixt.sharedfinances.domain.services.UserService
+import com.ynixt.sharedfinances.domain.services.plan.PlanEntitlementsService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -37,12 +40,33 @@ class UserController(
     private val userService: UserService,
     private val userDtoMapper: UserDtoMapper,
     private val onboardingService: OnboardingService,
+    private val planEntitlementsService: PlanEntitlementsService,
 ) {
     @GetMapping("/current")
     @Operation(summary = "Get info about the logged user")
     fun currentUser(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
     ): UserResponseDto = userDtoMapper.toResponseDtoFromPrincipal(principalToken.principal)
+
+    @GetMapping("/current/entitlements")
+    @Operation(summary = "Get the current user's plan limits and usage")
+    suspend fun currentEntitlements(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+    ): UserEntitlementsDto =
+        planEntitlementsService
+            .get(principalToken.principal.id, principalToken.principal.role, principalToken.principal.lastLoginAt)
+            .let { entitlements ->
+                UserEntitlementsDto(
+                    limitsEnabled = entitlements.limitsEnabled,
+                    role = entitlements.role,
+                    importMaxLines = entitlements.importMaxLines,
+                    projectedDeletionAt = entitlements.projectedDeletionAt,
+                    quotas =
+                        entitlements.quotas.map {
+                            PlanQuotaEntitlementDto(it.quota, it.limit, it.usage, it.unlimited, it.windowEnd)
+                        },
+                )
+            }
 
     @PutMapping("/current")
     @Operation(summary = "Change default currency of logged user")

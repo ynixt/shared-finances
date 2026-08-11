@@ -1,0 +1,32 @@
+planQuota:
+  usage: '{{usage}} of {{limit}} used'
+  remaining: '{{remaining}} remaining this month'
+  resets: 'Resets {{date}}'
+  refusal:
+    own: 'You have reached your {{quota}} limit. Review the current allowances on the Plans page.'
+    other: "This action cannot be completed because another user's {{quota}} limit was reached. Review the current allowances on the Plans page."
+    group: 'This group has reached its {{quota}} limit. Review the current allowances on the Plans page.'
+  quotas:
+    BANK_ACCOUNTS: Bank accounts
+    CREDIT_CARDS: Credit cards
+    CATEGORIES: Personal categories
+    GOALS: Personal goals
+    ACTIVE_SCHEDULES: Active schedules
+    IMPORTS_PER_MONTH: Monthly imports
+    SIMULATIONS_PER_MONTH: Monthly simulations
+    OWNED_GROUPS: Owned groups
+    GROUP_CATEGORIES: Group categories
+    GROUP_GOALS: Group goals
+    GROUP_ACTIVE_SCHEDULES: Active group schedules
+    GROUP_MEMBERS: Group members
+planIdentity:
+  userPlan: Your plan
+  groupTier: Group tier
+  ownerDeterminesTier: determined by the group's owner
+  userPlans:
+    USER: Common
+    PRO: Pro
+    ADMINISTRATOR: Administrator
+  groupTiers:
+    COMMON: Common
+    PRO: Pro

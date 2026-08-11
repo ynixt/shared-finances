@@ -3,9 +3,11 @@ package com.ynixt.sharedfinances.resources.services.imports
 import com.ynixt.sharedfinances.domain.entities.imports.ImportBatchEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.ImportBatchStatus
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.queue.producer.ImportJobDispatchQueueProducer
 import com.ynixt.sharedfinances.domain.repositories.ImportBatchRepository
 import com.ynixt.sharedfinances.domain.services.imports.ImportJobService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.ImportBatchDispatchRepository
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.cancelAndJoin
@@ -33,6 +35,7 @@ class ImportJobServiceImpl(
     private val eventPublisher: ImportBatchEventPublisher,
     private val meterRegistry: MeterRegistry,
     private val clock: Clock,
+    private val planQuotaService: PlanQuotaService,
 ) : ImportJobService {
     private val logger = LoggerFactory.getLogger(ImportJobServiceImpl::class.java)
 
@@ -112,6 +115,7 @@ class ImportJobServiceImpl(
                         completed.retries,
                     )
                     eventPublisher.publish(completed, ActionEventType.UPDATE)
+                    planQuotaService.usageChanged(completed.userId, PlanLimitKey.IMPORTS_PER_MONTH)
                 }
 
                 ImportBatchStatus.UNDO_RUNNING -> {

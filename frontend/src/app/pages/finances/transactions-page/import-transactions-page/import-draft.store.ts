@@ -126,7 +126,7 @@ export class ImportDraftStore extends ImportDraftState {
   async initialize(): Promise<void> {
     try {
       const [, preferences] = await Promise.all([this.catalogs.load(), this.importService.preferences()]);
-      this.maxLines = preferences.maxLines;
+      this.maxLines = preferences.maxLines ?? null;
       this.importPreferencesLoaded = true;
     } catch {
       this.error = this.importText('errors.loadData');
@@ -150,7 +150,7 @@ export class ImportDraftStore extends ImportDraftState {
       const hash = await this.importService.checkHash(this.fileHash);
       this.hashCheck = hash.status === 'NOT_IMPORTED' ? null : hash;
       if (this.fileFormat === 'OFX') {
-        this.ofxStore.parse(bytes, this.maxLines);
+        this.ofxStore.parse(bytes, this.maxLines ?? Number.MAX_SAFE_INTEGER);
         this.mapping = {
           bill: this.billFromDateMappingValue,
           category: this.fixedMappingValue,
@@ -201,7 +201,7 @@ export class ImportDraftStore extends ImportDraftState {
     try {
       const inclusionByIndex = new Map(this.rows.map(row => [row.index, row.included] as const));
       const parsed = this.csvStore.parse();
-      if (parsed.rows.length > this.maxLines) {
+      if (this.maxLines != null && parsed.rows.length > this.maxLines) {
         const maxLines = this.maxLines;
         this.removeFile();
         this.error = this.importText('errors.lineLimitExceeded', { maxLines });

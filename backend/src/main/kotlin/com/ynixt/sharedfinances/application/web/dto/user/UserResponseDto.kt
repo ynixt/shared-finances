@@ -1,5 +1,7 @@
 package com.ynixt.sharedfinances.application.web.dto.user
 
+import com.ynixt.sharedfinances.domain.enums.UserPlanRole
+import java.time.OffsetDateTime
 import java.util.UUID
 
 data class UserResponseDto(
@@ -15,4 +17,6 @@ data class UserResponseDto(
     var photoUrl: String?,
     var onboardingDone: Boolean,
     var darkMode: Boolean,
+    val role: UserPlanRole,
+    val lastLoginAt: OffsetDateTime,
 )

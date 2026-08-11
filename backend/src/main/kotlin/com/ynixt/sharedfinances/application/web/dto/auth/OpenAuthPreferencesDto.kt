@@ -8,4 +8,6 @@ data class OpenAuthPreferencesDto(
     val emailConfirmationEnabled: Boolean,
     val passwordRecoveryEnabled: Boolean,
     val turnstileEnabled: Boolean,
+    val legalDocumentsEnabled: Boolean,
+    val planLimitsEnabled: Boolean,
 )

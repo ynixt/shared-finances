@@ -312,6 +312,7 @@ class SimulationJobDatabaseClientRepository(
                             lease_expires_at = NULL,
                             worker_id = NULL,
                             finished_at = :finishedAt,
+                            counted_at = COALESCE(counted_at, :finishedAt),
                             updated_at = NOW()
                         WHERE
                             id = :jobId

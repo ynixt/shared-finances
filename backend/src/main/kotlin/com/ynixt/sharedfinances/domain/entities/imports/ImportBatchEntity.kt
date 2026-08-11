@@ -25,4 +25,6 @@ class ImportBatchEntity(
     val startedAt: OffsetDateTime?,
     val finishedAt: OffsetDateTime?,
     val retries: Int,
+    val countedAt: OffsetDateTime? = null,
+    val deletedAt: OffsetDateTime? = null,
 ) : AuditedEntity()

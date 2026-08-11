@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { CreditCardBillStatus } from '../../../../../domain/enums/credit-card-bill-status';
 
 export interface CreditCardBillDto {

@@ -6,6 +6,7 @@ import com.ynixt.sharedfinances.domain.entities.goals.FinancialGoalLedgerMovemen
 import com.ynixt.sharedfinances.domain.entities.goals.FinancialGoalTargetEntity
 import com.ynixt.sharedfinances.domain.enums.GoalLedgerMovementKind
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.exceptions.http.FinancialGoalForbiddenException
@@ -30,6 +31,7 @@ import com.ynixt.sharedfinances.domain.services.goals.EditFinancialGoalInput
 import com.ynixt.sharedfinances.domain.services.goals.FinancialGoalManagementService
 import com.ynixt.sharedfinances.domain.services.goals.NewFinancialGoalInput
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.FinancialGoalContributionScheduleSpringDataRepository
@@ -65,6 +67,7 @@ class FinancialGoalManagementServiceImpl(
     private val groupRepository: GroupRepository,
     private val groupPermissionService: GroupPermissionService,
     private val recurrenceService: RecurrenceService,
+    private val planQuotaService: PlanQuotaService,
     private val clock: Clock,
 ) : FinancialGoalManagementService {
     companion object {
@@ -171,6 +174,7 @@ class FinancialGoalManagementServiceImpl(
         userId: UUID,
         input: NewFinancialGoalInput,
     ): FinancialGoalHeader {
+        planQuotaService.assertCanAdd(userId, PlanLimitKey.GOALS)
         require(input.targets.isNotEmpty()) { "At least one currency target is required" }
         val savedGoal =
             financialGoalRepository
@@ -198,7 +202,9 @@ class FinancialGoalManagementServiceImpl(
             ).collectList()
             .awaitSingle()
 
-        return toHeader(savedGoal)
+        return toHeader(savedGoal).also {
+            planQuotaService.usageChanged(userId, PlanLimitKey.GOALS)
+        }
     }
 
     @Transactional
@@ -211,6 +217,7 @@ class FinancialGoalManagementServiceImpl(
         if (!groupPermissionService.hasPermission(userId, groupId, GroupPermissions.MANAGE_GOALS)) {
             throw FinancialGoalForbiddenException()
         }
+        planQuotaService.assertGroupCanAdd(groupId, PlanLimitKey.GROUP_GOALS, userId)
 
         val savedGoal =
             financialGoalRepository
@@ -238,7 +245,9 @@ class FinancialGoalManagementServiceImpl(
             ).collectList()
             .awaitSingle()
 
-        return toHeader(savedGoal)
+        return toHeader(savedGoal).also {
+            planQuotaService.groupUsageChanged(groupId, PlanLimitKey.GROUP_GOALS, userId)
+        }
     }
 
     @Transactional
@@ -295,9 +304,11 @@ class FinancialGoalManagementServiceImpl(
                 if (deleted == 0L) {
                     throw FinancialGoalNotFoundException(goalId)
                 }
+                planQuotaService.usageChanged(userId, PlanLimitKey.GOALS)
             }
             existing.groupId != null -> {
                 financialGoalRepository.deleteById(goalId.toString()).then().awaitSingle()
+                planQuotaService.groupUsageChanged(existing.groupId, PlanLimitKey.GROUP_GOALS, userId)
             }
         }
     }

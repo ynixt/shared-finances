@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.services.categories
 
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.exceptions.http.DebtSfCategoryProtectedException
 import com.ynixt.sharedfinances.domain.exceptions.http.DuplicatedCategoryConceptException
 import com.ynixt.sharedfinances.domain.exceptions.http.DuplicatedCategoryException
@@ -11,6 +12,7 @@ import com.ynixt.sharedfinances.domain.services.DatabaseHelperService
 import com.ynixt.sharedfinances.domain.services.actionevents.UserCategoryActionEventService
 import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.UserCategoryService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.util.PageUtil.createPage
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -27,6 +29,7 @@ class UserCategoryServiceImpl(
     categoryConceptService: CategoryConceptService,
     private val databaseHelperService: DatabaseHelperService,
     private val userCategoryActionEventService: UserCategoryActionEventService,
+    private val planQuotaService: PlanQuotaService,
 ) : CategoryService(
         repository = repository,
         categoryConceptService = categoryConceptService,
@@ -99,6 +102,7 @@ class UserCategoryServiceImpl(
         userId: UUID,
         newCategoryRequest: NewCategoryRequest,
     ): WalletEntryCategoryEntity {
+        planQuotaService.assertCanAdd(userId, PlanLimitKey.CATEGORIES)
         val concept =
             categoryConceptService.resolveForMutation(
                 conceptId = newCategoryRequest.conceptId,
@@ -132,6 +136,7 @@ class UserCategoryServiceImpl(
                             category = saved,
                             userId = userId,
                         )
+                    planQuotaService.usageChanged(userId, PlanLimitKey.CATEGORIES)
                 }
         } catch (t: Throwable) {
             throw when {
@@ -313,6 +318,7 @@ class UserCategoryServiceImpl(
 
         if (deleted) {
             categoryConceptService.cleanupOrphanedCustomConcept(existing.conceptId)
+            planQuotaService.usageChanged(userId, PlanLimitKey.CATEGORIES)
         }
 
         return deleted

@@ -18,6 +18,7 @@ import { TimeZoneSelectorComponent, allTimezones } from '../../components/timezo
 import { TurnstileWidgetComponent } from '../../components/turnstile-widget/turnstile-widget.component';
 import { AuthService } from '../../services/auth.service';
 import { ErrorMessageService } from '../../services/error-message.service';
+import { OpenAuthPreferencesService } from '../../services/open-auth-preferences.service';
 import { groupArrayBy } from '../../util/collection-util';
 import { DEFAULT_SUCCESS_LIFE } from '../../util/success-util';
 import { promiseTimeout } from '../../util/timeout-util';
@@ -61,6 +62,7 @@ export class RegistrationPageComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private errorMessageService: ErrorMessageService,
+    protected readonly openAuthPreferences: OpenAuthPreferencesService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -141,8 +143,8 @@ export class RegistrationPageComponent implements OnInit {
         language: [undefined, [Validators.required]],
         tmz: [this.getBrowserTmz(), [Validators.required]],
         defaultCurrency: [undefined, [Validators.required]],
-        acceptTerms: [false, [Validators.requiredTrue]],
-        acceptPrivacy: [false, [Validators.requiredTrue]],
+        acceptTerms: [false, this.openAuthPreferences.legalDocumentsEnabled() ? [Validators.requiredTrue] : []],
+        acceptPrivacy: [false, this.openAuthPreferences.legalDocumentsEnabled() ? [Validators.requiredTrue] : []],
         gravatarOptIn: [false],
       },
       { validators: confirmPasswordValidator },

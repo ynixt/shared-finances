@@ -1,38 +1,9 @@
 /* eslint-disable */
 /* tslint-disable */
 
-export type ActionEventCategory =
-  | 'BANK_ACCOUNT'
-  | 'GROUP'
-  | 'GROUP_OWNERSHIP'
-  | 'GROUP_MEMBERSHIP'
-  | 'CREDIT_CARD'
-  | 'BANK_ACCOUNT_ASSOCIATE'
-  | 'CREDIT_CARD_ASSOCIATE'
-  | 'USER'
-  | 'USER_CATEGORY'
-  | 'GROUP_CATEGORY'
-  | 'WALLET_EVENT'
-  | 'SIMULATION_JOB'
-  | 'IMPORT_BATCH'
-  | 'ONBOARDING';
+export type ActionEventCategory = 'BANK_ACCOUNT' | 'GROUP' | 'GROUP_OWNERSHIP' | 'GROUP_MEMBERSHIP' | 'CREDIT_CARD' | 'BANK_ACCOUNT_ASSOCIATE' | 'CREDIT_CARD_ASSOCIATE' | 'USER' | 'USER_CATEGORY' | 'GROUP_CATEGORY' | 'WALLET_EVENT' | 'SIMULATION_JOB' | 'IMPORT_BATCH' | 'ONBOARDING' | 'PLAN_USAGE' | 'GROUP_PLAN_USAGE';
 
-export const ActionEventCategory__Options: ActionEventCategory[] = [
-  'BANK_ACCOUNT',
-  'GROUP',
-  'GROUP_OWNERSHIP',
-  'GROUP_MEMBERSHIP',
-  'CREDIT_CARD',
-  'BANK_ACCOUNT_ASSOCIATE',
-  'CREDIT_CARD_ASSOCIATE',
-  'USER',
-  'USER_CATEGORY',
-  'GROUP_CATEGORY',
-  'WALLET_EVENT',
-  'SIMULATION_JOB',
-  'IMPORT_BATCH',
-  'ONBOARDING',
-];
+export const ActionEventCategory__Options: ActionEventCategory[] = ['BANK_ACCOUNT', 'GROUP', 'GROUP_OWNERSHIP', 'GROUP_MEMBERSHIP', 'CREDIT_CARD', 'BANK_ACCOUNT_ASSOCIATE', 'CREDIT_CARD_ASSOCIATE', 'USER', 'USER_CATEGORY', 'GROUP_CATEGORY', 'WALLET_EVENT', 'SIMULATION_JOB', 'IMPORT_BATCH', 'ONBOARDING', 'PLAN_USAGE', 'GROUP_PLAN_USAGE'];
 
 export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEventCategory } = {
   'BANK_ACCOUNT': 'BANK_ACCOUNT',
@@ -49,4 +20,6 @@ export const ActionEventCategory__Obj: { [K in ActionEventCategory]: ActionEvent
   'SIMULATION_JOB': 'SIMULATION_JOB',
   'IMPORT_BATCH': 'IMPORT_BATCH',
   'ONBOARDING': 'ONBOARDING',
+  'PLAN_USAGE': 'PLAN_USAGE',
+  'GROUP_PLAN_USAGE': 'GROUP_PLAN_USAGE',
 };

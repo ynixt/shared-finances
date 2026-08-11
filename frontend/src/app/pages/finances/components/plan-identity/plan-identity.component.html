@@ -1,0 +1,11 @@
+<p
+  class="text-sm text-color-secondary"
+  [class.mb-4]="kind() === 'user'"
+  [attr.data-testid]="kind() === 'user' ? 'user-plan-name' : 'group-tier'"
+>
+  {{ labelKey() | translate }}:
+  <strong>{{ valueKey() | translate }}</strong>
+  @if (kind() === 'group') {
+    · {{ 'planIdentity.ownerDeterminesTier' | translate }}
+  }
+</p>

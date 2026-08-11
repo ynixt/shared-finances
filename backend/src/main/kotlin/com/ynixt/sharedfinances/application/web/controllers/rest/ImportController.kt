@@ -1,6 +1,5 @@
 package com.ynixt.sharedfinances.application.web.controllers.rest
 
-import com.ynixt.sharedfinances.application.config.ImportProperties
 import com.ynixt.sharedfinances.application.web.dto.imports.CreateImportDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportBatchDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportDuplicateCheckDto
@@ -37,12 +36,13 @@ import java.util.UUID
 @Tag(name = "Imports", description = "Transaction statement import and history operations")
 class ImportController(
     private val importService: ImportService,
-    private val importProperties: ImportProperties,
     private val importLineLimitValidator: ImportLineLimitValidator,
 ) {
     @Operation(summary = "Get transaction import preferences")
     @GetMapping("/preferences")
-    suspend fun preferences(): ImportPreferencesDto = ImportPreferencesDto(maxLines = importProperties.maxLines)
+    suspend fun preferences(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+    ): ImportPreferencesDto = ImportPreferencesDto(maxLines = importLineLimitValidator.maximum(principalToken.principal.role))
 
     @Operation(summary = "Check whether a SHA-256 file hash was imported before")
     @GetMapping("/check-hash/{hash}")
@@ -60,7 +60,7 @@ class ImportController(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: ImportDuplicateCheckDto,
     ): List<Int> {
-        importLineLimitValidator.validate(body.lines.size)
+        importLineLimitValidator.validate(principalToken.principal.role, body.lines.size)
         return importService.checkDuplicates(
             userId = principalToken.principal.id,
             request =
@@ -87,7 +87,7 @@ class ImportController(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: CreateImportDto,
     ): ImportBatchDto {
-        importLineLimitValidator.validate(body.lines.size)
+        importLineLimitValidator.validate(principalToken.principal.role, body.lines.size)
         return importService
             .create(
                 userId = principalToken.principal.id,

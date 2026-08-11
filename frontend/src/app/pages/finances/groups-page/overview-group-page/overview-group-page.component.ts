@@ -23,6 +23,7 @@ import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sh
 import { WalletItemType } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums/wallet-item-type';
 import { WalletItemType__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums/wallet-item-type';
 import { ErrorMessageService } from '../../../../services/error-message.service';
+import { PlanEntitlementsStore } from '../../../../services/plan-entitlements.store';
 import { UserService } from '../../../../services/user.service';
 import {
   DashboardFeedFilters,
@@ -106,6 +107,7 @@ export class OverviewGroupPageComponent {
     private confirmationService: ConfirmationService,
     private userService: UserService,
     private translateService: TranslateService,
+    protected readonly planEntitlements: PlanEntitlementsStore,
   ) {
     const initialDateRange =
       readDateRangeFromQueryParams(this.route.snapshot.queryParamMap, 'normal') ?? createMonthDateRange(dayjs(), 'normal');
@@ -331,7 +333,7 @@ export class OverviewGroupPageComponent {
         untilDestroyed(this),
         filter(e => e.data.groupId == groupId),
       )
-      .subscribe(e => void this.ownershipChanged(e.data.newOwnerUserId));
+      .subscribe(() => void this.ownershipChanged());
 
     this.groupsActionEventService.memberLeft$
       .pipe(
@@ -353,13 +355,9 @@ export class OverviewGroupPageComponent {
     this.extraButtons = this.createExtraButtons();
   }
 
-  private async ownershipChanged(newOwnerUserId: string) {
+  private async ownershipChanged() {
     if (this.group == null || this.groupId == null) return;
-    if (newOwnerUserId === this.userService.user()?.id) {
-      this.group = await this.groupService.getGroup(this.groupId);
-    } else {
-      this.group = { ...this.group, ownerUserId: newOwnerUserId, isOwner: false };
-    }
+    this.group = await this.groupService.getGroup(this.groupId);
     this.extraButtons = this.createExtraButtons();
   }
 

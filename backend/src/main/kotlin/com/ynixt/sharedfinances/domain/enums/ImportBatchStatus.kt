@@ -8,4 +8,5 @@ enum class ImportBatchStatus {
     UNDO_QUEUED,
     UNDO_RUNNING,
     UNDO_FAILED,
+    UNDONE,
 }

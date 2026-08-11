@@ -1,13 +1,14 @@
 /* eslint-disable */
 /* tslint-disable */
-import { TransferPurpose } from '../../../../domain/enums/transfer-purpose';
-import { WalletEntryType } from '../../../../domain/enums/wallet-entry-type';
-import { GroupDto } from '../groups/group-dto';
-import { UserSimpleDto } from '../user/user-simple-dto';
+
 import { CategoryDto } from '../wallet/category/category-dto';
 import { EntryResponseDto } from './EventForListDto/entry-response-dto';
+import { GroupDto } from '../groups/group-dto';
 import { RecurrenceEventDto } from './recurrence-event-dto';
+import { TransferPurpose } from '../../../../domain/enums/transfer-purpose';
+import { UserSimpleDto } from '../user/user-simple-dto';
 import { WalletBeneficiaryLegDto } from './wallet-beneficiary-leg-dto';
+import { WalletEntryType } from '../../../../domain/enums/wallet-entry-type';
 
 export interface EventForListDto {
   beneficiaries: Array<WalletBeneficiaryLegDto>;

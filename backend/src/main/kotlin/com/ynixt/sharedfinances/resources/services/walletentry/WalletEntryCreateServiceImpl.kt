@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
@@ -29,6 +30,7 @@ import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryServic
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
@@ -65,6 +67,7 @@ class WalletEntryCreateServiceImpl(
     private val walletEventActionEventService: WalletEventActionEventService,
     private val walletItemMapper: WalletItemMapper,
     private val exchangeRateService: ExchangeRateService,
+    planQuotaService: PlanQuotaService,
     clock: Clock,
 ) : WalletEntrySaveServiceImpl(
         groupService = groupService,
@@ -78,6 +81,7 @@ class WalletEntryCreateServiceImpl(
         recurrenceEntryRepository = recurrenceEntryRepository,
         walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
         recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
+        planQuotaService = planQuotaService,
         clock = clock,
     ),
     WalletEntryCreateService {
@@ -93,7 +97,12 @@ class WalletEntryCreateServiceImpl(
 
         return if (hasMutationPermission(userId, preparedRequest)) {
             createWithoutCheckPermissions(userId, preparedRequest)
-                .also { walletEventActionEventService.sendInsertedWalletEvent(userId, it) }
+                .also {
+                    walletEventActionEventService.sendInsertedWalletEvent(userId, it)
+                    if (preparedRequest.groupId == null && createsSchedule(preparedRequest)) {
+                        planQuotaService.usageChanged(userId, PlanLimitKey.ACTIVE_SCHEDULES)
+                    }
+                }
         } else {
             null
         }
@@ -104,6 +113,9 @@ class WalletEntryCreateServiceImpl(
             throw UnauthorizedException()
         }
     }
+
+    private fun createsSchedule(request: NewEntryRequest): Boolean =
+        request.paymentType != PaymentType.UNIQUE || request.isInFuture(LocalDate.now(clock))
 
     @Transactional
     override suspend fun createFromRecurrenceConfig(
@@ -305,6 +317,12 @@ class WalletEntryCreateServiceImpl(
         )
 
         walletEventActionEventService.sendInsertedWalletEvent(event.createdByUserId, walletEventSaved)
+
+        if (event.groupId == null && nextExecution == null) {
+            planQuotaService.usageChanged(event.createdByUserId, PlanLimitKey.ACTIVE_SCHEDULES)
+        } else if (event.groupId != null && nextExecution == null) {
+            planQuotaService.groupUsageChanged(event.groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES, event.createdByUserId)
+        }
 
         return walletEventSaved
     }

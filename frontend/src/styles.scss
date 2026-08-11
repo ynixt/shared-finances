@@ -106,3 +106,17 @@ app-root {
     justify-content: unset;
   }
 }
+
+.title-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 32%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  padding: 0.15rem 0.55rem;
+  color: var(--primary-color);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}

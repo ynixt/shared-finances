@@ -10,6 +10,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventBenefi
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.TransferPurpose
 import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
@@ -41,6 +42,7 @@ import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.RecurrenceEventBeneficiarySpringDataRepository
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.springdata.WalletEventBeneficiarySpringDataRepository
@@ -67,6 +69,7 @@ abstract class WalletEntrySaveServiceImpl(
     protected val recurrenceEntryRepository: RecurrenceEntryRepository,
     protected val walletEventBeneficiaryRepository: WalletEventBeneficiarySpringDataRepository,
     protected val recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
+    protected val planQuotaService: PlanQuotaService,
     protected val clock: Clock,
 ) {
     protected suspend fun prepareMutationRequest(
@@ -366,6 +369,14 @@ abstract class WalletEntrySaveServiceImpl(
                 seriesOffset = seriesOffset,
             )
 
+        if (id == null && recurrenceToPersist.nextExecution != null) {
+            if (recurrenceToPersist.groupId == null) {
+                planQuotaService.assertCanAdd(userId, PlanLimitKey.ACTIVE_SCHEDULES)
+            } else {
+                planQuotaService.assertGroupCanAdd(recurrenceToPersist.groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES, userId)
+            }
+        }
+
         return recurrenceEventRepository
             .save(recurrenceToPersist)
             .awaitSingle()
@@ -386,6 +397,11 @@ abstract class WalletEntrySaveServiceImpl(
                             entry.event = savedRecurrence
                         }
                     }
+                if (id == null && savedRecurrence.nextExecution != null) {
+                    savedRecurrence.groupId?.let {
+                        planQuotaService.groupUsageChanged(it, PlanLimitKey.GROUP_ACTIVE_SCHEDULES, userId)
+                    }
+                }
             }
     }
 

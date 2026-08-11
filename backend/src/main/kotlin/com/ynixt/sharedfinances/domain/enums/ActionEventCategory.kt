@@ -16,4 +16,6 @@ enum class ActionEventCategory {
     SIMULATION_JOB,
     IMPORT_BATCH,
     ONBOARDING,
+    PLAN_USAGE,
+    GROUP_PLAN_USAGE,
 }

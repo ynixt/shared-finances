@@ -12,20 +12,24 @@ import { GithubStarsService } from '../../components/github-stars/github-stars.c
 import { AuthService } from '../../services/auth.service';
 import { BreakpointService } from '../../services/breakpoint.service';
 import { OpenAuthPreferencesService } from '../../services/open-auth-preferences.service';
+import { PlanEntitlementsStore } from '../../services/plan-entitlements.store';
 import { UserService } from '../../services/user.service';
 import { ShowcasePageComponent } from './showcase-page.component';
 
 describe('public registration entry points', () => {
   const registrationEnabled = signal(true);
+  const planLimitsEnabled = signal(false);
 
   beforeEach(async () => {
     registrationEnabled.set(true);
+    planLimitsEnabled.set(false);
     await TestBed.configureTestingModule({
       imports: [ShowcasePageComponent],
       providers: [
         provideHttpClient(),
         provideRouter([]),
-        { provide: OpenAuthPreferencesService, useValue: { registrationEnabled } },
+        { provide: OpenAuthPreferencesService, useValue: { registrationEnabled, planLimitsEnabled } },
+        { provide: PlanEntitlementsStore, useValue: { limitsEnabled: signal(false) } },
         { provide: UserService, useValue: { loading: signal(false), user: signal(null) } },
         { provide: AuthService, useValue: { logout: vi.fn() } },
         { provide: BreakpointService, useValue: { isUp: () => signal(false) } },
@@ -61,5 +65,17 @@ describe('public registration entry points', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('a[href="/register"]')).toHaveLength(0);
+  });
+
+  it('shows no public plan link while limits are off and restores it when enabled', () => {
+    const disabled = TestBed.createComponent(ShowcasePageComponent);
+    disabled.detectChanges();
+    expect(disabled.nativeElement.querySelector('a[href="/plans"]')).toBeNull();
+    disabled.destroy();
+
+    planLimitsEnabled.set(true);
+    const enabled = TestBed.createComponent(ShowcasePageComponent);
+    enabled.detectChanges();
+    expect(enabled.nativeElement.querySelector('a[href="/plans"]')).not.toBeNull();
   });
 });

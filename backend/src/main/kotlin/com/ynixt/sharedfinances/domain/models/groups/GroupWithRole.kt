@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.domain.models.groups
 
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.GroupPlanTier
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import java.time.OffsetDateTime
@@ -14,6 +15,7 @@ data class GroupWithRole(
     val ownerUserId: UUID,
     val isOwner: Boolean,
     val role: UserGroupRole,
+    val tier: GroupPlanTier = GroupPlanTier.COMMON,
     val itemsAssociated: List<WalletItem>? = null,
 ) {
     lateinit var permissions: Set<GroupPermissions>

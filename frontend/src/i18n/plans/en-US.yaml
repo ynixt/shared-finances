@@ -1,0 +1,51 @@
+plans:
+  navLink: Plans
+  eyebrow: Current allowances
+  title: Plans and limits, in plain sight
+  intro: >-
+    These are the limits this public Shared Finances instance enforces right now. They come from the
+    same stored settings used when the application accepts or refuses an action.
+  loading: Loading the current limits…
+  loadError: The current plan comparison could not be loaded.
+  quota: What is limited
+  unlimited: Unlimited
+  actions:
+    startNow: Start now
+    comingSoon: Coming soon
+  selfHosted:
+    name: Self-hosted
+    youDefine: You decide
+  userPlans:
+    eyebrow: Per account
+    title: User plans
+    description: These allowances belong to one user account, regardless of the groups it joins.
+  groupTiers:
+    eyebrow: Per owned group
+    title: Group tiers
+    description: >-
+      Group allowances are separate from user allowances. A group’s tier follows the plan of the
+      member who owns that group.
+  inactivity:
+    finite: An unused account on this plan may be deleted after {{months}} months, with advance notice by e-mail.
+    unlimited: Accounts on this plan have no configured inactivity-retention limit.
+  openSource:
+    eyebrow: Run it your way
+    title: Open source, without hosted-instance limits
+    description: >-
+      These limits help cover the cost of operating this public instance. Shared Finances is open
+      source, and an instance you host yourself is not subject to them.
+    link: ynixt/shared-finances
+  quotas:
+    BANK_ACCOUNTS: Bank accounts
+    CREDIT_CARDS: Credit cards
+    CATEGORIES: Personal categories
+    GOALS: Personal goals
+    ACTIVE_SCHEDULES: Active schedules
+    IMPORTS_PER_MONTH: Imports per month
+    SIMULATIONS_PER_MONTH: Simulations per month
+    OWNED_GROUPS: Groups owned
+    IMPORT_MAX_LINES: Rows in one imported file
+    GROUP_CATEGORIES: Group categories
+    GROUP_GOALS: Group goals
+    GROUP_ACTIVE_SCHEDULES: Active group schedules
+    GROUP_MEMBERS: Group members

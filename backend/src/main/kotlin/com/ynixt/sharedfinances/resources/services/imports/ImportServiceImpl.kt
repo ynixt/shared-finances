@@ -4,6 +4,7 @@ import com.ynixt.sharedfinances.domain.entities.imports.ImportBatchEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.ImportBatchStatus
 import com.ynixt.sharedfinances.domain.enums.ImportHashStatus
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.exceptions.http.InvalidImportRequestException
 import com.ynixt.sharedfinances.domain.exceptions.http.WalletItemNotFoundException
 import com.ynixt.sharedfinances.domain.models.imports.CreateImport
@@ -16,6 +17,7 @@ import com.ynixt.sharedfinances.domain.repositories.ImportBatchRepository
 import com.ynixt.sharedfinances.domain.repositories.ImportDuplicateRepository
 import com.ynixt.sharedfinances.domain.services.WalletItemService
 import com.ynixt.sharedfinances.domain.services.imports.ImportService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.resources.repositories.r2dbc.databaseclient.ImportBatchDispatchRepository
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
@@ -24,6 +26,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 @Service
@@ -35,6 +38,7 @@ class ImportServiceImpl(
     private val dispatchRepository: ImportBatchDispatchRepository,
     private val dispatchQueueProducer: ImportJobDispatchQueueProducer,
     private val eventPublisher: ImportBatchEventPublisher,
+    private val planQuotaService: PlanQuotaService,
 ) : ImportService {
     private val logger = LoggerFactory.getLogger(ImportServiceImpl::class.java)
 
@@ -109,10 +113,12 @@ class ImportServiceImpl(
         }
     }
 
+    @Transactional
     override suspend fun create(
         userId: UUID,
         request: CreateImport,
     ): ImportBatchSummary {
+        planQuotaService.assertCanAdd(userId, PlanLimitKey.IMPORTS_PER_MONTH)
         val accepted =
             try {
                 acceptanceService.accept(userId, request)

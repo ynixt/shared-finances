@@ -8,9 +8,11 @@ pageTitle:
   resetPassword: Redefinir senha
   legalTerms: Termos de Uso
   legalPrivacy: Política de Privacidade
+  plans: Planos e limites
   notFound: 404 - Não encontrado
   app: Visão Geral
   settings: Configurações
+  personalLimits: Meus limites
   bankAccounts: Contas bancárias
   newBankAccount: Nova conta bancária
   editBankAccount: Editar conta bancária
@@ -26,6 +28,7 @@ pageTitle:
   newGroup: Novo grupo
   editGroup: Editar grupo
   overviewGroup: Visão geral do grupo
+  groupLimits: Limites do grupo
   groupDebts: Dívidas do grupo
   groupDebtAdjustment: Ajuste de dívida do grupo
   groupDebtSettlement: Quitação de dívida do grupo

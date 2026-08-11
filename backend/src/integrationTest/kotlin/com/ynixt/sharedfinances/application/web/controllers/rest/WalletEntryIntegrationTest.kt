@@ -8,14 +8,20 @@ import com.ynixt.sharedfinances.application.web.dto.walletentry.EventForListDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.ScheduledExecutionManagerRequestDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletSourceLegDto
+import com.ynixt.sharedfinances.domain.entities.PlanLimitEntity
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
+import com.ynixt.sharedfinances.domain.enums.PlanLimitScope
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.ScheduledExecutionFilter
+import com.ynixt.sharedfinances.domain.enums.UserPlanRole
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.repositories.WalletItemRepository
+import com.ynixt.sharedfinances.domain.services.plan.PlanLimitService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.support.IntegrationTestContainers
 import com.ynixt.sharedfinances.support.config.TestClockConfig
@@ -35,6 +41,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
@@ -70,6 +77,15 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
 
     @Autowired
     private lateinit var mutableTestClock: MutableTestClock
+
+    @Autowired
+    private lateinit var planLimitService: PlanLimitService
+
+    @Autowired
+    private lateinit var planQuotaService: PlanQuotaService
+
+    @Autowired
+    private lateinit var databaseClient: DatabaseClient
 
     private lateinit var userTestUtil: UserTestUtil
 
@@ -581,6 +597,119 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
     }
 
     @Test
+    fun `should refuse middle only-this edit when personal active schedule quota is exhausted`() {
+        runBlocking {
+            val user = userTestUtil.createUserOnDatabase()
+            val accessToken = userTestUtil.login()
+            val userId = requireNotNull(user.id)
+            val creditCardId =
+                createCreditCard(
+                    userId = userId,
+                    accessToken = accessToken,
+                    name = "Schedule quota card",
+                    totalLimit = BigDecimal("1000.00"),
+                    dueDay = 1,
+                    daysBetweenDueAndClosing = 2,
+                )
+
+            createFutureInstallmentSchedule(accessToken, creditCardId)
+            val scheduled = getLatestScheduledEntry(accessToken)
+            databaseClient
+                .sql("UPDATE users SET role = 'USER' WHERE id = :userId")
+                .bind("userId", userId)
+                .fetch()
+                .rowsUpdated()
+                .awaitSingle()
+            planLimitService.save(activeScheduleLimit(1))
+
+            try {
+                assertThat(countActivePersonalSchedules(userId)).isEqualTo(1)
+
+                webClient
+                    .put()
+                    .uri("/wallet-entries/scheduled/${scheduled.recurrenceConfigId}")
+                    .header(HttpHeaders.AUTHORIZATION, accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(scheduleEditRequest(creditCardId, ScheduledEditScope.ONLY_THIS))
+                    .exchange()
+                    .expectStatus()
+                    .isEqualTo(HttpStatus.CONFLICT)
+
+                assertThat(countActivePersonalSchedules(userId)).isEqualTo(1)
+                assertThat(planQuotaService.currentUsage(userId, PlanLimitKey.ACTIVE_SCHEDULES)).isEqualTo(1)
+
+                planLimitService.save(activeScheduleLimit(2))
+                webClient
+                    .put()
+                    .uri("/wallet-entries/scheduled/${scheduled.recurrenceConfigId}")
+                    .header(HttpHeaders.AUTHORIZATION, accessToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(scheduleEditRequest(creditCardId, ScheduledEditScope.ONLY_THIS))
+                    .exchange()
+                    .expectStatus()
+                    .isEqualTo(HttpStatus.CONFLICT)
+
+                assertThat(countActivePersonalSchedules(userId))
+                    .describedAs("the first inserted split segment must roll back when the second assertion fails")
+                    .isEqualTo(1)
+                assertThat(planQuotaService.currentUsage(userId, PlanLimitKey.ACTIVE_SCHEDULES)).isEqualTo(1)
+            } finally {
+                planLimitService.save(activeScheduleLimit(50))
+            }
+        }
+    }
+
+    @Test
+    fun `scheduled edit scopes keep active recurrence rows aligned with reported usage`() {
+        runBlocking {
+            val expectedActiveRows =
+                mapOf(
+                    ScheduledEditScope.ONLY_THIS to 3L,
+                    ScheduledEditScope.THIS_AND_FUTURE to 2L,
+                    ScheduledEditScope.ALL_SERIES to 1L,
+                )
+
+            expectedActiveRows.forEach { (scope, expected) ->
+                val scopeUser =
+                    UserTestUtil(
+                        webClient = webClient,
+                        passwordEncoder = passwordEncoder,
+                        userRepository = userRepository,
+                    )
+                val user = scopeUser.createUserOnDatabase()
+                val accessToken = scopeUser.login()
+                val userId = requireNotNull(user.id)
+                val creditCardId =
+                    createCreditCard(
+                        userId = userId,
+                        accessToken = accessToken,
+                        name = "Schedule scope $scope",
+                        totalLimit = BigDecimal("1000.00"),
+                        dueDay = 1,
+                        daysBetweenDueAndClosing = 2,
+                    )
+
+                createFutureInstallmentSchedule(accessToken, creditCardId)
+                val scheduled = getLatestScheduledEntry(accessToken)
+                assertThat(countActivePersonalSchedules(userId)).isEqualTo(1)
+                assertThat(planQuotaService.currentUsage(userId, PlanLimitKey.ACTIVE_SCHEDULES)).isEqualTo(1)
+
+                editScheduledEntry(
+                    accessToken = accessToken,
+                    recurrenceConfigId = requireNotNull(scheduled.recurrenceConfigId),
+                    request = scheduleEditRequest(creditCardId, scope),
+                )
+
+                val persistedRows = countActivePersonalSchedules(userId)
+                assertThat(persistedRows).describedAs("active rows after $scope").isEqualTo(expected)
+                assertThat(planQuotaService.currentUsage(userId, PlanLimitKey.ACTIVE_SCHEDULES))
+                    .describedAs("reported usage after $scope")
+                    .isEqualTo(persistedRows)
+            }
+        }
+    }
+
+    @Test
     fun `should create one installment per bill month for purchase before closing date`() {
         runBlocking {
             val user = userTestUtil.createUserOnDatabase()
@@ -778,6 +907,84 @@ class WalletEntryIntegrationTest : IntegrationTestContainers() {
             .single { it.name == name }
             .id!!
     }
+
+    private fun createFutureInstallmentSchedule(
+        accessToken: String,
+        creditCardId: UUID,
+    ) = createInstallmentExpense(
+        accessToken = accessToken,
+        creditCardId = creditCardId,
+        name = "Quota schedule",
+        date = LocalDate.of(2026, 5, 16),
+        billDate = LocalDate.of(2026, 6, 1),
+        confirmed = false,
+        installmentValue = BigDecimal("100.00"),
+        installments = 5,
+        tags = emptyList(),
+    )
+
+    private fun scheduleEditRequest(
+        creditCardId: UUID,
+        scope: ScheduledEditScope,
+    ) = EditScheduledEntryDto(
+        occurrenceDate = LocalDate.of(2026, 6, 16),
+        scope = scope,
+        entry =
+            NewEntryDto(
+                type = WalletEntryType.EXPENSE,
+                groupId = null,
+                originId = null,
+                targetId = null,
+                sources =
+                    listOf(
+                        WalletSourceLegDto(
+                            walletItemId = creditCardId,
+                            contributionPercent = BigDecimal("100.00"),
+                            billDate = LocalDate.of(2026, 7, 1),
+                        ),
+                    ),
+                beneficiaries = null,
+                name = "Edited quota schedule",
+                categoryId = null,
+                date = LocalDate.of(2026, 6, 17),
+                value = BigDecimal("100.00"),
+                originValue = null,
+                targetValue = null,
+                confirmed = false,
+                observations = null,
+                paymentType = PaymentType.INSTALLMENTS,
+                installments = 5,
+                periodicity = RecurrenceType.MONTHLY,
+                periodicityQtyLimit = null,
+                originBillDate = null,
+                targetBillDate = null,
+                tags = emptyList(),
+                transferPurpose = null,
+            ),
+    )
+
+    private fun activeScheduleLimit(value: Int) =
+        PlanLimitEntity(
+            scope = PlanLimitScope.USER,
+            planKey = UserPlanRole.USER,
+            limitKey = PlanLimitKey.ACTIVE_SCHEDULES,
+            limitValue = value,
+        )
+
+    private suspend fun countActivePersonalSchedules(userId: UUID): Long =
+        databaseClient
+            .sql(
+                """
+                SELECT COUNT(*) AS qty
+                FROM recurrence_event
+                WHERE created_by_user_id = :userId
+                  AND group_id IS NULL
+                  AND next_execution IS NOT NULL
+                """.trimIndent(),
+            ).bind("userId", userId)
+            .map { row, _ -> row.get("qty", java.lang.Long::class.java)!!.toLong() }
+            .one()
+            .awaitSingle()
 
     private fun createInstallmentExpense(
         accessToken: String,

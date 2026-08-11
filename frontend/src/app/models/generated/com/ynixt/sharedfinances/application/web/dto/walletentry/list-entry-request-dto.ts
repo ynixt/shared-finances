@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { WalletEntryType } from '../../../../domain/enums/wallet-entry-type';
 
 export interface ListEntryRequestDto {

@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { ScheduledEditScope } from '../../../../domain/enums/scheduled-edit-scope';
 
 export interface DeleteScheduledEntryDto {

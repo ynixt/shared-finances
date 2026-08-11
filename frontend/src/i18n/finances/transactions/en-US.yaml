@@ -90,6 +90,7 @@ financesPage:
         title: 1. Statement file
         hint: 'Accepted formats: CSV and OFX.'
         maxLines: 'Maximum: {{maxLines}} transactions.'
+        planMaxLines: 'Your plan allows up to {{maxLines}} transactions per file.'
         select: Select file
         reading: Reading and calculating the file hash…
         hash:

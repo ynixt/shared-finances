@@ -1,0 +1,8 @@
+financesPage:
+  userLimitsPage:
+    title: My limits
+    description: Track the usage of the resources included in your plan.
+    used: '{{usage}} used'
+    available: '{{remaining}} available'
+    unlimited: Unlimited
+    resets: 'Resets on {{date}} at {{time}} ({{timezone}})'

@@ -8,9 +8,11 @@ pageTitle:
   resetPassword: Reset password
   legalTerms: Terms of Use
   legalPrivacy: Privacy Policy
+  plans: Plans and limits
   notFound: 404 - Not Found
   app: Overview
   settings: Settings
+  personalLimits: My limits
   bankAccounts: Bank accounts
   newBankAccount: New bank account
   editBankAccount: Edit bank account
@@ -26,6 +28,7 @@ pageTitle:
   newGroup: New group
   editGroup: Edit group
   overviewGroup: Group overview
+  groupLimits: Group limits
   groupDebts: Group debts
   groupDebtAdjustment: Group debt adjustment
   groupDebtSettlement: Group debt settlement

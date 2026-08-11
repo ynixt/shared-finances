@@ -27,6 +27,7 @@ class GlobalErrorHandler {
     ): Mono<ResponseEntity<AppResponseErrorDto>> {
         val body =
             AppResponseErrorDto(
+                errorCode = ex.errorCode,
                 messageI18n = ex.messageI18n,
                 alternativeMessage = ex.alternativeMessage,
                 argsI18n = ex.argsI18n,

@@ -21,7 +21,9 @@ describe('OpenAuthPreferencesService', () => {
     const load = service.load();
     http.expectOne('/api/open/auth/preferences').flush({
       emailConfirmationEnabled: true,
+      legalDocumentsEnabled: true,
       passwordRecoveryEnabled: true,
+      planLimitsEnabled: true,
       registrationEnabled: false,
       turnstileEnabled: true,
     });
@@ -29,6 +31,8 @@ describe('OpenAuthPreferencesService', () => {
     await load;
 
     expect(service.registrationEnabled()).toBe(false);
+    expect(service.legalDocumentsEnabled()).toBe(true);
+    expect(service.planLimitsEnabled()).toBe(true);
   });
 
   it('uses the enabled registration default when preferences fail', async () => {
@@ -39,5 +43,7 @@ describe('OpenAuthPreferencesService', () => {
     await load;
 
     expect(service.registrationEnabled()).toBe(true);
+    expect(service.legalDocumentsEnabled()).toBe(false);
+    expect(service.planLimitsEnabled()).toBe(false);
   });
 });

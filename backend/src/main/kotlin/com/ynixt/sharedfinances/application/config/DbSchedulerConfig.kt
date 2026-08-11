@@ -7,6 +7,7 @@ import com.github.kagkarlsson.scheduler.task.schedule.Schedules
 import com.ynixt.sharedfinances.application.web.jobs.ExpireInvitesJob
 import com.ynixt.sharedfinances.application.web.jobs.GenerateEntryRecurrenceJob
 import com.ynixt.sharedfinances.application.web.jobs.ImportJobsMaintenanceJob
+import com.ynixt.sharedfinances.application.web.jobs.InactiveAccountDeletionJob
 import com.ynixt.sharedfinances.application.web.jobs.MaterializeGoalContributionScheduleJob
 import com.ynixt.sharedfinances.application.web.jobs.SimulationJobsMaintenanceJob
 import com.ynixt.sharedfinances.application.web.jobs.SyncExchangeRatesJob
@@ -51,6 +52,7 @@ class DbSchedulerConfig(
     @param:Value("\${app.jobs.materializeGoal.cron}") private val materializeGoalCron: String,
     @param:Value("\${app.jobs.refreshExchangeRates.cron}") private val syncExchangeRatesCron: String,
     @param:Value("\${app.jobs.unconfirmedAccountCleanup.cron}") private val unconfirmedCleanupCron: String,
+    private val inactiveAccountDeletionProperties: InactiveAccountDeletionProperties,
     @param:Value("\${app.jobs.simulation.reconcile.cron-enabled:false}") private val simulationReconcileEnabled: Boolean,
     @param:Value("\${app.jobs.simulation.reconcile.cron}") private val simulationReconcileCron: String,
     @param:Value("\${app.jobs.simulation.purge.cron}") private val simulationPurgeCron: String,
@@ -103,6 +105,7 @@ class DbSchedulerConfig(
         materializeGoalJob: MaterializeGoalContributionScheduleJob,
         syncExchangeRatesJob: SyncExchangeRatesJob,
         unconfirmedAccountCleanupJob: UnconfirmedAccountCleanupJob,
+        inactiveAccountDeletionJob: InactiveAccountDeletionJob,
         simulationJobsMaintenanceJob: SimulationJobsMaintenanceJob,
         importJobsMaintenanceJob: ImportJobsMaintenanceJob,
     ): Scheduler {
@@ -132,6 +135,11 @@ class DbSchedulerConfig(
             Tasks
                 .recurring("unconfirmed-account-cleanup", Schedules.cron(unconfirmedCleanupCron))
                 .execute { _, _ -> runBlocking { unconfirmedAccountCleanupJob.execute() } }
+
+        tasks +=
+            Tasks
+                .recurring("inactive-account-deletion", Schedules.cron(inactiveAccountDeletionProperties.cron))
+                .execute { _, _ -> runBlocking { inactiveAccountDeletionJob.execute() } }
 
         tasks +=
             Tasks

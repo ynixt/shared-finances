@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { GoalCommitmentMonthlyPointDto } from './goal-commitment-monthly-point-dto';
 
 export interface GoalCommitmentChartSeriesDto {

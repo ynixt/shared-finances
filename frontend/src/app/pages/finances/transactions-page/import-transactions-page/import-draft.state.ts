@@ -18,7 +18,7 @@ export abstract class ImportDraftState {
   hashCheck: ImportHashCheckDto | null = null;
   file?: File;
   fileHash = '';
-  maxLines = 1000;
+  maxLines: number | null = null;
   importPreferencesLoaded = false;
   loading = true;
   parsing = false;

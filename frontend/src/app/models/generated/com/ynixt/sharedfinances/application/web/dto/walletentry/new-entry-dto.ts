@@ -1,10 +1,11 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { PaymentType } from '../../../../domain/enums/payment-type';
 import { RecurrenceType } from '../../../../domain/enums/recurrence-type';
 import { TransferPurpose } from '../../../../domain/enums/transfer-purpose';
-import { WalletEntryType } from '../../../../domain/enums/wallet-entry-type';
 import { WalletBeneficiaryLegDto } from './wallet-beneficiary-leg-dto';
+import { WalletEntryType } from '../../../../domain/enums/wallet-entry-type';
 import { WalletSourceLegDto } from './wallet-source-leg-dto';
 
 export interface NewEntryDto {

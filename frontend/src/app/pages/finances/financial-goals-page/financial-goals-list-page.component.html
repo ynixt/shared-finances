@@ -3,7 +3,6 @@
   [newRouterLink]="canManageGoals ? newGoalRouterLink : undefined"
   [closeRouterLink]="closeRouterLink"
 ></app-finances-title-bar>
-
 @if (loadError) {
   <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">{{ 'financesPage.goalsPage.loadError' | translate }}</div>
 } @else {

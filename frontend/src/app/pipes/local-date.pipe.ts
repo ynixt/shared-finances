@@ -18,8 +18,8 @@ export class LocalDatePipe implements PipeTransform {
     this.localeService.locale$.pipe(untilDestroyed(this)).subscribe(l => (this.locale = l));
   }
 
-  transform(value: string | number | Date | dayjs.Dayjs | null | undefined, format: string = 'short') {
-    return this.localDatePipeService.transform(value, format, this.locale);
+  transform(value: string | number | Date | dayjs.Dayjs | null | undefined, format: string = 'short', timezone?: string) {
+    return this.localDatePipeService.transform(value, format, this.locale, timezone);
   }
 }
 
@@ -27,9 +27,28 @@ export class LocalDatePipe implements PipeTransform {
 export class LocalDatePipeService {
   constructor(private localeService: LocaleService) {}
 
-  transform(value: string | number | Date | dayjs.Dayjs | null | undefined, format: string = 'short', locale?: string): string {
+  transform(
+    value: string | number | Date | dayjs.Dayjs | null | undefined,
+    format: string = 'short',
+    locale?: string,
+    timezone?: string,
+  ): string {
     if (value == null) return '';
-    if (dayjs.isDayjs(value)) return formatDate(value.toDate(), format, locale ?? this.localeService.locale);
-    return formatDate(value, format, locale ?? this.localeService.locale);
+    const date = dayjs.isDayjs(value) ? value.toDate() : new Date(value);
+    return formatDate(date, format, locale ?? this.localeService.locale, this.resolveTimezoneOffset(date, timezone));
+  }
+
+  private resolveTimezoneOffset(date: Date, timezone?: string): string | undefined {
+    if (timezone == null || !timezone.includes('/')) return timezone;
+
+    const offset = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'longOffset',
+    })
+      .formatToParts(date)
+      .find(part => part.type === 'timeZoneName')
+      ?.value.replace('GMT', '');
+
+    return offset === '' ? '+0000' : offset?.replace(':', '');
   }
 }

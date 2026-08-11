@@ -17,6 +17,7 @@ const ownerId = '00000000-0000-0000-0000-000000000001';
 const memberId = '00000000-0000-0000-0000-000000000002';
 
 const ownerGroup = (isOwner = true): GroupWithRoleDto => ({
+  tier: 'COMMON',
   id: '10000000-0000-0000-0000-000000000001',
   name: 'Shared',
   ownerUserId: ownerId,

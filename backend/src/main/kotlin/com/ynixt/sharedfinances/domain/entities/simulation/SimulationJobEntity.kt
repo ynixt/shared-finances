@@ -23,4 +23,6 @@ class SimulationJobEntity(
     val finishedAt: OffsetDateTime?,
     val cancelledAt: OffsetDateTime?,
     val retries: Int,
+    val countedAt: OffsetDateTime? = null,
+    val deletedAt: OffsetDateTime? = null,
 ) : AuditedEntity()

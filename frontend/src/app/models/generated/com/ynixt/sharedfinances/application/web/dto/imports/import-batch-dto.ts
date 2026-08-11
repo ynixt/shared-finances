@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { ImportBatchStatus } from '../../../../domain/enums/import-batch-status';
 
 export interface ImportBatchDto {

@@ -15,6 +15,8 @@ export function importBatchStatusLabelKey(status: ImportBatchStatus): string {
       return 'financesPage.transactionsPage.importPage.status.undoing';
     case 'UNDO_FAILED':
       return 'financesPage.transactionsPage.importPage.status.undoFailed';
+    case 'UNDONE':
+      return 'financesPage.transactionsPage.importPage.status.imported';
   }
 }
 

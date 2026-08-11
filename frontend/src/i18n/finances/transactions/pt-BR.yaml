@@ -90,6 +90,7 @@ financesPage:
         title: 1. Arquivo do extrato
         hint: 'Formatos aceitos: CSV e OFX.'
         maxLines: 'Máximo: {{maxLines}} transações.'
+        planMaxLines: 'Seu plano permite até {{maxLines}} transações por arquivo.'
         select: Selecionar arquivo
         reading: Lendo e calculando o hash do arquivo…
         hash:

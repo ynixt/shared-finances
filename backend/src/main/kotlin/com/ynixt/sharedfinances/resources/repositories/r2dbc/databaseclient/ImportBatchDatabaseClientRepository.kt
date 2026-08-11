@@ -165,7 +165,13 @@ class ImportBatchDatabaseClientRepository(
         dbClient
             .sql(
                 """
-                DELETE FROM import_batch
+                UPDATE import_batch
+                SET
+                    status = 'UNDONE',
+                    deleted_at = NOW(),
+                    lease_expires_at = NULL,
+                    worker_id = NULL,
+                    updated_at = NOW()
                 WHERE id = :batchId AND status = 'UNDO_RUNNING' AND worker_id = :workerId
                 """,
             ).bind("batchId", batchId)
@@ -189,6 +195,7 @@ class ImportBatchDatabaseClientRepository(
                     lease_expires_at = NULL,
                     worker_id = NULL,
                     finished_at = :finishedAt,
+                    counted_at = COALESCE(counted_at, :finishedAt),
                     updated_at = NOW()
                 WHERE id = :batchId AND status = 'RUNNING' AND worker_id = :workerId
                 """,

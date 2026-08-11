@@ -2,5 +2,5 @@
 /* tslint-disable */
 
 export interface ImportPreferencesDto {
-  maxLines: number;
+  maxLines?: number | null;
 }

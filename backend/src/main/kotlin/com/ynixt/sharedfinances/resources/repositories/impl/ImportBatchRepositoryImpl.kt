@@ -14,22 +14,24 @@ class ImportBatchRepositoryImpl(
     springDataRepository: ImportBatchSpringDataRepository,
 ) : EntityRepositoryImpl<ImportBatchSpringDataRepository, ImportBatchEntity>(springDataRepository),
     ImportBatchRepository {
+    override fun findById(id: UUID): Mono<ImportBatchEntity> = springDataRepository.findByIdAndDeletedAtIsNull(id)
+
     override fun findFirstByUserIdAndFileHashAndStatusIn(
         userId: UUID,
         fileHash: String,
         statuses: Collection<ImportBatchStatus>,
     ): Mono<ImportBatchEntity> =
-        springDataRepository.findFirstByUserIdAndFileHashAndStatusInOrderByCreatedAtDesc(
+        springDataRepository.findFirstByUserIdAndFileHashAndStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(
             userId = userId,
             fileHash = fileHash,
             statuses = statuses,
         )
 
     override fun findAllByUserId(userId: UUID): Flux<ImportBatchEntity> =
-        springDataRepository.findAllByUserIdOrderByCreatedAtDescIdDesc(userId)
+        springDataRepository.findAllByUserIdAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(userId)
 
     override fun findByIdAndUserId(
         id: UUID,
         userId: UUID,
-    ): Mono<ImportBatchEntity> = springDataRepository.findByIdAndUserId(id, userId)
+    ): Mono<ImportBatchEntity> = springDataRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId)
 }

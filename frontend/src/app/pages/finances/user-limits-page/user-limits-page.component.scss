@@ -1,0 +1,79 @@
+.limits-intro {
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--primary-color) 6%, transparent);
+  padding: 1rem 1.15rem;
+  color: var(--text-color-secondary);
+}
+
+.limits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.quota-card {
+  border: 1px solid var(--surface-border);
+  border-radius: 1rem;
+  background: var(--surface-card);
+  padding: 1.15rem;
+  box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--surface-900) 7%, transparent);
+}
+
+.quota-card-header,
+.quota-caption-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quota-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.quota-value {
+  flex: none;
+  color: var(--primary-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.quota-value.unlimited {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  padding: 0.2rem 0.55rem;
+}
+
+.quota-progress {
+  height: 0.5rem;
+  margin-top: 1.1rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--surface-200);
+}
+
+.quota-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary-400), var(--primary-color));
+  transition: width 180ms ease;
+}
+
+.quota-caption,
+.quota-caption-row,
+.quota-reset {
+  margin-top: 0.65rem;
+  color: var(--text-color-secondary);
+  font-size: 0.78rem;
+}
+
+.quota-reset {
+  margin-bottom: 0;
+  border-top: 1px solid var(--surface-border);
+  padding-top: 0.65rem;
+}

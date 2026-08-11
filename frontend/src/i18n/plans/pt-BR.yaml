@@ -1,0 +1,51 @@
+plans:
+  navLink: Planos
+  eyebrow: Limites atuais
+  title: Planos e limites, com transparência
+  intro: >-
+    Estes são os limites aplicados agora por esta instância pública do Shared Finances. Os valores
+    vêm das mesmas configurações armazenadas usadas quando o aplicativo aceita ou recusa uma ação.
+  loading: Carregando os limites atuais…
+  loadError: Não foi possível carregar a comparação atual de planos.
+  quota: O que é limitado
+  unlimited: Sem limite
+  actions:
+    startNow: Comece já
+    comingSoon: Em breve
+  selfHosted:
+    name: Self-hosted
+    youDefine: Você define
+  userPlans:
+    eyebrow: Por conta
+    title: Planos de usuário
+    description: Estes limites pertencem a uma conta de usuário, independentemente dos grupos dos quais participa.
+  groupTiers:
+    eyebrow: Por grupo próprio
+    title: Planos de grupo
+    description: >-
+      Os limites de grupo são separados dos limites do usuário. O plano de um grupo acompanha o plano
+      do membro que é proprietário desse grupo.
+  inactivity:
+    finite: Uma conta sem uso neste plano pode ser excluída após {{months}} meses, com aviso prévio por e-mail.
+    unlimited: Contas neste plano não têm limite de retenção por inatividade configurado.
+  openSource:
+    eyebrow: Execute do seu jeito
+    title: Código aberto, sem os limites da instância hospedada
+    description: >-
+      Estes limites ajudam a cobrir o custo de operação desta instância pública. O Shared Finances é
+      de código aberto, e uma instância hospedada por você não está sujeita a eles.
+    link: ynixt/shared-finances
+  quotas:
+    BANK_ACCOUNTS: Contas bancárias
+    CREDIT_CARDS: Cartões de crédito
+    CATEGORIES: Categorias pessoais
+    GOALS: Metas pessoais
+    ACTIVE_SCHEDULES: Agendamentos ativos
+    IMPORTS_PER_MONTH: Importações por mês
+    SIMULATIONS_PER_MONTH: Simulações por mês
+    OWNED_GROUPS: Grupos próprios
+    IMPORT_MAX_LINES: Linhas em um arquivo importado
+    GROUP_CATEGORIES: Categorias do grupo
+    GROUP_GOALS: Metas do grupo
+    GROUP_ACTIVE_SCHEDULES: Agendamentos ativos do grupo
+    GROUP_MEMBERS: Membros do grupo

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 
 import { Observable, filter, map } from 'rxjs';
 
+import { GroupPlanUsageEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import {
   GroupMemberLeftEventDto,
   GroupOwnershipChangedEventDto,
@@ -24,6 +25,7 @@ export class GroupsActionEventService {
   readonly groupDeleted$: Observable<GroupActionEvent<string>>;
   readonly ownershipChanged$: Observable<GroupActionEvent<GroupOwnershipChangedEventDto>>;
   readonly memberLeft$: Observable<GroupActionEvent<GroupMemberLeftEventDto>>;
+  readonly planUsage$: Observable<GroupActionEvent<GroupPlanUsageEventDto>>;
 
   readonly bankAccountAssociated$: Observable<GroupActionEvent<string>>;
   readonly bankAccountUnassociated$: Observable<GroupActionEvent<string>>;
@@ -47,6 +49,11 @@ export class GroupsActionEventService {
     this.memberLeft$ = this.userActionEventService.groupEvents$.pipe(
       filter(g => g.event === 'GROUP_MEMBERSHIP' && g.type === 'DELETE'),
       map(e => e as GroupActionEvent<GroupMemberLeftEventDto>),
+    );
+
+    this.planUsage$ = this.userActionEventService.groupEvents$.pipe(
+      filter(g => g.event === 'GROUP_PLAN_USAGE' && g.type === 'UPDATE'),
+      map(e => e as GroupActionEvent<GroupPlanUsageEventDto>),
     );
 
     this.groupDeleted$ = baseGroup$.pipe(

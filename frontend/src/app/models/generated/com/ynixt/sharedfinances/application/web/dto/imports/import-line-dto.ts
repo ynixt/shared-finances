@@ -1,9 +1,9 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { WalletBeneficiaryLegDto } from '../walletentry/wallet-beneficiary-leg-dto';
 
 export interface ImportLineDto {
-  externalTransactionId?: string | null;
   beneficiaries?: Array<WalletBeneficiaryLegDto> | null;
   billDate?: string | null;
   categoryId?: string | null;
@@ -11,6 +11,7 @@ export interface ImportLineDto {
   createFollowingInstallments: boolean;
   createPreviousInstallments: boolean;
   date: string;
+  externalTransactionId?: string | null;
   groupId?: string | null;
   installment?: number | null;
   installmentTotal?: number | null;

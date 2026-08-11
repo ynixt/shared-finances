@@ -9,6 +9,7 @@ import java.util.UUID
 
 interface GroupCategoryService {
     suspend fun newCategories(
+        userId: UUID,
         groupId: UUID,
         categories: List<NewCategoryRequest>,
     ): List<WalletEntryCategoryEntity>

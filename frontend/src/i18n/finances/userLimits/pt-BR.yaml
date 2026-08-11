@@ -1,0 +1,8 @@
+financesPage:
+  userLimitsPage:
+    title: Meus limites
+    description: Acompanhe aqui o consumo dos recursos incluídos no seu plano.
+    used: '{{usage}} usados'
+    available: '{{remaining}} disponíveis'
+    unlimited: Sem limite
+    resets: 'Renova em {{date}}, às {{time}} ({{timezone}})'

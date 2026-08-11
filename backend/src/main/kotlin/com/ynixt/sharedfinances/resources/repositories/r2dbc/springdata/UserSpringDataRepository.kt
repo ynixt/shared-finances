@@ -153,4 +153,39 @@ interface UserSpringDataRepository :
         userId: UUID,
         newEmail: String,
     ): Mono<Int>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set last_login_at = :usedAt,
+            inactivity_notice_stage = null,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+          and last_login_at < :cutoff
+        """,
+    )
+    fun recordActivityIfOlderThan(
+        userId: UUID,
+        usedAt: OffsetDateTime,
+        cutoff: OffsetDateTime,
+    ): Mono<Int>
+
+    @Modifying
+    @Query(
+        """
+        update users
+        set inactivity_notice_stage = :stage,
+            updated_at = CURRENT_TIMESTAMP
+        where id = :userId
+          and (inactivity_notice_stage is null or inactivity_notice_stage > :stage)
+        """,
+    )
+    fun recordInactivityNoticeStage(
+        userId: UUID,
+        stage: Int,
+    ): Mono<Int>
+
+    @Query("select * from users order by last_login_at")
+    fun findAllWithTrackedActivity(): Flux<UserEntity>
 }

@@ -20,6 +20,7 @@ import { UserActionEventService } from './pages/finances/services/user-action-ev
 import { AuthService } from './services/auth.service';
 import { DarkModeService } from './services/dark-mode.service';
 import { LangService } from './services/lang.service';
+import { PlanEntitlementsStore } from './services/plan-entitlements.store';
 import { TitleService } from './services/title.service';
 import { UserService } from './services/user.service';
 import { DEFAULT_ERROR_LIFE } from './util/error-util';
@@ -51,6 +52,7 @@ export class AppComponent {
     private messageService: MessageService,
     private userActionEventService: UserActionEventService,
     private darkModeService: DarkModeService,
+    private planEntitlementsStore: PlanEntitlementsStore,
   ) {
     this.langService.init();
 

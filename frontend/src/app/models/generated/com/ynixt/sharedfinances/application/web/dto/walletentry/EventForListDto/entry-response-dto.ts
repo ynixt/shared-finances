@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { WalletItemForEntryListDto } from '../../wallet/wallet-item-for-entry-list-dto';
 
 export interface EntryResponseDto {

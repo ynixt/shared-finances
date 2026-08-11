@@ -1,7 +1,8 @@
 /* eslint-disable */
 /* tslint-disable */
-import { GroupDebtMovementReasonKind } from '../../../../../domain/enums/group-debt-movement-reason-kind';
+
 import { EventForListDto } from '../../walletentry/event-for-list-dto';
+import { GroupDebtMovementReasonKind } from '../../../../../domain/enums/group-debt-movement-reason-kind';
 
 export interface GroupDebtMovementDto {
   carriedOver: boolean;

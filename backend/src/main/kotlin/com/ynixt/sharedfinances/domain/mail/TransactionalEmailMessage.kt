@@ -1,6 +1,6 @@
 package com.ynixt.sharedfinances.domain.mail
 
-data class AuthTransactionalEmailMessage(
+data class TransactionalEmailMessage(
     val toAddress: String,
     val subject: String,
     val textBody: String,

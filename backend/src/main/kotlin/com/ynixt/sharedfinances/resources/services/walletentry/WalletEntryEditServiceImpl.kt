@@ -7,6 +7,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEventEntity
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.TransferPurpose
@@ -33,6 +34,7 @@ import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptServic
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.groups.GroupDebtService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryEditService
 import com.ynixt.sharedfinances.domain.services.walletentry.recurrence.RecurrenceService
@@ -72,6 +74,7 @@ class WalletEntryEditServiceImpl(
     recurrenceEventBeneficiaryRepository: RecurrenceEventBeneficiarySpringDataRepository,
     private val debtMovementRepository: GroupMemberDebtMovementSpringDataRepository,
     private val debtLedgerMaintenanceService: GroupDebtLedgerMaintenanceService,
+    planQuotaService: PlanQuotaService,
     clock: Clock,
 ) : WalletEntryMutationSupportServiceImpl(
         walletEntryRepository = walletEntryRepository,
@@ -88,6 +91,7 @@ class WalletEntryEditServiceImpl(
         recurrenceEntryRepository = recurrenceEntryRepository,
         walletEventBeneficiaryRepository = walletEventBeneficiaryRepository,
         recurrenceEventBeneficiaryRepository = recurrenceEventBeneficiaryRepository,
+        planQuotaService = planQuotaService,
         clock = clock,
     ),
     WalletEntryEditService {
@@ -143,39 +147,47 @@ class WalletEntryEditServiceImpl(
             return null
         }
 
-        if (request.scope == ScheduledEditScope.THIS_AND_FUTURE) {
-            return handleThisAndFutureEdit(
-                userId = userId,
-                config = config,
-                occurrenceDate = request.occurrenceDate,
-                preparedRequest = preparedRequest,
-            )
-        }
+        val result =
+            if (request.scope == ScheduledEditScope.THIS_AND_FUTURE) {
+                handleThisAndFutureEdit(
+                    userId = userId,
+                    config = config,
+                    occurrenceDate = request.occurrenceDate,
+                    preparedRequest = preparedRequest,
+                )
+            } else {
+                val generatedEvent =
+                    walletEventRepository
+                        .findOneByRecurrenceEventIdAndDate(
+                            recurrenceEventId = recurrenceConfigId,
+                            date = request.occurrenceDate,
+                        ).awaitSingleOrNull()
 
-        val generatedEvent =
-            walletEventRepository
-                .findOneByRecurrenceEventIdAndDate(
-                    recurrenceEventId = recurrenceConfigId,
-                    date = request.occurrenceDate,
-                ).awaitSingleOrNull()
+                if (generatedEvent != null) {
+                    handleGeneratedOccurrenceEdit(
+                        userId = userId,
+                        config = config,
+                        generatedEvent = generatedEvent,
+                        preparedRequest = preparedRequest,
+                        scope = request.scope,
+                    )
+                } else {
+                    handleNonGeneratedOccurrenceEdit(
+                        userId = userId,
+                        config = config,
+                        occurrenceDate = request.occurrenceDate,
+                        preparedRequest = preparedRequest,
+                        scope = request.scope,
+                    )
+                }
+            }
 
-        return if (generatedEvent != null) {
-            handleGeneratedOccurrenceEdit(
-                userId = userId,
-                config = config,
-                generatedEvent = generatedEvent,
-                preparedRequest = preparedRequest,
-                scope = request.scope,
-            )
+        if (config.groupId == null) {
+            planQuotaService.usageChanged(userId, PlanLimitKey.ACTIVE_SCHEDULES)
         } else {
-            handleNonGeneratedOccurrenceEdit(
-                userId = userId,
-                config = config,
-                occurrenceDate = request.occurrenceDate,
-                preparedRequest = preparedRequest,
-                scope = request.scope,
-            )
+            planQuotaService.groupUsageChanged(config.groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES, userId)
         }
+        return result
     }
 
     private data class SeriesSelection(

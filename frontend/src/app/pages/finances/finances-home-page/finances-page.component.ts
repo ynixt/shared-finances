@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, effect } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
@@ -9,6 +9,7 @@ import {
   faDollarSign,
   faFileImport,
   faFlask,
+  faGaugeHigh,
   faGrip,
   faMoneyBillTransfer,
   faPlus,
@@ -29,6 +30,7 @@ import { AdvancedMenuComponent, AdvancedMenuItem } from '../../../components/adv
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { GroupPermissions, GroupPermissions__Obj } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
+import { PlanEntitlementsStore } from '../../../services/plan-entitlements.store';
 import { UserService } from '../../../services/user.service';
 import { GroupService } from '../services/group.service';
 import { GroupsActionEventService } from '../services/groups-action-event.service';
@@ -77,6 +79,7 @@ export class FinancesPageComponent {
     private router: Router,
     private groupService: GroupService,
     private userActionEventService: UserActionEventService,
+    private planEntitlementsStore: PlanEntitlementsStore,
     groupsActionEventService: GroupsActionEventService,
   ) {
     groupsActionEventService.groupDeleted$.pipe(untilDestroyed(this)).subscribe(event => {
@@ -121,6 +124,11 @@ export class FinancesPageComponent {
     });
 
     this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(() => {
+      this.loadItems();
+    });
+
+    effect(() => {
+      this.planEntitlementsStore.limitsEnabled();
       this.loadItems();
     });
 
@@ -207,6 +215,15 @@ export class FinancesPageComponent {
         ],
       },
     ];
+
+    if (this.planEntitlementsStore.limitsEnabled()) {
+      this.items.splice(1, 0, {
+        fa: faGaugeHigh,
+        label: this.translateService.instant('financesPage.menu.personalLimits'),
+        routerLink: ['/app/limits'],
+        routerLinkActiveOptions: { exact: true },
+      });
+    }
 
     this.groupMenuRoot = {
       expanded: true,
@@ -310,6 +327,15 @@ export class FinancesPageComponent {
           routerLinkActiveOptions: { exact: true },
         },
       ];
+
+      if (this.planEntitlementsStore.limitsEnabled()) {
+        groupChildren.splice(1, 0, {
+          fa: faGaugeHigh,
+          label: this.translateService.instant('financesPage.menu.limits'),
+          routerLink: ['/app/groups', g.id, 'limits'],
+          routerLinkActiveOptions: { exact: true },
+        });
+      }
 
       if (linksItems.length > 0) {
         groupChildren.push({

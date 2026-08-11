@@ -2,7 +2,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 
 import { Observable, filter, map } from 'rxjs';
 
-import { UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
+import { PlanUsageEventDto, UserActionEventDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/events';
 import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/user';
 import { BankAccountDto } from '../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/bankAccount';
@@ -45,6 +45,7 @@ export class UserActionEventService extends ActionEventService implements OnDest
   /** INSERT/UPDATE payload is {@link ImportBatchStatusEventDto}. */
   readonly importBatchAction$: Observable<UserActionEventDto>;
   readonly onboardingCompleted$: Observable<void>;
+  readonly planUsage$: Observable<PlanUsageEventDto>;
   readonly resyncRequired$: Observable<void>;
 
   constructor(tokenStateService: TokenStateService, zone: NgZone, singleSseCoordinatorService: SingleSseCoordinatorService) {
@@ -132,6 +133,11 @@ export class UserActionEventService extends ActionEventService implements OnDest
 
     // --- Import batches ---
     this.importBatchAction$ = this.streamOf<UserActionEventDto>('IMPORT_BATCH').pipe(notGroupFilter);
+
+    this.planUsage$ = this.streamOf<UserActionEventDto>('PLAN_USAGE').pipe(
+      notGroupFilter,
+      map(e => e.data as PlanUsageEventDto),
+    );
 
     // --- Onboarding ---
     this.onboardingCompleted$ = this.streamOf<UserActionEventDto>('ONBOARDING').pipe(

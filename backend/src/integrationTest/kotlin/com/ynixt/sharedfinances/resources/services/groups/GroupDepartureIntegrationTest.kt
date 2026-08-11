@@ -6,11 +6,13 @@ import com.ynixt.sharedfinances.application.web.dto.walletentry.NewEntryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletBeneficiaryLegDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletSourceLegDto
 import com.ynixt.sharedfinances.domain.enums.PaymentType
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.RecurrenceType
 import com.ynixt.sharedfinances.domain.enums.ScheduledEditScope
 import com.ynixt.sharedfinances.domain.enums.WalletEntryType
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import com.ynixt.sharedfinances.domain.services.walletentry.WalletEntryCreateService
 import com.ynixt.sharedfinances.support.IntegrationTestContainers
 import com.ynixt.sharedfinances.support.util.UserTestUtil
@@ -48,6 +50,8 @@ class GroupDepartureIntegrationTest : IntegrationTestContainers() {
 
     @Autowired private lateinit var walletEntryCreateService: WalletEntryCreateService
 
+    @Autowired private lateinit var planQuotaService: PlanQuotaService
+
     private lateinit var ownerUtil: UserTestUtil
     private lateinit var departingUtil: UserTestUtil
 
@@ -62,7 +66,9 @@ class GroupDepartureIntegrationTest : IntegrationTestContainers() {
         runBlocking {
             val fixture = seedFixture()
 
+            assertThat(planQuotaService.currentGroupUsage(fixture.groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES)).isEqualTo(4)
             assertThat(groupService.leaveGroup(fixture.departingUserId, fixture.groupId)).isTrue()
+            assertThat(planQuotaService.currentGroupUsage(fixture.groupId, PlanLimitKey.GROUP_ACTIVE_SCHEDULES)).isEqualTo(1)
 
             openConnection().use { connection ->
                 assertThat(connection.count("SELECT COUNT(*) FROM group_user WHERE group_id = '${fixture.groupId}'"))

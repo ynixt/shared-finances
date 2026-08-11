@@ -72,8 +72,8 @@ class GroupMemberDebtDatabaseClientRepositoryDataR2dbcTest : IntegrationTestCont
     private suspend fun seedUser(userId: UUID) {
         exec(
             """
-            INSERT INTO users(id, email, password_hash, first_name, last_name, lang, tmz, default_currency, email_verified, mfa_enabled)
-            VALUES ('$userId', 'debt-repo-$userId@example.com', 'hash', 'Test', 'User', 'en', 'UTC', 'BRL', true, false)
+            INSERT INTO users(id, email, password_hash, first_name, last_name, lang, tmz, default_currency, email_verified, mfa_enabled, role)
+            VALUES ('$userId', 'debt-repo-$userId@example.com', 'hash', 'Test', 'User', 'en', 'UTC', 'BRL', true, false, 'PRO')
             """.trimIndent(),
         )
     }

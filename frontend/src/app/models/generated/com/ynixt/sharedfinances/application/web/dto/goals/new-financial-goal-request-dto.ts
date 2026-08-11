@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { FinancialGoalTargetDto } from './financial-goal-target-dto';
 
 export interface NewFinancialGoalRequestDto {

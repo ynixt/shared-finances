@@ -41,7 +41,10 @@ interface SimulationJobRepository {
 
     fun reconcileExpiredLeases(now: OffsetDateTime): Mono<Long>
 
-    fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long>
+    fun deleteAllByCreatedAtBefore(
+        retentionThreshold: OffsetDateTime,
+        currentUtcMonthStart: OffsetDateTime,
+    ): Mono<Long>
 
     fun deletePersonalIfCreator(
         id: UUID,
@@ -61,6 +64,9 @@ interface SimulationJobRepository {
 interface SimulationJobSpringDataRepository :
     R2dbcRepository<SimulationJobEntity, String>,
     SimulationJobRepository {
+    @Query("SELECT * FROM simulation_job WHERE id = :id AND deleted_at IS NULL")
+    override fun findById(id: String): Mono<SimulationJobEntity>
+
     fun findByIdAndOwnerUserId(
         id: UUID,
         ownerUserId: UUID,
@@ -71,18 +77,22 @@ interface SimulationJobSpringDataRepository :
         ownerGroupId: UUID,
     ): Mono<SimulationJobEntity>
 
+    @Query("SELECT * FROM simulation_job WHERE owner_user_id = :ownerUserId AND deleted_at IS NULL ORDER BY created_at DESC, id DESC")
     override fun findAllByOwnerUserIdOrderByCreatedAtDescIdDesc(
         ownerUserId: UUID,
         pageable: Pageable,
     ): Flux<SimulationJobEntity>
 
+    @Query("SELECT * FROM simulation_job WHERE owner_group_id = :ownerGroupId AND deleted_at IS NULL ORDER BY created_at DESC, id DESC")
     override fun findAllByOwnerGroupIdOrderByCreatedAtDescIdDesc(
         ownerGroupId: UUID,
         pageable: Pageable,
     ): Flux<SimulationJobEntity>
 
+    @Query("SELECT COUNT(*) FROM simulation_job WHERE owner_user_id = :ownerUserId AND deleted_at IS NULL")
     override fun countByOwnerUserId(ownerUserId: UUID): Mono<Long>
 
+    @Query("SELECT COUNT(*) FROM simulation_job WHERE owner_group_id = :ownerGroupId AND deleted_at IS NULL")
     override fun countByOwnerGroupId(ownerGroupId: UUID): Mono<Long>
 
     @Modifying
@@ -148,17 +158,28 @@ interface SimulationJobSpringDataRepository :
     override fun reconcileExpiredLeases(now: OffsetDateTime): Mono<Long>
 
     @Modifying
-    @Query("DELETE FROM simulation_job WHERE created_at < :threshold")
-    override fun deleteAllByCreatedAtBefore(threshold: OffsetDateTime): Mono<Long>
+    @Query(
+        """
+        DELETE FROM simulation_job
+        WHERE created_at < :retentionThreshold
+          AND (counted_at IS NULL OR counted_at < :currentUtcMonthStart)
+        """,
+    )
+    override fun deleteAllByCreatedAtBefore(
+        retentionThreshold: OffsetDateTime,
+        currentUtcMonthStart: OffsetDateTime,
+    ): Mono<Long>
 
     @Modifying
     @Query(
         """
-        DELETE FROM simulation_job
+        UPDATE simulation_job
+        SET deleted_at = NOW(), updated_at = NOW()
         WHERE id = :id
           AND owner_user_id = :userId
           AND owner_group_id IS NULL
           AND requested_by_user_id = :userId
+          AND deleted_at IS NULL
         """,
     )
     override fun deletePersonalIfCreator(
@@ -169,10 +190,12 @@ interface SimulationJobSpringDataRepository :
     @Modifying
     @Query(
         """
-        DELETE FROM simulation_job
+        UPDATE simulation_job
+        SET deleted_at = NOW(), updated_at = NOW()
         WHERE id = :id
           AND owner_group_id = :groupId
           AND owner_user_id IS NULL
+          AND deleted_at IS NULL
         """,
     )
     override fun deleteGroupJob(

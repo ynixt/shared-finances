@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { EntrySummaryType } from '../../../../domain/enums/entry-summary-type';
 
 export interface SummaryEntryRequestDto {

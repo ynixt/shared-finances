@@ -9,6 +9,7 @@ import {
   ChangeRoleGroupUserRequestDto,
   EditGroupDto,
   GroupDto,
+  GroupEntitlementsDto,
   GroupUserDto,
   GroupWithRoleDto,
   NewGroupDto,
@@ -63,6 +64,12 @@ export class GroupService {
     }
 
     throw new UserMissingError();
+  }
+
+  async getEntitlements(groupId: string): Promise<GroupEntitlementsDto> {
+    const user = await this.userService.getUser();
+    if (user == null) throw new UserMissingError();
+    return lastValueFrom(this.http.get<GroupEntitlementsDto>(`/api/groups/${groupId}/entitlements`).pipe(take(1)));
   }
 
   async editGroup(groupId: string, request: EditGroupDto): Promise<GroupWithRoleDto> {

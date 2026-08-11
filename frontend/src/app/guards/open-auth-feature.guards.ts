@@ -35,3 +35,16 @@ export const emailConfirmationFlowsEnabledGuard: CanMatchFn = async () => {
   }
   return true;
 };
+
+const publicFeatureGuard = async (feature: 'legalDocumentsEnabled' | 'planLimitsEnabled') => {
+  const prefs = inject(OpenAuthPreferencesService);
+  const router = inject(Router);
+  await prefs.load();
+  return prefs.preferences()?.[feature] === true || router.createUrlTree(['/not-found']);
+};
+
+/** Terms and privacy routes exist only on instances that present their documents. */
+export const legalDocumentsEnabledGuard: CanMatchFn = () => publicFeatureGuard('legalDocumentsEnabled');
+
+/** The public comparison exists only while the instance enforces its plan model. */
+export const publicPlanComparisonEnabledGuard: CanMatchFn = () => publicFeatureGuard('planLimitsEnabled');

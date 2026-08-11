@@ -1,0 +1,16 @@
+<section class="border border-surface-200 dark:border-surface-700 rounded-lg p-4 space-y-3" data-testid="account-activity">
+  <div>
+    <span class="font-medium">{{ 'financesPage.userSettingsPage.lastUse' | translate }}:</span>
+    <span class="ml-2" data-testid="last-use">{{ lastLoginAt() | date: 'medium' }}</span>
+  </div>
+
+  @if (projectedDeletionAt(); as deletionAt) {
+    <div data-testid="projected-deletion">
+      <span class="font-medium">{{ 'financesPage.userSettingsPage.projectedDeletion' | translate }}:</span>
+      <span class="ml-2">{{ deletionAt | date: 'longDate' }}</span>
+      <p class="text-surface-600 dark:text-surface-300 mt-1">
+        {{ 'financesPage.userSettingsPage.projectedDeletionExplanation' | translate }}
+      </p>
+    </div>
+  }
+</section>

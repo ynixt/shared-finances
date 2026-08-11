@@ -9,6 +9,7 @@ import com.ynixt.sharedfinances.domain.exceptions.http.SimulationJobNotFoundExce
 import com.ynixt.sharedfinances.domain.services.simulation.NewSimulationJobInput
 import com.ynixt.sharedfinances.resources.services.simulation.SimulationJobServiceImpl
 import com.ynixt.sharedfinances.scenarios.support.MutableScenarioClock
+import com.ynixt.sharedfinances.scenarios.support.NoOpPlanQuotaService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupPermissionService
 import com.ynixt.sharedfinances.scenarios.support.ScenarioGroupService
 import kotlinx.coroutines.reactor.awaitSingle
@@ -44,6 +45,7 @@ class SimulationJobScenarioDsl(
             simulationJobProcessor = simulationJobProcessor,
             groupPermissionService = groupPermissionService,
             actionEventService = NoOpActionEventService(),
+            planQuotaService = NoOpPlanQuotaService,
             clock = clock,
         )
 

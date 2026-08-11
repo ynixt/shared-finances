@@ -12,6 +12,7 @@ import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryCon
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.ActionEventType
 import com.ynixt.sharedfinances.domain.enums.GroupPermissions
+import com.ynixt.sharedfinances.domain.enums.PlanLimitKey
 import com.ynixt.sharedfinances.domain.enums.UserGroupRole
 import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
 import com.ynixt.sharedfinances.domain.enums.WalletItemType
@@ -44,6 +45,7 @@ import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
 import com.ynixt.sharedfinances.domain.services.groups.GroupService
+import com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.springframework.data.domain.Page
@@ -215,6 +217,24 @@ internal class NoOpUserActionEventService : UserActionEventService {
         userId: UUID,
         user: UserEntity,
     ) {}
+}
+
+internal object NoOpPlanQuotaService : PlanQuotaService {
+    override suspend fun assertCanAdd(
+        quotaOwnerUserId: UUID,
+        quota: PlanLimitKey,
+        requesterUserId: UUID,
+    ) {}
+
+    override suspend fun currentUsage(
+        userId: UUID,
+        quota: PlanLimitKey,
+    ): Long = 0
+
+    override suspend fun usageChanged(
+        userId: UUID,
+        quota: PlanLimitKey,
+    ) = Unit
 }
 
 internal class NoOpGroupService : GroupService {

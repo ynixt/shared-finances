@@ -19,6 +19,9 @@ financesPage:
     avatar: Avatar
     darkMode: Modo noturno
     darkModeDescription: Ative para usar a interface no modo escuro.
+    lastUse: Último uso
+    projectedDeletion: Exclusão prevista da conta
+    projectedDeletionExplanation: Entrar na conta redefine esta data e impede a exclusão por inatividade.
     dangerArea: Área de perigo
     dangerAreaDescription: Excluir permanentemente sua conta e remover seus dados pessoais deste serviço. Esta ação não pode ser desfeita.
     deleteAccount: Excluir minha conta

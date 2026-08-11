@@ -289,6 +289,7 @@ class WalletEntryEditServiceImplDebtSettlementTest {
                             debtMovementRepository,
                             debtDatabaseClientRepository,
                         ),
+                    planQuotaService = Mockito.mock(com.ynixt.sharedfinances.domain.services.plan.PlanQuotaService::class.java),
                     clock = Clock.fixed(Instant.parse("2026-07-11T00:00:00Z"), ZoneOffset.UTC),
                 )
 

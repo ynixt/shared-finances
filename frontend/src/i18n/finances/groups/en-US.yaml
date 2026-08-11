@@ -52,6 +52,12 @@ financesPage:
         disabled: Opted out
       generateInvitation: Generate invitation
       expiresOn: 'Expires on {{date}}'
+    limitsPage:
+      title: 'Group limits: {{name}}'
+      description: The owner's plan determines the limits available to the whole group.
+      used: '{{usage}} used'
+      available: '{{remaining}} available'
+      unlimited: Unlimited
     bankAccountsAssociatedPage:
       title: 'Bank accounts associated in group: {{name}}'
       owner: Account owner

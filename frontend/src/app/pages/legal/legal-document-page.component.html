@@ -2,7 +2,10 @@
 
 <article class="max-w-3xl mx-auto p-6 space-y-4 text-default dark:text-surface-100">
   <h1 class="text-2xl font-semibold text-surface-900 dark:text-surface-0">{{ titleKey | translate }}</h1>
-  @for (key of paragraphKeys; track key) {
-    <p class="leading-relaxed whitespace-pre-wrap">{{ key | translate }}</p>
+  @for (paragraph of paragraphs; track paragraph.key) {
+    <p class="leading-relaxed whitespace-pre-wrap" [attr.data-legal-key]="paragraph.key">{{ paragraph.key | translate }}</p>
+    @if (paragraph.plansLink) {
+      <a routerLink="/plans" class="inline-block text-primary hover:underline font-medium">{{ 'legal.viewPlans' | translate }}</a>
+    }
   }
 </article>

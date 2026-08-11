@@ -1,0 +1,61 @@
+@let plan = entitlements();
+@let currentUser = user();
+
+@if (plan == null || currentUser == null) {
+  <div class="flex justify-center py-12">
+    <p-progress-spinner />
+  </div>
+} @else {
+  <div class="finances-page user-limits-page">
+    <app-finances-title-bar
+      [title]="'financesPage.userLimitsPage.title' | translate"
+      [titleBadge]="'planIdentity.userPlans.' + plan.role | translate"
+      closeRouterLink=".."
+    />
+
+    <div class="limits-intro">
+      <p>{{ 'financesPage.userLimitsPage.description' | translate }}</p>
+    </div>
+
+    <div class="limits-grid" data-testid="user-limits-grid">
+      @for (item of plan.quotas; track item.quota) {
+        <article class="quota-card" [attr.data-quota]="item.quota">
+          <div class="quota-card-header">
+            <h3>{{ 'planQuota.quotas.' + item.quota | translate }}</h3>
+            @if (item.unlimited) {
+              <span class="quota-value unlimited">{{ 'financesPage.userLimitsPage.unlimited' | translate }}</span>
+            } @else {
+              <span class="quota-value">{{ item.usage }} / {{ item.limit }}</span>
+            }
+          </div>
+
+          @if (item.unlimited) {
+            <p class="quota-caption">{{ 'financesPage.userLimitsPage.used' | translate: { usage: item.usage } }}</p>
+          } @else {
+            <div class="quota-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percentage(item)">
+              <span [style.width.%]="percentage(item)"></span>
+            </div>
+            <div class="quota-caption-row">
+              <span>{{ 'financesPage.userLimitsPage.used' | translate: { usage: item.usage } }}</span>
+              <span>{{ 'financesPage.userLimitsPage.available' | translate: { remaining: remaining(item) } }}</span>
+            </div>
+          }
+
+          @if (item.windowEnd) {
+            <p class="quota-reset text-center">
+              {{
+                'financesPage.userLimitsPage.resets'
+                  | translate
+                    : {
+                        date: (item.windowEnd | localDate: 'longDate' : currentUser.tmz),
+                        time: (item.windowEnd | localDate: 'HH:mm' : currentUser.tmz),
+                        timezone: currentUser.tmz,
+                      }
+              }}
+            </p>
+          }
+        </article>
+      }
+    </div>
+  </div>
+}

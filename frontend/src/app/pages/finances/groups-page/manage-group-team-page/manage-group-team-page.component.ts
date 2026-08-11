@@ -14,7 +14,7 @@ import { GroupInviteDto, GroupWithRoleDto } from '../../../../models/generated/c
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { LocalDatePipe } from '../../../../pipes/local-date.pipe';
 import { ErrorMessageService } from '../../../../services/error-message.service';
-import { UserService } from '../../../../services/user.service';
+import { PlanEntitlementsStore } from '../../../../services/plan-entitlements.store';
 import { FinancesTitleBarComponent } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupUserTableComponent } from '../../components/group-user-table/group-user-table.component';
 import { GroupInvitationService } from '../../services/group-invitation.service';
@@ -62,7 +62,7 @@ export class ManageGroupTeamPageComponent {
     private messageService: MessageService,
     private errorMessageService: ErrorMessageService,
     private groupsActionEventService: GroupsActionEventService,
-    private userService: UserService,
+    protected readonly planEntitlements: PlanEntitlementsStore,
   ) {
     this.route.paramMap.pipe(untilDestroyed(this)).subscribe(params => {
       const id = params.get('id');
@@ -82,15 +82,7 @@ export class ManageGroupTeamPageComponent {
 
     this.groupsActionEventService.ownershipChanged$.pipe(untilDestroyed(this)).subscribe(event => {
       if (event.data.groupId !== this.groupId || this.group == null) return;
-      if (event.data.newOwnerUserId === this.userService.user()?.id) {
-        void this.getGroup(event.data.groupId);
-        return;
-      }
-      this.group = {
-        ...this.group,
-        ownerUserId: event.data.newOwnerUserId,
-        isOwner: false,
-      };
+      void this.getGroup(event.data.groupId);
     });
   }
 

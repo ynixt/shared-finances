@@ -28,10 +28,13 @@ import { UserResponseDto } from '../../../models/generated/com/ynixt/sharedfinan
 import { AuthService } from '../../../services/auth.service';
 import { DarkModeService } from '../../../services/dark-mode.service';
 import { ErrorMessageService } from '../../../services/error-message.service';
+import { PlanEntitlementsStore } from '../../../services/plan-entitlements.store';
 import { UserService } from '../../../services/user.service';
 import { DEFAULT_SUCCESS_LIFE } from '../../../util/success-util';
 import { passwordValidator } from '../../registration-page/password-validator';
 import { FinancesTitleBarComponent } from '../components/finances-title-bar/finances-title-bar.component';
+import { PlanIdentityComponent } from '../components/plan-identity/plan-identity.component';
+import { AccountActivityInfoComponent } from './account-activity-info.component';
 import { confirmPasswordValidator } from './confirm-password.validator';
 
 @Component({
@@ -55,6 +58,8 @@ import { confirmPasswordValidator } from './confirm-password.validator';
     QRCodeComponent,
     ConfirmDialog,
     ToggleSwitch,
+    PlanIdentityComponent,
+    AccountActivityInfoComponent,
   ],
   templateUrl: './user-settings.component.html',
   styleUrl: './user-settings.component.scss',
@@ -68,6 +73,7 @@ export class UserSettingsComponent {
   private readonly errorMessageService = inject(ErrorMessageService);
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
+  readonly planEntitlements = inject(PlanEntitlementsStore).entitlements;
 
   user: UserResponseDto | null = null;
   submitting = false;

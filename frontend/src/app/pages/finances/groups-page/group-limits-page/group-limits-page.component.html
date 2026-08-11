@@ -1,0 +1,46 @@
+@let plan = entitlements();
+
+@if (loading || group == null || plan == null) {
+  <div class="flex justify-center py-12">
+    <p-progress-spinner />
+  </div>
+} @else {
+  <div class="finances-page group-limits-page">
+    <app-finances-title-bar
+      [title]="'financesPage.groupsPage.limitsPage.title' | translate: { name: group.name }"
+      [titleBadge]="'planIdentity.groupTiers.' + plan.tier | translate"
+      closeRouterLink=".."
+    />
+
+    <div class="limits-intro">
+      <p>{{ 'financesPage.groupsPage.limitsPage.description' | translate }}</p>
+    </div>
+
+    <div class="limits-grid" data-testid="group-limits-grid">
+      @for (item of plan.quotas; track item.quota) {
+        <article class="quota-card" [attr.data-quota]="item.quota">
+          <div class="quota-card-header">
+            <h3>{{ 'planQuota.quotas.' + item.quota | translate }}</h3>
+            @if (item.unlimited) {
+              <span class="quota-value unlimited">{{ 'financesPage.groupsPage.limitsPage.unlimited' | translate }}</span>
+            } @else {
+              <span class="quota-value">{{ item.usage }} / {{ item.limit }}</span>
+            }
+          </div>
+
+          @if (item.unlimited) {
+            <p class="quota-caption">{{ 'financesPage.groupsPage.limitsPage.used' | translate: { usage: item.usage } }}</p>
+          } @else {
+            <div class="quota-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="percentage(item)">
+              <span [style.width.%]="percentage(item)"></span>
+            </div>
+            <div class="quota-caption-row">
+              <span>{{ 'financesPage.groupsPage.limitsPage.used' | translate: { usage: item.usage } }}</span>
+              <span>{{ 'financesPage.groupsPage.limitsPage.available' | translate: { remaining: remaining(item) } }}</span>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  </div>
+}

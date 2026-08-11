@@ -30,6 +30,12 @@
             <app-user-avatar [user]="user" [showTooltip]="false"></app-user-avatar>
           </button>
         } @else {
+          @if (openAuthPreferences.planLimitsEnabled()) {
+            <a routerLink="/plans" pButton class="text-default-inverse dark:text-default hover:text-primary" [text]="true" [rounded]="true">
+              <span pButtonLabel>{{ 'plans.navLink' | translate }}</span>
+            </a>
+          }
+
           <a routerLink="/login" pButton class="text-default-inverse dark:text-default hover:text-primary" [text]="true" [rounded]="true">
             <span pButtonLabel>{{ 'general.login' | translate }}</span>
           </a>
@@ -50,7 +56,7 @@
 
 <p-menu #userMenu [model]="items" [popup]="true" styleClass="mt-1">
   <ng-template #start>
-    <div class="flex px-4 pt-5 items-center gap-8 text-muted-color">
+    <div class="flex px-4 pt-5 items-center gap-4 text-muted-color">
       <span class="mr-auto">{{
         'general.greetings'
           | translate
@@ -64,6 +70,14 @@
                       }),
               }
       }}</span>
+
+      @if (planEntitlements.limitsEnabled()) {
+        <a routerLink="/app/limits">
+          <span class="title-badge" data-testid="user-plan-badge">{{
+            'planIdentity.userPlans.' + (user ? user.role : 'USER') | translate
+          }}</span>
+        </a>
+      }
     </div>
     <p-divider class=""></p-divider>
   </ng-template>

@@ -4,6 +4,8 @@
   <div class="finances-page overview-group-page">
     <app-finances-title-bar
       [title]="'financesPage.groupsPage.manageTeamPage.title' | translate: { name: group.name }"
+      [titleBadge]="planEntitlements.limitsEnabled() ? ('planIdentity.groupTiers.' + group.tier | translate) : undefined"
+      titleBadgeRouterLink="../limits"
       closeRouterLink=".."
     ></app-finances-title-bar>
 

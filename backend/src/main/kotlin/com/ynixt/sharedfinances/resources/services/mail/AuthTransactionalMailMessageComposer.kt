@@ -2,7 +2,7 @@ package com.ynixt.sharedfinances.resources.services.mail
 
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.PublicWebProperties
-import com.ynixt.sharedfinances.domain.mail.AuthTransactionalEmailMessage
+import com.ynixt.sharedfinances.domain.mail.TransactionalEmailMessage
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
@@ -20,7 +20,7 @@ class AuthTransactionalMailMessageComposer(
         toAddress: String,
         locale: Locale,
         rawToken: String,
-    ): AuthTransactionalEmailMessage {
+    ): TransactionalEmailMessage {
         val link = buildConfirmLink(rawToken)
         val ttlMin = authProperties.emailConfirmation.ttlMinutes
         val window = formatValidityWindow(locale, ttlMin)
@@ -33,7 +33,7 @@ class AuthTransactionalMailMessageComposer(
                 locale,
             )
 
-        return AuthTransactionalEmailMessage(
+        return TransactionalEmailMessage(
             toAddress = toAddress,
             subject = subject,
             textBody = text,
@@ -44,7 +44,7 @@ class AuthTransactionalMailMessageComposer(
         toAddress: String,
         locale: Locale,
         rawToken: String,
-    ): AuthTransactionalEmailMessage {
+    ): TransactionalEmailMessage {
         val link = buildResetLink(rawToken)
         val ttlMin = authProperties.passwordRecovery.ttlMinutes
         val window = formatValidityWindow(locale, ttlMin)
@@ -57,7 +57,7 @@ class AuthTransactionalMailMessageComposer(
                 locale,
             )
 
-        return AuthTransactionalEmailMessage(
+        return TransactionalEmailMessage(
             toAddress = toAddress,
             subject = subject,
             textBody = text,

@@ -16,7 +16,7 @@ data class ImportHashCheckDto(
 )
 
 data class ImportPreferencesDto(
-    val maxLines: Int,
+    val maxLines: Int?,
 )
 
 data class ImportDuplicateLineDto(

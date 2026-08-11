@@ -50,4 +50,17 @@ interface UserRepository : EntityRepository<UserEntity> {
         userId: UUID,
         newEmail: String,
     ): Mono<Int>
+
+    fun recordActivityIfOlderThan(
+        userId: UUID,
+        usedAt: OffsetDateTime,
+        cutoff: OffsetDateTime,
+    ): Mono<Int>
+
+    fun recordInactivityNoticeStage(
+        userId: UUID,
+        stage: Int,
+    ): Mono<Int>
+
+    fun findAllWithTrackedActivity(): Flux<UserEntity>
 }

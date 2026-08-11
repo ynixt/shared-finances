@@ -1,9 +1,11 @@
 package com.ynixt.sharedfinances.domain.models.security
 
 import com.ynixt.sharedfinances.domain.entities.UserEntity
+import com.ynixt.sharedfinances.domain.enums.UserPlanRole
 import com.ynixt.sharedfinances.resources.services.mail.UserLocaleResolver
 import org.springframework.security.core.GrantedAuthority
 import java.security.Principal
+import java.time.OffsetDateTime
 import java.util.UUID
 
 class UserPrincipal(
@@ -19,6 +21,8 @@ class UserPrincipal(
     var mfaEnabled: Boolean,
     var onboardingDone: Boolean,
     var darkMode: Boolean,
+    val role: UserPlanRole,
+    val lastLoginAt: OffsetDateTime,
     val authorities: List<GrantedAuthority>,
 ) : Principal {
     constructor(user: UserEntity, authorities: List<GrantedAuthority>) : this(
@@ -34,6 +38,8 @@ class UserPrincipal(
         user.mfaEnabled,
         user.onboardingDone,
         user.darkMode,
+        user.role,
+        user.lastLoginAt,
         authorities,
     )
 

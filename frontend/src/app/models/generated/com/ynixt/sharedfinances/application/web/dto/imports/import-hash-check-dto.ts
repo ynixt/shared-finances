@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { ImportHashStatus } from '../../../../domain/enums/import-hash-status';
 
 export interface ImportHashCheckDto {

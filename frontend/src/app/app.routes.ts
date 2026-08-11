@@ -5,9 +5,12 @@ import { groupPermissionGuard } from './guards/group-permission.guard';
 import { notLoggedGuard } from './guards/not-logged.guard';
 import {
   emailConfirmationFlowsEnabledGuard,
+  legalDocumentsEnabledGuard,
   passwordRecoveryEnabledGuard,
+  publicPlanComparisonEnabledGuard,
   registrationEnabledGuard,
 } from './guards/open-auth-feature.guards';
+import { planLimitsEnabledGuard } from './guards/plan-limits-enabled.guard';
 import { GroupPermissions__Obj } from './models/generated/com/ynixt/sharedfinances/domain/enums';
 
 export const routes: Routes = [
@@ -69,6 +72,7 @@ export const routes: Routes = [
   },
   {
     path: 'legal/terms',
+    canMatch: [legalDocumentsEnabledGuard],
     loadComponent: () => import('./pages/legal/legal-document-page.component').then(m => m.LegalDocumentPageComponent),
     data: {
       pageTitleKey: 'pageTitle.legalTerms',
@@ -77,10 +81,19 @@ export const routes: Routes = [
   },
   {
     path: 'legal/privacy',
+    canMatch: [legalDocumentsEnabledGuard],
     loadComponent: () => import('./pages/legal/legal-document-page.component').then(m => m.LegalDocumentPageComponent),
     data: {
       pageTitleKey: 'pageTitle.legalPrivacy',
       legalDoc: 'privacy',
+    },
+  },
+  {
+    path: 'plans',
+    canMatch: [publicPlanComparisonEnabledGuard],
+    loadComponent: () => import('./pages/plans/plans-page.component').then(m => m.PlansPageComponent),
+    data: {
+      pageTitleKey: 'pageTitle.plans',
     },
   },
   {
@@ -109,6 +122,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/finances/user-settings/user-settings.component').then(m => m.UserSettingsComponent),
         data: {
           pageTitleKey: 'pageTitle.settings',
+        },
+      },
+      {
+        path: 'limits',
+        canActivate: [planLimitsEnabledGuard],
+        loadComponent: () => import('./pages/finances/user-limits-page/user-limits-page.component').then(m => m.UserLimitsPageComponent),
+        data: {
+          pageTitleKey: 'pageTitle.personalLimits',
         },
       },
       {
@@ -505,6 +526,15 @@ export const routes: Routes = [
                 m => m.GroupSimulationJobsPageComponent,
               ),
             data: { pageTitleKey: 'pageTitle.simulationJobs' },
+          },
+          {
+            path: ':id/limits',
+            canActivate: [planLimitsEnabledGuard],
+            loadComponent: () =>
+              import('./pages/finances/groups-page/group-limits-page/group-limits-page.component').then(m => m.GroupLimitsPageComponent),
+            data: {
+              pageTitleKey: 'pageTitle.groupLimits',
+            },
           },
           {
             path: ':id/debts/adjustments/new',

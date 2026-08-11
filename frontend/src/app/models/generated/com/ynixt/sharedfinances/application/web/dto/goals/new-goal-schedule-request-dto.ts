@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { RecurrenceType } from '../../../../domain/enums/recurrence-type';
 
 export interface NewGoalScheduleRequestDto {

@@ -1,5 +1,6 @@
 /* eslint-disable */
 /* tslint-disable */
+
 import { ImportLineDto } from './import-line-dto';
 
 export interface CreateImportDto {

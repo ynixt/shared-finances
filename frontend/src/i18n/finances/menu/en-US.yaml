@@ -15,3 +15,5 @@ financesPage:
     groups: Groups
     links: Links
     debts: Debts
+    limits: Limits
+    personalLimits: My limits

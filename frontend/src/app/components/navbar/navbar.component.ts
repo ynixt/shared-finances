@@ -16,6 +16,7 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { AuthService } from '../../services/auth.service';
 import { BreakpointService } from '../../services/breakpoint.service';
 import { OpenAuthPreferencesService } from '../../services/open-auth-preferences.service';
+import { PlanEntitlementsStore } from '../../services/plan-entitlements.store';
 import { UserService } from '../../services/user.service';
 import { DarkModeButtonComponent } from '../dark-mode-button/dark-mode-button.component';
 import { LangButtonComponent } from '../lang-button/lang-button.component';
@@ -52,6 +53,7 @@ export class NavbarComponent {
     private translateService: TranslateService,
     private authService: AuthService,
     protected readonly openAuthPreferences: OpenAuthPreferencesService,
+    protected readonly planEntitlements: PlanEntitlementsStore,
     breakpointService: BreakpointService,
   ) {
     this.translateService.onLangChange.pipe(startWith(this.translateService.currentLang), untilDestroyed(this)).subscribe(lang => {
@@ -80,6 +82,15 @@ export class NavbarComponent {
 
   private loadItems() {
     this.items = [
+      ...(this.openAuthPreferences.planLimitsEnabled()
+        ? [
+            {
+              label: this.translateService.instant('plans.navLink'),
+              icon: 'pi pi-chart-bar',
+              routerLink: ['/plans'],
+            },
+          ]
+        : []),
       {
         label: this.translateService.instant('navbar.settings'),
         icon: 'pi pi-cog',

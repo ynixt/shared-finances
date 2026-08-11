@@ -32,6 +32,9 @@ export class FinancesTitleBarComponent {
 
   @Input() title!: string;
 
+  @Input() titleBadge: string | undefined;
+  @Input() titleBadgeRouterLink: string | undefined;
+
   @Input() closeRouterLink: string | undefined | string[] = undefined;
   @Input() closeClick: (() => any) | undefined = undefined;
 
