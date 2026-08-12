@@ -7,6 +7,7 @@ import {
   faCalendarDays,
   faCreditCard,
   faDollarSign,
+  faFileExport,
   faFileImport,
   faFlask,
   faGaugeHigh,
@@ -32,6 +33,7 @@ import { GroupDto } from '../../../models/generated/com/ynixt/sharedfinances/app
 import { GroupPermissions, GroupPermissions__Obj } from '../../../models/generated/com/ynixt/sharedfinances/domain/enums';
 import { PlanEntitlementsStore } from '../../../services/plan-entitlements.store';
 import { UserService } from '../../../services/user.service';
+import { ExportReadyNotificationService } from '../services/export-ready-notification.service';
 import { GroupService } from '../services/group.service';
 import { GroupsActionEventService } from '../services/groups-action-event.service';
 import { UserActionEventService } from '../services/user-action-event.service';
@@ -54,7 +56,7 @@ type GroupMenuGroup = GroupDto & { permissions?: GroupPermissions[] };
   templateUrl: './finances-page.component.html',
   styleUrl: './finances-page.component.scss',
   encapsulation: ViewEncapsulation.None,
-  providers: [MessageService],
+  providers: [MessageService, ExportReadyNotificationService],
 })
 @UntilDestroy()
 export class FinancesPageComponent {
@@ -69,7 +71,8 @@ export class FinancesPageComponent {
     return (
       this.router.url.indexOf('/app/transactions/new') === -1 &&
       this.router.url.indexOf('/app/transactions/edit/') === -1 &&
-      this.router.url.indexOf('/app/transactions/import') === -1
+      this.router.url.indexOf('/app/transactions/import') === -1 &&
+      this.router.url.indexOf('/app/transactions/export') === -1
     );
   }
 
@@ -81,7 +84,9 @@ export class FinancesPageComponent {
     private userActionEventService: UserActionEventService,
     private planEntitlementsStore: PlanEntitlementsStore,
     groupsActionEventService: GroupsActionEventService,
+    exportReadyNotificationService: ExportReadyNotificationService,
   ) {
+    void exportReadyNotificationService;
     groupsActionEventService.groupDeleted$.pipe(untilDestroyed(this)).subscribe(event => {
       const groupId = event.data;
 
@@ -176,6 +181,12 @@ export class FinancesPageComponent {
         fa: faFileImport,
         label: this.translateService.instant('financesPage.menu.importTransactions'),
         routerLink: ['/app/transactions/import'],
+        routerLinkActiveOptions: { exact: true },
+      },
+      {
+        fa: faFileExport,
+        label: this.translateService.instant('financesPage.menu.exportTransactions'),
+        routerLink: ['/app/transactions/export'],
         routerLinkActiveOptions: { exact: true },
       },
       {

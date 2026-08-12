@@ -191,6 +191,11 @@ internal class InMemoryAccountDeletionGroupStore :
             memberships.filter { it.groupId == groupId }.map { it.toEntity() },
         )
 
+    override fun findAllMembersForUser(userId: UUID): Flux<GroupUserEntity> {
+        val accessibleGroupIds = memberships.filter { it.userId == userId }.map { it.groupId }.toSet()
+        return Flux.fromIterable(memberships.filter { it.groupId in accessibleGroupIds }.map { it.toEntity() })
+    }
+
     override fun findAllOptedInUserIds(groupId: UUID): Flux<UUID> =
         Flux.fromIterable(
             memberships

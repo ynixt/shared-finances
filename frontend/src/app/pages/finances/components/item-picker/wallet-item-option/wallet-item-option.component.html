@@ -1,0 +1,40 @@
+@if (mode() === 'option') {
+  <div class="flex items-center gap-4">
+    @if (icon(); as walletIcon) {
+      <fa-icon [icon]="walletIcon" />
+    }
+
+    <div class="flex flex-col gap-1">
+      <span>{{ item().name }}</span>
+      @if (item().type != null) {
+        <div class="flex items-center gap-2 text-xs text-muted">
+          <span>{{ 'enums.walletItemType.' + item().type | translate }}</span>
+          @if (item().user != null) {
+            <fa-icon size="xs" [icon]="iconUser" />
+            <span>{{ 'name.fullName' | translate: { lastName: item().user?.lastName, firstName: item().user?.firstName } }}</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+} @else if (mode() === 'selected') {
+  <div class="flex gap-4">
+    <span>{{ item().name }}</span>
+    @if (item().type != null) {
+      <div class="flex items-center gap-2 text-xs text-muted">
+        <span>{{ 'enums.walletItemType.' + item().type | translate }}</span>
+        @if (item().user != null) {
+          <fa-icon size="xs" [icon]="iconUser" />
+          <span>{{ 'name.fullName' | translate: { lastName: item().user?.lastName, firstName: item().user?.firstName } }}</span>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <span class="flex items-center gap-2">
+    @if (icon(); as walletIcon) {
+      <fa-icon size="xs" [icon]="walletIcon" />
+    }
+    <span>{{ item().name }}</span>
+  </span>
+}

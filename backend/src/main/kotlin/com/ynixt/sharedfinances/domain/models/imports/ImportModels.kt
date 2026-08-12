@@ -45,6 +45,8 @@ data class ImportLine(
     val tags: List<String>? = null,
     val observations: String? = null,
     val externalTransactionId: String? = null,
+    val transferGroupId: String? = null,
+    val seriesGroupId: String? = null,
 )
 
 data class CreateImport(

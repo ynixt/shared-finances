@@ -1,0 +1,96 @@
+<form [formGroup]="form()" class="grid gap-5" (ngSubmit)="submitted.emit()">
+  <section class="rounded-xl border border-primary-200 bg-primary-50/40 p-4 dark:border-primary-800 dark:bg-primary-950/20">
+    <label class="grid gap-2">
+      <span class="font-semibold">{{ 'financesPage.transactionsPage.exportPage.filters.group' | translate }}</span>
+      <p-select
+        formControlName="groupId"
+        [options]="groups()"
+        optionLabel="name"
+        optionValue="id"
+        [showClear]="true"
+        [placeholder]="'financesPage.transactionsPage.exportPage.filters.personalScope' | translate"
+        (onChange)="groupChanged.emit($event.value ?? null)"
+      />
+    </label>
+    <p class="mt-2 text-sm text-muted">{{ 'financesPage.transactionsPage.exportPage.filters.groupHelp' | translate }}</p>
+  </section>
+
+  <app-advanced-date-picker formControlName="dateRange" selectionMode="range" viewMode="date" />
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <label class="grid gap-2">
+      <span>{{ 'financesPage.transactionsPage.exportPage.filters.walletItems' | translate }}</span>
+      <app-wallet-item-multi-picker
+        #walletItemsSelect
+        formControlName="walletItemIds"
+        [optionsGetter]="walletItemsGetter()"
+        [pageSize]="10"
+        [showToggleAll]="false"
+        [placeholder]="'general.all' | translate"
+      />
+    </label>
+    <label class="grid gap-2">
+      <span>{{ 'financesPage.transactionsPage.exportPage.filters.categories' | translate }}</span>
+      <app-paged-multi-select
+        #categoriesSelect
+        formControlName="categoryIds"
+        [optionsGetter]="categoriesGetter()"
+        optionLabel="name"
+        optionValue="id"
+        [pageSize]="10"
+        [showToggleAll]="false"
+        [placeholder]="'general.all' | translate"
+      />
+    </label>
+    <label class="grid gap-2">
+      <span>{{ 'financesPage.transactionsPage.exportPage.filters.entryTypes' | translate }}</span>
+      <p-multiselect
+        formControlName="entryTypes"
+        [options]="entryTypes"
+        optionLabel="label"
+        optionValue="value"
+        [placeholder]="'general.all' | translate"
+        display="chip"
+      />
+    </label>
+    <label class="grid gap-2">
+      <span>{{ 'financesPage.transactionsPage.exportPage.filters.confirmedLabel' | translate }}</span>
+      <p-select
+        formControlName="confirmed"
+        [options]="confirmedOptions"
+        optionValue="value"
+        [showClear]="true"
+        [placeholder]="'general.all' | translate"
+      >
+        <ng-template #selectedItem let-option>{{ 'financesPage.transactionsPage.exportPage.' + option.labelKey | translate }}</ng-template>
+        <ng-template #item let-option>{{ 'financesPage.transactionsPage.exportPage.' + option.labelKey | translate }}</ng-template>
+      </p-select>
+    </label>
+  </div>
+
+  <label class="grid gap-2">
+    <span>{{ 'financesPage.transactionsPage.exportPage.filters.tags' | translate }}</span>
+    <app-chip-editor formControlName="tags" [placeholder]="'general.all' | translate" />
+  </label>
+
+  <label class="flex items-start gap-3">
+    <p-checkbox formControlName="billDateMode" [binary]="true" />
+    <span>
+      <strong>{{ 'financesPage.transactionsPage.exportPage.filters.billDate' | translate }}</strong>
+      <small class="block text-muted">{{ 'financesPage.transactionsPage.exportPage.filters.billDateHelp' | translate }}</small>
+    </span>
+  </label>
+
+  <label class="grid max-w-xs gap-2">
+    <span>{{ 'financesPage.transactionsPage.exportPage.format' | translate }}</span>
+    <p-select formControlName="format" [options]="formats" />
+  </label>
+
+  <p class="rounded-lg bg-surface-100 p-3 text-sm text-muted dark:bg-surface-800">
+    {{ 'financesPage.transactionsPage.exportPage.limitations' | translate }}
+  </p>
+
+  <button pButton type="submit" [disabled]="disabled()" [loading]="submitting()">
+    {{ 'financesPage.transactionsPage.exportPage.submit' | translate }}
+  </button>
+</form>

@@ -16,12 +16,14 @@ internal class NoOpGroupWalletItemRepository : GroupWalletItemRepository {
         enabled: Boolean,
         pageable: Pageable,
         walletItemType: WalletItemType?,
+        query: String?,
     ): Flux<WalletItemEntity> = Flux.empty()
 
     override fun countByGroupIdAndEnabled(
         groupId: UUID,
         enabled: Boolean,
         walletItemType: WalletItemType?,
+        query: String?,
     ): Mono<Long> = Mono.just(0L)
 
     override fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity> = Mono.just(groupUser)

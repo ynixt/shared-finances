@@ -14,12 +14,14 @@ interface GroupWalletItemRepository {
         enabled: Boolean,
         pageable: Pageable,
         walletItemType: WalletItemType? = null,
+        query: String? = null,
     ): Flux<WalletItemEntity>
 
     fun countByGroupIdAndEnabled(
         groupId: UUID,
         enabled: Boolean,
         walletItemType: WalletItemType? = null,
+        query: String? = null,
     ): Mono<Long>
 
     fun save(groupUser: GroupWalletItemEntity): Mono<GroupWalletItemEntity>

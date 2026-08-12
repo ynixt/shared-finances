@@ -44,6 +44,8 @@ export class UserActionEventService extends ActionEventService implements OnDest
   readonly simulationJobAction$: Observable<UserActionEventDto>;
   /** INSERT/UPDATE payload is {@link ImportBatchStatusEventDto}. */
   readonly importBatchAction$: Observable<UserActionEventDto>;
+  /** INSERT/UPDATE payload is ExportBatchStatusEventDto. */
+  readonly exportBatchAction$: Observable<UserActionEventDto>;
   readonly onboardingCompleted$: Observable<void>;
   readonly planUsage$: Observable<PlanUsageEventDto>;
   readonly resyncRequired$: Observable<void>;
@@ -133,6 +135,8 @@ export class UserActionEventService extends ActionEventService implements OnDest
 
     // --- Import batches ---
     this.importBatchAction$ = this.streamOf<UserActionEventDto>('IMPORT_BATCH').pipe(notGroupFilter);
+
+    this.exportBatchAction$ = this.streamOf<UserActionEventDto>('EXPORT_BATCH').pipe(notGroupFilter);
 
     this.planUsage$ = this.streamOf<UserActionEventDto>('PLAN_USAGE').pipe(
       notGroupFilter,

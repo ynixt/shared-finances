@@ -17,6 +17,7 @@ import { CsvImportCatalogStore } from './csv-import-catalog.store';
 import { CsvImportConversionService } from './csv-import-conversion.service';
 import { CsvImportDraftStore } from './csv-import-draft.store';
 import { CsvImportDuplicateService } from './csv-import-duplicate.service';
+import { CsvImportGroupingService } from './csv-import-grouping.service';
 import { CsvImportRowResolver } from './csv-import-row.resolver';
 import { CsvImportSubmissionService } from './csv-import-submission.service';
 import { LocalizedCsvTemplate, buildLocalizedCsvTemplate } from './csv-template';
@@ -43,6 +44,7 @@ import { OfxImportDraftStore } from './ofx-import-draft.store';
     CsvImportRowResolver,
     CsvImportConversionService,
     CsvImportDuplicateService,
+    CsvImportGroupingService,
     CsvImportBeneficiaryEditor,
     CsvImportSubmissionService,
     CsvImportDraftStore,

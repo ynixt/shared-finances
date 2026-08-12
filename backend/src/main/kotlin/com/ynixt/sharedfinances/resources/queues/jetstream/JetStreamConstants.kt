@@ -14,4 +14,8 @@ object JetStreamConstants {
     const val IMPORT_JOB_DISPATCH_STREAM = "SF_IMPORT_DISPATCH"
     const val IMPORT_JOB_DISPATCH_SUBJECT = "sf.imports.dispatch"
     const val IMPORT_JOB_WORKER_CONSUMER = "sf-import-workers"
+
+    const val EXPORT_JOB_DISPATCH_STREAM = "SF_EXPORT_DISPATCH"
+    const val EXPORT_JOB_DISPATCH_SUBJECT = "sf.exports.dispatch"
+    const val EXPORT_JOB_WORKER_CONSUMER = "sf-export-workers"
 }

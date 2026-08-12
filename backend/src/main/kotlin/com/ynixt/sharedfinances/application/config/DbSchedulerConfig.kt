@@ -5,6 +5,8 @@ import com.github.kagkarlsson.scheduler.task.helper.RecurringTask
 import com.github.kagkarlsson.scheduler.task.helper.Tasks
 import com.github.kagkarlsson.scheduler.task.schedule.Schedules
 import com.ynixt.sharedfinances.application.web.jobs.ExpireInvitesJob
+import com.ynixt.sharedfinances.application.web.jobs.ExportJobsMaintenanceJob
+import com.ynixt.sharedfinances.application.web.jobs.ExportPurgeJobs
 import com.ynixt.sharedfinances.application.web.jobs.GenerateEntryRecurrenceJob
 import com.ynixt.sharedfinances.application.web.jobs.ImportJobsMaintenanceJob
 import com.ynixt.sharedfinances.application.web.jobs.InactiveAccountDeletionJob
@@ -58,6 +60,9 @@ class DbSchedulerConfig(
     @param:Value("\${app.jobs.simulation.purge.cron}") private val simulationPurgeCron: String,
     @param:Value("\${app.jobs.imports.reconcile.cron-enabled:true}") private val importReconcileEnabled: Boolean,
     @param:Value("\${app.jobs.imports.reconcile.cron:0 */1 * * * *}") private val importReconcileCron: String,
+    @param:Value("\${app.jobs.exports.reconcile.cron-enabled:true}") private val exportReconcileEnabled: Boolean,
+    @param:Value("\${app.jobs.exports.reconcile.cron:0 */1 * * * *}") private val exportReconcileCron: String,
+    private val exportRetentionProperties: ExportRetentionProperties,
 ) {
     private val logger = LoggerFactory.getLogger(DbSchedulerConfig::class.java)
 
@@ -108,6 +113,8 @@ class DbSchedulerConfig(
         inactiveAccountDeletionJob: InactiveAccountDeletionJob,
         simulationJobsMaintenanceJob: SimulationJobsMaintenanceJob,
         importJobsMaintenanceJob: ImportJobsMaintenanceJob,
+        exportJobsMaintenanceJob: ExportJobsMaintenanceJob,
+        exportPurgeJobs: ExportPurgeJobs,
     ): Scheduler {
         val tasks = mutableListOf<RecurringTask<*>>()
 
@@ -164,6 +171,34 @@ class DbSchedulerConfig(
             logger.info("Import reconcile task registered with cron: {}", importReconcileCron)
         } else {
             logger.info("Import reconcile task is disabled (app.jobs.imports.reconcile.cron-enabled=false)")
+        }
+
+        if (exportReconcileEnabled) {
+            tasks +=
+                Tasks
+                    .recurring("export-reconcile", Schedules.cron(exportReconcileCron))
+                    .execute { _, _ -> runBlocking { exportJobsMaintenanceJob.executeReconcile() } }
+            logger.info("Export reconcile task registered with cron: {}", exportReconcileCron)
+        } else {
+            logger.info("Export reconcile task is disabled (app.jobs.exports.reconcile.cron-enabled=false)")
+        }
+
+        if (exportRetentionProperties.afterDownload.enabled) {
+            tasks +=
+                Tasks
+                    .recurring("export-purge-after-download", Schedules.cron(exportRetentionProperties.afterDownload.cron))
+                    .execute { _, _ -> runBlocking { exportPurgeJobs.purgeAfterDownload() } }
+        } else {
+            logger.info("Export purge after download is disabled")
+        }
+
+        if (exportRetentionProperties.absoluteAge.enabled) {
+            tasks +=
+                Tasks
+                    .recurring("export-purge-absolute-age", Schedules.cron(exportRetentionProperties.absoluteAge.cron))
+                    .execute { _, _ -> runBlocking { exportPurgeJobs.purgeByAbsoluteAge() } }
+        } else {
+            logger.info("Export purge by absolute age is disabled")
         }
 
         return Scheduler

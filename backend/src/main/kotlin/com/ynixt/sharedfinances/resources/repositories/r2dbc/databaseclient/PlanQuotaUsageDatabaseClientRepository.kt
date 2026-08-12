@@ -42,6 +42,10 @@ class PlanQuotaUsageDatabaseClientRepository(
                     "SELECT COUNT(*) AS usage FROM recurrence_event WHERE created_by_user_id = :userId AND group_id IS NULL AND next_execution IS NOT NULL"
                 PlanLimitKey.IMPORTS_PER_MONTH ->
                     "SELECT COUNT(*) AS usage FROM import_batch WHERE user_id = :userId AND counted_at >= :monthStart"
+                PlanLimitKey.EXPORTS_PER_MONTH ->
+                    "SELECT COALESCE((SELECT usage FROM plan_quota_monthly_usage " +
+                        "WHERE user_id = :userId AND quota = 'EXPORTS_PER_MONTH' " +
+                        "AND month_start = CAST(:monthStart AT TIME ZONE 'UTC' AS DATE)), 0) AS usage"
                 PlanLimitKey.SIMULATIONS_PER_MONTH ->
                     "SELECT COUNT(*) AS usage FROM simulation_job WHERE requested_by_user_id = :userId AND counted_at >= :monthStart"
                 PlanLimitKey.OWNED_GROUPS -> "SELECT COUNT(*) AS usage FROM \"group\" WHERE owner_user_id = :userId"

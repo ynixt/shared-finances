@@ -168,19 +168,29 @@ export class GroupDebtSettlementPageComponent {
     this.loading.set(true);
 
     try {
-      const [group, members, bankAccountsPage] = await Promise.all([
+      const [group, members, bankAccounts] = await Promise.all([
         this.groupService.getGroup(this.groupId),
         this.groupService.findAllMembers(this.groupId),
-        this.groupWalletItemService.getAllItems(this.groupId, { page: 0, size: 200 }, true),
+        this.loadAllBankAccounts(),
       ]);
 
       this.group.set(group);
       this.members.set(members);
-      this.bankAccounts.set(bankAccountsPage.content);
+      this.bankAccounts.set(bankAccounts);
     } catch (error) {
       this.errorMessageService.handleError(error, this.messageService);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadAllBankAccounts(): Promise<WalletItemSearchResponseDtoWithIcon[]> {
+    const pageSize = 10;
+    const items: WalletItemSearchResponseDtoWithIcon[] = [];
+    for (let page = 0; ; page += 1) {
+      const result = await this.groupWalletItemService.getAllItems(this.groupId, { page, size: pageSize, sort: 'name' }, true);
+      items.push(...result.content.map(item => ({ ...item, icon: faBuildingColumns })));
+      if (result.last === true || result.content.length < pageSize) return items;
     }
   }
 

@@ -4,6 +4,7 @@ financesPage:
     newTransaction: New Transaction
     scheduleManager: Schedule Manager
     importTransactions: Import transactions
+    exportTransactions: Export transactions
     registrations: Registrations
     bankAccounts: Bank Accounts
     creditCards: Credit Cards

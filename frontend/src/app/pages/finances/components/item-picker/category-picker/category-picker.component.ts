@@ -90,7 +90,7 @@ export class CategoryPickerComponent extends SimpleControlValueAccessor<Category
   }
 
   allCategoriesPageSize(): number {
-    return Math.max(this.categories()?.length ?? 500, 1);
+    return Math.max(this.categories()?.length ?? 100, 1);
   }
 
   private async loadAllCategoriesForPicker(page = 0): Promise<CategoryDto[]> {
@@ -102,7 +102,7 @@ export class CategoryPickerComponent extends SimpleControlValueAccessor<Category
     }
 
     const categories: CategoryDto[] = [];
-    const pageSize = 500;
+    const pageSize = 100;
     let currentPage = 0;
 
     while (true) {

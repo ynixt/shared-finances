@@ -30,11 +30,13 @@ class WalletItemController(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         pageable: Pageable,
         @RequestParam(required = false, defaultValue = "false") onlyBankAccounts: Boolean,
+        @RequestParam(required = false) query: String?,
     ): Page<WalletItemSearchResponseDto> =
         walletItemService
             .findAllItems(
                 principalToken.principal.id,
                 pageable,
                 onlyBankAccounts = onlyBankAccounts,
+                query = query,
             ).map(walletItemDtoMapper::searchResponseToDto)
 }

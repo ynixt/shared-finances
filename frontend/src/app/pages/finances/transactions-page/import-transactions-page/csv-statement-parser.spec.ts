@@ -61,8 +61,8 @@ describe('CSV statement parser', () => {
 
   it('prioritizes and resolves every canonical header', () => {
     const csv =
-      'origem;data;descricao;valor;moeda;categoria;grupo;parcela;beneficiarios;fatura;tags;observacoes;confirmado\n' +
-      '019fdb00-a88b-775d-806a-8d74982081ea;2026-08-10;Mercado;-120.50;USD;Mercado;Casa;Única;a@x.com:50|b@x.com:50;08/2026;casa,comida;Compra;sim\n';
+      'origem;nome_origem;data;descricao;valor;moeda;categoria;nome_categoria;id_conceito_categoria;grupo;nome_grupo;parcela;beneficiarios;fatura;tags;observacoes;confirmado;id transacao;id transferencia;id serie\n' +
+      'wallet;Conta;2026-08-10;Mercado;-120.50;USD;category;Mercado;food;group;Casa;1/3;a@x.com:50|b@x.com:50;2026-08-01;casa,comida;Compra;sim;tx-1;transfer-1;series-1\n';
     const parsed = parseCsv(csv, { delimiter: ';', decimalSeparator: '.', dateFormat: 'AUTO' });
     const mapping = parsed.mapping;
 
@@ -70,18 +70,25 @@ describe('CSV statement parser', () => {
     expect(parsed.layoutProviderId).toBe('shared-finances-csv-template-v1');
     expect(mapping).toMatchObject({
       origin: 'origem',
+      originName: 'nome_origem',
       date: 'data',
       description: 'descricao',
       value: 'valor',
       currency: 'moeda',
       category: 'categoria',
+      categoryName: 'nome_categoria',
+      categoryConceptId: 'id_conceito_categoria',
       group: 'grupo',
+      groupName: 'nome_grupo',
       installment: 'parcela',
       beneficiaries: 'beneficiarios',
       bill: 'fatura',
       tags: 'tags',
       observations: 'observacoes',
       confirmed: 'confirmado',
+      transactionId: 'id transacao',
+      transferId: 'id transferencia',
+      seriesId: 'id serie',
     });
     expect(parseBeneficiaries(parsed.rows[0]['beneficiarios'])).toEqual([
       { email: 'a@x.com', benefitPercent: 50 },
@@ -92,18 +99,25 @@ describe('CSV statement parser', () => {
   it('resolves every header emitted by the English template', () => {
     const headers = [
       'origin',
+      'origin_name',
       'date',
       'description',
-      'amount',
+      'value',
       'currency',
       'category',
+      'category_name',
+      'category_concept_id',
       'group',
+      'group_name',
       'installment',
       'beneficiaries',
       'bill',
       'tags',
       'observations',
       'confirmed',
+      'transaction id',
+      'transfer id',
+      'series id',
     ];
 
     const layout = detectCsvLayout(headers);
@@ -111,19 +125,39 @@ describe('CSV statement parser', () => {
     expect(layout.providerId).toBe('shared-finances-csv-template-v1');
     expect(layout.mapping).toMatchObject({
       origin: 'origin',
+      originName: 'origin_name',
       date: 'date',
       description: 'description',
-      value: 'amount',
+      value: 'value',
       currency: 'currency',
       category: 'category',
+      categoryName: 'category_name',
+      categoryConceptId: 'category_concept_id',
       group: 'group',
+      groupName: 'group_name',
       installment: 'installment',
       beneficiaries: 'beneficiaries',
       bill: 'bill',
       tags: 'tags',
       observations: 'observations',
       confirmed: 'confirmed',
+      transactionId: 'transaction id',
+      transferId: 'transfer id',
+      seriesId: 'series id',
     });
+  });
+
+  it('round-trips every escaped form emitted by the export writer', () => {
+    const csv =
+      '\uFEFForigin;origin_name;date;description;value;currency;category;category_name;category_concept_id;group;group_name;installment;beneficiaries;bill;tags;observations;confirmed;transaction id;transfer id;series id\r\n' +
+      'wallet;Checking;2026-08-11;"market; ""weekly""\nrun";-42.30;BRL;category;Food;food;group;Household;;user@example.com:100;;home,food;"first line\nsecond; ""quoted"" line";true;source-1;;;\r\n';
+
+    const parsed = parseCsv(csv, { delimiter: ';', decimalSeparator: '.', dateFormat: 'AUTO' });
+
+    expect(parsed.layoutProviderId).toBe('shared-finances-csv-template-v1');
+    expect(parsed.rows[0]['description']).toBe('market; "weekly"\nrun');
+    expect(parsed.rows[0]['observations']).toBe('first line\nsecond; "quoted" line');
+    expect(parsed.rows[0]['transaction id']).toBe('source-1');
   });
 
   it('requires manual mapping when no provider matches the headers', () => {

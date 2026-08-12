@@ -10,7 +10,6 @@ import {
   CsvColumnField,
   CsvColumnMapping,
   CsvDateFormat,
-  normalizeHeader,
   parseBeneficiaries,
   parseCsvDate,
   parseCsvNumber,
@@ -61,9 +60,7 @@ export class CsvImportRowResolver {
     const installment = parseInstallment(this.value(raw, 'installment', context));
     const parseError =
       parsedDate == null ? context.text('validation.invalidDate') : amount == null ? context.text('validation.invalidValue') : undefined;
-    const walletItemId = this.catalogs.resolveWalletItemId(this.value(raw, 'origin', context));
-    const walletItem = this.catalogs.walletItems.find(item => item.id === walletItemId);
-    const targetCurrency = walletItem?.currency ?? this.catalogs.defaultCurrency;
+    const targetCurrency = this.catalogs.defaultCurrency;
     const rawCurrency = this.value(raw, 'currency', context)?.trim();
     const currencyFromFile = this.catalogs.findKnownCurrency(rawCurrency);
     const hasInvalidFileCurrency = rawCurrency != null && rawCurrency !== '' && currencyFromFile == null;
@@ -96,9 +93,11 @@ export class CsvImportRowResolver {
         .filter(Boolean),
       observations: this.value(raw, 'observations', context)?.trim() || undefined,
       externalTransactionId: this.value(raw, 'transactionId', context)?.trim() || undefined,
+      transferGroupId: this.value(raw, 'transferId', context)?.trim() || undefined,
+      seriesGroupId: this.value(raw, 'seriesId', context)?.trim() || undefined,
       billDate: parseImportBill(this.value(raw, 'bill', context)),
       parseError,
-      walletItemId,
+      walletItemId: undefined,
     };
   }
 
@@ -151,32 +150,49 @@ export class CsvImportRowResolver {
   }
 
   async resolve(rows: ImportPreviewRow[], context: CsvImportRowContext): Promise<void> {
-    const groupsByName = new Map(this.catalogs.groups.map(group => [normalizeHeader(group.name), group] as const));
+    const references = this.catalogs.createReferenceIndex();
+    const membersByGroup = new Map(
+      this.catalogs.groups.map(group => [
+        group.id,
+        new Map(this.catalogs.groupMembers(group.id).map(member => [member.email.toLowerCase(), member])),
+      ]),
+    );
     for (const row of rows) {
       const group = this.isFixedMapping('group', context)
-        ? this.catalogs.groups.find(candidate => candidate.id === context.fixedValues.group)
-        : groupsByName.get(normalizeHeader(this.value(row.raw, 'group', context) ?? ''));
+        ? references.resolveGroup(String(context.fixedValues.group ?? ''))
+        : references.resolveGroup(
+            this.value(row.raw, 'group', context),
+            this.value(row.raw, 'groupName', context) ?? this.value(row.raw, 'group', context),
+          );
       row.groupId = group?.id;
-      if (group != null) {
-        await Promise.all([this.catalogs.ensureGroupCategories(group.id), this.catalogs.ensureGroupMembers(group.id)]);
+
+      if (row.sourceStatementKey == null) {
+        const originId = this.value(row.raw, 'origin', context);
+        const walletItem = references.resolveWalletItem(originId, this.value(row.raw, 'originName', context) ?? originId);
+        row.walletItemId = walletItem?.id;
+        this.applyResolvedWallet(row, walletItem?.currency ?? this.catalogs.defaultCurrency);
       }
 
       if (this.isFixedMapping('category', context) && context.fixedCategory != null) {
-        const available = this.catalogs.categoriesFor(row.groupId);
-        row.categoryId =
-          available.find(category => category.id === context.fixedCategory?.id)?.id ??
-          available.find(category => category.conceptId === context.fixedCategory?.conceptId)?.id ??
-          this.catalogs.findCategoryByName(available, context.fixedCategory.name)?.id;
+        row.categoryId = references.resolveCategory(
+          row.groupId,
+          context.fixedCategory.id,
+          context.fixedCategory.conceptId,
+          context.fixedCategory.name,
+        )?.id;
       } else {
-        row.categoryId = this.catalogs.findCategoryByName(
-          this.catalogs.categoriesFor(row.groupId),
-          this.value(row.raw, 'category', context),
+        const categoryId = this.value(row.raw, 'category', context);
+        row.categoryId = references.resolveCategory(
+          row.groupId,
+          categoryId,
+          this.value(row.raw, 'categoryConceptId', context),
+          this.value(row.raw, 'categoryName', context) ?? categoryId,
         )?.id;
       }
 
       if (row.groupId != null) {
-        const members = await this.catalogs.ensureGroupMembers(row.groupId);
-        const membersByEmail = new Map(members.map(member => [member.email.toLowerCase(), member] as const));
+        const members = this.catalogs.groupMembers(row.groupId);
+        const membersByEmail = membersByGroup.get(row.groupId) ?? new Map<string, UserForBeneficiary>();
         row.beneficiaries = parseBeneficiaries(this.value(row.raw, 'beneficiaries', context))
           .map(leg => ({ member: membersByEmail.get(leg.email), benefitPercent: leg.benefitPercent, email: leg.email }))
           .filter((leg): leg is { member: UserForBeneficiary; benefitPercent: number; email: string } => leg.member != null)
@@ -186,15 +202,20 @@ export class CsvImportRowResolver {
     }
   }
 
+  private applyResolvedWallet(row: ImportPreviewRow, targetCurrency: string): void {
+    row.conversionTargetCurrency = targetCurrency;
+    const sameCurrency = row.currency === targetCurrency;
+    row.conversionRate = sameCurrency ? 1 : undefined;
+    row.convertedValue = sameCurrency ? row.value : undefined;
+    row.convertedValueOverridden = false;
+  }
+
   async groupChanged(row: ImportPreviewRow, context: CsvImportRowContext): Promise<void> {
     const previousCategory = this.catalogs.findCategoryById(row.categoryId);
     row.beneficiaries = [];
     if (row.groupId != null && row.groupId !== '') {
       this.ensureDefaultBeneficiary(row);
-      const [, members] = await Promise.all([
-        this.catalogs.ensureGroupCategories(row.groupId),
-        this.catalogs.ensureGroupMembers(row.groupId),
-      ]);
+      const members = await this.catalogs.ensureGroupMembers(row.groupId);
       this.ensureDefaultBeneficiary(row, members);
     }
     row.categoryId = this.catalogs.findMatchingCategory(row, previousCategory, this.value(row.raw, 'category', context))?.id;

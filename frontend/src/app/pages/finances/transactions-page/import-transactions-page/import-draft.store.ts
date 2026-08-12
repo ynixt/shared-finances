@@ -4,44 +4,30 @@ import { TranslateService } from '@ngx-translate/core';
 
 import dayjs from 'dayjs';
 
-import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
 import { ImportBatchDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/imports';
 import { WalletItemSearchResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
 import { CategoryDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet/category';
-import { ImportService } from '../../services/import.service';
 import { UserForBeneficiary } from '../shared/transaction-form/transaction-form.types';
 import { CsvImportBeneficiaryEditor } from './csv-import-beneficiary.editor';
-import { CsvImportCatalogStore } from './csv-import-catalog.store';
-import { CsvImportConversionContext, CsvImportConversionService } from './csv-import-conversion.service';
+import { CsvImportConversionContext } from './csv-import-conversion.service';
 import {
   CSV_IMPORT_BILL_FROM_DATE_MAPPING_VALUE,
   CSV_IMPORT_FIXED_MAPPING_VALUE,
   CSV_IMPORT_MAPPING_OPTIONS,
   CSV_IMPORT_PREVIEW_PAGE_SIZE_OPTIONS,
 } from './csv-import-draft.config';
-import { CsvImportDraftStore } from './csv-import-draft.store';
-import { CsvImportDuplicateService } from './csv-import-duplicate.service';
-import { CsvImportRowContext, CsvImportRowResolver } from './csv-import-row.resolver';
+import { CsvImportRowContext } from './csv-import-row.resolver';
 import { CsvImportSubmissionService } from './csv-import-submission.service';
-import { CsvColumnField, detectDateFormat, parseCsvDate } from './csv-statement-parser';
-import { ImportDraftState } from './import-draft.state';
-import { ParsedImportSourceStatement, detectImportFileFormat, sha256Bytes } from './import-file-source';
+import { CsvColumnField, parseCsvDate } from './csv-statement-parser';
+import { ImportDraftFileStore } from './import-draft-file.store';
+import { ParsedImportSourceStatement } from './import-file-source';
 import { FixedValue, ImportPreviewRow, MappingOption } from './import-transactions.models';
 import { formatImportTags, hasValidImportBeneficiaries, parseImportTags } from './import-transactions.utils';
-import { OfxImportDraftStore } from './ofx-import-draft.store';
-import { OfxParseError } from './ofx-statement-parser';
 
 @Injectable()
-export class ImportDraftStore extends ImportDraftState {
-  private readonly csvStore = inject(CsvImportDraftStore);
-  private readonly ofxStore = inject(OfxImportDraftStore);
-  private readonly catalogs = inject(CsvImportCatalogStore);
-  private readonly rowResolver = inject(CsvImportRowResolver);
-  private readonly conversions = inject(CsvImportConversionService);
-  private readonly duplicates = inject(CsvImportDuplicateService);
+export class ImportDraftStore extends ImportDraftFileStore {
   private readonly beneficiaryEditor = inject(CsvImportBeneficiaryEditor);
   private readonly submission = inject(CsvImportSubmissionService);
-  private readonly importService = inject(ImportService);
   private readonly translateService = inject(TranslateService);
 
   readonly mappingOptions: MappingOption[] = CSV_IMPORT_MAPPING_OPTIONS;
@@ -64,43 +50,7 @@ export class ImportDraftStore extends ImportDraftState {
     return this.beneficiaryEditor.form;
   }
 
-  get defaultCurrency(): string {
-    return this.catalogs.defaultCurrency;
-  }
-
-  set defaultCurrency(value: string) {
-    this.catalogs.defaultCurrency = value;
-  }
-
-  set currencyOptions(value: string[]) {
-    this.catalogs.currencyOptions = value;
-  }
-
-  get walletItems(): WalletItemSearchResponseDto[] {
-    return this.catalogs.walletItems;
-  }
-
-  set walletItems(value: WalletItemSearchResponseDto[]) {
-    this.catalogs.walletItems = value;
-  }
-
-  get categories(): CategoryDto[] {
-    return this.catalogs.categories;
-  }
-
-  set categories(value: CategoryDto[]) {
-    this.catalogs.categories = value;
-  }
-
-  get groups(): GroupWithRoleDto[] {
-    return this.catalogs.groups;
-  }
-
-  set groups(value: GroupWithRoleDto[]) {
-    this.catalogs.groups = value;
-  }
-
-  private get rowContext(): CsvImportRowContext {
+  protected get rowContext(): CsvImportRowContext {
     return {
       dateFormat: this.csvStore.dateFormat,
       detectedDateFormat: this.csvStore.detectedDateFormat,
@@ -121,157 +71,6 @@ export class ImportDraftStore extends ImportDraftState {
       displayCurrency: row => this.displayCurrencyFor(row),
       text: (key, params) => this.importText(key, params),
     };
-  }
-
-  async initialize(): Promise<void> {
-    try {
-      const [, preferences] = await Promise.all([this.catalogs.load(), this.importService.preferences()]);
-      this.maxLines = preferences.maxLines ?? null;
-      this.importPreferencesLoaded = true;
-    } catch {
-      this.error = this.importText('errors.loadData');
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  async selectFile(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file == null || !this.importPreferencesLoaded) return;
-
-    this.parsing = true;
-    this.error = undefined;
-    try {
-      this.file = file;
-      const bytes = await file.arrayBuffer();
-      this.fileFormat = detectImportFileFormat(bytes, file.name);
-      this.fileHash = await sha256Bytes(bytes);
-      const hash = await this.importService.checkHash(this.fileHash);
-      this.hashCheck = hash.status === 'NOT_IMPORTED' ? null : hash;
-      if (this.fileFormat === 'OFX') {
-        this.ofxStore.parse(bytes, this.maxLines ?? Number.MAX_SAFE_INTEGER);
-        this.mapping = {
-          bill: this.billFromDateMappingValue,
-          category: this.fixedMappingValue,
-          confirmed: this.fixedMappingValue,
-          group: this.fixedMappingValue,
-          tags: this.fixedMappingValue,
-        };
-        this.fixedValues = { bill: dayjs().format('YYYY-MM'), category: '', confirmed: true, group: '', tags: '' };
-        await this.reprocessOfx(true);
-      } else {
-        this.csvStore.load(bytes);
-        await this.reprocessCsv(true);
-      }
-    } catch (error) {
-      const message = this.fileErrorMessage(error);
-      this.removeFile();
-      this.error = message;
-    } finally {
-      this.parsing = false;
-    }
-  }
-
-  removeFile(): void {
-    this.file = undefined;
-    this.fileHash = '';
-    this.csvStore.reset();
-    this.fileFormat = undefined;
-    this.ofxStore.reset();
-    this.hashCheck = null;
-    this.mapping = {};
-    this.fixedValues = { origin: '', bill: dayjs().format('YYYY-MM') };
-    this.fixedCategory = undefined;
-    this.rows = [];
-    this.resetPreviewPagination();
-    this.error = undefined;
-  }
-
-  async reprocess(resetMapping = false): Promise<void> {
-    if (this.fileFormat === 'OFX') {
-      await this.reprocessOfx(resetMapping);
-      return;
-    }
-    await this.reprocessCsv(resetMapping);
-  }
-
-  private async reprocessCsv(resetMapping = false): Promise<void> {
-    if (this.csvStore.fileText === '') return;
-    try {
-      const inclusionByIndex = new Map(this.rows.map(row => [row.index, row.included] as const));
-      const parsed = this.csvStore.parse();
-      if (this.maxLines != null && parsed.rows.length > this.maxLines) {
-        const maxLines = this.maxLines;
-        this.removeFile();
-        this.error = this.importText('errors.lineLimitExceeded', { maxLines });
-        return;
-      }
-      this.csvStore.headers = parsed.headers;
-      this.csvStore.detectedLayoutProviderId = parsed.layoutProviderId;
-      const detected = parsed.mapping;
-      this.mapping = resetMapping
-        ? { ...detected, origin: this.fixedMappingValue, bill: this.billFromDateMappingValue }
-        : Object.fromEntries(
-            this.mappingOptions
-              .map(({ field }) => [
-                field,
-                this.mapping[field] === this.fixedMappingValue ||
-                (field === 'bill' && this.mapping[field] === this.billFromDateMappingValue) ||
-                (this.mapping[field] && parsed.headers.includes(this.mapping[field]!))
-                  ? this.mapping[field]
-                  : field === 'origin' || field === 'bill'
-                    ? field === 'bill'
-                      ? this.billFromDateMappingValue
-                      : this.fixedMappingValue
-                    : detected[field],
-              ])
-              .filter(([, value]) => value != null),
-          );
-      this.csvStore.detectedDateFormat =
-        this.csvStore.dateFormat === 'AUTO' && this.mapping.date != null
-          ? detectDateFormat(parsed.rows.map(row => row[this.mapping.date!] ?? '').filter(Boolean))
-          : parsed.detectedDateFormat;
-      this.rows = parsed.rows.map((raw, index) => this.rowResolver.create(raw, index, this.rowContext));
-      if (!resetMapping) {
-        this.rows.forEach(row => {
-          row.included = inclusionByIndex.get(row.index) ?? row.included;
-        });
-      }
-      this.resetPreviewPagination();
-      await this.rowResolver.resolve(this.rows, this.rowContext);
-      this.rowResolver.applyBillSuggestions(this.rows, this.rowContext);
-      await this.refreshConversions();
-      await this.refreshDuplicates();
-      this.error = undefined;
-    } catch (error) {
-      this.rows = [];
-      this.error = error instanceof Error ? error.message : this.importText('errors.parseCsv');
-    }
-  }
-
-  private async reprocessOfx(resetRows = false): Promise<void> {
-    if (this.ofxStore.statements.length === 0) return;
-    const inclusionByIndex = new Map(this.rows.map(row => [row.index, row.included] as const));
-    const sources = this.ofxStore.statements.flatMap(statement => statement.rows);
-    this.rows = sources.map((source, index) => {
-      const row = this.rowResolver.createFromSource(
-        source,
-        index,
-        source.sourceStatementKey == null ? undefined : this.ofxStore.statementOrigins[source.sourceStatementKey],
-        this.rowContext,
-      );
-      row.confirmed = this.fixedValues.confirmed !== false;
-      row.tags = parseImportTags(String(this.fixedValues.tags ?? ''));
-      if (!resetRows) row.included = inclusionByIndex.get(index) ?? row.included;
-      return row;
-    });
-    this.resetPreviewPagination();
-    await this.rowResolver.resolve(this.rows, this.rowContext);
-    this.rowResolver.applyBillSuggestions(this.rows, this.rowContext);
-    await this.refreshConversions();
-    await this.refreshDuplicates();
-    this.error = undefined;
   }
 
   async setMapping(field: CsvColumnField, column: string): Promise<void> {
@@ -371,7 +170,7 @@ export class ImportDraftStore extends ImportDraftState {
       this.fixedValues[field] = normalizedValue;
       const groupId = String(normalizedValue);
       if (groupId !== '') {
-        await Promise.all([this.catalogs.ensureGroupCategories(groupId), this.catalogs.ensureGroupMembers(groupId)]);
+        await this.catalogs.ensureGroupMembers(groupId);
       }
       this.fixedCategory =
         previousCategory == null
@@ -565,11 +364,11 @@ export class ImportDraftStore extends ImportDraftState {
     if (fileHash === this.fileHash) this.hashCheck = null;
   }
 
-  private async refreshDuplicates(): Promise<void> {
+  protected async refreshDuplicates(): Promise<void> {
     await this.duplicates.refresh(this.rows, this.autoIgnoreDuplicates, key => this.importText(key));
   }
 
-  private async refreshConversions(): Promise<void> {
+  protected async refreshConversions(): Promise<void> {
     await this.conversions.refresh(this.rows, this.conversionContext);
   }
 
@@ -577,24 +376,8 @@ export class ImportDraftStore extends ImportDraftState {
     this.conversions.reset(row);
   }
 
-  billMonth(row: ImportPreviewRow): string {
-    return row.billDate?.slice(0, 7) ?? '';
-  }
-
-  setBillMonth(row: ImportPreviewRow, month: string): void {
-    row.billDate = month === '' ? undefined : `${month}-01`;
-  }
-
-  private importText(key: string, params?: Record<string, unknown>): string {
+  protected importText(key: string, params?: Record<string, unknown>): string {
     return this.translateService.instant(`financesPage.transactionsPage.importPage.${key}`, params);
-  }
-
-  private fileErrorMessage(error: unknown): string {
-    if (error instanceof OfxParseError) {
-      if (error.code === 'lineLimitExceeded') return this.importText('errors.lineLimitExceeded', error.params);
-      return this.importText(`errors.ofx.${error.code}`, error.params);
-    }
-    return error instanceof Error ? error.message : this.importText('errors.readFile');
   }
 
   private value(row: Record<string, string>, field: CsvColumnField): string | undefined {

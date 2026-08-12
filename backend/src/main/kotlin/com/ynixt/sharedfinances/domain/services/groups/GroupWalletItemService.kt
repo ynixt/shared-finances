@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.domain.services.groups
 
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.WalletItem
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -11,5 +12,7 @@ interface GroupWalletItemService {
         groupId: UUID,
         pageable: Pageable,
         onlyBankAccounts: Boolean = false,
+        query: String? = null,
+        walletItemType: WalletItemType? = null,
     ): Page<WalletItem>
 }

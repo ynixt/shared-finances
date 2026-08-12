@@ -30,17 +30,30 @@ class GroupUsersDatabaseClientRepository(
         return dbClient
             .sql(sql)
             .bind("groupId", groupId)
-            .map { row, _ ->
-                GroupUserEntity(
-                    groupId = row.get("group_id", UUID::class.java)!!,
-                    userId = row.get("user_id", UUID::class.java)!!,
-                    role = UserGroupRole.valueOf(row.get("role", String::class.java)!!),
-                    allowPlanningSimulator = row.get("allow_planning_simulator", java.lang.Boolean::class.java)?.booleanValue() ?: true,
-                ).also { gu ->
-                    gu.id = row.get("id", UUID::class.java)
-                    gu.user = UserR2DBCMapping.userFromRow(row)
-                }
-            }.all()
+            .map { row, _ -> groupUserFromRow(row) }
+            .all()
+    }
+
+    fun findAllMembersForUser(userId: UUID): Flux<GroupUserEntity> {
+        val sql =
+            """
+            SELECT
+              gu.id,
+              gu.group_id,
+              gu.user_id,
+              gu.role,
+              gu.allow_planning_simulator,
+              ${UserR2DBCMapping.createSelectForUser("u")}
+            FROM group_user gu
+            JOIN users u ON u.id = gu.user_id
+            WHERE gu.group_id IN (SELECT accessible.group_id FROM group_user accessible WHERE accessible.user_id = :userId)
+            """.trimIndent()
+
+        return dbClient
+            .sql(sql)
+            .bind("userId", userId)
+            .map { row, _ -> groupUserFromRow(row) }
+            .all()
     }
 
     fun findAllOptedInUserIds(groupId: UUID): Flux<UUID> {
@@ -58,4 +71,15 @@ class GroupUsersDatabaseClientRepository(
             .map { row, _ -> row.get("user_id", UUID::class.java)!! }
             .all()
     }
+
+    private fun groupUserFromRow(row: io.r2dbc.spi.Row): GroupUserEntity =
+        GroupUserEntity(
+            groupId = row.get("group_id", UUID::class.java)!!,
+            userId = row.get("user_id", UUID::class.java)!!,
+            role = UserGroupRole.valueOf(row.get("role", String::class.java)!!),
+            allowPlanningSimulator = row.get("allow_planning_simulator", java.lang.Boolean::class.java)?.booleanValue() ?: true,
+        ).also { groupUser ->
+            groupUser.id = row.get("id", UUID::class.java)
+            groupUser.user = UserR2DBCMapping.userFromRow(row)
+        }
 }

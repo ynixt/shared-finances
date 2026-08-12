@@ -64,6 +64,7 @@ financesPage:
         retry: Try again
       fields:
         origin: Origin
+        originName: Origin name
         originLowercase: origin
         selectOrigin: Select an origin
         date: Date
@@ -73,6 +74,8 @@ financesPage:
         debit: Debit/outflow
         type: Type
         category: Category
+        categoryName: Category name
+        categoryConceptId: Category concept ID
         categoryPlaceholder: No category
         currency: Row currency
         currencyPlaceholder: Select a currency
@@ -80,6 +83,7 @@ financesPage:
         transactionId: Transaction ID
         installment: Installment
         group: Group
+        groupName: Group name
         noGroup: Select a group
         bill: Bill
         tags: Tags
@@ -141,6 +145,7 @@ financesPage:
         revenue: Revenue
         expense: Expense
       preview:
+        unknownOrigin: Unknown origin
         title: 5. Preview
         originRequired: Origin is required
         include: Include
@@ -188,6 +193,7 @@ financesPage:
           billAndInstallment: Bill and installment
           otherData: Other data
       validation:
+        invalidTransferGroup: A transfer group must contain exactly two rows with opposite signs.
         invalidDate: Invalid date
         invalidDateLowercase: invalid date
         invalidValue: Invalid amount
@@ -262,19 +268,66 @@ financesPage:
         fileName: statement-import-template.csv
         columns:
           origin: origin
+          originName: origin_name
           date: date
           description: description
-          value: amount
+          value: value
           currency: currency
           type: type
           category: category
+          categoryName: category_name
+          categoryConceptId: category_concept_id
           group: group
+          groupName: group_name
           installment: installment
           beneficiaries: beneficiaries
           bill: bill
           tags: tags
           observations: observations
           confirmed: confirmed
+          transactionId: transaction id
+          transferId: transfer id
+          seriesId: series id
+    exportPage:
+      title: Export transactions
+      inProgress: 'An export is currently {{status}}.'
+      submit: Generate export
+      format: File format
+      limitations: Transfers and materialized installment occurrences can round-trip through CSV. Future installments are only recreated when explicitly selected during import; XLSX is one-way.
+      filters:
+        group: Group scope
+        personalScope: My transactions
+        groupHelp: Select a group to include transactions shared with all of its members. Leave empty for your personal transactions.
+        walletItems: Wallet items
+        categories: Categories
+        entryTypes: Transaction type
+        confirmedLabel: Confirmation
+        tags: Tags
+        billDate: Use credit-card bill month
+        billDateHelp: For credit-card entries, the selected range is interpreted as bill months. Other entries continue to use their transaction date.
+      confirmed:
+        any: Any
+        yes: Confirmed
+        no: Unconfirmed
+      history:
+        title: Export history
+        created: Created
+        format: Format
+        rows: Rows
+        status: Status
+        actions: Actions
+        expiresIn: 'File expires in {{countdown}}'
+        download: Download
+        delete: Delete
+      status:
+        QUEUED: Queued
+        RUNNING: Running
+        COMPLETED: Completed
+        FAILED: Failed
+        EXPIRED: Expired
+      notifications:
+        started: Export queued.
+        ready: Export ready. Use the history to download the file.
     newTransactionPage:
       title: New transaction
       success: Transaction created successfully.

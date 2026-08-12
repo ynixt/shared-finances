@@ -25,8 +25,25 @@ class WalletItemServiceImpl(
         userId: UUID,
         pageable: Pageable,
         onlyBankAccounts: Boolean,
-    ): Page<WalletItem> =
-        if (onlyBankAccounts) {
+        query: String?,
+    ): Page<WalletItem> {
+        val normalizedQuery = query?.trim()?.takeIf(String::isNotEmpty)
+        return if (onlyBankAccounts && normalizedQuery != null) {
+            createPage(
+                pageable,
+                countFn = {
+                    repository.countByUserIdAndTypeAndNameContainingIgnoreCase(userId, WalletItemType.BANK_ACCOUNT, normalizedQuery)
+                },
+            ) {
+                repository
+                    .findAllByUserIdAndTypeAndNameContainingIgnoreCase(
+                        userId = userId,
+                        type = WalletItemType.BANK_ACCOUNT,
+                        name = normalizedQuery,
+                        pageable = pageable,
+                    ).map(this::convert)
+            }
+        } else if (onlyBankAccounts) {
             createPage(pageable, countFn = { repository.countByUserIdAndType(userId, WalletItemType.BANK_ACCOUNT) }) {
                 repository
                     .findAllByUserIdAndType(
@@ -34,6 +51,15 @@ class WalletItemServiceImpl(
                         type = WalletItemType.BANK_ACCOUNT,
                         pageable = pageable,
                     ).map(this::convert)
+            }
+        } else if (normalizedQuery != null) {
+            createPage(
+                pageable,
+                countFn = { repository.countByUserIdAndEnabledAndNameContainingIgnoreCase(userId, true, normalizedQuery) },
+            ) {
+                repository
+                    .findAllByUserIdAndEnabledAndNameContainingIgnoreCase(userId, true, normalizedQuery, pageable)
+                    .map(this::convert)
             }
         } else {
             createPage(pageable, countFn = { repository.countByUserIdAndEnabled(userId, enabled = true) }) {
@@ -45,6 +71,7 @@ class WalletItemServiceImpl(
                     ).map(this::convert)
             }
         }
+    }
 
     override suspend fun findOne(id: UUID): WalletItem? = repository.findOneById(id).map(this::convert).awaitSingleOrNull()
 

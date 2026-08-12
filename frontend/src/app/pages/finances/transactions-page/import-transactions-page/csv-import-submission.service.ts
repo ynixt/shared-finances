@@ -66,6 +66,8 @@ export class CsvImportSubmissionService {
         tags: row.tags,
         observations: row.observations,
         externalTransactionId: row.externalTransactionId,
+        transferGroupId: row.transferGroupId,
+        seriesGroupId: row.seriesGroupId,
       })),
     };
   }

@@ -2,6 +2,7 @@ package com.ynixt.sharedfinances.application.web.controllers.rest.group
 
 import com.ynixt.sharedfinances.application.web.dto.wallet.WalletItemSearchResponseDto
 import com.ynixt.sharedfinances.application.web.mapper.WalletItemDtoMapper
+import com.ynixt.sharedfinances.domain.enums.WalletItemType
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.services.groups.GroupWalletItemService
 import io.swagger.v3.oas.annotations.Operation
@@ -33,6 +34,8 @@ class GroupWalletItemController(
         @PathVariable groupId: UUID,
         pageable: Pageable,
         @RequestParam(required = false, defaultValue = "false") onlyBankAccounts: Boolean,
+        @RequestParam(required = false) query: String?,
+        @RequestParam(required = false) type: WalletItemType?,
     ): Page<WalletItemSearchResponseDto> =
         groupWalletItemService
             .findAllItems(
@@ -40,5 +43,7 @@ class GroupWalletItemController(
                 groupId = groupId,
                 pageable,
                 onlyBankAccounts = onlyBankAccounts,
+                query = query,
+                walletItemType = type,
             ).map(walletItemDtoMapper::searchResponseToDto)
 }

@@ -5,12 +5,28 @@ import com.ynixt.sharedfinances.domain.repositories.WalletEntryCategoryRepositor
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.UUID
 
 interface WalletEntryCategorySpringDataRepository :
     WalletEntryCategoryRepository,
     R2dbcRepository<WalletEntryCategoryEntity, String> {
+    @Query(
+        """
+            SELECT category.*
+            FROM wallet_entry_category category
+            WHERE category.user_id = :userId
+               OR category.group_id IN (
+                    SELECT group_user.group_id
+                    FROM group_user
+                    WHERE group_user.user_id = :userId
+               )
+            ORDER BY category.group_id NULLS FIRST, category.name
+        """,
+    )
+    override fun findAllAvailableForImport(userId: UUID): Flux<WalletEntryCategoryEntity>
+
     @Modifying
     @Query(
         """

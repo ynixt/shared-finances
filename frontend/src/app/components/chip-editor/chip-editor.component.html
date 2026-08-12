@@ -6,6 +6,7 @@
       [(ngModel)]="currentChipOnInput"
       [ngModelOptions]="{ standalone: true }"
       fluid
+      [placeholder]="placeholder()"
       [maxlength]="maxLength() ?? null"
     />
     <button pButton type="submit" size="small">

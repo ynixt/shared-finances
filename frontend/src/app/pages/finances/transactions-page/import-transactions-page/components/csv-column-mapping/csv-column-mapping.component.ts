@@ -8,6 +8,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { CsvImportDraftStore } from '../../csv-import-draft.store';
 import { CsvColumnField } from '../../csv-statement-parser';
 import { ImportDraftStore } from '../../import-draft.store';
+import { sharedFinancesCsvTemplateV1LayoutProvider } from '../../layout-providers/shared-finances-csv-template-v1.layout-provider';
 
 interface MappingSelectOption {
   name: string;
@@ -49,10 +50,20 @@ export class CsvColumnMappingComponent {
 
   mappingOptions(field: CsvColumnField): MappingSelectOption[] {
     const options: MappingSelectOption[] = [];
+    const automaticallyDetectedOrigin =
+      field === 'origin' && this.csvStore.detectedLayoutProviderId === sharedFinancesCsvTemplateV1LayoutProvider.id
+        ? sharedFinancesCsvTemplateV1LayoutProvider.detect(this.csvStore.headers).origin
+        : undefined;
     if (field === 'bill') {
       options.push({
         name: this.translateService.instant('financesPage.transactionsPage.importPage.mapping.billFromDate'),
         value: this.store.billFromDateMappingValue,
+      });
+    }
+    if (automaticallyDetectedOrigin != null) {
+      options.push({
+        name: this.translateService.instant('financesPage.transactionsPage.importPage.mapping.autoDetect'),
+        value: automaticallyDetectedOrigin,
       });
     }
     if (field !== 'origin' && field !== 'bill') {
@@ -66,7 +77,9 @@ export class CsvColumnMappingComponent {
       value: this.store.fixedMappingValue,
     });
     if (this.store.fileFormat !== 'OFX') {
-      options.push(...this.csvStore.headers.map(header => ({ name: header, value: header })));
+      options.push(
+        ...this.csvStore.headers.filter(header => header !== automaticallyDetectedOrigin).map(header => ({ name: header, value: header })),
+      );
     }
     return options;
   }

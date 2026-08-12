@@ -2,9 +2,13 @@ package com.ynixt.sharedfinances.application.web.controllers.rest
 
 import com.ynixt.sharedfinances.application.web.dto.imports.CreateImportDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportBatchDto
+import com.ynixt.sharedfinances.application.web.dto.imports.ImportCategoryCatalogDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportDuplicateCheckDto
+import com.ynixt.sharedfinances.application.web.dto.imports.ImportGroupCategoryCatalogDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportHashCheckDto
 import com.ynixt.sharedfinances.application.web.dto.imports.ImportPreferencesDto
+import com.ynixt.sharedfinances.application.web.dto.user.UserSimpleDto
+import com.ynixt.sharedfinances.application.web.mapper.CategoryDtoMapper
 import com.ynixt.sharedfinances.application.web.validation.ImportLineLimitValidator
 import com.ynixt.sharedfinances.domain.models.imports.CreateImport
 import com.ynixt.sharedfinances.domain.models.imports.ImportBatchSummary
@@ -15,6 +19,7 @@ import com.ynixt.sharedfinances.domain.models.imports.ImportLine
 import com.ynixt.sharedfinances.domain.models.imports.UndoImportResult
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
 import com.ynixt.sharedfinances.domain.models.walletentry.NewWalletBeneficiaryLeg
+import com.ynixt.sharedfinances.domain.services.imports.ImportCategoryCatalogService
 import com.ynixt.sharedfinances.domain.services.imports.ImportService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -37,12 +42,39 @@ import java.util.UUID
 class ImportController(
     private val importService: ImportService,
     private val importLineLimitValidator: ImportLineLimitValidator,
+    private val importCategoryCatalogService: ImportCategoryCatalogService,
+    private val categoryDtoMapper: CategoryDtoMapper,
 ) {
     @Operation(summary = "Get transaction import preferences")
     @GetMapping("/preferences")
     suspend fun preferences(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
     ): ImportPreferencesDto = ImportPreferencesDto(maxLines = importLineLimitValidator.maximum(principalToken.principal.role))
+
+    @Operation(summary = "Get the complete category catalog required by the import preview")
+    @GetMapping("/category-catalog")
+    suspend fun categoryCatalog(
+        @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
+    ): ImportCategoryCatalogDto {
+        val categories = importCategoryCatalogService.findAll(principalToken.principal.id)
+        val membersByGroup = importCategoryCatalogService.findAllMembers(principalToken.principal.id).groupBy { it.groupId }
+        val categoriesByGroup = categories.filter { it.groupId != null }.groupBy { it.groupId!! }
+        return ImportCategoryCatalogDto(
+            personal = categories.filter { it.groupId == null }.map(categoryDtoMapper::toDto),
+            groups =
+                (categoriesByGroup.keys + membersByGroup.keys).map { groupId ->
+                    ImportGroupCategoryCatalogDto(
+                        groupId = groupId,
+                        categories = categoriesByGroup[groupId].orEmpty().map(categoryDtoMapper::toDto),
+                        members =
+                            membersByGroup[groupId].orEmpty().map { groupUser ->
+                                val user = requireNotNull(groupUser.user)
+                                UserSimpleDto(user.id!!, user.firstName, user.lastName, user.email, user.photoUrl)
+                            },
+                    )
+                },
+        )
+    }
 
     @Operation(summary = "Check whether a SHA-256 file hash was imported before")
     @GetMapping("/check-hash/{hash}")
@@ -121,6 +153,8 @@ class ImportController(
                                     tags = line.tags,
                                     observations = line.observations,
                                     externalTransactionId = line.externalTransactionId,
+                                    transferGroupId = line.transferGroupId,
+                                    seriesGroupId = line.seriesGroupId,
                                 )
                             },
                     ),

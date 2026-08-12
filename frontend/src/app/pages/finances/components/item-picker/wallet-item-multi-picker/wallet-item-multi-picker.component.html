@@ -1,0 +1,29 @@
+<app-paged-multi-select
+  #pagedMultiSelect
+  [optionsGetter]="optionsGetter()"
+  [placeholder]="placeholder()"
+  [pageSize]="pageSize()"
+  [showToggleAll]="showToggleAll()"
+  optionLabel="name"
+  optionValue="id"
+  dataKey="id"
+  [ngModel]="value ?? []"
+  (ngModelChange)="onValueChange($event)"
+  [disabled]="disabled"
+>
+  <ng-template #item let-item>
+    <app-wallet-item-option [item]="item" />
+  </ng-template>
+
+  <ng-template #selectedItems let-selectedItems let-removeChip="removeChip">
+    @if (selectedItems?.length) {
+      <span class="flex flex-wrap gap-1">
+        @for (item of selectedItems; track item.id) {
+          <p-chip [removable]="!disabled" (onRemove)="removeChip(item, $event)">
+            <app-wallet-item-option [item]="item" mode="chip" />
+          </p-chip>
+        }
+      </span>
+    }
+  </ng-template>
+</app-paged-multi-select>

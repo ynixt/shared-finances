@@ -3,6 +3,8 @@ package com.ynixt.sharedfinances.resources.services
 import com.ynixt.sharedfinances.application.config.FileStorageProperties
 import com.ynixt.sharedfinances.domain.services.FileStorageService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
@@ -24,36 +26,48 @@ class LocalFileStorageService(
     override suspend fun write(
         key: String,
         bytes: ByteArray,
-    ): Unit =
-        withContext(Dispatchers.IO) {
-            val destination = resolveKey(key)
-            createSafeDirectories(destination.parent)
+    ) = write(key, kotlinx.coroutines.flow.flowOf(bytes))
 
-            val temporary = Files.createTempFile(destination.parent, ".sf-write-", ".tmp")
-            try {
-                FileChannel
-                    .open(
-                        temporary,
-                        StandardOpenOption.WRITE,
-                        StandardOpenOption.TRUNCATE_EXISTING,
-                    ).use { channel ->
+    override suspend fun write(
+        key: String,
+        chunks: Flow<ByteArray>,
+    ) {
+        val destination =
+            withContext(Dispatchers.IO) {
+                resolveKey(key).also { createSafeDirectories(it.parent) }
+            }
+        val temporary =
+            withContext(Dispatchers.IO) {
+                Files.createTempFile(destination.parent, ".sf-write-", ".tmp")
+            }
+        try {
+            withContext(Dispatchers.IO) {
+                FileChannel.open(
+                    temporary,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                )
+            }.use { channel ->
+                chunks.collect { bytes ->
+                    withContext(Dispatchers.IO) {
                         val buffer = ByteBuffer.wrap(bytes)
-                        while (buffer.hasRemaining()) {
-                            channel.write(buffer)
-                        }
-                        channel.force(true)
+                        while (buffer.hasRemaining()) channel.write(buffer)
                     }
-
+                }
+                withContext(Dispatchers.IO) { channel.force(true) }
+            }
+            withContext(Dispatchers.IO) {
                 Files.move(
                     temporary,
                     destination,
                     StandardCopyOption.ATOMIC_MOVE,
                     StandardCopyOption.REPLACE_EXISTING,
                 )
-            } finally {
-                Files.deleteIfExists(temporary)
             }
+        } finally {
+            withContext(Dispatchers.IO) { Files.deleteIfExists(temporary) }
         }
+    }
 
     override suspend fun find(key: String): Resource? =
         withContext(Dispatchers.IO) {

@@ -20,6 +20,7 @@ class GroupWalletItemDatabaseClientRepository(
         enabled: Boolean,
         pageable: Pageable,
         walletItemType: WalletItemType? = null,
+        query: String? = null,
     ): Flux<WalletItemEntity> {
         val sort = pageableToSortQuery(pageable, setOf("name"))
         val typeClause =
@@ -28,6 +29,7 @@ class GroupWalletItemDatabaseClientRepository(
             } else {
                 " AND wi.type = :walletItemType "
             }
+        val queryClause = if (query == null) "" else " AND wi.name ILIKE :query "
 
         val sql =
             """
@@ -43,6 +45,7 @@ class GroupWalletItemDatabaseClientRepository(
                 gwi.group_id = :groupId 
                 and wi.enabled = :enabled
                 $typeClause
+                $queryClause
             $sort
             LIMIT ${pageable.pageSize} 
             OFFSET ${pageable.offset}
@@ -56,6 +59,9 @@ class GroupWalletItemDatabaseClientRepository(
         if (walletItemType != null) {
             spec = spec.bind("walletItemType", walletItemType.toString())
         }
+        if (query != null) {
+            spec = spec.bind("query", "%$query%")
+        }
         return spec
             .map { row, _ ->
                 WalletItemR2DBCMapping.walletItemFromRow(row, "")!!.also { wa ->
@@ -68,6 +74,7 @@ class GroupWalletItemDatabaseClientRepository(
         groupId: UUID,
         enabled: Boolean,
         walletItemType: WalletItemType? = null,
+        query: String? = null,
     ): Mono<Long> {
         val typeClause =
             if (walletItemType == null) {
@@ -75,6 +82,7 @@ class GroupWalletItemDatabaseClientRepository(
             } else {
                 " AND wi.type = :walletItemType "
             }
+        val queryClause = if (query == null) "" else " AND wi.name ILIKE :query "
         val sql =
             """
             SELECT COUNT(*) AS cnt
@@ -82,6 +90,7 @@ class GroupWalletItemDatabaseClientRepository(
             JOIN wallet_item wi ON wi.id = gwi.wallet_item_id
             WHERE gwi.group_id = :groupId AND wi.enabled = :enabled
             $typeClause
+            $queryClause
             """.trimIndent()
         var spec =
             dbClient
@@ -90,6 +99,9 @@ class GroupWalletItemDatabaseClientRepository(
                 .bind("enabled", enabled)
         if (walletItemType != null) {
             spec = spec.bind("walletItemType", walletItemType.toString())
+        }
+        if (query != null) {
+            spec = spec.bind("query", "%$query%")
         }
         return spec
             .map { row, _ -> row.get("cnt", java.lang.Long::class.java)!!.toLong() }

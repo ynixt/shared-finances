@@ -202,6 +202,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("com.github.slugify:slugify:3.0.7")
+    implementation("org.dhatim:fastexcel:0.20.2")
     implementation("com.twelvemonkeys.imageio:imageio-webp:3.13.0")
 
     implementation("com.github.kagkarlsson:db-scheduler:16.7.1")

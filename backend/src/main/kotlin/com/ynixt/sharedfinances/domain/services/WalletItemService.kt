@@ -12,6 +12,7 @@ interface WalletItemService {
         userId: UUID,
         pageable: Pageable,
         onlyBankAccounts: Boolean = false,
+        query: String? = null,
     ): Page<WalletItem>
 
     suspend fun findOne(id: UUID): WalletItem?

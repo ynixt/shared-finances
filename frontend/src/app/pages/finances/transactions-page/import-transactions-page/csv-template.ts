@@ -9,18 +9,25 @@ const translationPrefix = 'financesPage.transactionsPage.importPage.csvTemplate'
 
 const templateFields: CsvColumnField[] = [
   'origin',
+  'originName',
   'date',
   'description',
   'value',
   'currency',
   'category',
+  'categoryName',
+  'categoryConceptId',
   'group',
+  'groupName',
   'installment',
   'beneficiaries',
   'bill',
   'tags',
   'observations',
   'confirmed',
+  'transactionId',
+  'transferId',
+  'seriesId',
 ];
 
 export function buildLocalizedCsvTemplate(translate: (key: string) => string): LocalizedCsvTemplate {

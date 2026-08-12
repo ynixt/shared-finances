@@ -1,0 +1,9 @@
+﻿origin;origin_name;date;description;value;currency;category;category_name;category_concept_id;group;group_name;installment;beneficiaries;bill;tags;observations;confirmed;transaction id;transfer id;series id
+source-checking;Checking;2026-08-11;"market; ""weekly""
+run";-42.30;BRL;source-food;Food;food-concept;source-household;Household;;alice@example.com:60|bob@example.com:40;;home,food;"first line
+second; ""quoted"" line";true;simple-transaction;;
+source-checking;Checking;2026-08-11;Transfer out;-100.00;BRL;source-food;Food;food-concept;source-household;Household;;;;;;false;transfer-source;transfer-1;
+source-savings;Savings;2026-08-11;Transfer in;100.00;BRL;source-food;Food;food-concept;source-household;Household;;;;;;false;transfer-source;transfer-1;
+source-card;Card;2026-08-11;Installment purchase;-25.00;BRL;source-food;Food;food-concept;source-household;Household;1/12;;;;;true;installment-1;;series-1
+source-card;Card;2026-08-11;Installment purchase;-25.00;BRL;source-food;Food;food-concept;source-household;Household;2/12;;;;;true;installment-2;;series-1
+source-card;Card;2026-08-11;Installment purchase;-25.00;BRL;source-food;Food;food-concept;source-household;Household;3/12;;;;;true;installment-3;;series-1

@@ -148,6 +148,18 @@ app:
   imports:
     worker:
       enabled: ${SF_APP_IMPORT_WORKER_ENABLED:true}
+  exports:
+    worker:
+      enabled: ${SF_APP_EXPORT_WORKER_ENABLED:true}
+    retention:
+      after-download:
+        enabled: ${SF_APP_EXPORT_PURGE_AFTER_DOWNLOAD_ENABLED:true}
+        delay: ${SF_APP_EXPORT_PURGE_AFTER_DOWNLOAD_DELAY:5m}
+        cron: ${SF_APP_EXPORT_PURGE_AFTER_DOWNLOAD_CRON:0 */1 * * * *}
+      absolute-age:
+        enabled: ${SF_APP_EXPORT_PURGE_ABSOLUTE_AGE_ENABLED:true}
+        delay: ${SF_APP_EXPORT_PURGE_ABSOLUTE_AGE_DELAY:24h}
+        cron: ${SF_APP_EXPORT_PURGE_ABSOLUTE_AGE_CRON:0 */10 * * * *}
   jobs:
     refreshExchangeRates:
       cron: ${SF_APP_REFRESH_EXCHANGE_RATES_CRON:0 0 0/12 * * *}
@@ -169,3 +181,7 @@ app:
       reconcile:
         cron-enabled: ${SF_APP_IMPORT_RECONCILE_CRON_ENABLED:true}
         cron: ${SF_APP_IMPORT_RECONCILE_CRON:0 */1 * * * *}
+    exports:
+      reconcile:
+        cron-enabled: ${SF_APP_EXPORT_RECONCILE_CRON_ENABLED:true}
+        cron: ${SF_APP_EXPORT_RECONCILE_CRON:0 */1 * * * *}

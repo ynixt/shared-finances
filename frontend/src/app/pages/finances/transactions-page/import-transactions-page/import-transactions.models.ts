@@ -24,6 +24,11 @@ export interface ImportPreviewRow {
   date?: string;
   duplicate: boolean;
   externalTransactionId?: string;
+  transferGroupId?: string;
+  seriesGroupId?: string;
+  transferDisplayName?: string;
+  transferPreviewLeaderIndex?: number;
+  previewHidden?: boolean;
   groupId?: string;
   included: boolean;
   index: number;

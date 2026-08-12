@@ -6,6 +6,7 @@ import { lastValueFrom, take } from 'rxjs';
 import {
   CreateImportDto,
   ImportBatchDto,
+  ImportCategoryCatalogDto,
   ImportDuplicateCheckDto,
   ImportHashCheckDto,
   ImportPreferencesDto,
@@ -28,6 +29,11 @@ export class ImportService {
   async preferences(): Promise<ImportPreferencesDto> {
     await this.requireUser();
     return lastValueFrom(this.http.get<ImportPreferencesDto>('/api/imports/preferences').pipe(take(1)));
+  }
+
+  async categoryCatalog(): Promise<ImportCategoryCatalogDto> {
+    await this.requireUser();
+    return lastValueFrom(this.http.get<ImportCategoryCatalogDto>('/api/imports/category-catalog').pipe(take(1)));
   }
 
   async checkDuplicates(request: ImportDuplicateCheckDto): Promise<number[]> {

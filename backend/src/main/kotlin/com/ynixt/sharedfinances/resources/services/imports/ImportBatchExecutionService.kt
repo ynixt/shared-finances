@@ -45,14 +45,7 @@ class ImportBatchExecutionService(
         val payload = requireNotNull(batch.requestPayload) { "Import batch payload is unavailable." }
         val request = objectMapper.readValue<CreateImport>(payload)
 
-        request.lines.forEach { line ->
-            createLine(
-                userId = batch.userId,
-                walletItemId = line.walletItemId,
-                batchId = batchId,
-                line = line,
-            )
-        }
+        createGroupedLines(batch.userId, batchId, request.lines)
 
         check(
             dispatchRepository
@@ -64,17 +57,109 @@ class ImportBatchExecutionService(
         ) { "Import batch lease was lost before completion." }
     }
 
+    private suspend fun createGroupedLines(
+        userId: UUID,
+        batchId: UUID,
+        lines: List<ImportLine>,
+    ) {
+        val ordinary = lines.filter { it.transferGroupId == null }.toMutableList()
+        lines.filter { it.transferGroupId != null }.groupBy { it.transferGroupId!! }.values.forEach { group ->
+            when (group.size) {
+                1 -> ordinary += group.single()
+                2 -> {
+                    require(group.map { it.value.signum() }.toSet() == setOf(-1, 1)) {
+                        "Transfer rows must have opposite signs."
+                    }
+                    createTransfer(userId, batchId, group.first { it.value.signum() < 0 }, group.first { it.value.signum() > 0 })
+                }
+                else -> throw IllegalArgumentException("A transfer group must contain at most two rows.")
+            }
+        }
+
+        ordinary.filter { it.seriesGroupId == null }.forEach { createLine(userId, it.walletItemId, batchId, it) }
+        ordinary.filter { it.seriesGroupId != null }.groupBy { it.seriesGroupId!! }.values.forEach { group ->
+            createSeriesGroup(userId, batchId, group)
+        }
+    }
+
+    private suspend fun createTransfer(
+        userId: UUID,
+        batchId: UUID,
+        origin: ImportLine,
+        target: ImportLine,
+    ) {
+        walletEntryCreateService.create(
+            userId = userId,
+            newEntryRequest =
+                NewEntryRequest(
+                    type = WalletEntryType.TRANSFER,
+                    groupId = origin.groupId,
+                    originId = origin.walletItemId,
+                    targetId = target.walletItemId,
+                    name = origin.name?.trim()?.ifBlank { null },
+                    categoryId = origin.categoryId,
+                    date = origin.date,
+                    originValue = origin.value.abs(),
+                    targetValue = target.value.abs(),
+                    confirmed = origin.confirmed,
+                    observations = origin.observations,
+                    paymentType = PaymentType.UNIQUE,
+                    importBatchId = batchId,
+                    externalTransactionId = origin.externalTransactionId,
+                    originBillDate = origin.billDate,
+                    targetBillDate = target.billDate,
+                    tags = origin.tags,
+                    beneficiaries = null,
+                ),
+        ) ?: throw UnauthorizedException()
+    }
+
+    private suspend fun createSeriesGroup(
+        userId: UUID,
+        batchId: UUID,
+        group: List<ImportLine>,
+    ) {
+        val sorted = group.sortedBy { it.installment ?: Int.MAX_VALUE }
+        require(sorted.all { it.installment != null && it.installmentTotal != null }) {
+            "Rows grouped as a series must carry installment positions."
+        }
+        var seriesId: UUID? = null
+        sorted.forEach { line ->
+            seriesId = createLine(userId, line.walletItemId, batchId, line, seriesId, suppressRangeExpansion = true) ?: seriesId
+        }
+        val last = sorted.maxBy { requireNotNull(it.installment) }
+        val number = requireNotNull(last.installment)
+        val total = requireNotNull(last.installmentTotal)
+        if (last.createFollowingInstallments && number < total) {
+            createLine(
+                userId,
+                last.walletItemId,
+                batchId,
+                last.copy(
+                    date = last.date.plusMonths(1),
+                    billDate = last.billDate?.plusMonths(1),
+                    installment = number + 1,
+                    createPreviousInstallments = false,
+                    externalTransactionId = null,
+                ),
+                seriesId,
+            )
+        }
+    }
+
     private suspend fun createLine(
         userId: UUID,
         walletItemId: UUID,
         batchId: UUID,
         line: ImportLine,
-    ) {
+        forcedSeriesId: UUID? = null,
+        suppressRangeExpansion: Boolean = false,
+    ): UUID? {
         validateInstallment(line)
         val number = line.installment
         val total = line.installmentTotal
         val segmentLength =
-            if (number != null && total != null && line.createFollowingInstallments) {
+            if (!suppressRangeExpansion && number != null && total != null && line.createFollowingInstallments) {
                 total - number + 1
             } else {
                 1
@@ -93,20 +178,23 @@ class ImportBatchExecutionService(
                         installments = if (number == null) null else segmentLength,
                         seriesOffset = if (number == null) 0 else number - 1,
                         seriesQtyTotal = total,
-                        seriesId = null,
+                        seriesId = forcedSeriesId,
                     ),
             ) ?: throw UnauthorizedException()
 
-        if (number == null || total == null || !line.createPreviousInstallments || number == 1) {
-            return
-        }
-
         val seriesId =
-            when (current) {
-                is RecurrenceEventEntity -> current.seriesId
-                is WalletEventEntity -> requireNotNull(current.recurrenceEvent).seriesId
-                else -> error("Installment creation did not return recurrence metadata.")
+            if (number == null) {
+                null
+            } else {
+                when (current) {
+                    is RecurrenceEventEntity -> current.seriesId
+                    is WalletEventEntity -> requireNotNull(current.recurrenceEvent).seriesId
+                    else -> error("Installment creation did not return recurrence metadata.")
+                }
             }
+        if (number == null || total == null || suppressRangeExpansion || !line.createPreviousInstallments || number == 1) {
+            return seriesId
+        }
         val monthsBack = (number - 1).toLong()
         walletEntryCreateService.create(
             userId = userId,
@@ -124,6 +212,7 @@ class ImportBatchExecutionService(
                     externalTransactionId = null,
                 ),
         ) ?: throw UnauthorizedException()
+        return seriesId
     }
 
     private fun ImportLine.toEntryRequest(

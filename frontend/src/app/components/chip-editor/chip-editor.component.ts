@@ -28,6 +28,7 @@ export class ChipEditorComponent extends SimpleControlValueAccessor<string[]> {
 
   maxLength = input<number | undefined>(undefined);
   forceLowerCase = input<boolean>(true);
+  placeholder = input<string>();
 
   addCurrentChip() {
     if (this.currentChipOnInput) {

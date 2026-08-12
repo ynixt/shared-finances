@@ -4,6 +4,7 @@ financesPage:
     newTransaction: Nova Transação
     scheduleManager: Gerenciador de agendamentos
     importTransactions: Importar transações
+    exportTransactions: Exportar transações
     registrations: Cadastros
     bankAccounts: Contas bancárias
     creditCards: Cartões de crédito

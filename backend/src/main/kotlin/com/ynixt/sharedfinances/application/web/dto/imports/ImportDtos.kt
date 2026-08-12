@@ -1,5 +1,7 @@
 package com.ynixt.sharedfinances.application.web.dto.imports
 
+import com.ynixt.sharedfinances.application.web.dto.user.UserSimpleDto
+import com.ynixt.sharedfinances.application.web.dto.wallet.category.CategoryDto
 import com.ynixt.sharedfinances.application.web.dto.walletentry.WalletBeneficiaryLegDto
 import com.ynixt.sharedfinances.domain.enums.ImportBatchStatus
 import com.ynixt.sharedfinances.domain.enums.ImportHashStatus
@@ -17,6 +19,17 @@ data class ImportHashCheckDto(
 
 data class ImportPreferencesDto(
     val maxLines: Int?,
+)
+
+data class ImportGroupCategoryCatalogDto(
+    val groupId: UUID,
+    val categories: List<CategoryDto>,
+    val members: List<UserSimpleDto>,
+)
+
+data class ImportCategoryCatalogDto(
+    val personal: List<CategoryDto>,
+    val groups: List<ImportGroupCategoryCatalogDto>,
 )
 
 data class ImportDuplicateLineDto(
@@ -49,6 +62,8 @@ data class ImportLineDto(
     val tags: List<String>?,
     val observations: String?,
     val externalTransactionId: String? = null,
+    val transferGroupId: String? = null,
+    val seriesGroupId: String? = null,
 )
 
 data class CreateImportDto(

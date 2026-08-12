@@ -19,7 +19,6 @@ financesPage:
     avatar: Avatar
     darkMode: Dark mode
     darkModeDescription: Enable to use the dark interface theme.
-    lastUse: Last use
     projectedDeletion: Projected account deletion
     projectedDeletionExplanation: Signing in resets this date and prevents inactive-account deletion.
     dangerArea: Danger area

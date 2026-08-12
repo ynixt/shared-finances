@@ -1,0 +1,39 @@
+<section class="mt-10">
+  <h2 class="mb-3 text-lg font-semibold">{{ 'financesPage.transactionsPage.exportPage.history.title' | translate }}</h2>
+  <p-table [value]="visibleBatches" [paginator]="visibleBatches.length > 10" [rows]="10">
+    <ng-template #header>
+      <tr>
+        <th>{{ 'financesPage.transactionsPage.exportPage.history.created' | translate }}</th>
+        <th>{{ 'financesPage.transactionsPage.exportPage.history.format' | translate }}</th>
+        <th>{{ 'financesPage.transactionsPage.exportPage.history.rows' | translate }}</th>
+        <th>{{ 'financesPage.transactionsPage.exportPage.history.status' | translate }}</th>
+        <th>{{ 'financesPage.transactionsPage.exportPage.history.actions' | translate }}</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-batch>
+      <tr>
+        <td>{{ batch.createdAt | date: 'short' }}</td>
+        <td>{{ batch.format }}</td>
+        <td>{{ batch.rowCount ?? '—' }}</td>
+        <td>
+          {{ 'financesPage.transactionsPage.exportPage.status.' + batch.status | translate }}
+          @if (remaining(batch); as countdown) {
+            <small class="block text-muted">{{
+              'financesPage.transactionsPage.exportPage.history.expiresIn' | translate: { countdown }
+            }}</small>
+          }
+        </td>
+        <td class="flex gap-2">
+          @if (batch.downloadAvailable) {
+            <button pButton type="button" size="small" (click)="downloaded.emit(batch)">
+              {{ 'financesPage.transactionsPage.exportPage.history.download' | translate }}
+            </button>
+            <button pButton type="button" size="small" severity="danger" [text]="true" (click)="deleted.emit(batch)">
+              {{ 'financesPage.transactionsPage.exportPage.history.delete' | translate }}
+            </button>
+          }
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</section>

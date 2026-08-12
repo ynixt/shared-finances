@@ -29,6 +29,19 @@ interface WalletItemRepository : EntityRepository<WalletItemEntity> {
         enabled: Boolean,
     ): Mono<Long>
 
+    fun findAllByUserIdAndEnabledAndNameContainingIgnoreCase(
+        userId: UUID,
+        enabled: Boolean,
+        name: String,
+        pageable: Pageable,
+    ): Flux<WalletItemEntity>
+
+    fun countByUserIdAndEnabledAndNameContainingIgnoreCase(
+        userId: UUID,
+        enabled: Boolean,
+        name: String,
+    ): Mono<Long>
+
     fun findAllByUserIdAndType(
         userId: UUID,
         type: WalletItemType,

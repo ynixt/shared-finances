@@ -15,7 +15,7 @@ export class WalletItemService {
     private userService: UserService,
   ) {}
 
-  async getAllItems(request?: PageRequest, onlyBankAccounts = false): Promise<Page<WalletItemSearchResponseDto>> {
+  async getAllItems(request?: PageRequest, onlyBankAccounts = false, query?: string): Promise<Page<WalletItemSearchResponseDto>> {
     const user = await this.userService.getUser();
 
     if (user != null) {
@@ -23,6 +23,7 @@ export class WalletItemService {
         this.paginationService
           .get<WalletItemSearchResponseDto>('/api/wallet-items', request, {
             onlyBankAccounts: onlyBankAccounts ? 'true' : undefined,
+            query: query?.trim() || undefined,
           })
           .pipe(take(1)),
       );

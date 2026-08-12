@@ -42,7 +42,7 @@ export abstract class ImportDraftState {
         normalizedSearch === '' ||
         normalizeHeader(row.name ?? '').includes(normalizedSearch) ||
         Object.values(row.raw).some(value => normalizeHeader(value).includes(normalizedSearch));
-      return matchesSearch && (this.categoryFilter === '' || row.categoryId === this.categoryFilter);
+      return !row.previewHidden && matchesSearch && (this.categoryFilter === '' || row.categoryId === this.categoryFilter);
     });
   }
 
@@ -53,6 +53,7 @@ export abstract class ImportDraftState {
   get selectedRows(): ImportPreviewRow[] {
     return this.rows.filter(
       row =>
+        this.transferLeaderIncluded(row) &&
         row.included &&
         row.parseError == null &&
         row.walletItemId != null &&
@@ -61,6 +62,11 @@ export abstract class ImportDraftState {
         row.convertedValue != null &&
         this.hasValidBeneficiaries(row),
     );
+  }
+
+  private transferLeaderIncluded(row: ImportPreviewRow): boolean {
+    if (row.transferPreviewLeaderIndex == null) return true;
+    return this.rows.find(candidate => candidate.index === row.transferPreviewLeaderIndex)?.included !== false;
   }
 
   get revenueCount(): number {
@@ -96,5 +102,13 @@ export abstract class ImportDraftState {
   setAutoIgnoreDuplicates(enabled: boolean): void {
     this.autoIgnoreDuplicates = enabled;
     if (enabled) this.rows.filter(row => row.duplicate).forEach(row => (row.included = false));
+  }
+
+  billMonth(row: ImportPreviewRow): string {
+    return row.billDate?.slice(0, 7) ?? '';
+  }
+
+  setBillMonth(row: ImportPreviewRow, month: string): void {
+    row.billDate = month === '' ? undefined : `${month}-01`;
   }
 }

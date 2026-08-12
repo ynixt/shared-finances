@@ -64,6 +64,7 @@ financesPage:
         retry: Tentar novamente
       fields:
         origin: Origem
+        originName: Nome da origem
         originLowercase: origem
         selectOrigin: Selecione uma origem
         date: Data
@@ -73,6 +74,8 @@ financesPage:
         debit: Saída/débito
         type: Tipo
         category: Categoria
+        categoryName: Nome da categoria
+        categoryConceptId: ID do conceito da categoria
         categoryPlaceholder: Sem categoria
         currency: Moeda da linha
         currencyPlaceholder: Moeda
@@ -80,6 +83,7 @@ financesPage:
         transactionId: ID da transação
         installment: Parcela
         group: Grupo
+        groupName: Nome do grupo
         noGroup: Selecionar um grupo
         bill: Fatura
         tags: Tags
@@ -141,6 +145,7 @@ financesPage:
         revenue: Receita
         expense: Despesa
       preview:
+        unknownOrigin: Origem desconhecida
         title: 5. Preview
         originRequired: Necessário preencher origem
         include: Incluir
@@ -188,6 +193,7 @@ financesPage:
           billAndInstallment: Fatura e parcela
           otherData: Outros dados
       validation:
+        invalidTransferGroup: Um grupo de transferência deve conter exatamente duas linhas com sinais opostos.
         invalidDate: Data inválida
         invalidDateLowercase: data inválida
         invalidValue: Valor inválido
@@ -262,19 +268,66 @@ financesPage:
         fileName: modelo-importacao-extrato.csv
         columns:
           origin: origem
+          originName: nome_origem
           date: data
           description: descricao
           value: valor
           currency: moeda
           type: tipo
           category: categoria
+          categoryName: nome_categoria
+          categoryConceptId: id_conceito_categoria
           group: grupo
+          groupName: nome_grupo
           installment: parcela
           beneficiaries: beneficiarios
           bill: fatura
           tags: tags
           observations: observacoes
           confirmed: confirmado
+          transactionId: id transacao
+          transferId: id transferencia
+          seriesId: id serie
+    exportPage:
+      title: Exportar transações
+      inProgress: 'Uma exportação está no estado {{status}}.'
+      submit: Gerar exportação
+      format: Formato do arquivo
+      limitations: Transferências e ocorrências de parcelas já materializadas podem fazer o ciclo completo pelo CSV. Parcelas futuras só são recriadas quando essa opção é marcada explicitamente na importação; XLSX é somente para exportação.
+      filters:
+        group: Escopo do grupo
+        personalScope: Minhas transações
+        groupHelp: Selecione um grupo para incluir transações compartilhadas com todos os integrantes. Deixe vazio para suas transações pessoais.
+        walletItems: Origens
+        categories: Categorias
+        entryTypes: Tipo de transação
+        confirmedLabel: Confirmação
+        tags: Tags
+        billDate: Usar o mês da fatura do cartão
+        billDateHelp: Para lançamentos de cartão, o período selecionado será interpretado em meses de fatura. Os demais continuam usando a data da transação.
+      confirmed:
+        any: Qualquer
+        yes: Confirmada
+        no: Não confirmada
+      history:
+        title: Histórico de exportações
+        created: Criada em
+        format: Formato
+        rows: Linhas
+        status: Estado
+        actions: Ações
+        expiresIn: 'O arquivo expira em {{countdown}}'
+        download: Baixar
+        delete: Excluir
+      status:
+        QUEUED: Na fila
+        RUNNING: Em processamento
+        COMPLETED: Concluída
+        FAILED: Falhou
+        EXPIRED: Expirada
+      notifications:
+        started: Exportação adicionada à fila.
+        ready: Exportação pronta. Use o histórico para baixar o arquivo.
     newTransactionPage:
       title: Nova transação
       success: Transação criada com sucesso.

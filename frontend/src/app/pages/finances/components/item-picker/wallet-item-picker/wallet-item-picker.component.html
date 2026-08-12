@@ -6,33 +6,11 @@
   [ngModel]="value"
   (ngModelChange)="onValueChange($event)"
 >
-  <ng-template let-item let-optionLabel="optionLabel" #item>
-    <div class="flex items-center gap-4">
-      <fa-icon [icon]="item['icon']"></fa-icon>
-
-      <div class="flex gap-1 flex-col">
-        <span>{{ item[optionLabel] }}</span>
-        <div class="flex gap-2 items-center text-muted text-xs">
-          <span>{{ 'enums.walletItemType.' + item.type | translate }}</span>
-          @if (item.user != null) {
-            <fa-icon size="xs" [icon]="iconUser"></fa-icon>
-            <span>{{ 'name.fullName' | translate: { lastName: item.user.lastName, firstName: item.user.firstName } }}</span>
-          }
-        </div>
-      </div>
-    </div>
+  <ng-template let-item #item>
+    <app-wallet-item-option [item]="item" />
   </ng-template>
 
-  <ng-template let-item let-optionLabel="optionLabel" #selectedItem>
-    <div class="flex gap-4">
-      <span>{{ item[optionLabel] }}</span>
-      <div class="flex gap-2 items-center text-muted text-xs">
-        <span>{{ 'enums.walletItemType.' + item.type | translate }}</span>
-        @if (item.user != null) {
-          <fa-icon size="xs" [icon]="iconUser"></fa-icon>
-          <span>{{ 'name.fullName' | translate: { lastName: item.user.lastName, firstName: item.user.firstName } }}</span>
-        }
-      </div>
-    </div>
+  <ng-template let-item #selectedItem>
+    <app-wallet-item-option [item]="item" mode="selected" />
   </ng-template>
 </app-paged-select>

@@ -17,7 +17,9 @@ export interface ImportLineDto {
   installmentTotal?: number | null;
   name?: string | null;
   observations?: string | null;
+  seriesGroupId?: string | null;
   tags?: Array<string> | null;
+  transferGroupId?: string | null;
   value: number;
   walletItemId: string;
 }

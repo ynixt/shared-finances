@@ -3,6 +3,7 @@ package com.ynixt.sharedfinances.resources.services
 import com.ynixt.sharedfinances.domain.entities.UserEntity
 import com.ynixt.sharedfinances.domain.repositories.UserRepository
 import com.ynixt.sharedfinances.domain.services.FileStorageService
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -85,6 +86,11 @@ class AvatarReadServiceImplTest {
         override suspend fun write(
             key: String,
             bytes: ByteArray,
+        ) = Unit
+
+        override suspend fun write(
+            key: String,
+            chunks: Flow<ByteArray>,
         ) = Unit
 
         override suspend fun find(key: String): Resource? {

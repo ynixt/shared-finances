@@ -1,6 +1,7 @@
 package com.ynixt.sharedfinances.resources.services
 
 import com.ynixt.sharedfinances.application.config.FileStorageProperties
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class LocalFileStorageServiceTest {
@@ -50,6 +52,34 @@ class LocalFileStorageServiceTest {
                 byteArrayOf(1, 2, 3),
                 restartedService.find("avatars/user.png")!!.inputStream.use { it.readAllBytes() },
             )
+        }
+
+    @Test
+    fun `streams a large payload without assembling it in memory`() =
+        runTest {
+            val service = service()
+            val chunkSize = 1024 * 1024
+            val chunkCount = 64
+
+            service.write(
+                "exports/large.csv",
+                flow {
+                    repeat(chunkCount) { index ->
+                        emit(ByteArray(chunkSize) { (index % 251).toByte() })
+                    }
+                },
+            )
+
+            val stored = temporaryDirectory.resolve("exports/large.csv")
+            assertEquals(chunkSize.toLong() * chunkCount, Files.size(stored))
+            Files.newInputStream(stored).use { input ->
+                repeat(chunkCount) { index ->
+                    val chunk = input.readNBytes(chunkSize)
+                    assertEquals(chunkSize, chunk.size)
+                    assertEquals((index % 251).toByte(), chunk.first())
+                    assertEquals((index % 251).toByte(), chunk.last())
+                }
+            }
         }
 
     @Test

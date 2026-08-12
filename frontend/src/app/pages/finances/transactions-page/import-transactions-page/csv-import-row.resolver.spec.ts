@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CreditCardBillService } from '../../services/credit-card-bill.service';
 import { CsvImportCatalogStore } from './csv-import-catalog.store';
+import { CsvImportReferenceIndex } from './csv-import-reference-index';
 import { CsvImportRowContext, CsvImportRowResolver } from './csv-import-row.resolver';
 
 describe('CsvImportRowResolver', () => {
@@ -17,15 +18,23 @@ describe('CsvImportRowResolver', () => {
   const category = { id: 'food', name: 'Mercado', conceptId: 'food' };
   const catalogs = {
     defaultCurrency: 'BRL',
-    walletItems: [{ id: 'wallet', currency: 'BRL' }],
+    walletItems: [{ id: 'wallet', name: 'Conta', currency: 'BRL' }],
     groups: [{ id: 'group', name: 'Casa' }],
     currentUser,
-    resolveWalletItemId: vi.fn((value?: string) => (value === 'wallet' ? 'wallet' : undefined)),
+    createReferenceIndex: vi.fn(
+      () =>
+        new CsvImportReferenceIndex(
+          [{ id: 'wallet', name: 'Conta', currency: 'BRL' }] as never,
+          [{ id: 'group', name: 'Casa' }] as never,
+          [],
+          new Map([['group', [category] as never]]),
+        ),
+    ),
     findKnownCurrency: vi.fn((value?: string) => (value === 'Real brasileiro' ? 'BRL' : undefined)),
     categoriesFor: vi.fn(() => [category]),
     findCategoryByName: vi.fn((_categories: unknown, name?: string) => (name?.toLowerCase() === 'mercado' ? category : undefined)),
-    ensureGroupCategories: vi.fn(() => Promise.resolve([category])),
     ensureGroupMembers: vi.fn(() => Promise.resolve([currentUser])),
+    groupMembers: vi.fn(() => [currentUser]),
   };
 
   beforeEach(() => {
@@ -39,13 +48,11 @@ describe('CsvImportRowResolver', () => {
     });
   });
 
-  it('creates a preview row using the mapped fields and catalog currency name', () => {
+  it('creates a preview row using the mapped fields and catalog currency name', async () => {
     const resolver = TestBed.inject(CsvImportRowResolver);
-    const row = resolver.create(
-      { data: '08/08/2026', valor: '10,50', origem: 'wallet', moeda: 'Real brasileiro' },
-      0,
-      context({ date: 'data', value: 'valor', origin: 'origem', currency: 'moeda' }),
-    );
+    const rowContext = context({ date: 'data', value: 'valor', origin: 'origem', currency: 'moeda' });
+    const row = resolver.create({ data: '08/08/2026', valor: '10,50', origem: 'wallet', moeda: 'Real brasileiro' }, 0, rowContext);
+    await resolver.resolve([row], rowContext);
 
     expect(row).toEqual(expect.objectContaining({ date: '2026-08-08', value: 10.5, walletItemId: 'wallet', currency: 'BRL' }));
   });

@@ -23,6 +23,8 @@ class GroupWalletItemServiceImpl(
         groupId: UUID,
         pageable: Pageable,
         onlyBankAccounts: Boolean,
+        query: String?,
+        walletItemType: WalletItemType?,
     ): Page<WalletItem> =
         groupPermissionService
             .hasPermission(
@@ -30,14 +32,19 @@ class GroupWalletItemServiceImpl(
                 groupId = groupId,
             ).let { hasPermission ->
                 if (hasPermission) {
-                    val type = if (onlyBankAccounts) WalletItemType.BANK_ACCOUNT else null
-                    createPage(pageable, countFn = { groupWalletItemRepository.countByGroupIdAndEnabled(groupId, enabled = true, type) }) {
+                    val type = walletItemType ?: if (onlyBankAccounts) WalletItemType.BANK_ACCOUNT else null
+                    val normalizedQuery = query?.trim()?.takeIf(String::isNotEmpty)
+                    createPage(
+                        pageable,
+                        countFn = { groupWalletItemRepository.countByGroupIdAndEnabled(groupId, enabled = true, type, normalizedQuery) },
+                    ) {
                         groupWalletItemRepository
                             .findAllByGroupIdAndEnabled(
                                 groupId = groupId,
                                 enabled = true,
                                 pageable = pageable,
                                 walletItemType = type,
+                                query = normalizedQuery,
                             ).map(walletItemMapper::toModel)
                     }
                 } else {

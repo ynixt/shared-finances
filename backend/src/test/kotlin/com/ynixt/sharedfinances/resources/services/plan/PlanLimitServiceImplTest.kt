@@ -91,6 +91,8 @@ class PlanLimitServiceImplTest {
             val service = service(repository, cache)
 
             assertNull(service.resolve(UserPlanRole.ADMINISTRATOR, PlanLimitKey.BANK_ACCOUNTS).value)
+            assertNull(service.resolve(UserPlanRole.ADMINISTRATOR, PlanLimitKey.EXPORTS_PER_MONTH).value)
+            assertNull(service.resolve(UserPlanRole.ADMINISTRATOR, PlanLimitKey.EXPORT_MAX_LINES).value)
             assertEquals(0, repository.reads)
             assertEquals(0, cache.reads)
         }

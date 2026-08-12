@@ -55,3 +55,6 @@ apiErrors:
   imports:
     lineLimitExceeded: An import cannot contain more than {{maxLines}} lines.
     invalidRequest: The import request is invalid.
+  exports:
+    lineLimitExceeded: 'This export contains {{matched}} rows, above your limit of {{cap}}.'
+    emptySelection: No transactions matched the selected filters.

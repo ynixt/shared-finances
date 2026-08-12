@@ -1,0 +1,21 @@
+<app-finances-title-bar [title]="'financesPage.transactionsPage.exportPage.title' | translate" [closeRouterLink]="['/app']" />
+
+@if (inProgress; as batch) {
+  <div class="mb-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm dark:border-blue-800 dark:bg-blue-950/30">
+    {{ 'financesPage.transactionsPage.exportPage.inProgress' | translate: { status: batch.status } }}
+  </div>
+}
+
+<app-export-filters
+  [form]="form"
+  [groups]="groups"
+  [walletItemsGetter]="walletItemsGetter"
+  [categoriesGetter]="categoriesGetter"
+  [scopeKey]="selectedGroupId"
+  [disabled]="loading || inProgress != null"
+  [submitting]="submitting"
+  (groupChanged)="groupChanged($event)"
+  (submitted)="submit()"
+/>
+
+<app-export-history [batches]="batches" (downloaded)="download($event)" (deleted)="delete($event)" />

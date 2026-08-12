@@ -21,6 +21,8 @@ interface GroupUsersRepository {
 
     fun findAllMembers(groupId: UUID): Flux<GroupUserEntity>
 
+    fun findAllMembersForUser(userId: UUID): Flux<GroupUserEntity>
+
     fun findAllOptedInUserIds(groupId: UUID): Flux<UUID>
 
     fun updateRole(

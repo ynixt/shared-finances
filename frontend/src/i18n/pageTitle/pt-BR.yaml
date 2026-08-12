@@ -45,6 +45,7 @@ pageTitle:
   editTransaction: Editar transação
   scheduleManager: Gerenciador de agendamentos
   importTransactions: Importar transações
+  exportTransactions: Exportar transações
   goals: Metas
   newGoal: Nova meta
   editGoal: Editar meta

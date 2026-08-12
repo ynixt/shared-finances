@@ -29,6 +29,8 @@ class GroupUsersRepositoryImpl(
 
     override fun findAllMembers(groupId: UUID): Flux<GroupUserEntity> = dcRepository.findAllMembers(groupId)
 
+    override fun findAllMembersForUser(userId: UUID): Flux<GroupUserEntity> = dcRepository.findAllMembersForUser(userId)
+
     override fun findAllOptedInUserIds(groupId: UUID): Flux<UUID> = dcRepository.findAllOptedInUserIds(groupId)
 
     override fun updateRole(

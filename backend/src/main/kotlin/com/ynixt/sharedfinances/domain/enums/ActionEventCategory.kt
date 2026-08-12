@@ -15,6 +15,7 @@ enum class ActionEventCategory {
     WALLET_EVENT,
     SIMULATION_JOB,
     IMPORT_BATCH,
+    EXPORT_BATCH,
     ONBOARDING,
     PLAN_USAGE,
     GROUP_PLAN_USAGE,

@@ -18,6 +18,7 @@ class QuotaCreationPathInventoryTest {
         assertContains("categories/UserCategoryServiceImpl.kt", "assertCanAdd(userId, PlanLimitKey.CATEGORIES)")
         assertContains("goals/FinancialGoalManagementServiceImpl.kt", "assertCanAdd(userId, PlanLimitKey.GOALS)")
         assertContains("imports/ImportServiceImpl.kt", "assertCanAdd(userId, PlanLimitKey.IMPORTS_PER_MONTH)")
+        assertContains("exports/ExportBatchAcceptanceService.kt", "assertCanAdd(userId, PlanLimitKey.EXPORTS_PER_MONTH)")
         assertContains("simulation/SimulationJobServiceImpl.kt", "assertCanAdd(ownerUserId, PlanLimitKey.SIMULATIONS_PER_MONTH)")
         assertContains("simulation/SimulationJobServiceImpl.kt", "assertCanAdd(requesterUserId, PlanLimitKey.SIMULATIONS_PER_MONTH)")
         assertContains("groups/GroupServiceImpl.kt", "assertCanAdd(userId, PlanLimitKey.OWNED_GROUPS)")
@@ -85,8 +86,23 @@ class QuotaCreationPathInventoryTest {
     @Test
     fun `usage repository defines exactly one indexed count for every quota`() {
         val repository = source("../repositories/r2dbc/databaseclient/PlanQuotaUsageDatabaseClientRepository.kt")
-        assertEquals(12, Regex("PlanLimitKey\\.[A-Z_]+ ->").findAll(repository).count())
+        assertEquals(13, Regex("PlanLimitKey\\.[A-Z_]+ ->").findAll(repository).count())
         PlanLimitKeyNames.values.forEach { assertTrue(repository.contains("PlanLimitKey.$it"), "Missing count for $it") }
+    }
+
+    @Test
+    fun `export usage is aggregated independently from disposable batch history`() {
+        val usageRepository = source("../repositories/r2dbc/databaseclient/PlanQuotaUsageDatabaseClientRepository.kt")
+        val exportUsage =
+            usageRepository
+                .substringAfter("PlanLimitKey.EXPORTS_PER_MONTH ->")
+                .substringBefore("PlanLimitKey.SIMULATIONS_PER_MONTH ->")
+        val batchRepository = source("../repositories/r2dbc/databaseclient/ExportBatchDatabaseClientRepository.kt")
+
+        assertTrue(exportUsage.contains("plan_quota_monthly_usage"))
+        assertFalse(exportUsage.contains("FROM export_batch"))
+        assertTrue(batchRepository.contains("INSERT INTO plan_quota_monthly_usage"))
+        assertTrue(batchRepository.contains("DELETE FROM export_batch"))
     }
 
     @Test
@@ -114,6 +130,9 @@ class QuotaCreationPathInventoryTest {
                     "override suspend fun create(",
                 ).substringBefore("override suspend fun getForOwner(")
         assertFalse(simulationCreates.contains("usageChanged"))
+
+        val exports = source("exports/ExportBatchAcceptanceService.kt")
+        assertFalse(exports.contains("usageChanged"))
     }
 
     private fun assertContains(
@@ -132,6 +151,7 @@ class QuotaCreationPathInventoryTest {
                 "GOALS",
                 "ACTIVE_SCHEDULES",
                 "IMPORTS_PER_MONTH",
+                "EXPORTS_PER_MONTH",
                 "SIMULATIONS_PER_MONTH",
                 "OWNED_GROUPS",
                 "GROUP_CATEGORIES",

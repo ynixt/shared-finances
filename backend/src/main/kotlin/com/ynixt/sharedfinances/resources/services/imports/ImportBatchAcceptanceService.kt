@@ -140,6 +140,8 @@ class ImportBatchAcceptanceService(
                                 ?.distinct(),
                         observations = line.observations?.trim()?.ifBlank { null },
                         externalTransactionId = normalizeExternalTransactionId(line.externalTransactionId),
+                        transferGroupId = normalizeGroupingId(line.transferGroupId),
+                        seriesGroupId = normalizeGroupingId(line.seriesGroupId),
                     )
                 },
         )
@@ -179,6 +181,8 @@ class ImportBatchAcceptanceService(
                     )
                 }
             }
+
+    private fun normalizeGroupingId(value: String?): String? = value?.trim()?.ifBlank { null }?.take(MAX_EXTERNAL_TRANSACTION_ID_LENGTH)
 
     private companion object {
         val ACTIVE_STATUSES =

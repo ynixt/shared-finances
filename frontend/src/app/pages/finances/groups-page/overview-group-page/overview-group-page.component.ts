@@ -16,20 +16,13 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 
 import { GroupOverviewDashboardDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/dashboard';
 import { GroupWithRoleDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups';
-import { GroupUserDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/groups/group-user-dto';
-import { WalletItemSearchResponseDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/wallet';
 import { EventForListDto } from '../../../../models/generated/com/ynixt/sharedfinances/application/web/dto/walletentry';
 import { GroupPermissions__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums';
-import { WalletItemType } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums/wallet-item-type';
 import { WalletItemType__Obj } from '../../../../models/generated/com/ynixt/sharedfinances/domain/enums/wallet-item-type';
 import { ErrorMessageService } from '../../../../services/error-message.service';
 import { PlanEntitlementsStore } from '../../../../services/plan-entitlements.store';
 import { UserService } from '../../../../services/user.service';
-import {
-  DashboardFeedFilters,
-  DashboardFilterOption,
-  EMPTY_DASHBOARD_FEED_FILTERS,
-} from '../../components/dashboard-filters/dashboard-feed-filters.model';
+import { DashboardFeedFilters, EMPTY_DASHBOARD_FEED_FILTERS } from '../../components/dashboard-filters/dashboard-feed-filters.model';
 import { GroupDashboardFiltersComponent } from '../../components/dashboard-filters/group-dashboard-filters.component';
 import { FinancesTitleBarComponent, FinancesTitleBarExtraButton } from '../../components/finances-title-bar/finances-title-bar.component';
 import { GroupDebtPairsPanelComponent } from '../../components/group-debt-pairs-panel/group-debt-pairs-panel.component';
@@ -47,12 +40,12 @@ import {
   readDateRangeFromQueryParams,
   syncDateQueryParams,
 } from '../../services/date-query-params.util';
-import { GroupCategoriesService } from '../../services/group-categories.service';
-import { GroupWalletItemService } from '../../services/group-wallet-item.service';
 import { GroupService } from '../../services/group.service';
 import { GroupsActionEventService } from '../../services/groups-action-event.service';
 import { OverviewDashboardService } from '../../services/overview-dashboard.service';
 import { UserActionEventService } from '../../services/user-action-event.service';
+import { shouldRefreshGroupDashboardForEvent } from './group-dashboard-event-filter';
+import { GroupDashboardFilterOptionsService } from './group-dashboard-filter-options.service';
 
 @Component({
   selector: 'app-overview-group-page',
@@ -73,12 +66,11 @@ import { UserActionEventService } from '../../services/user-action-event.service
   ],
   templateUrl: './overview-group-page.component.html',
   styleUrl: './overview-group-page.component.scss',
-  providers: [ConfirmationService],
+  providers: [ConfirmationService, GroupDashboardFilterOptionsService],
 })
 @UntilDestroy()
 export class OverviewGroupPageComponent {
   readonly dateControl = new FormControl<DateRange | undefined>(undefined);
-  private readonly dashboardFilterPageSize = 10;
   private readonly refreshBurst$ = new Subject<void>();
   private readonly debtsButtonIcon = faScaleBalanced;
 
@@ -97,8 +89,7 @@ export class OverviewGroupPageComponent {
     private router: Router,
     private route: ActivatedRoute,
     private groupService: GroupService,
-    private groupWalletItemService: GroupWalletItemService,
-    private groupCategoriesService: GroupCategoriesService,
+    private filterOptions: GroupDashboardFilterOptionsService,
     private groupsActionEventService: GroupsActionEventService,
     private overviewDashboardService: OverviewDashboardService,
     private userActionEventService: UserActionEventService,
@@ -136,10 +127,18 @@ export class OverviewGroupPageComponent {
     });
   }
 
-  readonly memberOptionsGetter = this.loadMembers.bind(this);
-  readonly bankAccountOptionsGetter = this.loadBankAccounts.bind(this);
-  readonly creditCardOptionsGetter = this.loadCreditCards.bind(this);
-  readonly categoryOptionsGetter = this.loadCategories.bind(this);
+  readonly memberOptionsGetter = (page = 0, query?: string) =>
+    this.groupId == null ? Promise.resolve([]) : this.filterOptions.loadMembers(this.groupId, page, query);
+  readonly bankAccountOptionsGetter = (page = 0, query?: string) =>
+    this.groupId == null
+      ? Promise.resolve([])
+      : this.filterOptions.loadWalletItems(this.groupId, WalletItemType__Obj.BANK_ACCOUNT, page, query);
+  readonly creditCardOptionsGetter = (page = 0, query?: string) =>
+    this.groupId == null
+      ? Promise.resolve([])
+      : this.filterOptions.loadWalletItems(this.groupId, WalletItemType__Obj.CREDIT_CARD, page, query);
+  readonly categoryOptionsGetter = (page = 0, query?: string) =>
+    this.groupId == null ? Promise.resolve([]) : this.filterOptions.loadCategories(this.groupId, page, query);
 
   onFiltersChange(filters: DashboardFeedFilters) {
     this.dashboardFilters = filters;
@@ -208,73 +207,10 @@ export class OverviewGroupPageComponent {
   }
 
   private handleTransactionEvent(event: EventForListDto) {
-    if (!this.shouldRefreshForEvent(event)) {
+    if (!shouldRefreshGroupDashboardForEvent(event, this.groupId, this.dateControl.value, this.dashboardFilters)) {
       return;
     }
     this.refreshBurst$.next();
-  }
-
-  private shouldRefreshForEvent(event: EventForListDto): boolean {
-    if (this.groupId == null || event.group?.id !== this.groupId) {
-      return false;
-    }
-
-    const dateRange = this.dateControl.value;
-    if (dateRange == null) {
-      return false;
-    }
-
-    const eventDate = dayjs(event.date);
-    const inRange =
-      (dateRange.startDate.isBefore(eventDate) || dateRange.startDate.isSame(eventDate, 'day')) &&
-      (dateRange.endDate == null || dateRange.endDate.isAfter(eventDate) || dateRange.endDate.isSame(eventDate, 'day'));
-    if (!inRange) {
-      return false;
-    }
-
-    if (this.dashboardFilters.entryTypes.length > 0 && !this.dashboardFilters.entryTypes.includes(event.type)) {
-      return false;
-    }
-    if (
-      this.dashboardFilters.bankAccountIds.length > 0 &&
-      event.entries.find(entry => this.dashboardFilters.bankAccountIds.includes(entry.walletItemId)) == null
-    ) {
-      return false;
-    }
-    if (
-      this.dashboardFilters.creditCardIds.length > 0 &&
-      event.entries.find(entry => this.dashboardFilters.creditCardIds.includes(entry.walletItemId)) == null
-    ) {
-      return false;
-    }
-    if (
-      this.dashboardFilters.memberIds.length > 0 &&
-      event.entries.find(
-        entry => entry.walletItem.user?.id != null && this.dashboardFilters.memberIds.includes(entry.walletItem.user.id),
-      ) == null &&
-      (event.user?.id == null || !this.dashboardFilters.memberIds.includes(event.user.id))
-    ) {
-      return false;
-    }
-
-    if (!this.matchesCategoryFilters(event)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  private matchesCategoryFilters(event: EventForListDto): boolean {
-    if (this.dashboardFilters.categoryIds.length === 0 && !this.dashboardFilters.includeUncategorized) {
-      return true;
-    }
-
-    const categoryId = event.category?.id;
-    if (categoryId == null) {
-      return this.dashboardFilters.includeUncategorized;
-    }
-
-    return this.dashboardFilters.categoryIds.length === 0 || this.dashboardFilters.categoryIds.includes(categoryId);
   }
 
   private bumpTableRefreshKey() {
@@ -408,67 +344,5 @@ export class OverviewGroupPageComponent {
 
   private groupDeleted() {
     void this.router.navigate(['/app']);
-  }
-
-  private async loadMembers(page = 0, query?: string): Promise<DashboardFilterOption[]> {
-    if (this.groupId == null) return [];
-    const members = await this.groupService.findAllMembers(this.groupId);
-    return this.paginateAndMapMembers(members, page, query);
-  }
-
-  private async loadBankAccounts(page = 0, query?: string): Promise<DashboardFilterOption[]> {
-    return this.loadWalletItemsByType(WalletItemType__Obj.BANK_ACCOUNT, page, query);
-  }
-
-  private async loadCreditCards(page = 0, query?: string): Promise<DashboardFilterOption[]> {
-    return this.loadWalletItemsByType(WalletItemType__Obj.CREDIT_CARD, page, query);
-  }
-
-  private async loadWalletItemsByType(type: WalletItemType, page = 0, query?: string): Promise<DashboardFilterOption[]> {
-    if (this.groupId == null) return [];
-    const pageData = await this.groupWalletItemService.getAllItems(this.groupId, { page: 0, size: 500, sort: 'name' });
-    const filtered = pageData.content.filter(item => item.type === type);
-    const queried = this.filterByQuery(filtered, query, item => item.name);
-    return this.paginate(queried, page).map(item => ({ id: item.id, label: item.name }));
-  }
-
-  private async loadCategories(page = 0, query?: string): Promise<DashboardFilterOption[]> {
-    if (this.groupId == null) return [];
-    const categories = await this.groupCategoriesService.getAllCategories(
-      this.groupId,
-      {
-        onlyRoot: false,
-        mountChildren: false,
-        query,
-      },
-      {
-        page,
-        size: this.dashboardFilterPageSize,
-        sort: 'name',
-      },
-    );
-
-    return categories.content.map(category => ({ id: category.id, label: category.name }));
-  }
-
-  private paginateAndMapMembers(members: GroupUserDto[], page: number, query?: string): DashboardFilterOption[] {
-    const filtered = this.filterByQuery(members, query, member => `${member.user.firstName} ${member.user.lastName}`);
-    return this.paginate(filtered, page).map(member => ({
-      id: member.user.id,
-      label: `${member.user.firstName} ${member.user.lastName}`.trim(),
-    }));
-  }
-
-  private filterByQuery<T>(items: T[], query: string | undefined, mapLabel: (item: T) => string): T[] {
-    const normalizedQuery = query?.trim().toLowerCase();
-    if (normalizedQuery == null || normalizedQuery.length === 0) {
-      return items;
-    }
-    return items.filter(item => mapLabel(item).toLowerCase().includes(normalizedQuery));
-  }
-
-  private paginate<T>(items: T[], page: number): T[] {
-    const start = page * this.dashboardFilterPageSize;
-    return items.slice(start, start + this.dashboardFilterPageSize);
   }
 }

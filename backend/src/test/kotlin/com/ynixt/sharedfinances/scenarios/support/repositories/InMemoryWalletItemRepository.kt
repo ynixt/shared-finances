@@ -47,6 +47,36 @@ internal class InMemoryWalletItemRepository : WalletItemRepository {
         enabled: Boolean,
     ): Mono<Long> = Mono.just(filterItems { it.userId == userId && it.enabled == enabled }.size.toLong())
 
+    override fun findAllByUserIdAndEnabledAndNameContainingIgnoreCase(
+        userId: UUID,
+        enabled: Boolean,
+        name: String,
+        pageable: Pageable,
+    ): Flux<WalletItemEntity> =
+        Flux.fromIterable(
+            page(
+                filterItems {
+                    it.userId == userId &&
+                        it.enabled == enabled &&
+                        it.name.contains(name, ignoreCase = true)
+                },
+                pageable,
+            ),
+        )
+
+    override fun countByUserIdAndEnabledAndNameContainingIgnoreCase(
+        userId: UUID,
+        enabled: Boolean,
+        name: String,
+    ): Mono<Long> =
+        Mono.just(
+            filterItems {
+                it.userId == userId &&
+                    it.enabled == enabled &&
+                    it.name.contains(name, ignoreCase = true)
+            }.size.toLong(),
+        )
+
     override fun findAllByUserIdAndType(
         userId: UUID,
         type: WalletItemType,

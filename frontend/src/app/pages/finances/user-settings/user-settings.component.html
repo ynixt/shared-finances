@@ -15,19 +15,17 @@
             @if (entitlements.limitsEnabled) {
               <app-plan-identity kind="user" [value]="entitlements.role" />
             }
-            <div class="pt-4">
-              <app-account-activity-info
-                [lastLoginAt]="user.lastLoginAt"
-                [projectedDeletionAt]="entitlements.limitsEnabled ? entitlements.projectedDeletionAt : null"
-              />
-            </div>
+            <app-account-activity-info
+              [lastLoginAt]="user.lastLoginAt"
+              [projectedDeletionAt]="entitlements.limitsEnabled ? entitlements.projectedDeletionAt : null"
+            />
           }
           <form [formGroup]="generalForm" class="flex flex-col gap-4 pt-4" (ngSubmit)="submitGeneralForm()">
             <div class="grid md:grid-cols-2 gap-2" formGroupName="name">
               <div>
                 <label for="firstName" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
-                  'general.firstName' | translate
-                }}</label>
+                    'general.firstName' | translate
+                  }}</label>
                 <input
                   pInputText
                   id="firstName"
@@ -40,7 +38,7 @@
 
               <div>
                 <label for="lastName" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                  >{{ 'general.lastName' | translate }}
+                >{{ 'general.lastName' | translate }}
                 </label>
                 <input pInputText id="lastName" type="text" [placeholder]="'general.lastName' | translate" formControlName="last" fluid />
               </div>
@@ -48,28 +46,28 @@
 
             <div class="w-full mb-4">
               <label for="email" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                >{{ 'general.email' | translate }}
+              >{{ 'general.email' | translate }}
               </label>
               <input pInputText id="email" type="text" [placeholder]="'general.email' | translate" fluid formControlName="email" />
             </div>
 
             <div class="w-full mb-4">
               <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                >{{ 'general.language' | translate }}
+              >{{ 'general.language' | translate }}
               </label>
               <app-language-picker id="languagePicker" formControlName="language"></app-language-picker>
             </div>
 
             <div class="w-full mb-4">
               <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                >{{ 'onboardingPage.defaultCurrency' | translate }}
+              >{{ 'onboardingPage.defaultCurrency' | translate }}
               </label>
               <app-currency-selector id="currencySelector" formControlName="defaultCurrency"></app-currency-selector>
             </div>
 
             <div class="w-full mb-4">
               <label for="languagePicker" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                >{{ 'onboardingPage.timezone' | translate }}
+              >{{ 'onboardingPage.timezone' | translate }}
               </label>
               <app-time-zone-selector id="timezoneSelector" formControlName="tmz"></app-time-zone-selector>
             </div>
@@ -80,8 +78,8 @@
               >
                 <div>
                   <label for="darkModeToggle" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{
-                    'financesPage.userSettingsPage.darkMode' | translate
-                  }}</label>
+                      'financesPage.userSettingsPage.darkMode' | translate
+                    }}</label>
                   <p class="text-surface-600 dark:text-surface-300">
                     {{ 'financesPage.userSettingsPage.darkModeDescription' | translate }}
                   </p>
@@ -92,7 +90,7 @@
 
             <div class="w-full mt-4 mb-8">
               <label for="avatar" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                >{{ 'financesPage.userSettingsPage.avatar' | translate }}
+              >{{ 'financesPage.userSettingsPage.avatar' | translate }}
               </label>
               <div class="justify-center items-center flex">
                 <app-user-avatar-editor id="avatar" formControlName="photo" [user]="user"></app-user-avatar-editor>
@@ -119,7 +117,7 @@
             <form [formGroup]="securityPasswordForm" class="flex flex-col gap-4" (ngSubmit)="submitChangePasswordForm()">
               <div class="w-full mb-8">
                 <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                  >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
+                >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
                 </label>
                 <p-password id="currentPassword" fluid formControlName="currentPassword" [toggleMask]="true" [feedback]="false" />
               </div>
@@ -127,14 +125,14 @@
               <div class="grid md:grid-cols-2 gap-2">
                 <div class="w-full mb-8">
                   <label for="newPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                    >{{ 'financesPage.userSettingsPage.newPassword' | translate }}
+                  >{{ 'financesPage.userSettingsPage.newPassword' | translate }}
                   </label>
                   <p-password id="newPassword" fluid formControlName="newPassword" [toggleMask]="true" [feedback]="true" />
                 </div>
 
                 <div class="w-full mb-8">
                   <label for="newPasswordConfirmation" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                    >{{ 'financesPage.userSettingsPage.newPasswordConfirmation' | translate }}
+                  >{{ 'financesPage.userSettingsPage.newPasswordConfirmation' | translate }}
                   </label>
                   <p-password
                     id="newPasswordConfirmation"
@@ -166,7 +164,7 @@
             <form [formGroup]="securityTwoStepBeginForm" class="flex flex-col gap-4" (ngSubmit)="submitSecurityTwoStepBeginForm()">
               <div class="w-full mb-8">
                 <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                  >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
+                >{{ 'financesPage.userSettingsPage.currentPassword' | translate }}
                 </label>
                 <p-password id="currentPassword" fluid formControlName="currentPassword" [toggleMask]="true" [feedback]="false" />
               </div>
@@ -174,7 +172,7 @@
               @if (user.mfaEnabled) {
                 <div class="w-full mb-8">
                   <label for="currentPassword" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2"
-                    >{{ 'financesPage.userSettingsPage.mfa' | translate }}
+                  >{{ 'financesPage.userSettingsPage.mfa' | translate }}
                   </label>
                   <p-input-otp
                     formControlName="code"

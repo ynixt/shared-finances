@@ -45,6 +45,7 @@ pageTitle:
   editTransaction: Edit transaction
   scheduleManager: Schedule manager
   importTransactions: Import transactions
+  exportTransactions: Export transactions
   goals: Goals
   newGoal: New goal
   editGoal: Edit goal

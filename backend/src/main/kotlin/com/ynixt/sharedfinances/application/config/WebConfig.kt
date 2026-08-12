@@ -9,7 +9,16 @@ import org.springframework.web.reactive.result.method.annotation.ArgumentResolve
 @Configuration
 class WebConfig : WebFluxConfigurer {
     override fun configureArgumentResolvers(configurer: ArgumentResolverConfigurer) {
-        configurer.addCustomResolver(ReactivePageableHandlerMethodArgumentResolver())
+        configurer.addCustomResolver(pageableResolver())
         configurer.addCustomResolver(ReactiveSortHandlerMethodArgumentResolver())
+    }
+
+    internal fun pageableResolver() =
+        ReactivePageableHandlerMethodArgumentResolver().apply {
+            setMaxPageSize(MAX_PAGE_SIZE)
+        }
+
+    companion object {
+        const val MAX_PAGE_SIZE = 100
     }
 }

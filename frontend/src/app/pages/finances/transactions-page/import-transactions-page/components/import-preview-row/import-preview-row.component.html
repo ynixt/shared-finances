@@ -29,16 +29,20 @@
           }}
         </span>
       }
-      <input
-        pInputText
-        class="table-control w-full min-w-0"
-        [(ngModel)]="row.name"
-        [disabled]="!row.included"
-        [attr.aria-label]="
-          'financesPage.transactionsPage.importPage.preview.descriptionAria'
-            | translate: { date: row.date ?? ('financesPage.transactionsPage.importPage.validation.invalidDateLowercase' | translate) }
-        "
-      />
+      @if (row.transferDisplayName) {
+        <span class="truncate text-sm font-semibold" [title]="row.transferDisplayName">{{ row.transferDisplayName }}</span>
+      } @else {
+        <input
+          pInputText
+          class="table-control w-full min-w-0"
+          [(ngModel)]="row.name"
+          [disabled]="!row.included"
+          [attr.aria-label]="
+            'financesPage.transactionsPage.importPage.preview.descriptionAria'
+              | translate: { date: row.date ?? ('financesPage.transactionsPage.importPage.validation.invalidDateLowercase' | translate) }
+          "
+        />
+      }
       @if (row.observations) {
         <p class="col-span-full truncate text-xs text-muted" [title]="row.observations">{{ row.observations }}</p>
       }
