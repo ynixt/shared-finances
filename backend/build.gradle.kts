@@ -58,8 +58,6 @@ val integrationTestTask =
         classpath = sourceSets["integrationTest"].runtimeClasspath
         minHeapSize = "512m"
         maxHeapSize = "2g"
-        forkEvery = 1
-        systemProperty("spring.test.context.cache.maxSize", "1")
 
         shouldRunAfter(tasks.named("test"))
     }

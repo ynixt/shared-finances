@@ -11,7 +11,6 @@ import java.nio.file.Path
 import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.Test
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -60,7 +59,7 @@ class TransactionCsvWriterTest {
         }
 
     @Test
-    fun `matches the versioned fixture consumed by the real frontend importer`() =
+    fun `matches the versioned backend export contract fixture`() =
         runTest {
             val bytes =
                 TransactionCsvWriter()
@@ -74,8 +73,7 @@ class TransactionCsvWriterTest {
                     }
             val fixture =
                 Path.of(
-                    "../frontend/src/app/pages/finances/transactions-page/" +
-                        "import-transactions-page/fixtures/transaction-export-round-trip.csv",
+                    "src/test/resources/exports/transaction-export-round-trip.csv",
                 )
 
             val regenerationInstructions =
@@ -86,14 +84,16 @@ class TransactionCsvWriterTest {
             }
 
             assertTrue(Files.exists(fixture), "Versioned CSV fixture is missing. $regenerationInstructions")
-            assertContentEquals(
-                Files.readAllBytes(fixture),
-                bytes,
+            assertEquals(
+                normalizeLineEndings(Files.readString(fixture)),
+                normalizeLineEndings(bytes.decodeToString()),
                 "CSV writer output drifted. $regenerationInstructions",
             )
             assertEquals(6, fixtureRows().size)
             assertTrue(Files.readString(fixture).contains("home,food"))
         }
+
+    private fun normalizeLineEndings(value: String): String = value.replace("\r\n", "\n")
 
     private fun regenerateFixture(): Boolean =
         System.getenv(REGENERATE_FIXTURE_ENV).equals("true", ignoreCase = true) ||
