@@ -42,6 +42,7 @@ plans:
     GOALS: Metas pessoais
     ACTIVE_SCHEDULES: Agendamentos ativos
     IMPORTS_PER_MONTH: Importações por mês
+    EXPORTS_PER_MONTH: Exportações por mês
     SIMULATIONS_PER_MONTH: Simulações por mês
     OWNED_GROUPS: Grupos próprios
     IMPORT_MAX_LINES: Linhas em um arquivo importado

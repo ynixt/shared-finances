@@ -13,6 +13,7 @@ planQuota:
     GOALS: Metas pessoais
     ACTIVE_SCHEDULES: Agendamentos ativos
     IMPORTS_PER_MONTH: Importações mensais
+    EXPORTS_PER_MONTH: Exportações mensais
     SIMULATIONS_PER_MONTH: Simulações mensais
     OWNED_GROUPS: Grupos próprios
     GROUP_CATEGORIES: Categorias do grupo
