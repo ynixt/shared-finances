@@ -27,7 +27,6 @@ class ExchangeRateSyncController(
     @PostMapping
     suspend fun syncForDate(
         @RequestParam(required = false) date: String?,
-        @RequestParam(required = false) quotes: List<String>?,
     ): SyncResult {
         val targetDate =
             if (date.isNullOrBlank()) {
@@ -36,9 +35,7 @@ class ExchangeRateSyncController(
                 LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
             }
 
-        val baseCurrencies = quotes?.map { it.uppercase() }?.toSet()?.takeIf { it.isNotEmpty() }
-
-        val upserted = exchangeRateService.syncQuotesForDate(date = targetDate, baseCurrencies = baseCurrencies)
+        val upserted = exchangeRateService.syncQuotesForDate(date = targetDate)
 
         return SyncResult(date = targetDate.toString(), upserted = upserted)
     }

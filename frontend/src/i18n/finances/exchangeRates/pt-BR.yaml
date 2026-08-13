@@ -7,6 +7,7 @@ financesPage:
     quotedAt: Horário da cotação
     fetchedAt: Horário da coleta
     source: Fonte
+    defaultBaseHint: Sem filtros de moeda, a moeda base é USD.
     filters:
       baseCurrency: Moeda base
       quoteCurrency: Moeda cotada

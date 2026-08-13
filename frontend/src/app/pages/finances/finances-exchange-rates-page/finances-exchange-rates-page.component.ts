@@ -21,6 +21,15 @@ import { ONLY_DATE_FORMAT } from '../../../util/date-util';
 import { FinancesTitleBarComponent } from '../components/finances-title-bar/finances-title-bar.component';
 import { ExchangeRateService } from '../services/exchange-rate.service';
 
+/** Decimals used for conventional pairs, where two is already the right amount. */
+const RATE_MIN_FRACTION_DIGITS = 2;
+
+/** Significant digits kept when a rate is too small to survive the default. */
+const RATE_SIGNIFICANT_DIGITS = 4;
+
+/** Intl refuses anything above this. */
+const RATE_MAX_FRACTION_DIGITS = 20;
+
 @Component({
   selector: 'app-finances-exchange-rates-page',
   imports: [
@@ -77,6 +86,29 @@ export class FinancesExchangeRatesPageComponent {
     this.showPaginator = false;
     await this.loadInitialData();
     this.showPaginator = true;
+  }
+
+  /**
+   * Upper bound of decimals for a rate. Derived pairs range from thousands (BRL/JPY) down to
+   * about 1e-10 (SHIB/BTC), so a fixed width either truncates crypto to zero or pads conventional
+   * pairs with noise. Two decimals stay the default and the bound only widens when the rate would
+   * otherwise round away; Intl trims whatever the value does not use.
+   */
+  rateMaxFractionDigits(rate: number | string | null | undefined): number {
+    const parsed = typeof rate === 'string' ? parseFloat(rate) : rate;
+    const value = Math.abs(parsed ?? 0);
+
+    if (!Number.isFinite(value) || value === 0) {
+      return RATE_MIN_FRACTION_DIGITS;
+    }
+
+    const smallestRepresentable = 0.5 * Math.pow(10, -RATE_MIN_FRACTION_DIGITS);
+    if (value >= smallestRepresentable) {
+      return RATE_MIN_FRACTION_DIGITS;
+    }
+
+    const leadingZeros = Math.floor(-Math.log10(value));
+    return Math.min(leadingZeros + RATE_SIGNIFICANT_DIGITS, RATE_MAX_FRACTION_DIGITS);
   }
 
   async onPageChange(newPage: number) {

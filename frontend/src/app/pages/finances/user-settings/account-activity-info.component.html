@@ -1,6 +1,5 @@
 @if (projectedDeletionAt(); as deletionAt) {
   <section class="border border-surface-200 dark:border-surface-700 rounded-lg p-4 space-y-3" data-testid="account-activity">
-
     <div data-testid="projected-deletion">
       <span class="font-medium">{{ 'financesPage.userSettingsPage.projectedDeletion' | translate }}:</span>
       <span class="ml-2">{{ deletionAt | date: 'longDate' }}</span>

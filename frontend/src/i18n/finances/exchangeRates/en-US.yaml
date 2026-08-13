@@ -7,6 +7,7 @@ financesPage:
     quotedAt: Quoted at
     fetchedAt: Fetched at
     source: Source
+    defaultBaseHint: With no currency filters, the base currency is USD.
     filters:
       baseCurrency: Base currency
       quoteCurrency: Quote currency

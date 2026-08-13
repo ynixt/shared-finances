@@ -3,11 +3,10 @@
 
 export interface ExchangeRateQuoteDto {
   baseCurrency: string;
+  derived: boolean;
   fetchedAt: any;
-  id: string;
   quoteCurrency: string;
   quoteDate: string;
-  quotedAt: any;
   rate: number;
   source: string;
 }

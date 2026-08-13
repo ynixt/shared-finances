@@ -1,10 +1,10 @@
 package com.ynixt.sharedfinances.scenarios.wallet
 
-import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.exceptions.http.TransferTargetValueRequiredException
 import com.ynixt.sharedfinances.domain.models.CursorPage
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuote
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
@@ -652,12 +652,9 @@ class TransferScenarioDslTest {
         object : ExchangeRateService {
             override suspend fun syncLatestQuotes(): Int = 0
 
-            override suspend fun syncQuotesForDate(
-                date: LocalDate,
-                baseCurrencies: Set<String>?,
-            ): Int = 0
+            override suspend fun syncQuotesForDate(date: LocalDate): Int = 0
 
-            override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity> =
+            override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuote> =
                 CursorPage(
                     items = emptyList(),
                     nextCursor = null,
@@ -675,6 +672,9 @@ class TransferScenarioDslTest {
                 toCurrency: String,
                 referenceDate: LocalDate,
             ): ResolvedExchangeRate = ResolvedExchangeRate(rate = rate, quoteDate = referenceDate)
+
+            override suspend fun resolveRateBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, ResolvedExchangeRate?> =
+                requests.associateWith { request -> ResolvedExchangeRate(rate = rate, quoteDate = request.referenceDate) }
 
             override suspend fun convert(
                 value: BigDecimal,

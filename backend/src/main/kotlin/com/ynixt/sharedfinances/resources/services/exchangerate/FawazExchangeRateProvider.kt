@@ -5,12 +5,12 @@ import feign.Feign
 import feign.Param
 import feign.RequestLine
 import feign.jackson.JacksonDecoder
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 @Component
 class FawazExchangeRateProvider(
@@ -19,6 +19,7 @@ class FawazExchangeRateProvider(
     private val clock: Clock,
 ) : ExchangeRateProvider {
     override val source: String = "fawazahmed0"
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     // jsdelivr npm URL: https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{tag}/v1/...
     // app.exchangeRates.providerUrl is the package root ending with "@" (no tag in config), e.g. ...currency-api@
@@ -59,56 +60,34 @@ class FawazExchangeRateProvider(
             .target(FawazApiClient::class.java, target)
     }
 
-    override suspend fun fetchLatest(
-        baseCurrency: String,
-        quoteCurrencies: Set<String>,
-    ): List<ExchangeRateProvider.Quote> {
-        if (quoteCurrencies.isEmpty()) return emptyList()
+    override suspend fun fetchUsdRates(date: LocalDate?): List<ExchangeRateProvider.Quote> =
+        parsePayload(
+            payload =
+                if (date == null) {
+                    latestClient.getRates(USD)
+                } else {
+                    historicalClient(date).getRates(USD)
+                },
+        )
 
-        val normalizedBase = baseCurrency.lowercase()
-        val payload = latestClient.getRates(normalizedBase)
-        return parsePayload(normalizedBase, quoteCurrencies, payload)
-    }
-
-    override suspend fun fetchForDate(
-        baseCurrency: String,
-        quoteCurrencies: Set<String>,
-        date: LocalDate,
-    ): List<ExchangeRateProvider.Quote> {
-        if (quoteCurrencies.isEmpty()) return emptyList()
-
-        val normalizedBase = baseCurrency.lowercase()
-        val payload = historicalClient(date).getRates(normalizedBase)
-        return parsePayload(normalizedBase, quoteCurrencies, payload)
-    }
-
-    private fun parsePayload(
-        normalizedBase: String,
-        quoteCurrencies: Set<String>,
-        payload: Map<String, Any?>,
-    ): List<ExchangeRateProvider.Quote> {
+    private fun parsePayload(payload: Map<String, Any?>): List<ExchangeRateProvider.Quote> {
         val quoteDate = payload["date"]?.toString()?.let(LocalDate::parse) ?: LocalDate.now(clock)
-        val quotedAt = quoteDate.atStartOfDay().atOffset(ZoneOffset.UTC)
 
-        val baseRatesMap =
-            (payload[normalizedBase] as? Map<*, *>)
-                ?.mapNotNull { (k, v) ->
-                    val key = k?.toString() ?: return@mapNotNull null
-                    key to toBigDecimal(v)
-                }?.toMap() ?: emptyMap()
-
-        return quoteCurrencies
-            .map { it.uppercase() }
-            .mapNotNull { quoteCurrency ->
-                val rate = baseRatesMap[quoteCurrency.lowercase()] ?: return@mapNotNull null
+        val rates = payload[USD] as? Map<*, *> ?: return emptyList()
+        return rates.mapNotNull { (rawCurrency, rawRate) ->
+            val currency = rawCurrency?.toString()?.uppercase()
+            val rate = toBigDecimal(rawRate)
+            if (currency.isNullOrBlank() || rate == null) {
+                logger.error("Ignoring malformed USD exchange rate entry: currency={}, rate={}", rawCurrency, rawRate)
+                null
+            } else {
                 ExchangeRateProvider.Quote(
-                    baseCurrency = normalizedBase.uppercase(),
-                    quoteCurrency = quoteCurrency,
+                    currency = currency,
                     quoteDate = quoteDate,
-                    quotedAt = quotedAt,
                     rate = rate,
                 )
             }
+        }
     }
 
     private fun toBigDecimal(value: Any?): BigDecimal? =
@@ -118,6 +97,10 @@ class FawazExchangeRateProvider(
             is String -> value.toBigDecimalOrNull()
             else -> null
         }
+
+    private companion object {
+        const val USD = "usd"
+    }
 }
 
 private interface FawazApiClient {

@@ -4,8 +4,6 @@ import com.ynixt.sharedfinances.domain.exceptions.http.InvalidExchangeRateQuoteC
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.repositories.ExchangeRateQuoteListCursor
 import java.time.LocalDate
-import java.time.OffsetDateTime
-import java.util.UUID
 
 data class ExchangeRateQuoteListRequest(
     val pageRequest: CursorPageRequest,
@@ -19,26 +17,18 @@ data class ExchangeRateQuoteListRequest(
             val quoteDateStr = m["quoteDate"] as? String
             val baseCurrencyStr = m["baseCurrency"] as? String
             val quoteCurrencyStr = m["quoteCurrency"] as? String
-            val quotedAtStr = m["quotedAt"] as? String
-            val idStr = m["id"] as? String
             when {
                 quoteDateStr == null &&
                     baseCurrencyStr == null &&
-                    quoteCurrencyStr == null &&
-                    quotedAtStr == null &&
-                    idStr == null -> null
+                    quoteCurrencyStr == null -> null
                 quoteDateStr != null &&
                     baseCurrencyStr != null &&
-                    quoteCurrencyStr != null &&
-                    quotedAtStr != null &&
-                    idStr != null ->
+                    quoteCurrencyStr != null ->
                     try {
                         ExchangeRateQuoteListCursor(
                             quoteDate = LocalDate.parse(quoteDateStr),
                             baseCurrency = baseCurrencyStr.uppercase(),
                             quoteCurrency = quoteCurrencyStr.uppercase(),
-                            quotedAt = OffsetDateTime.parse(quotedAtStr),
-                            id = UUID.fromString(idStr),
                         )
                     } catch (_: RuntimeException) {
                         throw InvalidExchangeRateQuoteCursorException(
@@ -47,7 +37,7 @@ data class ExchangeRateQuoteListRequest(
                     }
                 else ->
                     throw InvalidExchangeRateQuoteCursorException(
-                        "nextCursor for exchange rate quotes must include quoteDate, baseCurrency, quoteCurrency, quotedAt, and id together, or omit all.",
+                        "nextCursor for exchange rate quotes must include quoteDate, baseCurrency, and quoteCurrency together, or omit all.",
                     )
             }
         }

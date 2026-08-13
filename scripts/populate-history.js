@@ -1,16 +1,10 @@
-const fs = require("node:fs");
-const path = require("node:path");
-
 const {
     MIN_DATE,
     MAX_DATE,
-    QUOTES,
     SF_APP_SERVICE_SECRET,
     API_URL = "",
-    DELAY_MS = "2000",
+    DELAY_MS = "1000",
 } = process.env;
-
-const CURRENCIES_FROM_JSON = process.argv.includes("--currencies-from-json");
 
 if (!MIN_DATE) {
     throw new Error(
@@ -32,35 +26,8 @@ function addOneDay(dateString) {
     return date.toISOString().slice(0, 10);
 }
 
-function buildQuotesParams() {
-    if (!QUOTES) return "";
-
-    return QUOTES.split(",")
-        .map((quote) => quote.trim())
-        .filter(Boolean)
-        .map((quote) => `quotes=${encodeURIComponent(quote)}`)
-        .map((param) => `&${param}`)
-        .join("");
-}
-
-function loadCurrenciesFromJson() {
-    const currenciesPath = path.resolve(
-        __dirname,
-        "../backend/src/main/resources/currencies.json"
-    );
-
-    const fileContent = fs.readFileSync(currenciesPath, "utf8");
-    const currenciesJson = JSON.parse(fileContent);
-
-    return Object.keys(currenciesJson);
-}
-
-async function syncExchangeRates(date, quotesParams, currency) {
-    const currencyParam = currency
-        ? `&quotes=${encodeURIComponent(currency)}`
-        : "";
-
-    const url = `${API_URL}/exchange-rates/sync?date=${date}${quotesParams}${currencyParam}`;
+async function syncExchangeRates(date) {
+    const url = `${API_URL}/exchange-rates/sync?date=${date}`;
 
     try {
         const response = await fetch(url, {
@@ -81,37 +48,14 @@ async function syncExchangeRates(date, quotesParams, currency) {
 }
 
 async function main() {
-    const currencies = CURRENCIES_FROM_JSON ? loadCurrenciesFromJson() : null;
-    const quotesParams = CURRENCIES_FROM_JSON ? "" : buildQuotesParams();
-
-    console.log(
-        `Populating exchange rate history from ${MIN_DATE} to ${MAX_DATE}${
-            CURRENCIES_FROM_JSON
-                ? ` (currencies from currencies.json: ${currencies.length})`
-                : QUOTES
-                    ? ` (quotes: ${QUOTES})`
-                    : ""
-        }`
-    );
+    console.log(`Populating exchange rate history from ${MIN_DATE} to ${MAX_DATE}`);
 
     let current = MIN_DATE;
 
     while (current <= MAX_DATE) {
-        if (CURRENCIES_FROM_JSON) {
-            for (const currency of currencies) {
-                process.stdout.write(`Syncing ${current} / ${currency} ... `);
-
-                await syncExchangeRates(current, "", currency);
-
-                await sleep(DELAY_MS);
-            }
-        } else {
-            process.stdout.write(`Syncing ${current} ... `);
-
-            await syncExchangeRates(current, quotesParams);
-
-            await sleep(DELAY_MS);
-        }
+        process.stdout.write(`Syncing ${current} ... `);
+        await syncExchangeRates(current);
+        await sleep(DELAY_MS);
 
         current = addOneDay(current);
     }

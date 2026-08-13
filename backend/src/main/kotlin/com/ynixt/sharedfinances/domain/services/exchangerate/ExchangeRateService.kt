@@ -1,7 +1,7 @@
 package com.ynixt.sharedfinances.domain.services.exchangerate
 
-import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.models.CursorPage
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuote
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -9,12 +9,9 @@ import java.time.LocalDate
 interface ExchangeRateService {
     suspend fun syncLatestQuotes(): Int
 
-    suspend fun syncQuotesForDate(
-        date: LocalDate,
-        baseCurrencies: Set<String>? = null,
-    ): Int
+    suspend fun syncQuotesForDate(date: LocalDate): Int
 
-    suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity>
+    suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuote>
 
     suspend fun getRate(
         fromCurrency: String,
@@ -27,6 +24,8 @@ interface ExchangeRateService {
         toCurrency: String,
         referenceDate: LocalDate,
     ): ResolvedExchangeRate
+
+    suspend fun resolveRateBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, ResolvedExchangeRate?>
 
     suspend fun convert(
         value: BigDecimal,

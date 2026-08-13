@@ -27,12 +27,10 @@ down-dev-v:
 
 # Usage:
 #   make populate-history MIN_DATE=2024-01-01 MAX_DATE=2026-04-24
-#   make populate-history MIN_DATE=2024-01-01 MAX_DATE=2024-12-31 QUOTES=USD,BRL,EUR
 .PHONY: populate-history
 populate-history:
 	MIN_DATE="$(MIN_DATE)" \
 	MAX_DATE="$(MAX_DATE)" \
-	QUOTES="$(QUOTES)" \
 	SF_APP_SERVICE_SECRET="$(SF_APP_SERVICE_SECRET)" \
 	API_URL="$(API_URL)" \
 	node scripts/populate-history.js

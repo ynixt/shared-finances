@@ -19,6 +19,12 @@ export interface ExchangeRateQuoteListFilters {
   quoteDateTo?: string | undefined;
 }
 
+interface ExchangeRateQuoteCursor {
+  quoteDate: string;
+  baseCurrency: string;
+  quoteCurrency: string;
+}
+
 export interface ExchangeRateResolveRequest {
   fromCurrency: string;
   referenceDate: string;
@@ -57,8 +63,24 @@ export class ExchangeRateService {
       quoteDateTo: filters?.quoteDateTo || undefined,
     };
 
+    const nextCursor = pageRequest?.nextCursor as ExchangeRateQuoteCursor | undefined;
+    const normalizedPageRequest: CursorPageRequest | undefined = pageRequest
+      ? {
+          size: pageRequest.size,
+          nextCursor: nextCursor
+            ? {
+                quoteDate: nextCursor.quoteDate,
+                baseCurrency: nextCursor.baseCurrency,
+                quoteCurrency: nextCursor.quoteCurrency,
+              }
+            : undefined,
+        }
+      : undefined;
+
     return lastValueFrom(
-      this.cursorPaginationService.post<ExchangeRateQuoteDto>('/api/exchange-rates/list', pageRequest, undefined, body).pipe(take(1)),
+      this.cursorPaginationService
+        .post<ExchangeRateQuoteDto>('/api/exchange-rates/list', normalizedPageRequest, undefined, body)
+        .pipe(take(1)),
     );
   }
 

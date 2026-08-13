@@ -3,13 +3,13 @@ package com.ynixt.sharedfinances.scenarios.support
 import com.ynixt.sharedfinances.application.config.AuthProperties
 import com.ynixt.sharedfinances.application.config.LegalDocumentProperties
 import com.ynixt.sharedfinances.application.config.PlanProperties
-import com.ynixt.sharedfinances.domain.entities.exchangerate.ExchangeRateQuoteEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletCategoryConceptEntity
 import com.ynixt.sharedfinances.domain.entities.wallet.entries.WalletEntryCategoryEntity
 import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptCode
 import com.ynixt.sharedfinances.domain.enums.WalletCategoryConceptKind
 import com.ynixt.sharedfinances.domain.mapper.CreditCardBillMapper
 import com.ynixt.sharedfinances.domain.models.CursorPage
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuote
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByGoalRow
 import com.ynixt.sharedfinances.domain.repositories.GoalCommittedByWalletRow
@@ -81,12 +81,9 @@ internal fun identityExchangeRateService(): ExchangeRateService =
     object : ExchangeRateService {
         override suspend fun syncLatestQuotes(): Int = 0
 
-        override suspend fun syncQuotesForDate(
-            date: LocalDate,
-            baseCurrencies: Set<String>?,
-        ): Int = 0
+        override suspend fun syncQuotesForDate(date: LocalDate): Int = 0
 
-        override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity> =
+        override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuote> =
             CursorPage(
                 items = emptyList(),
                 nextCursor = null,
@@ -104,6 +101,9 @@ internal fun identityExchangeRateService(): ExchangeRateService =
             toCurrency: String,
             referenceDate: LocalDate,
         ): ResolvedExchangeRate = ResolvedExchangeRate(rate = BigDecimal.ONE, quoteDate = referenceDate)
+
+        override suspend fun resolveRateBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, ResolvedExchangeRate?> =
+            requests.associateWith { request -> ResolvedExchangeRate(BigDecimal.ONE, request.referenceDate) }
 
         override suspend fun convert(
             value: BigDecimal,

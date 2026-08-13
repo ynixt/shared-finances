@@ -6,11 +6,11 @@ import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateQuo
 import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateResolutionDto
 import com.ynixt.sharedfinances.application.web.dto.exchangerate.ExchangeRateResolveBatchRequestDto
 import com.ynixt.sharedfinances.application.web.mapper.ExchangeRateQuoteDtoMapper
-import com.ynixt.sharedfinances.domain.exceptions.http.ExchangeRateUnavailableException
 import com.ynixt.sharedfinances.domain.extensions.CursorPageExtensions.mapCursorPageToDto
 import com.ynixt.sharedfinances.domain.models.CursorPageRequest
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.models.security.UserJwtAuthenticationToken
+import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.math.BigDecimal
 
 @RestController
 @RequestMapping("/exchange-rates")
@@ -63,34 +64,32 @@ class ExchangeRateController(
     suspend fun resolve(
         @AuthenticationPrincipal principalToken: UserJwtAuthenticationToken,
         @RequestBody body: ExchangeRateResolveBatchRequestDto,
-    ): List<ExchangeRateResolutionDto> =
-        body.requests
-            .take(500)
-            .map { request ->
-                val fromCurrency = request.fromCurrency.trim().uppercase()
-                val toCurrency = request.toCurrency.trim().uppercase()
-                try {
-                    val resolved =
-                        exchangeRateService.resolveRate(
+    ): List<ExchangeRateResolutionDto> {
+        val normalizedRequests =
+            body.requests
+                .take(500)
+                .map { request ->
+                    val fromCurrency = request.fromCurrency.trim().uppercase()
+                    val toCurrency = request.toCurrency.trim().uppercase()
+                    request to
+                        ConversionRequest(
+                            value = BigDecimal.ONE,
                             fromCurrency = fromCurrency,
                             toCurrency = toCurrency,
                             referenceDate = request.referenceDate,
                         )
-                    ExchangeRateResolutionDto(
-                        fromCurrency = fromCurrency,
-                        toCurrency = toCurrency,
-                        referenceDate = request.referenceDate,
-                        rate = resolved.rate,
-                        quoteDate = resolved.quoteDate,
-                    )
-                } catch (_: ExchangeRateUnavailableException) {
-                    ExchangeRateResolutionDto(
-                        fromCurrency = fromCurrency,
-                        toCurrency = toCurrency,
-                        referenceDate = request.referenceDate,
-                        rate = null,
-                        quoteDate = null,
-                    )
                 }
-            }
+        val resolvedByRequest = exchangeRateService.resolveRateBatch(normalizedRequests.map { it.second })
+
+        return normalizedRequests.map { (request, conversionRequest) ->
+            val resolved = resolvedByRequest[conversionRequest]
+            ExchangeRateResolutionDto(
+                fromCurrency = conversionRequest.fromCurrency,
+                toCurrency = conversionRequest.toCurrency,
+                referenceDate = request.referenceDate,
+                rate = resolved?.rate,
+                quoteDate = resolved?.quoteDate,
+            )
+        }
+    }
 }

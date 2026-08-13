@@ -1,5 +1,6 @@
 package com.ynixt.sharedfinances.resources.services.dashboard
 
+import com.ynixt.sharedfinances.domain.exceptions.http.ExchangeRateUnavailableException
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardCardKey
 import com.ynixt.sharedfinances.domain.models.dashboard.OverviewDashboardDetail
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
@@ -49,7 +50,12 @@ internal class OverviewDashboardAssemblyServiceImpl(
                 if (request == null) {
                     rawValue.value
                 } else {
-                    convertedByRequest.getValue(request)
+                    convertedByRequest[request]
+                        ?: throw ExchangeRateUnavailableException(
+                            request.fromCurrency,
+                            request.toCurrency,
+                            request.referenceDate,
+                        )
                 }
 
             rawValue.key to converted.asMoney()

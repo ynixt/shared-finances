@@ -144,7 +144,6 @@ app:
         saltHex: ${SF_APP_MFA_TOTP_CRYPTO_SALT_HEX}
   exchangeRates:
     providerUrl: ${SF_APP_EXCHANGE_RATES_PROVIDER_URL:https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@}
-    fetchDelayMs: ${SF_APP_EXCHANGE_FETCH_DELAY_MS:1000}
   imports:
     worker:
       enabled: ${SF_APP_IMPORT_WORKER_ENABLED:true}

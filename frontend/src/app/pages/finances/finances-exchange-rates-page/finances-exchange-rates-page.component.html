@@ -24,6 +24,11 @@
       {{ 'financesPage.exchangeRatesPage.filters.apply' | translate }}
     </button>
   </div>
+  @if (!filterBase && !filterQuote) {
+    <p class="mt-3 text-sm text-gray-600 text-default">
+      {{ 'financesPage.exchangeRatesPage.defaultBaseHint' | translate }}
+    </p>
+  }
 </div>
 
 @if (loading && quotes.length === 0) {
@@ -45,7 +50,10 @@
       <ng-template #body let-quote>
         <tr>
           <td class="font-semibold">{{ quote.baseCurrency }}/{{ quote.quoteCurrency }}</td>
-          <td>{{ quote.rate | localCurrency: quote.quoteCurrency : 8 }}</td>
+          <td>
+            {{ 1 | localCurrency: quote.baseCurrency }} =
+            {{ quote.rate | localCurrency: quote.quoteCurrency : 2 : rateMaxFractionDigits(quote.rate) }}
+          </td>
           <td>{{ quote.quoteDate | localDate: 'shortDate' }}</td>
           <td>{{ quote.source }}</td>
         </tr>

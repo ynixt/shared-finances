@@ -26,6 +26,7 @@ import com.ynixt.sharedfinances.domain.models.WalletItem
 import com.ynixt.sharedfinances.domain.models.bankaccount.BankAccount
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCard
 import com.ynixt.sharedfinances.domain.models.creditcard.CreditCardBill
+import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuote
 import com.ynixt.sharedfinances.domain.models.exchangerate.ExchangeRateQuoteListRequest
 import com.ynixt.sharedfinances.domain.models.groups.EditGroupRequest
 import com.ynixt.sharedfinances.domain.models.groups.GroupWithRole
@@ -41,6 +42,7 @@ import com.ynixt.sharedfinances.domain.services.actionevents.WalletEventActionEv
 import com.ynixt.sharedfinances.domain.services.categories.CategoryConceptService
 import com.ynixt.sharedfinances.domain.services.categories.GenericCategoryService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ConversionRequest
+import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateDerivation
 import com.ynixt.sharedfinances.domain.services.exchangerate.ExchangeRateService
 import com.ynixt.sharedfinances.domain.services.exchangerate.ResolvedExchangeRate
 import com.ynixt.sharedfinances.domain.services.groups.GroupPermissionService
@@ -489,37 +491,68 @@ internal class ScenarioStoredExchangeRateService : ExchangeRateService {
         quoteDate: LocalDate,
         rate: BigDecimal,
         source: String = "scenario-test",
-        quotedAt: OffsetDateTime = quoteDate.atStartOfDay().atOffset(ZoneOffset.UTC),
-        fetchedAt: OffsetDateTime = quotedAt,
+        fetchedAt: OffsetDateTime = quoteDate.atStartOfDay().atOffset(ZoneOffset.UTC),
     ) {
-        val entity =
+        val normalizedBase = baseCurrency.uppercase()
+        val normalizedQuote = quoteCurrency.uppercase()
+        val baseRate =
+            if (normalizedBase ==
+                "USD"
+            ) {
+                BigDecimal.ONE
+            } else if (normalizedQuote == "USD") {
+                BigDecimal.ONE.divide(rate)
+            } else {
+                BigDecimal.ONE
+            }
+        val quoteRate = if (normalizedQuote == "USD") BigDecimal.ONE else rate.multiply(baseRate)
+        storeUsdRate(normalizedBase, quoteDate, baseRate, source, fetchedAt)
+        storeUsdRate(normalizedQuote, quoteDate, quoteRate, source, fetchedAt)
+    }
+
+    private fun storeUsdRate(
+        currency: String,
+        quoteDate: LocalDate,
+        rate: BigDecimal,
+        source: String,
+        fetchedAt: OffsetDateTime,
+    ) {
+        quotes.removeAll { it.currency == currency && it.quoteDate == quoteDate }
+        quotes +=
             ExchangeRateQuoteEntity(
                 source = source,
-                baseCurrency = baseCurrency.uppercase(),
-                quoteCurrency = quoteCurrency.uppercase(),
+                currency = currency,
                 quoteDate = quoteDate,
                 rate = rate,
-                quotedAt = quotedAt,
                 fetchedAt = fetchedAt,
-            ).also { quote ->
-                quote.id = UUID.randomUUID()
-            }
-        quotes.add(entity)
+            ).also { it.id = UUID.randomUUID() }
     }
 
     override suspend fun syncLatestQuotes(): Int = 0
 
-    override suspend fun syncQuotesForDate(
-        date: LocalDate,
-        baseCurrencies: Set<String>?,
-    ): Int = 0
+    override suspend fun syncQuotesForDate(date: LocalDate): Int = 0
 
-    override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuoteEntity> {
+    override suspend fun listQuotes(request: ExchangeRateQuoteListRequest): CursorPage<ExchangeRateQuote> {
+        val effectiveBase = request.baseCurrency ?: if (request.quoteCurrency == null) "USD" else null
         val filtered =
             quotes
-                .asSequence()
+                .flatMap { base ->
+                    quotes
+                        .filter { quote -> quote.quoteDate == base.quoteDate && quote.currency != base.currency }
+                        .map { quote ->
+                            ExchangeRateQuote(
+                                source = quote.source,
+                                baseCurrency = base.currency,
+                                quoteCurrency = quote.currency,
+                                quoteDate = quote.quoteDate,
+                                rate = ExchangeRateDerivation.derive(base.rate, quote.rate),
+                                fetchedAt = quote.fetchedAt,
+                                derived = base.currency != "USD",
+                            )
+                        }
+                }.asSequence()
                 .filter { quote ->
-                    request.baseCurrency == null || quote.baseCurrency == request.baseCurrency.uppercase()
+                    effectiveBase == null || quote.baseCurrency == effectiveBase.uppercase()
                 }.filter { quote ->
                     request.quoteCurrency == null || quote.quoteCurrency == request.quoteCurrency.uppercase()
                 }.filter { quote ->
@@ -527,9 +560,9 @@ internal class ScenarioStoredExchangeRateService : ExchangeRateService {
                 }.filter { quote ->
                     request.quoteDateTo == null || !quote.quoteDate.isAfter(request.quoteDateTo)
                 }.sortedWith(
-                    compareByDescending<ExchangeRateQuoteEntity> { it.quoteDate }
-                        .thenByDescending { it.quotedAt }
-                        .thenByDescending { it.id?.toString().orEmpty() },
+                    compareByDescending<ExchangeRateQuote> { it.quoteDate }
+                        .thenBy { it.baseCurrency }
+                        .thenBy { it.quoteCurrency },
                 ).toList()
 
         return CursorPage(
@@ -557,15 +590,30 @@ internal class ScenarioStoredExchangeRateService : ExchangeRateService {
             return ResolvedExchangeRate(rate = BigDecimal.ONE, quoteDate = referenceDate)
         }
 
-        val selected =
-            selectQuote(normalizedFrom, normalizedTo, referenceDate)
+        val selectedDate =
+            selectQuoteDate(normalizedFrom, normalizedTo, referenceDate)
                 ?: throw ExchangeRateUnavailableException(normalizedFrom, normalizedTo, referenceDate)
+        val rates = quotes.filter { it.quoteDate == selectedDate }.associateBy { it.currency }
 
         return ResolvedExchangeRate(
-            rate = selected.rate,
-            quoteDate = selected.quoteDate,
+            rate = ExchangeRateDerivation.derive(rates.getValue(normalizedFrom).rate, rates.getValue(normalizedTo).rate),
+            quoteDate = selectedDate,
         )
     }
+
+    override suspend fun resolveRateBatch(requests: Collection<ConversionRequest>): Map<ConversionRequest, ResolvedExchangeRate?> =
+        buildMap {
+            requests.forEach { request ->
+                put(
+                    request,
+                    try {
+                        resolveRate(request.fromCurrency, request.toCurrency, request.referenceDate)
+                    } catch (_: ExchangeRateUnavailableException) {
+                        null
+                    },
+                )
+            }
+        }
 
     override suspend fun convert(
         value: BigDecimal,
@@ -594,28 +642,24 @@ internal class ScenarioStoredExchangeRateService : ExchangeRateService {
         return result
     }
 
-    private fun selectQuote(
+    private fun selectQuoteDate(
         baseCurrency: String,
         quoteCurrency: String,
         referenceDate: LocalDate,
-    ): ExchangeRateQuoteEntity? {
-        val pairQuotes =
+    ): LocalDate? {
+        val commonDates =
             quotes
-                .asSequence()
-                .filter { quote ->
-                    quote.baseCurrency == baseCurrency && quote.quoteCurrency == quoteCurrency
-                }.sortedWith(
-                    compareBy<ExchangeRateQuoteEntity> { it.quoteDate }
-                        .thenBy { it.quotedAt }
-                        .thenBy { it.id?.toString().orEmpty() },
-                ).toList()
+                .groupBy { it.quoteDate }
+                .filterValues { rows -> rows.any { it.currency == baseCurrency } && rows.any { it.currency == quoteCurrency } }
+                .keys
+                .sorted()
 
-        if (pairQuotes.isEmpty()) {
+        if (commonDates.isEmpty()) {
             return null
         }
 
-        val before = pairQuotes.lastOrNull { !it.quoteDate.isAfter(referenceDate) }
-        val after = pairQuotes.firstOrNull { !it.quoteDate.isBefore(referenceDate) }
+        val before = commonDates.lastOrNull { !it.isAfter(referenceDate) }
+        val after = commonDates.firstOrNull { !it.isBefore(referenceDate) }
 
         return when {
             before == null && after == null -> null
@@ -627,11 +671,11 @@ internal class ScenarioStoredExchangeRateService : ExchangeRateService {
 
     private fun chooseClosest(
         referenceDate: LocalDate,
-        before: ExchangeRateQuoteEntity,
-        after: ExchangeRateQuoteEntity,
-    ): ExchangeRateQuoteEntity {
-        val beforeDistance = ChronoUnit.DAYS.between(before.quoteDate, referenceDate).absoluteValue
-        val afterDistance = ChronoUnit.DAYS.between(referenceDate, after.quoteDate).absoluteValue
+        before: LocalDate,
+        after: LocalDate,
+    ): LocalDate {
+        val beforeDistance = ChronoUnit.DAYS.between(before, referenceDate).absoluteValue
+        val afterDistance = ChronoUnit.DAYS.between(referenceDate, after).absoluteValue
 
         return if (beforeDistance <= afterDistance) before else after
     }
