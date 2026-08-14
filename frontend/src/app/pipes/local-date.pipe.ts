@@ -3,8 +3,13 @@ import { Injectable, Pipe, PipeTransform } from '@angular/core';
 import { UntilDestroy, untilDestroyed } from '@ngneat/until-destroy';
 
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 import { LocaleService } from '../services/locale.service';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 @Pipe({ name: 'localDate', pure: false, standalone: true })
 @UntilDestroy()
@@ -34,21 +39,12 @@ export class LocalDatePipeService {
     timezone?: string,
   ): string {
     if (value == null) return '';
-    const date = dayjs.isDayjs(value) ? value.toDate() : new Date(value);
-    return formatDate(date, format, locale ?? this.localeService.locale, this.resolveTimezoneOffset(date, timezone));
-  }
+    let dateInDayJs = dayjs.isDayjs(value) ? value : dayjs(value);
 
-  private resolveTimezoneOffset(date: Date, timezone?: string): string | undefined {
-    if (timezone == null || !timezone.includes('/')) return timezone;
+    if (timezone != null) {
+      dateInDayJs = dateInDayJs.tz(timezone);
+    }
 
-    const offset = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      timeZoneName: 'longOffset',
-    })
-      .formatToParts(date)
-      .find(part => part.type === 'timeZoneName')
-      ?.value.replace('GMT', '');
-
-    return offset === '' ? '+0000' : offset?.replace(':', '');
+    return formatDate(dateInDayJs.toDate(), format, locale ?? this.localeService.locale);
   }
 }
